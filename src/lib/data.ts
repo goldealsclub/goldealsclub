@@ -1,8 +1,7 @@
 import dealsJson from "../../public/deals.json";
 
-export type DealTier = "standard" | "super" | "exceptional";
+export type DealLevel = "hot-deal" | "bon-deal" | "promo-normale";
 export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "pants" | "accessories";
-export type Gender = "men" | "women" | "unisex";
 
 export interface Deal {
   id: string;
@@ -15,19 +14,13 @@ export interface Deal {
   image_url: string;
   product_url: string;
   merchant: string;
-  deal_level: DealTier;
-  popularity: number;
   description: string;
-  color: string;
-  gender: Gender;
-  sizes: string[];
-  created_at: string;
-}
-
-export function getTierFromDiscount(discount: number): DealTier {
-  if (discount >= 50) return "exceptional";
-  if (discount >= 30) return "super";
-  return "standard";
+  is_super_deal: boolean;
+  deal_level: DealLevel;
+  flame_count: number;
+  popularity: number;
+  saved: boolean;
+  detected_at: string;
 }
 
 export interface Seller {
@@ -46,17 +39,13 @@ export const sellers: Seller[] = [
   { name: "ASOS", logo: "", dealCount: 48, trusted: true },
 ];
 
-// Trusted merchants derived from sellers list
 const trustedMerchants = new Set(sellers.filter(s => s.trusted).map(s => s.name));
 
 export function isTrustedMerchant(merchant: string): boolean {
   return trustedMerchants.has(merchant);
 }
 
-export const deals: Deal[] = (dealsJson as Deal[]).map((d) => ({
-  ...d,
-  deal_level: d.deal_level || getTierFromDiscount(d.discount_percent),
-}));
+export const deals: Deal[] = dealsJson as Deal[];
 
 export const categoryList: { key: Category; image: string }[] = [
   { key: "sneakers", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop" },
@@ -66,3 +55,8 @@ export const categoryList: { key: Category; image: string }[] = [
   { key: "pants", image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=400&h=400&fit=crop" },
   { key: "accessories", image: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=400&h=400&fit=crop" },
 ];
+
+// Helpers for sections
+export const hotDeals = deals.filter(d => d.deal_level === "hot-deal");
+export const bonDeals = deals.filter(d => d.deal_level === "bon-deal");
+export const promoNormales = deals.filter(d => d.deal_level === "promo-normale");

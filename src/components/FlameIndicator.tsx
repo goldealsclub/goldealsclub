@@ -1,13 +1,12 @@
 import { Flame } from "lucide-react";
-import { DealTier } from "@/lib/data";
 
 interface FlameIndicatorProps {
-  tier: DealTier;
+  count: number;
   className?: string;
 }
 
-const FlameIndicator = ({ tier, className = "" }: FlameIndicatorProps) => {
-  const count = tier === "exceptional" ? 3 : tier === "super" ? 2 : 1;
+const FlameIndicator = ({ count, className = "" }: FlameIndicatorProps) => {
+  if (count <= 0) return null;
 
   return (
     <span className={`inline-flex items-center gap-0.5 ${className}`} title={`${count}/3`}>
@@ -15,9 +14,9 @@ const FlameIndicator = ({ tier, className = "" }: FlameIndicatorProps) => {
         <Flame
           key={i}
           className={`w-3.5 h-3.5 transition-colors ${
-            tier === "exceptional"
+            count >= 3
               ? "text-amber-700 fill-amber-700/30"
-              : tier === "super"
+              : count === 2
               ? "text-foreground fill-foreground/20"
               : "text-foreground/50"
           }`}
