@@ -1,0 +1,92 @@
+import { Link } from "react-router-dom";
+import { Heart, Eye } from "lucide-react";
+import { Deal } from "@/lib/data";
+import { useI18n } from "@/lib/i18n";
+import { useFavorites } from "@/lib/favorites";
+import FlameIndicator from "./FlameIndicator";
+import ShareMenu from "./ShareMenu";
+
+interface DealCardProps {
+  deal: Deal;
+  featured?: boolean;
+}
+
+const DealCard = ({ deal, featured = false }: DealCardProps) => {
+  const { t } = useI18n();
+  const { toggle, isFav } = useFavorites();
+  const saved = isFav(deal.id);
+
+  return (
+    <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
+      {/* Image */}
+      <Link to={`/deal/${deal.id}`} className="block relative overflow-hidden aspect-square">
+        <img
+          src={deal.image}
+          alt={deal.name}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          loading="lazy"
+        />
+        {/* Hover overlay with CTA */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-foreground/10">
+          <span className="bg-primary text-primary-foreground px-6 py-3 text-[10px] font-display uppercase tracking-[0.2em]">
+            {t.seeOffer}
+          </span>
+        </div>
+        {/* Discount badge */}
+        <div className="absolute top-3 left-3 bg-primary text-primary-foreground px-2.5 py-1 text-[11px] font-display tracking-wider">
+          -{deal.discount}%
+        </div>
+        {/* Flame indicator */}
+        <div className="absolute top-3 right-3">
+          <FlameIndicator tier={deal.tier} />
+        </div>
+      </Link>
+
+      {/* Info */}
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] font-body text-foreground/50 uppercase tracking-wider">{deal.seller}</span>
+          {deal.sellerTrusted && (
+            <span className="text-[9px] font-body text-foreground/40 border border-foreground/15 px-1.5 py-0.5 uppercase tracking-wider">
+              {t.trustedBadge}
+            </span>
+          )}
+        </div>
+
+        <Link to={`/deal/${deal.id}`}>
+          <h3 className="font-display text-sm uppercase tracking-wide leading-tight mb-3 group-hover:text-foreground/70 transition-colors">
+            {deal.name}
+          </h3>
+        </Link>
+
+        <div className="flex items-baseline gap-2 mb-3">
+          <span className="font-display text-lg">{deal.price}€</span>
+          <span className="font-body text-sm text-foreground/40 line-through">{deal.originalPrice}€</span>
+        </div>
+
+        {/* Actions row */}
+        <div className="flex items-center justify-between pt-3 border-t border-foreground/8">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => toggle(deal.id)}
+              className="p-2 hover:bg-accent/50 rounded-sm transition-colors"
+              aria-label={t.save}
+            >
+              <Heart
+                className={`w-4 h-4 transition-colors ${saved ? "fill-foreground text-foreground" : "text-foreground/40 group-hover:text-foreground"}`}
+                strokeWidth={1.5}
+              />
+            </button>
+            <ShareMenu url={`/deal/${deal.id}`} title={deal.name} />
+          </div>
+          <div className="flex items-center gap-1 text-foreground/35">
+            <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
+            <span className="text-[10px] font-body">{deal.popularity}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DealCard;
