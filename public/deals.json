@@ -51,6 +51,7 @@
     "merchant": "Nike FR",
     "description": "Chaussure d'entraînement pour homme",
     "gender": "men",
+    "gender_label": "Homme",
     "is_super_deal": false,
     "deal_level": "promo-normale",
     "flame_count": 1,
