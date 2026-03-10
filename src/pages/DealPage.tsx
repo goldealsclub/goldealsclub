@@ -1,4 +1,4 @@
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, ArrowLeft, Eye, ExternalLink, Star, Clock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { deals, isTrustedMerchant } from "@/lib/data";
@@ -20,6 +20,7 @@ function formatCurrency(price: number | null, currency: string): string {
 const DealPage = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { toggle, isFav } = useFavorites();
 
   const deal = deals.find((d) => d.id === id);
@@ -40,10 +41,10 @@ const DealPage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-8">
-        <Link to="/" className="inline-flex items-center gap-2 text-[10px] font-display uppercase tracking-widest text-foreground/40 hover:text-foreground transition-colors mb-8">
+        <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-[10px] font-display uppercase tracking-widest text-foreground/40 hover:text-foreground transition-colors mb-8">
           <ArrowLeft className="w-3 h-3" strokeWidth={1.5} />
           {t.backToHome}
-        </Link>
+        </button>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Image */}

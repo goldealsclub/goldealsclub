@@ -13,6 +13,7 @@ import FavoritesPage from "./pages/FavoritesPage";
 import TrendsPage from "./pages/TrendsPage";
 import SellersPage from "./pages/SellersPage";
 import BrandPage from "./pages/BrandPage";
+import ScrollToTop from "./components/ScrollToTop";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,6 +27,7 @@ const App = () => (
           <Toaster />
           <Sonner />
           <BrowserRouter>
+            <ScrollToTop />
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/category/:slug" element={<CategoryPage />} />
