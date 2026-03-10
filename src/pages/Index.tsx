@@ -120,7 +120,7 @@ const Index = () => {
           <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.selections}</h2>
           <p className="font-body text-xs text-foreground/50 mb-12">{t.selectionSub}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
-            {deals.filter(d => d.tier === "gold").slice(0, 3).map((deal) => (
+            {deals.filter(d => d.tier === "exceptional").slice(0, 3).map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
