@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 
 const TrendsPage = () => {
   const { t } = useI18n();
+  const { filteredDeals: deals } = useGender();
 
   return (
     <div className="min-h-screen bg-background">
