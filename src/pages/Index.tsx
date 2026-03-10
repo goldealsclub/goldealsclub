@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { categoryList, sellers, Deal, getLastUpdatedDate } from "@/lib/data";
+import { categoryList, sellers, Deal } from "@/lib/data";
 import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
