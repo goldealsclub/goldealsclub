@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/lib/i18n";
 import { FavoritesProvider } from "@/lib/favorites";
+import { GenderProvider } from "@/lib/gender-context";
 import Index from "./pages/Index";
 import CategoryPage from "./pages/CategoryPage";
 import DealPage from "./pages/DealPage";
@@ -19,6 +20,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <I18nProvider>
       <FavoritesProvider>
+        <GenderProvider>
         <TooltipProvider>
           <Toaster />
           <Sonner />
@@ -34,6 +36,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </GenderProvider>
       </FavoritesProvider>
     </I18nProvider>
   </QueryClientProvider>

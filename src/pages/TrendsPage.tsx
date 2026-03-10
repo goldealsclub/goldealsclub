@@ -1,5 +1,5 @@
 import { useI18n } from "@/lib/i18n";
-import { deals } from "@/lib/data";
+import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
 import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 
 const TrendsPage = () => {
   const { t } = useI18n();
+  const { filteredDeals: deals } = useGender();
 
   return (
     <div className="min-h-screen bg-background">

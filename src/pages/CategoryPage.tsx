@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { deals, Category } from "@/lib/data";
+import { Category } from "@/lib/data";
+import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
 import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
@@ -10,6 +11,7 @@ import { useMemo } from "react";
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t } = useI18n();
+  const { filteredDeals } = useGender();
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
@@ -17,7 +19,7 @@ const CategoryPage = () => {
   };
 
   const categoryName = categoryKeys[slug || ""] || slug;
-  const categoryDeals = useMemo(() => deals.filter((d) => d.category === (slug as Category)), [slug]);
+  const categoryDeals = useMemo(() => filteredDeals.filter((d) => d.category === (slug as Category)), [slug, filteredDeals]);
 
   return (
     <div className="min-h-screen bg-background">
