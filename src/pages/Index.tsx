@@ -6,6 +6,7 @@ import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-image.jpg";
+import logo from "@/assets/logo.png";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 
 const Index = () => {
