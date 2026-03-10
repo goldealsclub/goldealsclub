@@ -22,9 +22,9 @@ const Header = () => {
 
   const genderTabs: { key: Gender | "all"; label: string }[] = [
     { key: "all", label: t.all },
-    { key: "men", label: t.men },
-    { key: "women", label: t.women },
-    { key: "kids", label: t.kids },
+    { key: "homme", label: t.men },
+    { key: "femme", label: t.women },
+    { key: "enfant", label: t.kids },
   ];
 
   const navLinks = [
@@ -57,17 +57,14 @@ const Header = () => {
       </div>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Mobile menu toggle */}
           <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-5 h-5" strokeWidth={1.5} /> : <Menu className="w-5 h-5" strokeWidth={1.5} />}
           </button>
 
-          {/* Logo */}
           <Link to="/" className="flex-shrink-0">
             <img src={logo} alt="GOLDEALS CLUB" className="h-14 md:h-20 w-auto" />
           </Link>
 
-          {/* Desktop Nav */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
               <Link
@@ -80,14 +77,11 @@ const Header = () => {
             ))}
           </nav>
 
-          {/* Right actions */}
           <div className="flex items-center gap-3">
-            {/* Search */}
             <button onClick={() => setSearchOpen(!searchOpen)} className="p-2">
               <Search className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
             </button>
 
-            {/* Favorites */}
             <Link to="/favorites" className="p-2 relative">
               <Heart className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
               {favorites.size > 0 && (
@@ -97,7 +91,6 @@ const Header = () => {
               )}
             </Link>
 
-            {/* Language */}
             <div className="flex items-center gap-1 border-l border-foreground/10 pl-3 ml-1">
               {languages.map((l) => (
                 <button
@@ -114,7 +107,6 @@ const Header = () => {
           </div>
         </div>
 
-        {/* Search bar */}
         {searchOpen && (
           <div className="pb-4 animate-fade-in">
             <input
@@ -127,7 +119,6 @@ const Header = () => {
         )}
       </div>
 
-      {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-foreground/8 bg-background animate-fade-in">
           <nav className="container mx-auto px-4 py-4 flex flex-col gap-3">

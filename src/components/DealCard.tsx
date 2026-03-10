@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Heart, Eye, ExternalLink } from "lucide-react";
+import { Heart, ExternalLink, Star, Clock } from "lucide-react";
 import { Deal, isTrustedMerchant } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
@@ -11,11 +11,26 @@ interface DealCardProps {
   featured?: boolean;
 }
 
+function formatCurrency(price: number | null, currency: string): string {
+  if (price === null) return "";
+  if (currency === "EUR") return `${price.toFixed(2)}€`;
+  if (currency === "USD") return `$${price.toFixed(2)}`;
+  if (currency === "GBP") return `£${price.toFixed(2)}`;
+  return `${price.toFixed(2)} ${currency}`;
+}
+
+function formatEndDate(date: string | null): string | null {
+  if (!date) return null;
+  const d = new Date(date);
+  return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
+}
+
 const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const { t } = useI18n();
   const { toggle, isFav } = useFavorites();
   const saved = isFav(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
+  const endDate = formatEndDate(deal.promo_end_date);
 
   return (
     <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
@@ -27,7 +42,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
           loading="lazy"
         />
-        {/* Hover overlay with CTA */}
+        {/* Hover overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-foreground/10">
           <span className="bg-primary text-primary-foreground px-6 py-3 text-[10px] font-display uppercase tracking-[0.2em]">
             {t.seeOffer}
@@ -39,10 +54,24 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             -{deal.discount_percent}%
           </div>
         )}
+        {/* Super deal badge */}
+        {deal.is_super_deal && (
+          <div className="absolute top-3 left-3 mt-8 bg-accent text-accent-foreground px-2 py-0.5 text-[9px] font-display uppercase tracking-wider flex items-center gap-1">
+            <Star className="w-3 h-3" strokeWidth={1.5} />
+            Super Deal
+          </div>
+        )}
         {/* Gender badge */}
         {deal.gender_label && (
           <div className="absolute bottom-3 left-3 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">
             {deal.gender_label}
+          </div>
+        )}
+        {/* Promo end date */}
+        {endDate && (
+          <div className="absolute bottom-3 right-14 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body tracking-wider border border-foreground/10 flex items-center gap-1">
+            <Clock className="w-2.5 h-2.5" strokeWidth={1.5} />
+            {endDate}
           </div>
         )}
         {/* Flame indicator */}
@@ -60,6 +89,9 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
               {t.trustedBadge}
             </span>
           )}
+          {deal.source && (
+            <span className="text-[9px] font-body text-foreground/30 ml-auto">{deal.source}</span>
+          )}
         </div>
 
         <Link to={`/deal/${deal.id}`}>
@@ -69,11 +101,13 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         </Link>
 
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="font-display text-lg">{deal.sale_price}€</span>
-          <span className="font-body text-sm text-foreground/40 line-through">{deal.original_price}€</span>
+          <span className="font-display text-lg">{formatCurrency(deal.sale_price, deal.currency)}</span>
+          {deal.original_price && (
+            <span className="font-body text-sm text-foreground/40 line-through">{formatCurrency(deal.original_price, deal.currency)}</span>
+          )}
         </div>
 
-        {/* Actions row */}
+        {/* Actions */}
         <div className="flex items-center justify-between pt-3 border-t border-foreground/8">
           <div className="flex items-center gap-1">
             <button

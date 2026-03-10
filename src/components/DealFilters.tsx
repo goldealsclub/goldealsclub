@@ -67,15 +67,18 @@ const FilterSection = ({ title, children, defaultOpen = false }: { title: string
 const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const { t } = useI18n();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const [sort, setSort] = useState<SortKey>("popularity");
+  const [sort, setSort] = useState<SortKey>("newest");
   const [showFilters, setShowFilters] = useState(false);
 
   const allBrands = useMemo(() => getUniqueValues(sourceDeals, "brand"), [sourceDeals]);
   const allMerchants = useMemo(() => getUniqueValues(sourceDeals, "merchant"), [sourceDeals]);
+  const allCategories = useMemo(() => getUniqueValues(sourceDeals, "category") as Category[], [sourceDeals]);
 
-  const categoryKeys: Record<string, string> = {
+  const categoryLabels: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
-    tshirts: t.tshirts, pants: t.pants, accessories: t.accessories,
+    tshirts: t.tshirts, "t-shirts": "T-shirts", pants: t.pants,
+    accessories: t.accessories, accessoires: t.accessories,
+    vestes: t.jackets, autres: "Autres",
   };
 
   const levelTabs: { key: DealLevel | "all"; label: string; flames: number }[] = [
@@ -112,15 +115,19 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     if (filters.categories.length) result = result.filter((d) => filters.categories.includes(d.category));
     if (filters.brands.length) result = result.filter((d) => filters.brands.includes(d.brand));
     if (filters.merchants.length) result = result.filter((d) => filters.merchants.includes(d.merchant));
-    if (filters.minPrice !== null) result = result.filter((d) => d.sale_price >= filters.minPrice!);
-    if (filters.maxPrice !== null) result = result.filter((d) => d.sale_price <= filters.maxPrice!);
-    if (filters.minDiscount !== null) result = result.filter((d) => d.discount_percent >= filters.minDiscount!);
+    if (filters.minPrice !== null) result = result.filter((d) => (d.sale_price ?? 0) >= filters.minPrice!);
+    if (filters.maxPrice !== null) result = result.filter((d) => (d.sale_price ?? 0) <= filters.maxPrice!);
+    if (filters.minDiscount !== null) result = result.filter((d) => (d.discount_percent ?? 0) >= filters.minDiscount!);
 
     result.sort((a, b) => {
-      if (sort === "discount") return b.discount_percent - a.discount_percent;
+      if (sort === "discount") return (b.discount_percent ?? 0) - (a.discount_percent ?? 0);
       if (sort === "popularity") return b.popularity - a.popularity;
-      if (sort === "priceAsc") return a.sale_price - b.sale_price;
-      if (sort === "priceDesc") return b.sale_price - a.sale_price;
+      if (sort === "priceAsc") return (a.sale_price ?? 0) - (b.sale_price ?? 0);
+      if (sort === "priceDesc") return (b.sale_price ?? 0) - (a.sale_price ?? 0);
+      // newest: promo_start_date desc, then detected_at desc
+      const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
+      const dateB = new Date(b.promo_start_date || b.detected_at).getTime();
+      if (dateB !== dateA) return dateB - dateA;
       return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
     });
 
@@ -146,7 +153,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
           </button>
         ))}
       </div>
-
 
       <div className="flex items-center justify-between border-b border-foreground/8 pb-4 mb-6">
         <div className="flex items-center gap-3 overflow-x-auto">
@@ -199,10 +205,10 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
             <FilterSection title={t.category} defaultOpen>
-              {(["sneakers", "jackets", "hoodies", "tshirts", "pants", "accessories"] as Category[]).map((cat) => (
+              {allCategories.map((cat) => (
                 <FilterChip
                   key={cat}
-                  label={categoryKeys[cat]}
+                  label={categoryLabels[cat] || cat}
                   active={filters.categories.includes(cat)}
                   onClick={() => setFilters((f) => ({ ...f, categories: toggleArray(f.categories, cat) }))}
                 />

@@ -8,15 +8,23 @@ import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-image.jpg";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 
+/** Sort by promo_start_date desc, then detected_at desc */
+function sortByDate(a: Deal, b: Deal): number {
+  const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
+  const dateB = new Date(b.promo_start_date || b.detected_at).getTime();
+  if (dateB !== dateA) return dateB - dateA;
+  return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
+}
+
 const Index = () => {
   const { t } = useI18n();
   const { filteredDeals: deals } = useGender();
 
-  const hotDeals = deals.filter(d => d.deal_level === "hot-deal");
-  const bonDeals = deals.filter(d => d.deal_level === "bon-deal");
-  const promoNormales = deals.filter(d => d.deal_level === "promo-normale");
+  const hotDeals = deals.filter(d => d.deal_level === "hot-deal").sort(sortByDate);
+  const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortByDate);
+  const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortByDate);
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
-  const newDeals = [...deals].sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime()).slice(0, 4);
+  const newDeals = [...deals].sort(sortByDate).slice(0, 4);
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,

@@ -13,13 +13,18 @@ const CategoryPage = () => {
   const { t } = useI18n();
   const { filteredDeals } = useGender();
 
-  const categoryKeys: Record<string, string> = {
+  const categoryLabels: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
-    tshirts: t.tshirts, pants: t.pants, accessories: t.accessories,
+    tshirts: t.tshirts, "t-shirts": "T-shirts", pants: t.pants,
+    accessories: t.accessories, accessoires: t.accessories,
+    vestes: t.jackets, autres: "Autres",
   };
 
-  const categoryName = categoryKeys[slug || ""] || slug;
-  const categoryDeals = useMemo(() => filteredDeals.filter((d) => d.category === (slug as Category)), [slug, filteredDeals]);
+  const categoryName = categoryLabels[slug || ""] || slug;
+  const categoryDeals = useMemo(
+    () => filteredDeals.filter((d) => d.category === slug || (slug === "tshirts" && d.category === "t-shirts")),
+    [slug, filteredDeals]
+  );
 
   return (
     <div className="min-h-screen bg-background">

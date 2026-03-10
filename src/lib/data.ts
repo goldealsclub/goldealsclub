@@ -1,25 +1,29 @@
 import dealsJson from "../../public/deals.json";
 
 export type DealLevel = "hot-deal" | "bon-deal" | "promo-normale";
-export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "pants" | "accessories" | "autres" | "vestes" | "t-shirts" | "accessoires";
-export type Gender = "men" | "women" | "kids" | "unisex";
+export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "t-shirts" | "pants" | "accessories" | "accessoires" | "vestes" | "autres";
+export type Gender = "homme" | "femme" | "enfant" | "unisexe";
 
 export interface Deal {
   id: string;
   title: string;
   brand: string;
   category: Category;
+  gender: Gender;
+  gender_label: string;
   sale_price: number | null;
   original_price: number | null;
   discount_percent: number | null;
   image_url: string;
   product_url: string;
   merchant: string;
+  source: string;
+  currency: string;
   description: string;
+  promo_start_date: string;
+  promo_end_date: string | null;
   is_super_deal: boolean;
   deal_level: DealLevel;
-  gender: Gender;
-  gender_label: string;
   flame_count: number;
   popularity: number;
   saved: boolean;
@@ -43,8 +47,6 @@ export const sellers: Seller[] = [
   { name: "Adidas", logo: "", dealCount: 38, trusted: true },
 ];
 
-const trustedMerchants = new Set(sellers.filter(s => s.trusted).map(s => s.name));
-
 export function isTrustedMerchant(merchant: string): boolean {
   for (const s of sellers) {
     if (s.trusted && merchant.toLowerCase().includes(s.name.toLowerCase())) return true;
@@ -52,7 +54,43 @@ export function isTrustedMerchant(merchant: string): boolean {
   return false;
 }
 
-export const deals: Deal[] = dealsJson as Deal[];
+/** Upgrade Nike thumbnail URLs to high-res */
+function upgradeImageUrl(url: string): string {
+  if (url.includes("static.nike.com") && url.includes("t_PDP_144")) {
+    return url.replace("t_PDP_144_v1", "t_PDP_864_v1");
+  }
+  if (url.includes("assets.adidas.com") && url.includes("w_600")) {
+    return url.replace("w_600", "w_960");
+  }
+  return url;
+}
+
+/** Derive gender_label from gender */
+function deriveGenderLabel(gender: string): string {
+  switch (gender) {
+    case "homme": return "Homme";
+    case "femme": return "Femme";
+    case "enfant": return "Enfant";
+    case "unisexe": return "Unisexe";
+    default: return "";
+  }
+}
+
+/** Normalize raw JSON deals */
+function normalizeDeals(raw: any[]): Deal[] {
+  return raw.map((d, i) => ({
+    ...d,
+    id: d.id || `deal-${i}-${(d.title || "").slice(0, 20).replace(/\s+/g, "-").toLowerCase()}`,
+    image_url: upgradeImageUrl(d.image_url || ""),
+    gender_label: d.gender_label || deriveGenderLabel(d.gender || ""),
+    source: d.source || "",
+    currency: d.currency || "EUR",
+    promo_start_date: d.promo_start_date || d.detected_at || "",
+    promo_end_date: d.promo_end_date || null,
+  }));
+}
+
+export const deals: Deal[] = normalizeDeals(dealsJson as any[]);
 
 export const categoryList: { key: Category; image: string }[] = [
   { key: "sneakers", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop" },
@@ -63,7 +101,14 @@ export const categoryList: { key: Category; image: string }[] = [
   { key: "accessories", image: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=400&h=400&fit=crop" },
 ];
 
-// Helpers for sections
-export const hotDeals = deals.filter(d => d.deal_level === "hot-deal");
-export const bonDeals = deals.filter(d => d.deal_level === "bon-deal");
-export const promoNormales = deals.filter(d => d.deal_level === "promo-normale");
+// Sort by promo_start_date desc, then detected_at desc
+function sortByDate(a: Deal, b: Deal): number {
+  const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
+  const dateB = new Date(b.promo_start_date || b.detected_at).getTime();
+  if (dateB !== dateA) return dateB - dateA;
+  return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
+}
+
+export const hotDeals = deals.filter(d => d.deal_level === "hot-deal").sort(sortByDate);
+export const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortByDate);
+export const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortByDate);
