@@ -40,6 +40,7 @@ export const sellers: Seller[] = [
   { name: "Farfetch", logo: "", dealCount: 31, trusted: true },
   { name: "Nike", logo: "", dealCount: 56, trusted: true },
   { name: "ASOS", logo: "", dealCount: 48, trusted: true },
+  { name: "Adidas", logo: "", dealCount: 38, trusted: true },
 ];
 
 const trustedMerchants = new Set(sellers.filter(s => s.trusted).map(s => s.name));
