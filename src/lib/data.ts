@@ -9,9 +9,9 @@ export interface Deal {
   title: string;
   brand: string;
   category: Category;
-  sale_price: number;
-  original_price: number;
-  discount_percent: number;
+  sale_price: number | null;
+  original_price: number | null;
+  discount_percent: number | null;
   image_url: string;
   product_url: string;
   merchant: string;
