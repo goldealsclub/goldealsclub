@@ -256,6 +256,7 @@ const translations = {
     men: "Hombre",
     women: "Mujer",
     unisex: "Unisex",
+    kids: "Niños",
     minPrice: "Mín",
     maxPrice: "Máx",
     minDiscount: "Mín %",

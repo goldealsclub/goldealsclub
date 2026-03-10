@@ -18,6 +18,7 @@ export interface Deal {
   description: string;
   is_super_deal: boolean;
   deal_level: DealLevel;
+  gender: Gender;
   flame_count: number;
   popularity: number;
   saved: boolean;
