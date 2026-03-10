@@ -12,6 +12,7 @@ import DealPage from "./pages/DealPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import TrendsPage from "./pages/TrendsPage";
 import SellersPage from "./pages/SellersPage";
+import BrandPage from "./pages/BrandPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
