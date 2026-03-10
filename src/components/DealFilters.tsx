@@ -8,7 +8,6 @@ export type SortKey = "discount" | "popularity" | "newest" | "priceAsc" | "price
 
 interface Filters {
   dealLevel: DealLevel | "all";
-  gender: Gender | "all";
   categories: Category[];
   brands: string[];
   merchants: string[];
