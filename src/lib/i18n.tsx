@@ -4,7 +4,7 @@ export type Lang = "fr" | "en" | "es";
 
 const translations = {
   fr: {
-    heroTitle: "GOLDDEALS CLUB",
+    heroTitle: "GOLDEALS CLUB",
     heroSub: "Les meilleures promos mode, streetwear et sneakers, sélectionnées avec style chez des vendeurs fiables.",
     heroCta: "Découvrir les super promos",
     superPromos: "Super Promos du Moment",
@@ -64,7 +64,7 @@ const translations = {
     copied: "Lien copié !",
   },
   en: {
-    heroTitle: "GOLDDEALS CLUB",
+    heroTitle: "GOLDEALS CLUB",
     heroSub: "The best fashion, streetwear & sneaker deals, curated with style from trusted sellers.",
     heroCta: "Discover super deals",
     superPromos: "Top Deals Right Now",
@@ -124,7 +124,7 @@ const translations = {
     copied: "Link copied!",
   },
   es: {
-    heroTitle: "GOLDDEALS CLUB",
+    heroTitle: "GOLDEALS CLUB",
     heroSub: "Las mejores ofertas de moda, streetwear y sneakers, seleccionadas con estilo de vendedores confiables.",
     heroCta: "Descubrir súper ofertas",
     superPromos: "Súper Ofertas del Momento",

@@ -20,7 +20,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div>
-            <h3 className="font-display text-lg text-background mb-3 tracking-wider">GOLDDEALS CLUB</h3>
+            <h3 className="font-display text-lg text-background mb-3 tracking-wider">GOLDEALS CLUB</h3>
             <p className="text-xs font-body leading-relaxed text-background/50">{t.footerTagline}</p>
           </div>
 
@@ -65,7 +65,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-background/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] font-body text-background/30">© 2026 GOLDDEALS CLUB. All rights reserved.</p>
+          <p className="text-[10px] font-body text-background/30">© 2026 GOLDEALS CLUB. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="#" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerAbout}</a>
             <a href="#" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerContact}</a>
