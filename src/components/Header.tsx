@@ -36,7 +36,7 @@ const Header = () => {
 
           {/* Logo */}
           <Link to="/" className="flex-shrink-0">
-            <img src={logo} alt="GOLDDEALS CLUB" className="h-8 md:h-10 w-auto" />
+            <img src={logo} alt="GOLDEALS CLUB" className="h-8 md:h-10 w-auto" />
           </Link>
 
           {/* Desktop Nav */}

@@ -65,7 +65,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-background/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-[10px] font-body text-background/30">© 2026 GOLDDEALS CLUB. All rights reserved.</p>
+          <p className="text-[10px] font-body text-background/30">© 2026 GOLDEALS CLUB. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="#" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerAbout}</a>
             <a href="#" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerContact}</a>

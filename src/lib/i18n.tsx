@@ -124,7 +124,7 @@ const translations = {
     copied: "Link copied!",
   },
   es: {
-    heroTitle: "GOLDDEALS CLUB",
+    heroTitle: "GOLDEALS CLUB",
     heroSub: "Las mejores ofertas de moda, streetwear y sneakers, seleccionadas con estilo de vendedores confiables.",
     heroCta: "Descubrir súper ofertas",
     superPromos: "Súper Ofertas del Momento",
