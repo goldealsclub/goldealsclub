@@ -170,6 +170,7 @@ const translations = {
     men: "Men",
     women: "Women",
     unisex: "Unisex",
+    kids: "Kids",
     minPrice: "Min",
     maxPrice: "Max",
     minDiscount: "Min %",
