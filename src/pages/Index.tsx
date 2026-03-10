@@ -10,7 +10,11 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 
 const Index = () => {
   const { t } = useI18n();
+  const { filteredDeals: deals } = useGender();
 
+  const hotDeals = deals.filter(d => d.deal_level === "hot-deal");
+  const bonDeals = deals.filter(d => d.deal_level === "bon-deal");
+  const promoNormales = deals.filter(d => d.deal_level === "promo-normale");
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
   const newDeals = [...deals].sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime()).slice(0, 4);
 

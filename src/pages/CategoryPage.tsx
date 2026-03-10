@@ -19,7 +19,7 @@ const CategoryPage = () => {
   };
 
   const categoryName = categoryKeys[slug || ""] || slug;
-  const categoryDeals = useMemo(() => deals.filter((d) => d.category === (slug as Category)), [slug]);
+  const categoryDeals = useMemo(() => filteredDeals.filter((d) => d.category === (slug as Category)), [slug, filteredDeals]);
 
   return (
     <div className="min-h-screen bg-background">
