@@ -4,7 +4,7 @@ export type Lang = "fr" | "en" | "es";
 
 const translations = {
   fr: {
-    heroTitle: "GOLDDEALS CLUB",
+    heroTitle: "GOLDEALS CLUB",
     heroSub: "Les meilleures promos mode, streetwear et sneakers, sélectionnées avec style chez des vendeurs fiables.",
     heroCta: "Découvrir les super promos",
     superPromos: "Super Promos du Moment",
