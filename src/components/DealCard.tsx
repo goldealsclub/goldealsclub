@@ -34,9 +34,11 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           </span>
         </div>
         {/* Discount badge */}
-        <div className="absolute top-3 left-3 bg-primary text-primary-foreground px-2.5 py-1 text-[11px] font-display tracking-wider">
-          -{deal.discount_percent}%
-        </div>
+        {deal.discount_percent && deal.discount_percent > 0 && (
+          <div className="absolute top-3 left-3 bg-primary text-primary-foreground px-2.5 py-1 text-[11px] font-display tracking-wider">
+            -{deal.discount_percent}%
+          </div>
+        )}
         {/* Gender badge */}
         {deal.gender_label && (
           <div className="absolute bottom-3 left-3 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">

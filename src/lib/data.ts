@@ -46,7 +46,10 @@ export const sellers: Seller[] = [
 const trustedMerchants = new Set(sellers.filter(s => s.trusted).map(s => s.name));
 
 export function isTrustedMerchant(merchant: string): boolean {
-  return trustedMerchants.has(merchant);
+  for (const s of sellers) {
+    if (s.trusted && merchant.toLowerCase().includes(s.name.toLowerCase())) return true;
+  }
+  return false;
 }
 
 export const deals: Deal[] = dealsJson as Deal[];
