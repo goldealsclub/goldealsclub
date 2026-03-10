@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { X, SlidersHorizontal, ChevronDown } from "lucide-react";
-import { Deal, DealLevel, Category } from "@/lib/data";
+import { Deal, DealLevel, Category, Gender } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
 
@@ -8,6 +8,7 @@ export type SortKey = "discount" | "popularity" | "newest" | "priceAsc" | "price
 
 interface Filters {
   dealLevel: DealLevel | "all";
+  gender: Gender | "all";
   categories: Category[];
   brands: string[];
   merchants: string[];
@@ -18,6 +19,7 @@ interface Filters {
 
 const defaultFilters: Filters = {
   dealLevel: "all",
+  gender: "all",
   categories: [],
   brands: [],
   merchants: [],
@@ -98,6 +100,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
   const activeCount =
     (filters.dealLevel !== "all" ? 1 : 0) +
+    (filters.gender !== "all" ? 1 : 0) +
     filters.categories.length +
     filters.brands.length +
     filters.merchants.length +
@@ -109,6 +112,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     let result = [...sourceDeals];
 
     if (filters.dealLevel !== "all") result = result.filter((d) => d.deal_level === filters.dealLevel);
+    if (filters.gender !== "all") result = result.filter((d) => d.gender === filters.gender);
     if (filters.categories.length) result = result.filter((d) => filters.categories.includes(d.category));
     if (filters.brands.length) result = result.filter((d) => filters.brands.includes(d.brand));
     if (filters.merchants.length) result = result.filter((d) => filters.merchants.includes(d.merchant));
@@ -147,7 +151,28 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
         ))}
       </div>
 
-      {/* Sort + filter toggle */}
+      {/* Gender tabs */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        {([
+          { key: "all" as const, label: t.allDeals },
+          { key: "men" as const, label: t.men },
+          { key: "women" as const, label: t.women },
+          { key: "kids" as const, label: t.kids },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setFilters((f) => ({ ...f, gender: tab.key }))}
+            className={`text-[10px] font-display uppercase tracking-wider px-4 py-2 border transition-all whitespace-nowrap ${
+              filters.gender === tab.key
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-foreground/10 text-foreground/50 hover:text-foreground hover:border-foreground/30"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-center justify-between border-b border-foreground/8 pb-4 mb-6">
         <div className="flex items-center gap-3 overflow-x-auto">
           <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40 whitespace-nowrap">{t.sortBy}</span>
