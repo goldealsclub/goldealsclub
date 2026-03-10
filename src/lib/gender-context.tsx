@@ -27,7 +27,6 @@ export const GenderProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     },
     [gender]
   );
-  );
 
   return (
     <GenderContext.Provider value={{ gender, setGender, filteredDeals }}>
