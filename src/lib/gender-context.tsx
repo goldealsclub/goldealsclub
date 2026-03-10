@@ -23,7 +23,6 @@ export const GenderProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     () => {
       if (gender === "all") return deals;
       return deals.filter((d) => d.gender === gender || d.gender === "unisex");
-      return deals.filter((d) => d.gender === gender || d.gender === "unisex");
     },
     [gender]
   );
