@@ -145,7 +145,7 @@ const translations = {
     premiumSub: "Desirable pieces. Irresistible prices.",
     selectionSub: "Premium selection, strong discounts, trusted sellers.",
     trustedSellersSub: "We only work with verified and recognized sellers.",
-    backToHome: "Back to home",
+    backToHome: "Back",
     dealDetail: "Deal detail",
     description: "Description",
     seeOfferAt: "See offer at",
