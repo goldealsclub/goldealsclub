@@ -255,6 +255,7 @@ const translations = {
     priceDesc: "Precio: mayor a menor",
     filters: "Filtres",
     clearAll: "Limpiar todo",
+    all: "Todo",
     men: "Hombre",
     women: "Mujer",
     unisex: "Unisex",
