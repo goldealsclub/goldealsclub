@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Heart, Menu, X } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw } from "lucide-react";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
 import { useGender } from "@/lib/gender-context";
 import type { Gender } from "@/lib/data";
+import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const languages: { code: Lang; label: string }[] = [
   { code: "fr", label: "FR" },
