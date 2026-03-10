@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { Search, Heart, Menu, X } from "lucide-react";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
+import { useGender } from "@/lib/gender-context";
+import type { Gender } from "@/lib/data";
 import logo from "@/assets/logo.png";
 
 const languages: { code: Lang; label: string }[] = [
