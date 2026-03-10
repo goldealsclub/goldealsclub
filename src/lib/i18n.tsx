@@ -64,7 +64,7 @@ const translations = {
     copied: "Lien copié !",
   },
   en: {
-    heroTitle: "GOLDDEALS CLUB",
+    heroTitle: "GOLDEALS CLUB",
     heroSub: "The best fashion, streetwear & sneaker deals, curated with style from trusted sellers.",
     heroCta: "Discover super deals",
     superPromos: "Top Deals Right Now",
