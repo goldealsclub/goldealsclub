@@ -1,14 +1,12 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { categoryList, sellers, Deal, getLastUpdatedDate } from "@/lib/data";
+import { categoryList, sellers, Deal } from "@/lib/data";
 import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-image.jpg";
-import { ArrowRight, ShieldCheck, RefreshCw } from "lucide-react";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
+import { ArrowRight, ShieldCheck } from "lucide-react";
 
 function sortByDate(a: Deal, b: Deal): number {
   const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
@@ -66,16 +64,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Update date + Brands bar */}
+      {/* Brands bar */}
       <section className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2 mb-4">
           <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40">{deals.length} deals</span>
-          {getLastUpdatedDate() && (
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-body text-foreground/50 bg-foreground/5 px-3 py-1.5 rounded-full">
-              <RefreshCw className="w-3 h-3" />
-              Mis à jour le {format(new Date(getLastUpdatedDate()), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-            </span>
-          )}
         </div>
         <div className="flex flex-wrap gap-3">
           {brands.map(([brand, count]) => (

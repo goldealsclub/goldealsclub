@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Search, Heart, Menu, X } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw } from "lucide-react";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
 import { useGender } from "@/lib/gender-context";
 import type { Gender } from "@/lib/data";
+import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 const languages: { code: Lang; label: string }[] = [
   { code: "fr", label: "FR" },
@@ -37,6 +40,17 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
+      {/* Update date bar */}
+      {getLastUpdatedDate() && (
+        <div className="bg-primary/5 border-b border-foreground/6">
+          <div className="container mx-auto px-4 flex items-center justify-center gap-1.5 h-7">
+            <RefreshCw className="w-3 h-3 text-foreground/40" />
+            <span className="text-[10px] font-body text-foreground/50">
+              Deals actualisés le {format(new Date(getLastUpdatedDate()), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+            </span>
+          </div>
+        </div>
+      )}
       {/* Gender bar */}
       <div className="border-b border-foreground/6 bg-muted/30">
         <div className="container mx-auto px-4 flex items-center justify-center gap-6 h-9">
