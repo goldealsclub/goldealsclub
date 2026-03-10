@@ -232,7 +232,7 @@ const translations = {
     premiumSub: "Piezas deseables. Precios irresistibles.",
     selectionSub: "Selección premium, grandes descuentos, vendedores confiables.",
     trustedSellersSub: "Solo trabajamos con vendedores verificados y reconocidos.",
-    backToHome: "Volver al inicio",
+    backToHome: "Volver",
     dealDetail: "Detalle de la oferta",
     description: "Descripción",
     seeOfferAt: "Ver oferta en",
