@@ -1,5 +1,6 @@
 export type DealTier = "standard" | "super" | "exceptional";
 export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "pants" | "accessories";
+export type Gender = "men" | "women" | "unisex";
 
 export interface Deal {
   id: string;
@@ -16,6 +17,16 @@ export interface Deal {
   createdAt: string;
   description: string;
   url: string;
+  brand: string;
+  color: string;
+  gender: Gender;
+  sizes: string[];
+}
+
+export function getTierFromDiscount(discount: number): DealTier {
+  if (discount >= 50) return "exceptional";
+  if (discount >= 30) return "super";
+  return "standard";
 }
 
 export interface Seller {
@@ -64,8 +75,25 @@ const names = [
   "Prada Re-Nylon Bucket Hat",
 ];
 
+const brands = ["Nike", "Adidas", "Jordan", "The North Face", "Carhartt WIP", "Stone Island", "Nike", "Off-White", "New Balance", "Acne Studios", "Fear of God", "Prada"];
+const colors = ["Noir", "Blanc", "Gris", "Beige", "Bleu", "Vert", "Rouge", "Marron", "Crème", "Kaki", "Navy", "Noir"];
+const genders: Gender[] = ["men", "women", "unisex", "men", "unisex", "men", "men", "unisex", "unisex", "women", "unisex", "unisex"];
+const sizeOptions = [
+  ["39", "40", "41", "42", "43", "44", "45"],
+  ["40", "41", "42", "43", "44"],
+  ["38", "39", "40", "41", "42", "43", "44", "45"],
+  ["S", "M", "L", "XL"],
+  ["S", "M", "L", "XL", "XXL"],
+  ["S", "M", "L"],
+  ["S", "M", "L", "XL"],
+  ["XS", "S", "M", "L", "XL"],
+  ["39", "40", "41", "42", "43", "44"],
+  ["XS", "S", "M", "L"],
+  ["S", "M", "L", "XL"],
+  ["Unique"],
+];
+
 const categories: Category[] = ["sneakers", "jackets", "hoodies", "tshirts", "pants", "accessories"];
-const tiers: DealTier[] = ["standard", "standard", "standard", "super", "super", "exceptional"];
 
 export const deals: Deal[] = names.map((name, i) => {
   const originalPrice = Math.floor(Math.random() * 300) + 80;
@@ -81,11 +109,15 @@ export const deals: Deal[] = names.map((name, i) => {
     seller: sellers[i % sellers.length].name,
     sellerTrusted: true,
     category: categories[i % categories.length],
-    tier: tiers[i % tiers.length],
+    tier: getTierFromDiscount(discount),
     popularity: Math.floor(Math.random() * 500) + 50,
     createdAt: new Date(Date.now() - Math.random() * 7 * 86400000).toISOString(),
     description: "Pièce incontournable de la saison, disponible à un prix exceptionnel. Qualité premium, design iconique. Offre limitée chez un vendeur vérifié.",
     url: "#",
+    brand: brands[i],
+    color: colors[i],
+    gender: genders[i],
+    sizes: sizeOptions[i],
   };
 });
 
