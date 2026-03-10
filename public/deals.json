@@ -11,6 +11,7 @@
     "merchant": "Nike FR",
     "description": "Chaussure pour ado",
     "gender": "kids",
+    "gender_label": "Enfant",
     "is_super_deal": false,
     "deal_level": "bon-deal",
     "flame_count": 2,
