@@ -100,6 +100,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
   const activeCount =
     (filters.dealLevel !== "all" ? 1 : 0) +
+    (filters.gender !== "all" ? 1 : 0) +
     filters.categories.length +
     filters.brands.length +
     filters.merchants.length +
