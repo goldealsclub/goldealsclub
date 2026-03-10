@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { X, SlidersHorizontal, ChevronDown } from "lucide-react";
-import { Deal, DealLevel, Category } from "@/lib/data";
+import { Deal, DealLevel, Category, Gender } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
 
