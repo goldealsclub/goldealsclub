@@ -23,8 +23,12 @@ const Index = () => {
   const hotDeals = deals.filter(d => d.deal_level === "hot-deal").sort(sortByDate);
   const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortByDate);
   const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortByDate);
-  const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
-  const newDeals = [...deals].sort(sortByDate).slice(0, 4);
+  const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity);
+  const newDeals = [...deals].sort(sortByDate);
+
+  // Brand counters for debug/verification
+  const brandCounts: Record<string, number> = {};
+  deals.forEach(d => { brandCounts[d.brand] = (brandCounts[d.brand] || 0) + 1; });
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
@@ -56,7 +60,19 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Hot Deals */}
+      {/* Brand counters */}
+      <section className="container mx-auto px-4 py-6">
+        <div className="flex flex-wrap gap-3">
+          <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40">{deals.length} deals total —</span>
+          {Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).map(([brand, count]) => (
+            <span key={brand} className="text-[10px] font-body text-foreground/50 border border-foreground/10 px-2 py-0.5">
+              {brand}: {count}
+            </span>
+          ))}
+        </div>
+      </section>
+
+      {/* Hot Deals — NO LIMIT */}
       {hotDeals.length > 0 && (
         <section className="container mx-auto px-4 py-20">
           <div className="flex items-end justify-between mb-12">
@@ -69,7 +85,7 @@ const Index = () => {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-            {hotDeals.slice(0, 4).map((deal) => (
+            {hotDeals.map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
@@ -100,7 +116,7 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Bons Deals */}
+      {/* Bons Deals — NO LIMIT */}
       {bonDeals.length > 0 && (
         <section className="container mx-auto px-4 py-20">
           <div className="flex items-end justify-between mb-12">
@@ -110,14 +126,14 @@ const Index = () => {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-            {bonDeals.slice(0, 4).map((deal) => (
+            {bonDeals.map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Popular */}
+      {/* Popular — NO LIMIT */}
       <section className="container mx-auto px-4 py-20">
         <div className="flex items-end justify-between mb-12">
           <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.popular}</h2>
@@ -129,13 +145,13 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Promos Normales */}
+      {/* Promos Normales — NO LIMIT */}
       {promoNormales.length > 0 && (
         <section className="bg-sable/30">
           <div className="container mx-auto px-4 py-20">
             <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.normalPromos}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
-              {promoNormales.slice(0, 3).map((deal) => (
+              {promoNormales.map((deal) => (
                 <DealCard key={deal.id} deal={deal} />
               ))}
             </div>
@@ -143,7 +159,7 @@ const Index = () => {
         </section>
       )}
 
-      {/* New Deals */}
+      {/* New Deals — NO LIMIT */}
       <section className="container mx-auto px-4 py-20">
         <div className="flex items-end justify-between mb-12">
           <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.newDeals}</h2>

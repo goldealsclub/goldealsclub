@@ -54,7 +54,7 @@ export function isTrustedMerchant(merchant: string): boolean {
   return false;
 }
 
-/** Upgrade Nike thumbnail URLs to high-res */
+/** Upgrade Nike/Adidas thumbnail URLs to high-res */
 function upgradeImageUrl(url: string): string {
   if (url.includes("static.nike.com") && url.includes("t_PDP_144")) {
     return url.replace("t_PDP_144_v1", "t_PDP_864_v1");
@@ -65,8 +65,34 @@ function upgradeImageUrl(url: string): string {
   return url;
 }
 
+/** Infer gender from description, falling back to the gender field */
+function inferGender(genderField: string, description: string, title: string): Gender {
+  const desc = (description || "").toLowerCase();
+  const ttl = (title || "").toLowerCase();
+  const combined = `${desc} ${ttl}`;
+
+  if (combined.includes("pour femme") || combined.includes("pour fille") || combined.includes("women") || combined.includes("woman")) {
+    return "femme";
+  }
+  if (combined.includes("pour homme") || combined.includes("pour garçon") || combined.includes("men's") || combined.includes("for men")) {
+    return "homme";
+  }
+  if (combined.includes("pour ado") || combined.includes("pour enfant") || combined.includes("enfants") || combined.includes("kids") || combined.includes("junior") || combined.includes("bébé") || combined.includes("nourrisson")) {
+    return "enfant";
+  }
+
+  // Fallback to the original gender field
+  const g = (genderField || "").toLowerCase();
+  if (g === "homme" || g === "men") return "homme";
+  if (g === "femme" || g === "women") return "femme";
+  if (g === "enfant" || g === "kids") return "enfant";
+  if (g === "unisexe" || g === "unisex") return "unisexe";
+
+  return "unisexe";
+}
+
 /** Derive gender_label from gender */
-function deriveGenderLabel(gender: string): string {
+function genderToLabel(gender: Gender): string {
   switch (gender) {
     case "homme": return "Homme";
     case "femme": return "Femme";
@@ -78,16 +104,20 @@ function deriveGenderLabel(gender: string): string {
 
 /** Normalize raw JSON deals */
 function normalizeDeals(raw: any[]): Deal[] {
-  return raw.map((d, i) => ({
-    ...d,
-    id: d.id || `deal-${i}-${(d.title || "").slice(0, 20).replace(/\s+/g, "-").toLowerCase()}`,
-    image_url: upgradeImageUrl(d.image_url || ""),
-    gender_label: d.gender_label || deriveGenderLabel(d.gender || ""),
-    source: d.source || "",
-    currency: d.currency || "EUR",
-    promo_start_date: d.promo_start_date || d.detected_at || "",
-    promo_end_date: d.promo_end_date || null,
-  }));
+  return raw.map((d, i) => {
+    const gender = inferGender(d.gender || "", d.description || "", d.title || "");
+    return {
+      ...d,
+      id: d.id || `deal-${i}-${(d.title || "").slice(0, 30).replace(/\s+/g, "-").toLowerCase()}`,
+      image_url: upgradeImageUrl(d.image_url || ""),
+      gender,
+      gender_label: genderToLabel(gender),
+      source: d.source || "",
+      currency: d.currency || "EUR",
+      promo_start_date: d.promo_start_date || d.detected_at || "",
+      promo_end_date: d.promo_end_date || null,
+    };
+  });
 }
 
 export const deals: Deal[] = normalizeDeals(dealsJson as any[]);

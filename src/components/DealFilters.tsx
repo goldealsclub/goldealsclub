@@ -35,7 +35,7 @@ interface DealFiltersProps {
   children: (filtered: Deal[]) => React.ReactNode;
 }
 
-const FilterChip = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
+const FilterChip = ({ label, count, active, onClick }: { label: string; count?: number; active: boolean; onClick: () => void }) => (
   <button
     onClick={onClick}
     className={`text-[10px] font-display uppercase tracking-wider px-3 py-1.5 border transition-colors ${
@@ -45,6 +45,9 @@ const FilterChip = ({ label, active, onClick }: { label: string; active: boolean
     }`}
   >
     {label}
+    {count !== undefined && (
+      <span className={`ml-1.5 text-[9px] ${active ? "text-primary-foreground/70" : "text-foreground/30"}`}>({count})</span>
+    )}
   </button>
 );
 
@@ -73,6 +76,25 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const allBrands = useMemo(() => getUniqueValues(sourceDeals, "brand"), [sourceDeals]);
   const allMerchants = useMemo(() => getUniqueValues(sourceDeals, "merchant"), [sourceDeals]);
   const allCategories = useMemo(() => getUniqueValues(sourceDeals, "category") as Category[], [sourceDeals]);
+
+  // Counters per brand, merchant, category
+  const brandCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    sourceDeals.forEach(d => { counts[d.brand] = (counts[d.brand] || 0) + 1; });
+    return counts;
+  }, [sourceDeals]);
+
+  const merchantCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    sourceDeals.forEach(d => { counts[d.merchant] = (counts[d.merchant] || 0) + 1; });
+    return counts;
+  }, [sourceDeals]);
+
+  const categoryCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    sourceDeals.forEach(d => { counts[d.category] = (counts[d.category] || 0) + 1; });
+    return counts;
+  }, [sourceDeals]);
 
   const categoryLabels: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
@@ -108,6 +130,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     (filters.maxPrice !== null ? 1 : 0) +
     (filters.minDiscount !== null ? 1 : 0);
 
+  // NO slice, NO limit — all deals shown
   const filtered = useMemo(() => {
     let result = [...sourceDeals];
 
@@ -134,9 +157,16 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     return result;
   }, [sourceDeals, filters, sort]);
 
+  // Level counts for tabs
+  const levelCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: sourceDeals.length };
+    sourceDeals.forEach(d => { counts[d.deal_level] = (counts[d.deal_level] || 0) + 1; });
+    return counts;
+  }, [sourceDeals]);
+
   return (
     <div>
-      {/* Level tabs */}
+      {/* Level tabs with counters */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
         {levelTabs.map((tab) => (
           <button
@@ -150,6 +180,9 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
           >
             {tab.flames > 0 && <FlameIndicator count={tab.flames} className="scale-90" />}
             {tab.label}
+            <span className={`text-[9px] ${filters.dealLevel === tab.key ? "text-primary-foreground/70" : "text-foreground/30"}`}>
+              ({levelCounts[tab.key] || 0})
+            </span>
           </button>
         ))}
       </div>
@@ -209,6 +242,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                 <FilterChip
                   key={cat}
                   label={categoryLabels[cat] || cat}
+                  count={categoryCounts[cat] || 0}
                   active={filters.categories.includes(cat)}
                   onClick={() => setFilters((f) => ({ ...f, categories: toggleArray(f.categories, cat) }))}
                 />
@@ -220,6 +254,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                 <FilterChip
                   key={b}
                   label={b}
+                  count={brandCounts[b] || 0}
                   active={filters.brands.includes(b)}
                   onClick={() => setFilters((f) => ({ ...f, brands: toggleArray(f.brands, b) }))}
                 />
@@ -231,6 +266,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                 <FilterChip
                   key={s}
                   label={s}
+                  count={merchantCounts[s] || 0}
                   active={filters.merchants.includes(s)}
                   onClick={() => setFilters((f) => ({ ...f, merchants: toggleArray(f.merchants, s) }))}
                 />
