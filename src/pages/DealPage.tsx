@@ -20,6 +20,7 @@ function formatCurrency(price: number | null, currency: string): string {
 const DealPage = () => {
   const { id } = useParams<{ id: string }>();
   const { t } = useI18n();
+  const navigate = useNavigate();
   const { toggle, isFav } = useFavorites();
 
   const deal = deals.find((d) => d.id === id);
