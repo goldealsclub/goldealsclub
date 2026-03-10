@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/lib/i18n";
 import { FavoritesProvider } from "@/lib/favorites";
+import { GenderProvider } from "@/lib/gender-context";
 import Index from "./pages/Index";
 import CategoryPage from "./pages/CategoryPage";
 import DealPage from "./pages/DealPage";
