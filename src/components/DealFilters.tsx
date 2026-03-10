@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { X, SlidersHorizontal, ChevronDown } from "lucide-react";
-import { Deal, DealLevel, Category } from "@/lib/data";
+import { Deal, DealLevel, Category, deals as allDealsGlobal } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
 
@@ -73,11 +73,12 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const [sort, setSort] = useState<SortKey>("newest");
   const [showFilters, setShowFilters] = useState(false);
 
-  const allBrands = useMemo(() => getUniqueValues(sourceDeals, "brand"), [sourceDeals]);
-  const allMerchants = useMemo(() => getUniqueValues(sourceDeals, "merchant"), [sourceDeals]);
-  const allCategories = useMemo(() => getUniqueValues(sourceDeals, "category") as Category[], [sourceDeals]);
+  // Use ALL deals for filter options so gender filtering doesn't hide categories
+  const allBrands = useMemo(() => getUniqueValues(allDealsGlobal, "brand"), []);
+  const allMerchants = useMemo(() => getUniqueValues(allDealsGlobal, "merchant"), []);
+  const allCategories = useMemo(() => getUniqueValues(allDealsGlobal, "category") as Category[], []);
 
-  // Counters per brand, merchant, category
+  // Counters from sourceDeals (reflects current gender/page filter)
   const brandCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     sourceDeals.forEach(d => { counts[d.brand] = (counts[d.brand] || 0) + 1; });
@@ -99,7 +100,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const categoryLabels: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
     tshirts: t.tshirts, "t-shirts": "T-shirts", pants: t.pants,
-    accessories: t.accessories, accessoires: t.accessories,
+    pantalons: "Pantalons", accessories: t.accessories, accessoires: t.accessories,
     vestes: t.jackets, autres: "Autres",
   };
 
