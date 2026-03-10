@@ -1,6 +1,6 @@
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { Category } from "@/lib/data";
+import { Category, categoryList } from "@/lib/data";
 import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
 import DealFilters from "@/components/DealFilters";
@@ -17,21 +17,62 @@ const CategoryPage = () => {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
     tshirts: t.tshirts, "t-shirts": "T-shirts", pants: t.pants,
     accessories: t.accessories, accessoires: t.accessories,
-    vestes: t.jackets, autres: "Autres",
+    vestes: t.jackets, autres: "Autres", all: t.all,
   };
 
-  const categoryName = categoryLabels[slug || ""] || slug;
+  const isAll = slug === "all";
+  const categoryName = isAll ? t.allDeals : (categoryLabels[slug || ""] || slug);
+
   const categoryDeals = useMemo(
-    () => filteredDeals.filter((d) => d.category === slug || (slug === "tshirts" && d.category === "t-shirts")),
-    [slug, filteredDeals]
+    () => isAll
+      ? filteredDeals
+      : filteredDeals.filter((d) => d.category === slug || (slug === "tshirts" && d.category === "t-shirts")),
+    [slug, filteredDeals, isAll]
   );
+
+  // Get all unique categories from the full deal set for nav
+  const allCategories = useMemo(() => {
+    const cats = new Set(filteredDeals.map(d => d.category));
+    return Array.from(cats);
+  }, [filteredDeals]);
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-12">
         <h1 className="font-display text-3xl md:text-4xl tracking-wider mb-2">{categoryName}</h1>
-        <p className="font-body text-xs text-foreground/50 mb-8">{categoryDeals.length} deals</p>
+        <p className="font-body text-xs text-foreground/50 mb-6">{categoryDeals.length} deals</p>
+
+        {/* Category navigation */}
+        <div className="flex flex-wrap gap-2 mb-8">
+          <Link
+            to="/category/all"
+            className={`text-[10px] font-display uppercase tracking-wider px-4 py-2 border transition-colors ${
+              isAll
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-foreground/10 text-foreground/50 hover:text-foreground hover:border-foreground/30"
+            }`}
+          >
+            {t.all} ({filteredDeals.length})
+          </Link>
+          {[...categoryList.map(c => c.key), "t-shirts", "autres"].filter((cat, i, arr) => arr.indexOf(cat) === i).map((cat) => {
+            const count = filteredDeals.filter(d => d.category === cat || (cat === "tshirts" && d.category === "t-shirts")).length;
+            if (count === 0) return null;
+            return (
+              <Link
+                key={cat}
+                to={`/category/${cat}`}
+                className={`text-[10px] font-display uppercase tracking-wider px-4 py-2 border transition-colors ${
+                  slug === cat
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "border-foreground/10 text-foreground/50 hover:text-foreground hover:border-foreground/30"
+                }`}
+              >
+                {categoryLabels[cat] || cat} ({count})
+              </Link>
+            );
+          })}
+        </div>
 
         <DealFilters sourceDeals={categoryDeals}>
           {(filtered) => (
