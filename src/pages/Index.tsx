@@ -30,10 +30,7 @@ const Index = () => {
         <img src={heroImage} alt="Fashion editorial" className="absolute inset-0 w-full h-full object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
         <div className="relative container mx-auto px-4 pb-16 md:pb-24">
-          <img src={logo} alt="GOLDEALS CLUB" className="h-16 md:h-24 w-auto mb-6 brightness-0 invert" />
-          <h1 className="font-display text-4xl md:text-7xl text-background tracking-wider mb-4">
-            {t.heroTitle}
-          </h1>
+          <img src={logo} alt="GOLDEALS CLUB" className="h-16 md:h-28 w-auto mb-6 brightness-0 invert" />
           <p className="font-body text-sm md:text-base text-background/70 max-w-lg mb-8 leading-relaxed">
             {t.heroSub}
           </p>
