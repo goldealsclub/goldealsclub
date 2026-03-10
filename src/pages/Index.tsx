@@ -64,16 +64,10 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Update date + Brands bar */}
+      {/* Brands bar */}
       <section className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-2 mb-4">
           <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40">{deals.length} deals</span>
-          {getLastUpdatedDate() && (
-            <span className="inline-flex items-center gap-1.5 text-[10px] font-body text-foreground/50 bg-foreground/5 px-3 py-1.5 rounded-full">
-              <RefreshCw className="w-3 h-3" />
-              Mis à jour le {format(new Date(getLastUpdatedDate()), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-            </span>
-          )}
         </div>
         <div className="flex flex-wrap gap-3">
           {brands.map(([brand, count]) => (
