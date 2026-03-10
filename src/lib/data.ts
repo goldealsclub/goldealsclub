@@ -127,9 +127,20 @@ export const categoryList: { key: Category; image: string }[] = [
   { key: "jackets", image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=400&fit=crop" },
   { key: "hoodies", image: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=400&h=400&fit=crop" },
   { key: "tshirts", image: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=400&fit=crop" },
-  { key: "pants", image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=400&h=400&fit=crop" },
-  { key: "accessories", image: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=400&h=400&fit=crop" },
+  { key: "pantalons", image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=400&h=400&fit=crop" },
+  { key: "vestes", image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=400&fit=crop" },
+  { key: "accessoires", image: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=400&h=400&fit=crop" },
 ];
+
+/** Get the most recent deal date as the "last updated" timestamp */
+export function getLastUpdatedDate(): string {
+  if (deals.length === 0) return "";
+  const latest = deals.reduce((max, d) => {
+    const t = new Date(d.detected_at || d.promo_start_date).getTime();
+    return t > max ? t : max;
+  }, 0);
+  return new Date(latest).toISOString();
+}
 
 // Sort by promo_start_date desc, then detected_at desc
 function sortByDate(a: Deal, b: Deal): number {
