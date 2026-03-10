@@ -11,6 +11,7 @@ import { useMemo } from "react";
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t } = useI18n();
+  const { filteredDeals } = useGender();
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
