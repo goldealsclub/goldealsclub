@@ -1,26 +1,27 @@
+import dealsJson from "../../public/deals.json";
+
 export type DealTier = "standard" | "super" | "exceptional";
 export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "pants" | "accessories";
 export type Gender = "men" | "women" | "unisex";
 
 export interface Deal {
   id: string;
-  name: string;
-  image: string;
-  price: number;
-  originalPrice: number;
-  discount: number;
-  seller: string;
-  sellerTrusted: boolean;
-  category: Category;
-  tier: DealTier;
-  popularity: number;
-  createdAt: string;
-  description: string;
-  url: string;
+  title: string;
   brand: string;
+  category: Category;
+  sale_price: number;
+  original_price: number;
+  discount_percent: number;
+  image_url: string;
+  product_url: string;
+  merchant: string;
+  deal_level: DealTier;
+  popularity: number;
+  description: string;
   color: string;
   gender: Gender;
   sizes: string[];
+  created_at: string;
 }
 
 export function getTierFromDiscount(discount: number): DealTier {
@@ -45,81 +46,17 @@ export const sellers: Seller[] = [
   { name: "ASOS", logo: "", dealCount: 48, trusted: true },
 ];
 
-const productImages = [
-  "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1556906781-9a412961c28c?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1622470953794-aa9c70b0fb9d?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=600&h=600&fit=crop",
-  "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=600&fit=crop",
-];
+// Trusted merchants derived from sellers list
+const trustedMerchants = new Set(sellers.filter(s => s.trusted).map(s => s.name));
 
-const names = [
-  "Nike Air Max 90 Essential",
-  "Adidas Yeezy Boost 350 V2",
-  "Jordan 1 Retro High OG",
-  "North Face Nuptse Jacket",
-  "Carhartt WIP Hooded Chase",
-  "Stone Island Ghost Piece",
-  "Nike Tech Fleece Jogger",
-  "Off-White Logo Tee",
-  "New Balance 550",
-  "Acne Studios Hoodie",
-  "Essentials Sweatpants",
-  "Prada Re-Nylon Bucket Hat",
-];
+export function isTrustedMerchant(merchant: string): boolean {
+  return trustedMerchants.has(merchant);
+}
 
-const brands = ["Nike", "Adidas", "Jordan", "The North Face", "Carhartt WIP", "Stone Island", "Nike", "Off-White", "New Balance", "Acne Studios", "Fear of God", "Prada"];
-const colors = ["Noir", "Blanc", "Gris", "Beige", "Bleu", "Vert", "Rouge", "Marron", "Crème", "Kaki", "Navy", "Noir"];
-const genders: Gender[] = ["men", "women", "unisex", "men", "unisex", "men", "men", "unisex", "unisex", "women", "unisex", "unisex"];
-const sizeOptions = [
-  ["39", "40", "41", "42", "43", "44", "45"],
-  ["40", "41", "42", "43", "44"],
-  ["38", "39", "40", "41", "42", "43", "44", "45"],
-  ["S", "M", "L", "XL"],
-  ["S", "M", "L", "XL", "XXL"],
-  ["S", "M", "L"],
-  ["S", "M", "L", "XL"],
-  ["XS", "S", "M", "L", "XL"],
-  ["39", "40", "41", "42", "43", "44"],
-  ["XS", "S", "M", "L"],
-  ["S", "M", "L", "XL"],
-  ["Unique"],
-];
-
-const categories: Category[] = ["sneakers", "jackets", "hoodies", "tshirts", "pants", "accessories"];
-
-export const deals: Deal[] = names.map((name, i) => {
-  const originalPrice = Math.floor(Math.random() * 300) + 80;
-  const discount = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60][Math.floor(Math.random() * 10)];
-  const price = Math.round(originalPrice * (1 - discount / 100));
-  return {
-    id: `deal-${i + 1}`,
-    name,
-    image: productImages[i % productImages.length],
-    price,
-    originalPrice,
-    discount,
-    seller: sellers[i % sellers.length].name,
-    sellerTrusted: true,
-    category: categories[i % categories.length],
-    tier: getTierFromDiscount(discount),
-    popularity: Math.floor(Math.random() * 500) + 50,
-    createdAt: new Date(Date.now() - Math.random() * 7 * 86400000).toISOString(),
-    description: "Pièce incontournable de la saison, disponible à un prix exceptionnel. Qualité premium, design iconique. Offre limitée chez un vendeur vérifié.",
-    url: "#",
-    brand: brands[i],
-    color: colors[i],
-    gender: genders[i],
-    sizes: sizeOptions[i],
-  };
-});
+export const deals: Deal[] = (dealsJson as Deal[]).map((d) => ({
+  ...d,
+  deal_level: d.deal_level || getTierFromDiscount(d.discount_percent),
+}));
 
 export const categoryList: { key: Category; image: string }[] = [
   { key: "sneakers", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop" },

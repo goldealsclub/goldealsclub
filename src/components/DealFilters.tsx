@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { X, SlidersHorizontal, ChevronDown } from "lucide-react";
-import { Deal, DealTier, Category, Gender, deals as allDealsData } from "@/lib/data";
+import { Deal, DealTier, Category, Gender } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
 
@@ -10,7 +10,7 @@ interface Filters {
   tier: DealTier | "all";
   categories: Category[];
   brands: string[];
-  sellers: string[];
+  merchants: string[];
   colors: string[];
   genders: Gender[];
   minPrice: number | null;
@@ -22,7 +22,7 @@ const defaultFilters: Filters = {
   tier: "all",
   categories: [],
   brands: [],
-  sellers: [],
+  merchants: [],
   colors: [],
   genders: [],
   minPrice: null,
@@ -30,7 +30,7 @@ const defaultFilters: Filters = {
   minDiscount: null,
 };
 
-function getUniqueValues<T>(items: Deal[], key: keyof Deal): string[] {
+function getUniqueValues(items: Deal[], key: keyof Deal): string[] {
   return [...new Set(items.map((d) => String(d[key])))].sort();
 }
 
@@ -91,7 +91,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const [showFilters, setShowFilters] = useState(false);
 
   const allBrands = useMemo(() => getUniqueValues(sourceDeals, "brand"), [sourceDeals]);
-  const allSellers = useMemo(() => getUniqueValues(sourceDeals, "seller"), [sourceDeals]);
+  const allMerchants = useMemo(() => getUniqueValues(sourceDeals, "merchant"), [sourceDeals]);
   const allColors = useMemo(() => getUniqueValues(sourceDeals, "color"), [sourceDeals]);
 
   const categoryKeys: Record<string, string> = {
@@ -125,7 +125,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     (filters.tier !== "all" ? 1 : 0) +
     filters.categories.length +
     filters.brands.length +
-    filters.sellers.length +
+    filters.merchants.length +
     filters.colors.length +
     filters.genders.length +
     (filters.minPrice !== null ? 1 : 0) +
@@ -135,22 +135,22 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const filtered = useMemo(() => {
     let result = [...sourceDeals];
 
-    if (filters.tier !== "all") result = result.filter((d) => d.tier === filters.tier);
+    if (filters.tier !== "all") result = result.filter((d) => d.deal_level === filters.tier);
     if (filters.categories.length) result = result.filter((d) => filters.categories.includes(d.category));
     if (filters.brands.length) result = result.filter((d) => filters.brands.includes(d.brand));
-    if (filters.sellers.length) result = result.filter((d) => filters.sellers.includes(d.seller));
+    if (filters.merchants.length) result = result.filter((d) => filters.merchants.includes(d.merchant));
     if (filters.colors.length) result = result.filter((d) => filters.colors.includes(d.color));
     if (filters.genders.length) result = result.filter((d) => filters.genders.includes(d.gender));
-    if (filters.minPrice !== null) result = result.filter((d) => d.price >= filters.minPrice!);
-    if (filters.maxPrice !== null) result = result.filter((d) => d.price <= filters.maxPrice!);
-    if (filters.minDiscount !== null) result = result.filter((d) => d.discount >= filters.minDiscount!);
+    if (filters.minPrice !== null) result = result.filter((d) => d.sale_price >= filters.minPrice!);
+    if (filters.maxPrice !== null) result = result.filter((d) => d.sale_price <= filters.maxPrice!);
+    if (filters.minDiscount !== null) result = result.filter((d) => d.discount_percent >= filters.minDiscount!);
 
     result.sort((a, b) => {
-      if (sort === "discount") return b.discount - a.discount;
+      if (sort === "discount") return b.discount_percent - a.discount_percent;
       if (sort === "popularity") return b.popularity - a.popularity;
-      if (sort === "priceAsc") return a.price - b.price;
-      if (sort === "priceDesc") return b.price - a.price;
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      if (sort === "priceAsc") return a.sale_price - b.sale_price;
+      if (sort === "priceDesc") return b.sale_price - a.sale_price;
+      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
     });
 
     return result;
@@ -251,14 +251,14 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
               ))}
             </FilterSection>
 
-            {/* Seller */}
+            {/* Merchant */}
             <FilterSection title={t.seller}>
-              {allSellers.map((s) => (
+              {allMerchants.map((s) => (
                 <FilterChip
                   key={s}
                   label={s}
-                  active={filters.sellers.includes(s)}
-                  onClick={() => setFilters((f) => ({ ...f, sellers: toggleArray(f.sellers, s) }))}
+                  active={filters.merchants.includes(s)}
+                  onClick={() => setFilters((f) => ({ ...f, merchants: toggleArray(f.merchants, s) }))}
                 />
               ))}
             </FilterSection>
