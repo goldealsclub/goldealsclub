@@ -16,8 +16,16 @@ const languages: { code: Lang; label: string }[] = [
 const Header = () => {
   const { t, lang, setLang } = useI18n();
   const { favorites } = useFavorites();
+  const { gender, setGender } = useGender();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const genderTabs: { key: Gender | "all"; label: string }[] = [
+    { key: "all", label: t.allDeals },
+    { key: "men", label: t.men },
+    { key: "women", label: t.women },
+    { key: "kids", label: t.kids },
+  ];
 
   const navLinks = [
     { to: "/", label: t.home },
