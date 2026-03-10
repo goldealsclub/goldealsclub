@@ -151,7 +151,28 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
         ))}
       </div>
 
-      {/* Sort + filter toggle */}
+      {/* Gender tabs */}
+      <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
+        {([
+          { key: "all" as const, label: t.allDeals },
+          { key: "men" as const, label: t.men },
+          { key: "women" as const, label: t.women },
+          { key: "kids" as const, label: t.kids },
+        ]).map((tab) => (
+          <button
+            key={tab.key}
+            onClick={() => setFilters((f) => ({ ...f, gender: tab.key }))}
+            className={`text-[10px] font-display uppercase tracking-wider px-4 py-2 border transition-all whitespace-nowrap ${
+              filters.gender === tab.key
+                ? "bg-primary text-primary-foreground border-primary"
+                : "border-foreground/10 text-foreground/50 hover:text-foreground hover:border-foreground/30"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <div className="flex items-center justify-between border-b border-foreground/8 pb-4 mb-6">
         <div className="flex items-center gap-3 overflow-x-auto">
           <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40 whitespace-nowrap">{t.sortBy}</span>
