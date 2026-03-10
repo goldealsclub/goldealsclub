@@ -1,6 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { deals, Category } from "@/lib/data";
+import { Category } from "@/lib/data";
+import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
 import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
