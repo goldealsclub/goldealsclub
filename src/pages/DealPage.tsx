@@ -57,9 +57,9 @@ const DealPage = () => {
                   {t.trustedBadge}
                 </span>
               )}
-              {deal.gender === "unisex" && (
+              {deal.gender_label && (
                 <span className="text-[9px] font-body border border-foreground/15 px-2 py-0.5 uppercase tracking-wider text-foreground/40">
-                  {deal.gender_label || "Unisexe"}
+                  {deal.gender_label}
                 </span>
               )}
             </div>
