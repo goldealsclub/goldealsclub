@@ -37,6 +37,12 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         <div className="absolute top-3 left-3 bg-primary text-primary-foreground px-2.5 py-1 text-[11px] font-display tracking-wider">
           -{deal.discount_percent}%
         </div>
+        {/* Unisexe badge */}
+        {deal.gender === "unisex" && (
+          <div className="absolute bottom-3 left-3 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">
+            {deal.gender_label || "Unisexe"}
+          </div>
+        )}
         {/* Flame indicator */}
         <div className="absolute top-3 right-3">
           <FlameIndicator count={deal.flame_count} />

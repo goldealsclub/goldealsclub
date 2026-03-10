@@ -21,7 +21,6 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
 
   const genderTabs: { key: Gender | "all"; label: string }[] = [
-    { key: "all", label: t.allDeals },
     { key: "men", label: t.men },
     { key: "women", label: t.women },
     { key: "kids", label: t.kids },
