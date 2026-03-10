@@ -65,7 +65,7 @@ const names = [
 ];
 
 const categories: Category[] = ["sneakers", "jackets", "hoodies", "tshirts", "pants", "accessories"];
-const tiers: DealTier[] = ["standard", "standard", "standard", "super", "super", "gold"];
+const tiers: DealTier[] = ["standard", "standard", "standard", "super", "super", "exceptional"];
 
 export const deals: Deal[] = names.map((name, i) => {
   const originalPrice = Math.floor(Math.random() * 300) + 80;
