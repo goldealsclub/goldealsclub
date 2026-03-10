@@ -1,7 +1,7 @@
 import dealsJson from "../../public/deals.json";
 
 export type DealLevel = "hot-deal" | "bon-deal" | "promo-normale";
-export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "pants" | "accessories" | "autres";
+export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "pants" | "accessories" | "autres" | "vestes" | "t-shirts" | "accessoires";
 export type Gender = "men" | "women" | "kids" | "unisex";
 
 export interface Deal {
@@ -9,9 +9,9 @@ export interface Deal {
   title: string;
   brand: string;
   category: Category;
-  sale_price: number;
-  original_price: number;
-  discount_percent: number;
+  sale_price: number | null;
+  original_price: number | null;
+  discount_percent: number | null;
   image_url: string;
   product_url: string;
   merchant: string;
@@ -40,12 +40,16 @@ export const sellers: Seller[] = [
   { name: "Farfetch", logo: "", dealCount: 31, trusted: true },
   { name: "Nike", logo: "", dealCount: 56, trusted: true },
   { name: "ASOS", logo: "", dealCount: 48, trusted: true },
+  { name: "Adidas", logo: "", dealCount: 38, trusted: true },
 ];
 
 const trustedMerchants = new Set(sellers.filter(s => s.trusted).map(s => s.name));
 
 export function isTrustedMerchant(merchant: string): boolean {
-  return trustedMerchants.has(merchant);
+  for (const s of sellers) {
+    if (s.trusted && merchant.toLowerCase().includes(s.name.toLowerCase())) return true;
+  }
+  return false;
 }
 
 export const deals: Deal[] = dealsJson as Deal[];
