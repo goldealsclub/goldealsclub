@@ -2,6 +2,7 @@ import dealsJson from "../../public/deals.json";
 
 export type DealLevel = "hot-deal" | "bon-deal" | "promo-normale";
 export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "pants" | "accessories";
+export type Gender = "men" | "women" | "kids" | "unisex";
 
 export interface Deal {
   id: string;
