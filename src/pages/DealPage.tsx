@@ -44,7 +44,7 @@ const DealPage = () => {
               -{deal.discount_percent}%
             </div>
             <div className="absolute top-4 right-4">
-              <FlameIndicator tier={deal.deal_level} />
+              <FlameIndicator count={deal.flame_count} />
             </div>
           </div>
 

@@ -10,13 +10,13 @@
     "image_url": "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=600&h=600&fit=crop",
     "product_url": "https://example.com/nike-air-max-90",
     "merchant": "Zalando",
-    "deal_level": "super",
-    "popularity": 423,
     "description": "Pièce incontournable de la saison, disponible à un prix exceptionnel. Qualité premium, design iconique.",
-    "color": "Noir",
-    "gender": "men",
-    "sizes": ["39", "40", "41", "42", "43", "44", "45"],
-    "created_at": "2026-03-09T10:00:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "hot-deal",
+    "flame_count": 3,
+    "popularity": 423,
+    "saved": false,
+    "detected_at": "2026-03-09T10:00:00.000Z"
   },
   {
     "id": "deal-2",
@@ -29,13 +29,13 @@
     "image_url": "https://images.unsplash.com/photo-1556906781-9a412961c28c?w=600&h=600&fit=crop",
     "product_url": "https://example.com/yeezy-350",
     "merchant": "END.",
-    "deal_level": "exceptional",
-    "popularity": 512,
     "description": "Le modèle iconique de Kanye West à prix cassé. Silhouette Primeknit et semelle Boost pour un confort ultime.",
-    "color": "Blanc",
-    "gender": "unisex",
-    "sizes": ["40", "41", "42", "43", "44"],
-    "created_at": "2026-03-08T14:30:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "hot-deal",
+    "flame_count": 3,
+    "popularity": 512,
+    "saved": false,
+    "detected_at": "2026-03-08T14:30:00.000Z"
   },
   {
     "id": "deal-3",
@@ -48,13 +48,13 @@
     "image_url": "https://images.unsplash.com/photo-1578587018452-892bacefd3f2?w=600&h=600&fit=crop",
     "product_url": "https://example.com/jordan-1-retro",
     "merchant": "SSENSE",
-    "deal_level": "super",
-    "popularity": 389,
     "description": "La sneaker légendaire dans un coloris OG. Cuir premium et coupe haute classique.",
-    "color": "Rouge",
-    "gender": "unisex",
-    "sizes": ["38", "39", "40", "41", "42", "43", "44", "45"],
-    "created_at": "2026-03-10T08:00:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "bon-deal",
+    "flame_count": 2,
+    "popularity": 389,
+    "saved": false,
+    "detected_at": "2026-03-10T08:00:00.000Z"
   },
   {
     "id": "deal-4",
@@ -67,13 +67,13 @@
     "image_url": "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=600&h=600&fit=crop",
     "product_url": "https://example.com/nuptse-jacket",
     "merchant": "Farfetch",
-    "deal_level": "exceptional",
-    "popularity": 467,
     "description": "La doudoune iconique Nuptse avec garnissage 700 fill. Chaleur exceptionnelle, style streetwear.",
-    "color": "Noir",
-    "gender": "unisex",
-    "sizes": ["S", "M", "L", "XL"],
-    "created_at": "2026-03-07T16:00:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "hot-deal",
+    "flame_count": 3,
+    "popularity": 467,
+    "saved": false,
+    "detected_at": "2026-03-07T16:00:00.000Z"
   },
   {
     "id": "deal-5",
@@ -86,13 +86,13 @@
     "image_url": "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=600&h=600&fit=crop",
     "product_url": "https://example.com/carhartt-chase",
     "merchant": "Nike",
-    "deal_level": "super",
-    "popularity": 198,
     "description": "Le hoodie Chase en coton lourd avec broderie logo. Un basique workwear indémodable.",
-    "color": "Gris",
-    "gender": "unisex",
-    "sizes": ["S", "M", "L", "XL", "XXL"],
-    "created_at": "2026-03-06T12:00:00.000Z"
+    "is_super_deal": false,
+    "deal_level": "bon-deal",
+    "flame_count": 2,
+    "popularity": 198,
+    "saved": false,
+    "detected_at": "2026-03-06T12:00:00.000Z"
   },
   {
     "id": "deal-6",
@@ -105,13 +105,13 @@
     "image_url": "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=600&h=600&fit=crop",
     "product_url": "https://example.com/stone-island-ghost",
     "merchant": "ASOS",
-    "deal_level": "exceptional",
-    "popularity": 302,
     "description": "T-shirt de la ligne Ghost Piece avec teinture spéciale. Badge compass amovible.",
-    "color": "Beige",
-    "gender": "men",
-    "sizes": ["S", "M", "L"],
-    "created_at": "2026-03-09T09:00:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "hot-deal",
+    "flame_count": 3,
+    "popularity": 302,
+    "saved": false,
+    "detected_at": "2026-03-09T09:00:00.000Z"
   },
   {
     "id": "deal-7",
@@ -124,13 +124,13 @@
     "image_url": "https://images.unsplash.com/photo-1622470953794-aa9c70b0fb9d?w=600&h=600&fit=crop",
     "product_url": "https://example.com/tech-fleece-jogger",
     "merchant": "Zalando",
-    "deal_level": "exceptional",
-    "popularity": 445,
     "description": "Le jogger Tech Fleece avec sa coupe slim et ses poches zippées. Confort et style au quotidien.",
-    "color": "Noir",
-    "gender": "men",
-    "sizes": ["S", "M", "L", "XL"],
-    "created_at": "2026-03-08T11:00:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "hot-deal",
+    "flame_count": 3,
+    "popularity": 445,
+    "saved": false,
+    "detected_at": "2026-03-08T11:00:00.000Z"
   },
   {
     "id": "deal-8",
@@ -143,13 +143,13 @@
     "image_url": "https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&h=600&fit=crop",
     "product_url": "https://example.com/off-white-tee",
     "merchant": "END.",
-    "deal_level": "exceptional",
-    "popularity": 278,
     "description": "T-shirt oversize avec le logo diagonal signature de Virgil Abloh. Coton premium.",
-    "color": "Blanc",
-    "gender": "unisex",
-    "sizes": ["XS", "S", "M", "L", "XL"],
-    "created_at": "2026-03-05T15:00:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "hot-deal",
+    "flame_count": 3,
+    "popularity": 278,
+    "saved": false,
+    "detected_at": "2026-03-05T15:00:00.000Z"
   },
   {
     "id": "deal-9",
@@ -162,13 +162,13 @@
     "image_url": "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=600&h=600&fit=crop",
     "product_url": "https://example.com/nb-550",
     "merchant": "SSENSE",
-    "deal_level": "super",
-    "popularity": 356,
     "description": "La 550 revisitée dans un coloris clean. Silhouette basketball rétro, cuir premium.",
-    "color": "Crème",
-    "gender": "unisex",
-    "sizes": ["39", "40", "41", "42", "43", "44"],
-    "created_at": "2026-03-07T10:00:00.000Z"
+    "is_super_deal": false,
+    "deal_level": "bon-deal",
+    "flame_count": 2,
+    "popularity": 356,
+    "saved": false,
+    "detected_at": "2026-03-07T10:00:00.000Z"
   },
   {
     "id": "deal-10",
@@ -181,13 +181,13 @@
     "image_url": "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=600&h=600&fit=crop",
     "product_url": "https://example.com/acne-hoodie",
     "merchant": "Farfetch",
-    "deal_level": "exceptional",
-    "popularity": 234,
     "description": "Hoodie minimaliste en coton bio avec le logo Face patch. Coupe oversized scandinave.",
-    "color": "Kaki",
-    "gender": "women",
-    "sizes": ["XS", "S", "M", "L"],
-    "created_at": "2026-03-06T18:00:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "hot-deal",
+    "flame_count": 3,
+    "popularity": 234,
+    "saved": false,
+    "detected_at": "2026-03-06T18:00:00.000Z"
   },
   {
     "id": "deal-11",
@@ -200,13 +200,13 @@
     "image_url": "https://images.unsplash.com/photo-1600185365926-3a2ce3cdb9eb?w=600&h=600&fit=crop",
     "product_url": "https://example.com/essentials-sweatpants",
     "merchant": "ASOS",
-    "deal_level": "super",
-    "popularity": 189,
     "description": "Sweatpants Essentials avec logo floqué latéral. Coton épais et coupe relaxed.",
-    "color": "Beige",
-    "gender": "unisex",
-    "sizes": ["S", "M", "L", "XL"],
-    "created_at": "2026-03-04T14:00:00.000Z"
+    "is_super_deal": false,
+    "deal_level": "promo-normale",
+    "flame_count": 1,
+    "popularity": 189,
+    "saved": false,
+    "detected_at": "2026-03-04T14:00:00.000Z"
   },
   {
     "id": "deal-12",
@@ -219,12 +219,12 @@
     "image_url": "https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=600&h=600&fit=crop",
     "product_url": "https://example.com/prada-bucket-hat",
     "merchant": "Nike",
-    "deal_level": "exceptional",
-    "popularity": 156,
     "description": "Bob en nylon recyclé avec plaque logo triangle. Accessoire de luxe éco-responsable.",
-    "color": "Noir",
-    "gender": "unisex",
-    "sizes": ["Unique"],
-    "created_at": "2026-03-03T20:00:00.000Z"
+    "is_super_deal": true,
+    "deal_level": "hot-deal",
+    "flame_count": 3,
+    "popularity": 156,
+    "saved": false,
+    "detected_at": "2026-03-03T20:00:00.000Z"
   }
 ]

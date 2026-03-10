@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Heart, Eye } from "lucide-react";
+import { Heart, Eye, ExternalLink } from "lucide-react";
 import { Deal, isTrustedMerchant } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
@@ -39,7 +39,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         </div>
         {/* Flame indicator */}
         <div className="absolute top-3 right-3">
-          <FlameIndicator tier={deal.deal_level} />
+          <FlameIndicator count={deal.flame_count} />
         </div>
       </Link>
 
@@ -80,10 +80,15 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             </button>
             <ShareMenu url={`/deal/${deal.id}`} title={deal.title} />
           </div>
-          <div className="flex items-center gap-1 text-foreground/35">
-            <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
-            <span className="text-[10px] font-body">{deal.popularity}</span>
-          </div>
+          <a
+            href={deal.product_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-[10px] font-display uppercase tracking-wider text-foreground/50 hover:text-foreground transition-colors"
+          >
+            {t.seeOffer}
+            <ExternalLink className="w-3 h-3" strokeWidth={1.5} />
+          </a>
         </div>
       </div>
     </div>

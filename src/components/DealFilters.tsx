@@ -1,30 +1,26 @@
 import { useState, useMemo } from "react";
 import { X, SlidersHorizontal, ChevronDown } from "lucide-react";
-import { Deal, DealTier, Category, Gender } from "@/lib/data";
+import { Deal, DealLevel, Category } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
 
 export type SortKey = "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
 
 interface Filters {
-  tier: DealTier | "all";
+  dealLevel: DealLevel | "all";
   categories: Category[];
   brands: string[];
   merchants: string[];
-  colors: string[];
-  genders: Gender[];
   minPrice: number | null;
   maxPrice: number | null;
   minDiscount: number | null;
 }
 
 const defaultFilters: Filters = {
-  tier: "all",
+  dealLevel: "all",
   categories: [],
   brands: [],
   merchants: [],
-  colors: [],
-  genders: [],
   minPrice: null,
   maxPrice: null,
   minDiscount: null,
@@ -39,15 +35,7 @@ interface DealFiltersProps {
   children: (filtered: Deal[]) => React.ReactNode;
 }
 
-const FilterChip = ({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) => (
+const FilterChip = ({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) => (
   <button
     onClick={onClick}
     className={`text-[10px] font-display uppercase tracking-wider px-3 py-1.5 border transition-colors ${
@@ -60,15 +48,7 @@ const FilterChip = ({
   </button>
 );
 
-const FilterSection = ({
-  title,
-  children,
-  defaultOpen = false,
-}: {
-  title: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) => {
+const FilterSection = ({ title, children, defaultOpen = false }: { title: string; children: React.ReactNode; defaultOpen?: boolean }) => {
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="border-b border-foreground/6 last:border-b-0">
@@ -92,22 +72,17 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
   const allBrands = useMemo(() => getUniqueValues(sourceDeals, "brand"), [sourceDeals]);
   const allMerchants = useMemo(() => getUniqueValues(sourceDeals, "merchant"), [sourceDeals]);
-  const allColors = useMemo(() => getUniqueValues(sourceDeals, "color"), [sourceDeals]);
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
     tshirts: t.tshirts, pants: t.pants, accessories: t.accessories,
   };
 
-  const genderKeys: Record<Gender, string> = {
-    men: t.men, women: t.women, unisex: t.unisex,
-  };
-
-  const tierTabs: { key: DealTier | "all"; label: string }[] = [
-    { key: "all", label: t.allPromos },
-    { key: "standard", label: t.normalPromos },
-    { key: "super", label: t.goodDeals },
-    { key: "exceptional", label: t.hotDeals },
+  const levelTabs: { key: DealLevel | "all"; label: string; flames: number }[] = [
+    { key: "all", label: t.allPromos, flames: 0 },
+    { key: "promo-normale", label: t.normalPromos, flames: 1 },
+    { key: "bon-deal", label: t.goodDeals, flames: 2 },
+    { key: "hot-deal", label: t.hotDeals, flames: 3 },
   ];
 
   const sortOptions: { key: SortKey; label: string }[] = [
@@ -122,12 +97,10 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     arr.includes(val) ? arr.filter((v) => v !== val) : [...arr, val];
 
   const activeCount =
-    (filters.tier !== "all" ? 1 : 0) +
+    (filters.dealLevel !== "all" ? 1 : 0) +
     filters.categories.length +
     filters.brands.length +
     filters.merchants.length +
-    filters.colors.length +
-    filters.genders.length +
     (filters.minPrice !== null ? 1 : 0) +
     (filters.maxPrice !== null ? 1 : 0) +
     (filters.minDiscount !== null ? 1 : 0);
@@ -135,12 +108,10 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const filtered = useMemo(() => {
     let result = [...sourceDeals];
 
-    if (filters.tier !== "all") result = result.filter((d) => d.deal_level === filters.tier);
+    if (filters.dealLevel !== "all") result = result.filter((d) => d.deal_level === filters.dealLevel);
     if (filters.categories.length) result = result.filter((d) => filters.categories.includes(d.category));
     if (filters.brands.length) result = result.filter((d) => filters.brands.includes(d.brand));
     if (filters.merchants.length) result = result.filter((d) => filters.merchants.includes(d.merchant));
-    if (filters.colors.length) result = result.filter((d) => filters.colors.includes(d.color));
-    if (filters.genders.length) result = result.filter((d) => filters.genders.includes(d.gender));
     if (filters.minPrice !== null) result = result.filter((d) => d.sale_price >= filters.minPrice!);
     if (filters.maxPrice !== null) result = result.filter((d) => d.sale_price <= filters.maxPrice!);
     if (filters.minDiscount !== null) result = result.filter((d) => d.discount_percent >= filters.minDiscount!);
@@ -150,7 +121,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
       if (sort === "popularity") return b.popularity - a.popularity;
       if (sort === "priceAsc") return a.sale_price - b.sale_price;
       if (sort === "priceDesc") return b.sale_price - a.sale_price;
-      return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
     });
 
     return result;
@@ -158,19 +129,19 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
   return (
     <div>
-      {/* Tier tabs */}
+      {/* Level tabs */}
       <div className="flex items-center gap-2 mb-6 overflow-x-auto pb-2">
-        {tierTabs.map((tab) => (
+        {levelTabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setFilters((f) => ({ ...f, tier: tab.key }))}
+            onClick={() => setFilters((f) => ({ ...f, dealLevel: tab.key }))}
             className={`flex items-center gap-2 text-[10px] font-display uppercase tracking-wider px-4 py-2 border transition-all whitespace-nowrap ${
-              filters.tier === tab.key
+              filters.dealLevel === tab.key
                 ? "bg-primary text-primary-foreground border-primary"
                 : "border-foreground/10 text-foreground/50 hover:text-foreground hover:border-foreground/30"
             }`}
           >
-            {tab.key !== "all" && <FlameIndicator tier={tab.key} className="scale-90" />}
+            {tab.flames > 0 && <FlameIndicator count={tab.flames} className="scale-90" />}
             {tab.label}
           </button>
         ))}
@@ -227,7 +198,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8">
-            {/* Category */}
             <FilterSection title={t.category} defaultOpen>
               {(["sneakers", "jackets", "hoodies", "tshirts", "pants", "accessories"] as Category[]).map((cat) => (
                 <FilterChip
@@ -239,7 +209,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
               ))}
             </FilterSection>
 
-            {/* Brand */}
             <FilterSection title={t.brand} defaultOpen>
               {allBrands.map((b) => (
                 <FilterChip
@@ -251,7 +220,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
               ))}
             </FilterSection>
 
-            {/* Merchant */}
             <FilterSection title={t.seller}>
               {allMerchants.map((s) => (
                 <FilterChip
@@ -263,31 +231,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
               ))}
             </FilterSection>
 
-            {/* Color */}
-            <FilterSection title={t.color}>
-              {allColors.map((c) => (
-                <FilterChip
-                  key={c}
-                  label={c}
-                  active={filters.colors.includes(c)}
-                  onClick={() => setFilters((f) => ({ ...f, colors: toggleArray(f.colors, c) }))}
-                />
-              ))}
-            </FilterSection>
-
-            {/* Gender */}
-            <FilterSection title={t.gender}>
-              {(["men", "women", "unisex"] as Gender[]).map((g) => (
-                <FilterChip
-                  key={g}
-                  label={genderKeys[g]}
-                  active={filters.genders.includes(g)}
-                  onClick={() => setFilters((f) => ({ ...f, genders: toggleArray(f.genders, g) }))}
-                />
-              ))}
-            </FilterSection>
-
-            {/* Price range */}
             <FilterSection title={t.price}>
               <div className="flex items-center gap-2 w-full">
                 <input
@@ -309,7 +252,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
               </div>
             </FilterSection>
 
-            {/* Min discount */}
             <FilterSection title={t.discountPercent}>
               <div className="flex items-center gap-2">
                 <input
@@ -326,10 +268,8 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
         </div>
       )}
 
-      {/* Results count */}
       <p className="font-body text-xs text-foreground/50 mb-6">{filtered.length} deals</p>
 
-      {/* Results */}
       {filtered.length === 0 ? (
         <p className="font-body text-sm text-foreground/40 text-center py-16">{t.noResults}</p>
       ) : (

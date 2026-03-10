@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { deals, categoryList } from "@/lib/data";
-import { sellers } from "@/lib/data";
+import { deals, categoryList, sellers, hotDeals, bonDeals, promoNormales } from "@/lib/data";
 import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,9 +10,8 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 const Index = () => {
   const { t } = useI18n();
 
-  const superDeals = deals.filter((d) => d.discount_percent >= 30).sort((a, b) => b.discount_percent - a.discount_percent).slice(0, 4);
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
-  const newDeals = [...deals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 4);
+  const newDeals = [...deals].sort((a, b) => new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime()).slice(0, 4);
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
@@ -45,23 +43,25 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Super Promos */}
-      <section className="container mx-auto px-4 py-20">
-        <div className="flex items-end justify-between mb-12">
-          <div>
-            <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.superPromos}</h2>
-            <p className="font-body text-xs text-foreground/50 mt-2">{t.premiumSub}</p>
+      {/* Hot Deals */}
+      {hotDeals.length > 0 && (
+        <section className="container mx-auto px-4 py-20">
+          <div className="flex items-end justify-between mb-12">
+            <div>
+              <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.hotDeals} 🔥</h2>
+              <p className="font-body text-xs text-foreground/50 mt-2">{t.premiumSub}</p>
+            </div>
+            <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
+              {t.allDeals} <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+            </Link>
           </div>
-          <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
-            {t.allDeals} <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
-          </Link>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-          {superDeals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} />
-          ))}
-        </div>
-      </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+            {hotDeals.slice(0, 4).map((deal) => (
+              <DealCard key={deal.id} deal={deal} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Categories */}
       <section className="bg-sable/30">
@@ -87,13 +87,27 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Bons Deals */}
+      {bonDeals.length > 0 && (
+        <section className="container mx-auto px-4 py-20">
+          <div className="flex items-end justify-between mb-12">
+            <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.goodDeals}</h2>
+            <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
+              {t.allDeals} <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+            </Link>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+            {bonDeals.slice(0, 4).map((deal) => (
+              <DealCard key={deal.id} deal={deal} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {/* Popular */}
       <section className="container mx-auto px-4 py-20">
         <div className="flex items-end justify-between mb-12">
           <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.popular}</h2>
-          <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
-            {t.allDeals} <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
-          </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
           {popularDeals.map((deal) => (
@@ -101,6 +115,20 @@ const Index = () => {
           ))}
         </div>
       </section>
+
+      {/* Promos Normales */}
+      {promoNormales.length > 0 && (
+        <section className="bg-sable/30">
+          <div className="container mx-auto px-4 py-20">
+            <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.normalPromos}</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
+              {promoNormales.slice(0, 3).map((deal) => (
+                <DealCard key={deal.id} deal={deal} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       {/* New Deals */}
       <section className="container mx-auto px-4 py-20">
@@ -111,19 +139,6 @@ const Index = () => {
           {newDeals.map((deal) => (
             <DealCard key={deal.id} deal={deal} />
           ))}
-        </div>
-      </section>
-
-      {/* Selections */}
-      <section className="bg-sable/30">
-        <div className="container mx-auto px-4 py-20">
-          <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.selections}</h2>
-          <p className="font-body text-xs text-foreground/50 mb-12">{t.selectionSub}</p>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
-            {deals.filter(d => d.deal_level === "exceptional").slice(0, 3).map((deal) => (
-              <DealCard key={deal.id} deal={deal} />
-            ))}
-          </div>
         </div>
       </section>
 
