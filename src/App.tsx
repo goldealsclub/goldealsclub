@@ -33,6 +33,7 @@ const App = () => (
               <Route path="/favorites" element={<FavoritesPage />} />
               <Route path="/trends" element={<TrendsPage />} />
               <Route path="/sellers" element={<SellersPage />} />
+              <Route path="/brand/:brand" element={<BrandPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
