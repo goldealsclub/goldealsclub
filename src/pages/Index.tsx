@@ -37,7 +37,8 @@ const Index = () => {
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
-    tshirts: t.tshirts, pants: t.pants, accessories: t.accessories,
+    tshirts: t.tshirts, pants: t.pants, pantalons: "Pantalons",
+    accessories: t.accessories, accessoires: "Accessoires", vestes: t.jackets, autres: "Autres",
   };
 
   return (
