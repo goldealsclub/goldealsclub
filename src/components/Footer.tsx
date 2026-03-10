@@ -20,7 +20,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           {/* Brand */}
           <div>
-            <h3 className="font-display text-lg text-background mb-3 tracking-wider">GOLDDEALS CLUB</h3>
+            <h3 className="font-display text-lg text-background mb-3 tracking-wider">GOLDEALS CLUB</h3>
             <p className="text-xs font-body leading-relaxed text-background/50">{t.footerTagline}</p>
           </div>
 
