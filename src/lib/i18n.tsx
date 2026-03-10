@@ -81,6 +81,7 @@ const translations = {
     priceDesc: "Prix décroissant",
     filters: "Filtres",
     clearAll: "Tout effacer",
+    all: "Tout",
     men: "Homme",
     women: "Femme",
     unisex: "Unisexe",
