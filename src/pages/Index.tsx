@@ -11,7 +11,7 @@ import { ArrowRight, ShieldCheck } from "lucide-react";
 const Index = () => {
   const { t } = useI18n();
 
-  const superDeals = deals.filter((d) => d.tier === "gold" || d.tier === "super").slice(0, 4);
+  const superDeals = deals.filter((d) => d.tier === "exceptional" || d.tier === "super").slice(0, 4);
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
   const newDeals = [...deals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4);
 
