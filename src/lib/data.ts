@@ -1,4 +1,4 @@
-export type DealTier = "standard" | "super" | "gold";
+export type DealTier = "standard" | "super" | "exceptional";
 export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "pants" | "accessories";
 
 export interface Deal {
