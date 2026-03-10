@@ -168,6 +168,7 @@ const translations = {
     priceDesc: "Price: high to low",
     filters: "Filters",
     clearAll: "Clear all",
+    all: "All",
     men: "Men",
     women: "Women",
     unisex: "Unisex",
