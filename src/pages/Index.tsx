@@ -6,15 +6,14 @@ import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-image.jpg";
-import logo from "@/assets/logo.png";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 
 const Index = () => {
   const { t } = useI18n();
 
-  const superDeals = deals.filter((d) => d.discount >= 30).sort((a, b) => b.discount - a.discount).slice(0, 4);
+  const superDeals = deals.filter((d) => d.discount_percent >= 30).sort((a, b) => b.discount_percent - a.discount_percent).slice(0, 4);
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity).slice(0, 4);
-  const newDeals = [...deals].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4);
+  const newDeals = [...deals].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 4);
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
@@ -121,7 +120,7 @@ const Index = () => {
           <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.selections}</h2>
           <p className="font-body text-xs text-foreground/50 mb-12">{t.selectionSub}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
-            {deals.filter(d => d.tier === "exceptional").slice(0, 3).map((deal) => (
+            {deals.filter(d => d.deal_level === "exceptional").slice(0, 3).map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
