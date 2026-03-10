@@ -18,7 +18,6 @@ interface Filters {
 
 const defaultFilters: Filters = {
   dealLevel: "all",
-  gender: "all",
   categories: [],
   brands: [],
   merchants: [],
