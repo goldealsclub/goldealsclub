@@ -109,7 +109,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     let result = [...sourceDeals];
 
     if (filters.dealLevel !== "all") result = result.filter((d) => d.deal_level === filters.dealLevel);
-    if (filters.gender !== "all") result = result.filter((d) => d.gender === filters.gender);
     if (filters.categories.length) result = result.filter((d) => filters.categories.includes(d.category));
     if (filters.brands.length) result = result.filter((d) => filters.brands.includes(d.brand));
     if (filters.merchants.length) result = result.filter((d) => filters.merchants.includes(d.merchant));
