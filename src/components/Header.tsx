@@ -37,6 +37,24 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
+      {/* Gender bar */}
+      <div className="border-b border-foreground/6 bg-muted/30">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-6 h-9">
+          {genderTabs.map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setGender(tab.key)}
+              className={`text-[10px] font-display uppercase tracking-[0.2em] transition-colors ${
+                gender === tab.key
+                  ? "text-foreground"
+                  : "text-foreground/35 hover:text-foreground/70"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16 md:h-20">
           {/* Mobile menu toggle */}

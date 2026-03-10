@@ -36,6 +36,7 @@ const App = () => (
             </Routes>
           </BrowserRouter>
         </TooltipProvider>
+        </GenderProvider>
       </FavoritesProvider>
     </I18nProvider>
   </QueryClientProvider>
