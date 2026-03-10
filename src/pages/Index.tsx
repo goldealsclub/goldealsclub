@@ -6,7 +6,9 @@ import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-image.jpg";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, ShieldCheck, RefreshCw } from "lucide-react";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 
 function sortByDate(a: Deal, b: Deal): number {
   const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
