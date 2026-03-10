@@ -16,7 +16,7 @@ const CategoryPage = () => {
   const categoryLabels: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
     tshirts: t.tshirts, "t-shirts": "T-shirts", pants: t.pants,
-    accessories: t.accessories, accessoires: t.accessories,
+    pantalons: "Pantalons", accessories: t.accessories, accessoires: t.accessories,
     vestes: t.jackets, autres: "Autres", all: t.all,
   };
 
