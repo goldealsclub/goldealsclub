@@ -54,7 +54,7 @@ const Index = () => {
             {t.heroSub}
           </p>
           <Link
-            to="/category/sneakers"
+            to="/category/all"
             className="inline-flex items-center gap-3 bg-background text-foreground px-8 py-4 text-[11px] font-display uppercase tracking-[0.2em] hover:bg-background/90 transition-colors"
           >
             {t.heroCta}
