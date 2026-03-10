@@ -57,7 +57,7 @@ const translations = {
     premiumSub: "Des pièces désirables. Des prix irrésistibles.",
     selectionSub: "Sélection premium, réductions fortes, vendeurs fiables.",
     trustedSellersSub: "Nous travaillons uniquement avec des vendeurs vérifiés et reconnus.",
-    backToHome: "Retour à l'accueil",
+    backToHome: "Retour",
     dealDetail: "Détail du deal",
     description: "Description",
     seeOfferAt: "Voir l'offre chez",
