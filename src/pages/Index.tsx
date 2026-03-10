@@ -8,13 +8,15 @@ import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-image.jpg";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 
-/** Sort by promo_start_date desc, then detected_at desc */
 function sortByDate(a: Deal, b: Deal): number {
   const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
   const dateB = new Date(b.promo_start_date || b.detected_at).getTime();
   if (dateB !== dateA) return dateB - dateA;
   return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
 }
+
+/** Max items for homepage aperçu sections */
+const PREVIEW_LIMIT = 4;
 
 const Index = () => {
   const { t } = useI18n();
@@ -26,9 +28,10 @@ const Index = () => {
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity);
   const newDeals = [...deals].sort(sortByDate);
 
-  // Brand counters for debug/verification
+  // Brand counters
   const brandCounts: Record<string, number> = {};
   deals.forEach(d => { brandCounts[d.brand] = (brandCounts[d.brand] || 0) + 1; });
+  const brands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]);
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
@@ -60,19 +63,25 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Brand counters */}
-      <section className="container mx-auto px-4 py-6">
+      {/* Brands bar */}
+      <section className="container mx-auto px-4 py-8">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40">{deals.length} deals —</span>
+        </div>
         <div className="flex flex-wrap gap-3">
-          <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40">{deals.length} deals total —</span>
-          {Object.entries(brandCounts).sort((a, b) => b[1] - a[1]).map(([brand, count]) => (
-            <span key={brand} className="text-[10px] font-body text-foreground/50 border border-foreground/10 px-2 py-0.5">
-              {brand}: {count}
-            </span>
+          {brands.map(([brand, count]) => (
+            <Link
+              key={brand}
+              to={`/brand/${encodeURIComponent(brand)}`}
+              className="text-[11px] font-display uppercase tracking-wider border border-foreground/10 px-4 py-2 text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors"
+            >
+              {brand} <span className="text-foreground/30 ml-1">({count})</span>
+            </Link>
           ))}
         </div>
       </section>
 
-      {/* Hot Deals — NO LIMIT */}
+      {/* Hot Deals — APERÇU */}
       {hotDeals.length > 0 && (
         <section className="container mx-auto px-4 py-20">
           <div className="flex items-end justify-between mb-12">
@@ -81,11 +90,11 @@ const Index = () => {
               <p className="font-body text-xs text-foreground/50 mt-2">{t.premiumSub}</p>
             </div>
             <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
-              {t.allDeals} <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+              {t.allDeals} ({hotDeals.length}) <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-            {hotDeals.map((deal) => (
+            {hotDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
@@ -116,42 +125,50 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Bons Deals — NO LIMIT */}
+      {/* Bons Deals — APERÇU */}
       {bonDeals.length > 0 && (
         <section className="container mx-auto px-4 py-20">
           <div className="flex items-end justify-between mb-12">
             <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.goodDeals}</h2>
             <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
-              {t.allDeals} <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+              {t.allDeals} ({bonDeals.length}) <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-            {bonDeals.map((deal) => (
+            {bonDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}
           </div>
         </section>
       )}
 
-      {/* Popular — NO LIMIT */}
+      {/* Popular — APERÇU */}
       <section className="container mx-auto px-4 py-20">
         <div className="flex items-end justify-between mb-12">
           <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.popular}</h2>
+          <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
+            {t.allDeals} ({deals.length}) <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+          </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-          {popularDeals.map((deal) => (
+          {popularDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
             <DealCard key={deal.id} deal={deal} />
           ))}
         </div>
       </section>
 
-      {/* Promos Normales — NO LIMIT */}
+      {/* Promos Normales — APERÇU */}
       {promoNormales.length > 0 && (
         <section className="bg-sable/30">
           <div className="container mx-auto px-4 py-20">
-            <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.normalPromos}</h2>
+            <div className="flex items-end justify-between mb-8">
+              <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.normalPromos}</h2>
+              <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
+                {t.allDeals} ({promoNormales.length}) <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+              </Link>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
-              {promoNormales.map((deal) => (
+              {promoNormales.slice(0, 3).map((deal) => (
                 <DealCard key={deal.id} deal={deal} />
               ))}
             </div>
@@ -159,13 +176,16 @@ const Index = () => {
         </section>
       )}
 
-      {/* New Deals — NO LIMIT */}
+      {/* New Deals — APERÇU */}
       <section className="container mx-auto px-4 py-20">
         <div className="flex items-end justify-between mb-12">
           <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.newDeals}</h2>
+          <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
+            {t.allDeals} ({deals.length}) <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+          </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-          {newDeals.map((deal) => (
+          {newDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
             <DealCard key={deal.id} deal={deal} />
           ))}
         </div>
