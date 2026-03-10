@@ -31,6 +31,7 @@
     "merchant": "Nike FR",
     "description": "Chaussure pour femme",
     "gender": "women",
+    "gender_label": "Femme",
     "is_super_deal": false,
     "deal_level": "bon-deal",
     "flame_count": 2,
