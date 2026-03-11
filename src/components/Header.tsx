@@ -7,6 +7,7 @@ import { useGender } from "@/lib/gender-context";
 import type { Gender } from "@/lib/data";
 import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
+import BrandBanner from "@/components/BrandBanner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -19,7 +20,7 @@ const languages: { code: Lang; label: string }[] = [
 const Header = () => {
   const { t, lang, setLang } = useI18n();
   const { favorites } = useFavorites();
-  const { gender, setGender } = useGender();
+  const { gender, setGender, filteredDeals } = useGender();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -160,6 +161,7 @@ const Header = () => {
           </nav>
         </div>
       )}
+      <BrandBanner deals={filteredDeals} />
     </header>
   );
 };
