@@ -29,8 +29,7 @@ const Index = () => {
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity);
   const newDeals = [...deals].sort(sortByDate);
 
-
-
+  const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
     tshirts: t.tshirts, pants: t.pants, pantalons: "Pantalons",
     accessories: t.accessories, accessoires: "Accessoires", vestes: t.jackets, autres: "Autres",
