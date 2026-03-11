@@ -107,7 +107,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
             .insert({ user_id: user.id, deal_id: id });
         } else {
           await supabase
-            .from("favorites" as any)
+            .from("favorites")
             .delete()
             .eq("user_id", user.id)
             .eq("deal_id", id);
