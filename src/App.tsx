@@ -37,6 +37,7 @@ const App = () => (
             <Sonner />
             <BrowserRouter>
               <ScrollToTop />
+              <NewDealNotifier />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/category/:slug" element={<CategoryPage />} />
