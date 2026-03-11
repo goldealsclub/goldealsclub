@@ -18,6 +18,14 @@ interface BrandBannerProps {
 }
 
 const BrandBanner = ({ deals }: BrandBannerProps) => {
+  const [visible, setVisible] = useState(true);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY < 80);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const brands = useMemo(() => {
     const counts: Record<string, number> = {};
     deals.forEach((d) => {
@@ -29,30 +37,34 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
   }, [deals]);
 
   return (
-    <section className="border-b border-foreground/8 bg-background">
+    <section
+      className={`border-b border-foreground/5 bg-background/60 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
+        visible ? "max-h-14 opacity-100" : "max-h-0 opacity-0 border-b-0"
+      }`}
+    >
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-6 overflow-x-auto py-5 scrollbar-hide">
+        <div className="flex items-center gap-5 overflow-x-auto py-2 scrollbar-hide">
           {brands.map(({ name, count }) => {
             const logo = brandLogos[name];
             return (
               <Link
                 key={name}
                 to={`/brand/${encodeURIComponent(name)}`}
-                className="group flex flex-col items-center gap-1.5 min-w-[80px] shrink-0 opacity-50 hover:opacity-100 transition-opacity duration-200"
+                className="group flex flex-col items-center gap-1 min-w-[70px] shrink-0 opacity-40 hover:opacity-90 transition-opacity duration-200"
               >
                 {logo ? (
                   <img
                     src={logo}
                     alt={name}
-                    className="h-7 w-auto object-contain dark:invert"
+                    className="h-5 w-auto object-contain dark:invert"
                     loading="lazy"
                   />
                 ) : (
-                  <span className="font-display text-sm uppercase tracking-wider text-foreground">
+                  <span className="font-display text-[10px] uppercase tracking-wider text-foreground">
                     {name}
                   </span>
                 )}
-                <span className="text-[9px] font-body text-foreground/30 group-hover:text-foreground/50 transition-colors">
+                <span className="text-[8px] font-body text-foreground/25 group-hover:text-foreground/50 transition-colors">
                   {count} deals
                 </span>
               </Link>
