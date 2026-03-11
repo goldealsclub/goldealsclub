@@ -51,12 +51,12 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const loadFromDb = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("favorites" as any)
+        .from("favorites")
         .select("deal_id")
         .eq("user_id", user.id);
 
       if (!error && data) {
-        const dbFavs = new Set((data as any[]).map((r: any) => r.deal_id as string));
+        const dbFavs = new Set(data.map((r) => r.deal_id));
 
         // On first login, merge localStorage favorites into DB
         if (!syncedRef.current) {
@@ -64,8 +64,8 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           const toSync = [...localFavs].filter((id) => !dbFavs.has(id));
           if (toSync.length > 0) {
             await supabase
-              .from("favorites" as any)
-              .insert(toSync.map((deal_id) => ({ user_id: user.id, deal_id })) as any);
+              .from("favorites")
+              .insert(toSync.map((deal_id) => ({ user_id: user.id, deal_id })));
             toSync.forEach((id) => dbFavs.add(id));
           }
           // Clear localStorage after merge
@@ -103,11 +103,11 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (user) {
         if (wasAdded) {
           await supabase
-            .from("favorites" as any)
-            .insert({ user_id: user.id, deal_id: id } as any);
+            .from("favorites")
+            .insert({ user_id: user.id, deal_id: id });
         } else {
           await supabase
-            .from("favorites" as any)
+            .from("favorites")
             .delete()
             .eq("user_id", user.id)
             .eq("deal_id", id);

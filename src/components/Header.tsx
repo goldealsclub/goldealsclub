@@ -10,6 +10,7 @@ import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
 import BrandBanner from "@/components/BrandBanner";
 import SearchOverlay from "@/components/SearchOverlay";
+import AlertPreferences from "@/components/AlertPreferences";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -121,9 +122,12 @@ const Header = () => {
             </Link>
 
             {user ? (
-              <button onClick={signOut} className="p-2" title="Se déconnecter">
-                <LogOut className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
-              </button>
+              <>
+                <AlertPreferences />
+                <button onClick={signOut} className="p-2" title="Se déconnecter">
+                  <LogOut className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
+                </button>
+              </>
             ) : (
               <Link to="/auth" className="p-2" title="Se connecter">
                 <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />

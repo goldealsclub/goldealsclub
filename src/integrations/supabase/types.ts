@@ -14,6 +14,117 @@ export type Database = {
   }
   public: {
     Tables: {
+      deals: {
+        Row: {
+          brand: string
+          category: string
+          created_at: string | null
+          currency: string | null
+          deal_level: string | null
+          description: string | null
+          detected_at: string | null
+          discount_percent: number | null
+          display_score: number | null
+          flame_count: number | null
+          gender: string
+          gender_label: string | null
+          id: string
+          image_url: string | null
+          is_super_deal: boolean | null
+          merchant: string
+          original_price: number | null
+          popularity: number | null
+          product_url: string
+          promo_end_date: string | null
+          promo_start_date: string | null
+          sale_price: number | null
+          saved: boolean | null
+          source: string | null
+          title: string
+        }
+        Insert: {
+          brand: string
+          category: string
+          created_at?: string | null
+          currency?: string | null
+          deal_level?: string | null
+          description?: string | null
+          detected_at?: string | null
+          discount_percent?: number | null
+          display_score?: number | null
+          flame_count?: number | null
+          gender?: string
+          gender_label?: string | null
+          id: string
+          image_url?: string | null
+          is_super_deal?: boolean | null
+          merchant: string
+          original_price?: number | null
+          popularity?: number | null
+          product_url: string
+          promo_end_date?: string | null
+          promo_start_date?: string | null
+          sale_price?: number | null
+          saved?: boolean | null
+          source?: string | null
+          title: string
+        }
+        Update: {
+          brand?: string
+          category?: string
+          created_at?: string | null
+          currency?: string | null
+          deal_level?: string | null
+          description?: string | null
+          detected_at?: string | null
+          discount_percent?: number | null
+          display_score?: number | null
+          flame_count?: number | null
+          gender?: string
+          gender_label?: string | null
+          id?: string
+          image_url?: string | null
+          is_super_deal?: boolean | null
+          merchant?: string
+          original_price?: number | null
+          popularity?: number | null
+          product_url?: string
+          promo_end_date?: string | null
+          promo_start_date?: string | null
+          sale_price?: number | null
+          saved?: boolean | null
+          source?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
+      email_alert_preferences: {
+        Row: {
+          created_at: string | null
+          enabled: boolean | null
+          frequency: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          enabled?: boolean | null
+          frequency?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          enabled?: boolean | null
+          frequency?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       favorites: {
         Row: {
           created_at: string
