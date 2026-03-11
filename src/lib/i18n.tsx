@@ -179,6 +179,8 @@ const translations = {
     maxPrice: "Max",
     minDiscount: "Min %",
     noResults: "No deals match your filters.",
+    recentlyViewed: "Recently Viewed",
+    youMayAlsoLike: "You may also like",
   },
   es: {
     heroTitle: "GOLDEALS CLUB",
