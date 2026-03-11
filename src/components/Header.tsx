@@ -20,7 +20,7 @@ const languages: { code: Lang; label: string }[] = [
 const Header = () => {
   const { t, lang, setLang } = useI18n();
   const { favorites } = useFavorites();
-  const { gender, setGender } = useGender();
+  const { gender, setGender, filteredDeals } = useGender();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
