@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, ExternalLink, Star, Clock } from "lucide-react";
+import { Heart, ExternalLink, Star, Clock, GitCompareArrows } from "lucide-react";
 import { Deal, isTrustedMerchant } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
+import { useCompare } from "./CompareDrawer";
 import FlameIndicator from "./FlameIndicator";
 import ShareMenu from "./ShareMenu";
 
