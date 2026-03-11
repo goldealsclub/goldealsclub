@@ -10,6 +10,7 @@ import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
 import BrandBanner from "@/components/BrandBanner";
 import SearchOverlay from "@/components/SearchOverlay";
+import AlertPreferences from "@/components/AlertPreferences";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
