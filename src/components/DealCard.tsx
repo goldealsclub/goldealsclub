@@ -19,7 +19,7 @@ function formatCurrency(price: number | null, currency: string): string {
   return `${price.toFixed(2)} ${currency}`;
 }
 
-function formatEndDate(date: string | null): string | null {
+function formatDate(date: string | null): string | null {
   if (!date) return null;
   const d = new Date(date);
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
