@@ -7,6 +7,7 @@ import { useFavorites } from "@/lib/favorites";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import FlameIndicator from "@/components/FlameIndicator";
 import ShareMenu from "@/components/ShareMenu";
+import PriceAlertButton from "@/components/PriceAlertButton";
 import DealCard from "@/components/DealCard";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import Header from "@/components/Header";
