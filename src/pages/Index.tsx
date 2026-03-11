@@ -195,6 +195,82 @@ const Index = () => {
   );
 };
 
+const SLIDE_DURATION = 5000;
+
+const HeroSlideshow = ({ t }: { t: any }) => {
+  const [current, setCurrent] = useState(0);
+  const [prev, setPrev] = useState<number | null>(null);
+
+  const advance = useCallback(() => {
+    setPrev(current);
+    setCurrent((c) => (c + 1) % heroImages.length);
+  }, [current]);
+
+  useEffect(() => {
+    const timer = setInterval(advance, SLIDE_DURATION);
+    return () => clearInterval(timer);
+  }, [advance]);
+
+  // Clear prev after transition completes
+  useEffect(() => {
+    if (prev === null) return;
+    const t2 = setTimeout(() => setPrev(null), 1200);
+    return () => clearTimeout(t2);
+  }, [prev]);
+
+  return (
+    <section className="relative min-h-[90vh] flex items-end overflow-hidden">
+      {/* Images */}
+      {heroImages.map((src, i) => (
+        <img
+          key={i}
+          src={src}
+          alt={`Streetwear editorial ${i + 1}`}
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-[1200ms] ease-in-out"
+          style={{
+            opacity: i === current ? 1 : 0,
+            zIndex: i === current ? 2 : i === prev ? 1 : 0,
+          }}
+        />
+      ))}
+
+      {/* Gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent z-[3]" />
+
+      {/* Content */}
+      <div className="relative z-[4] container mx-auto px-4 pb-16 md:pb-24">
+        <h1 className="font-display text-4xl md:text-7xl text-background tracking-wider mb-4">
+          {t.heroTitle}
+        </h1>
+        <p className="font-body text-sm md:text-base text-background/70 max-w-lg mb-8 leading-relaxed">
+          {t.heroSub}
+        </p>
+        <Link
+          to="/category/all"
+          className="inline-flex items-center gap-3 bg-background text-foreground px-8 py-4 text-[11px] font-display uppercase tracking-[0.2em] hover:bg-background/90 transition-colors"
+        >
+          {t.heroCta}
+          <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
+        </Link>
+
+        {/* Slide indicators */}
+        <div className="flex gap-2 mt-8">
+          {heroImages.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setPrev(current); setCurrent(i); }}
+              className={`h-[2px] transition-all duration-500 ${
+                i === current ? "w-8 bg-background" : "w-4 bg-background/30"
+              }`}
+              aria-label={`Slide ${i + 1}`}
+            />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+};
+
 const NewsletterSection = () => {
   const { t } = useI18n();
   const [email, setEmail] = useState("");
