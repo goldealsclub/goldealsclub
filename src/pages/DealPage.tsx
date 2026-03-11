@@ -1,11 +1,14 @@
+import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, ArrowLeft, Eye, ExternalLink, Star, Clock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { deals, isTrustedMerchant } from "@/lib/data";
 import { useFavorites } from "@/lib/favorites";
+import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import FlameIndicator from "@/components/FlameIndicator";
 import ShareMenu from "@/components/ShareMenu";
 import DealCard from "@/components/DealCard";
+import RecentlyViewed from "@/components/RecentlyViewed";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
@@ -22,8 +25,14 @@ const DealPage = () => {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { toggle, isFav } = useFavorites();
+  const { addViewed } = useRecentlyViewed();
 
   const deal = deals.find((d) => d.id === id);
+
+  useEffect(() => {
+    if (deal) addViewed(deal.id);
+  }, [deal?.id]);
+
   if (!deal) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -34,7 +43,19 @@ const DealPage = () => {
 
   const saved = isFav(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
-  const similar = deals.filter((d) => d.category === deal.category && d.id !== deal.id).slice(0, 4);
+  // Improved similar deals: prioritize same brand+category, then same brand, then same category
+  const similar = deals
+    .filter((d) => d.id !== deal.id)
+    .map((d) => ({
+      deal: d,
+      score: (d.brand === deal.brand && d.category === deal.category ? 3 : 0)
+        + (d.brand === deal.brand ? 2 : 0)
+        + (d.category === deal.category ? 1 : 0),
+    }))
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 4)
+    .map((x) => x.deal);
   const endDate = deal.promo_end_date ? new Date(deal.promo_end_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" }) : null;
 
   return (
@@ -139,10 +160,10 @@ const DealPage = () => {
           </div>
         </div>
 
-        {/* Similar */}
+        {/* Similar — "Vous aimerez aussi" */}
         {similar.length > 0 && (
           <div className="mt-20">
-            <h2 className="font-display text-xl tracking-wider mb-8">{t.similarDeals}</h2>
+            <h2 className="font-display text-xl tracking-wider mb-8">{t.youMayAlsoLike}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
               {similar.map((d) => (
                 <DealCard key={d.id} deal={d} />
@@ -150,6 +171,9 @@ const DealPage = () => {
             </div>
           </div>
         )}
+
+        {/* Recently viewed */}
+        <RecentlyViewed excludeId={deal.id} />
       </div>
       <Footer />
     </div>

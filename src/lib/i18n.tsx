@@ -90,6 +90,8 @@ const translations = {
     maxPrice: "Max",
     minDiscount: "Min %",
     noResults: "Aucun deal ne correspond à vos filtres.",
+    recentlyViewed: "Récemment consultés",
+    youMayAlsoLike: "Vous aimerez aussi",
   },
   en: {
     heroTitle: "GOLDEALS CLUB",
@@ -177,6 +179,8 @@ const translations = {
     maxPrice: "Max",
     minDiscount: "Min %",
     noResults: "No deals match your filters.",
+    recentlyViewed: "Recently Viewed",
+    youMayAlsoLike: "You may also like",
   },
   es: {
     heroTitle: "GOLDEALS CLUB",
@@ -264,6 +268,8 @@ const translations = {
     maxPrice: "Máx",
     minDiscount: "Mín %",
     noResults: "Ninguna oferta coincide con tus filtros.",
+    recentlyViewed: "Vistos recientemente",
+    youMayAlsoLike: "También te puede gustar",
   },
 } as const;
 
