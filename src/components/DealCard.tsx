@@ -1,9 +1,10 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Heart, ExternalLink, Star, Clock } from "lucide-react";
+import { Heart, ExternalLink, Star, Clock, GitCompareArrows } from "lucide-react";
 import { Deal, isTrustedMerchant } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
+import { useCompare } from "./CompareDrawer";
 import FlameIndicator from "./FlameIndicator";
 import ShareMenu from "./ShareMenu";
 
@@ -29,7 +30,9 @@ function formatDate(date: string | null): string | null {
 const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const { t } = useI18n();
   const { toggle, isFav } = useFavorites();
+  const { add, isComparing } = useCompare();
   const saved = isFav(deal.id);
+  const comparing = isComparing(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
   const startDate = formatDate(deal.promo_start_date);
   const endDate = formatDate(deal.promo_end_date);
@@ -143,6 +146,14 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
               />
             </button>
             <ShareMenu url={`/deal/${deal.id}`} title={deal.title} />
+            <button
+              onClick={() => add(deal)}
+              className={`p-2 hover:bg-accent/50 rounded-sm transition-colors ${comparing ? "text-foreground" : "text-foreground/40"}`}
+              aria-label={t.addToCompare}
+              title={t.addToCompare}
+            >
+              <GitCompareArrows className="w-4 h-4" strokeWidth={1.5} />
+            </button>
           </div>
           <a
             href={deal.product_url}
