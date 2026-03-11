@@ -29,10 +29,13 @@ const Header = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
+  // Hide BrandBanner on homepage, show on other pages
+  const isHomePage = location.pathname === "/" || location.pathname === "/index";
+
   const handleGenderClick = (key: Gender | "all") => {
     setGender(key);
     // On homepage, scroll to deals section
-    if (location.pathname === "/" || location.pathname === "/index") {
+    if (isHomePage) {
       setTimeout(() => {
         document.getElementById("deals-section")?.scrollIntoView({ behavior: "smooth" });
       }, 50);
@@ -169,7 +172,8 @@ const Header = () => {
           </nav>
         </div>
       )}
-      <BrandBanner deals={filteredDeals} />
+      {/* Show BrandBanner with fade effect on non-home pages */}
+      {!isHomePage && <BrandBanner deals={filteredDeals} />}
     </header>
   );
 };
