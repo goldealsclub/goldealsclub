@@ -60,8 +60,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Brand logos banner */}
-      <BrandBanner deals={deals} />
+
+
 
       {/* Scroll target for gender filter */}
       <div id="deals-section" />

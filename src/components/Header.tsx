@@ -7,6 +7,7 @@ import { useGender } from "@/lib/gender-context";
 import type { Gender } from "@/lib/data";
 import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
+import BrandBanner from "@/components/BrandBanner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
