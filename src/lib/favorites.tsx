@@ -103,8 +103,8 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       if (user) {
         if (wasAdded) {
           await supabase
-            .from("favorites" as any)
-            .insert({ user_id: user.id, deal_id: id } as any);
+            .from("favorites")
+            .insert({ user_id: user.id, deal_id: id });
         } else {
           await supabase
             .from("favorites" as any)
