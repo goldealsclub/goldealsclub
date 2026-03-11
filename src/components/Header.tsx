@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, Menu, X, RefreshCw } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw, User, LogOut } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
 import { useGender } from "@/lib/gender-context";
@@ -21,6 +22,7 @@ const Header = () => {
   const { t, lang, setLang } = useI18n();
   const { favorites } = useFavorites();
   const { gender, setGender, filteredDeals } = useGender();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -116,6 +118,16 @@ const Header = () => {
                 </span>
               )}
             </Link>
+
+            {user ? (
+              <button onClick={signOut} className="p-2" title="Se déconnecter">
+                <LogOut className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
+              </button>
+            ) : (
+              <Link to="/auth" className="p-2" title="Se connecter">
+                <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
+              </Link>
+            )}
 
             <div className="flex items-center gap-1 border-l border-foreground/10 pl-3 ml-1">
               {languages.map((l) => (

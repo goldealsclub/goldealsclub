@@ -19,7 +19,7 @@ function formatCurrency(price: number | null, currency: string): string {
   return `${price.toFixed(2)} ${currency}`;
 }
 
-function formatEndDate(date: string | null): string | null {
+function formatDate(date: string | null): string | null {
   if (!date) return null;
   const d = new Date(date);
   return d.toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
@@ -30,7 +30,8 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const { toggle, isFav } = useFavorites();
   const saved = isFav(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
-  const endDate = formatEndDate(deal.promo_end_date);
+  const startDate = formatDate(deal.promo_start_date);
+  const endDate = formatDate(deal.promo_end_date);
 
   return (
     <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
@@ -67,11 +68,15 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             {deal.gender_label}
           </div>
         )}
-        {/* Promo end date */}
-        {endDate && (
+        {/* Promo dates */}
+        {(startDate || endDate) && (
           <div className="absolute bottom-3 right-14 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body tracking-wider border border-foreground/10 flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" strokeWidth={1.5} />
-            {endDate}
+            {startDate && endDate
+              ? `${startDate} — ${endDate}`
+              : startDate
+              ? `Dès ${startDate}`
+              : `Fin ${endDate}`}
           </div>
         )}
         {/* Flame indicator */}

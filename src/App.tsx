@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { I18nProvider } from "@/lib/i18n";
 import { FavoritesProvider } from "@/lib/favorites";
 import { GenderProvider } from "@/lib/gender-context";
+import { AuthProvider } from "@/lib/auth-context";
 import Index from "./pages/Index";
 import CategoryPage from "./pages/CategoryPage";
 import DealPage from "./pages/DealPage";
@@ -13,6 +14,8 @@ import FavoritesPage from "./pages/FavoritesPage";
 import TrendsPage from "./pages/TrendsPage";
 import SellersPage from "./pages/SellersPage";
 import BrandPage from "./pages/BrandPage";
+import AuthPage from "./pages/AuthPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import ScrollToTop from "./components/ScrollToTop";
 import NotFound from "./pages/NotFound";
 
@@ -20,29 +23,33 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <I18nProvider>
-      <FavoritesProvider>
-        <GenderProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <ScrollToTop />
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/category/:slug" element={<CategoryPage />} />
-              <Route path="/deal/:id" element={<DealPage />} />
-              <Route path="/favorites" element={<FavoritesPage />} />
-              <Route path="/trends" element={<TrendsPage />} />
-              <Route path="/sellers" element={<SellersPage />} />
-              <Route path="/brand/:brand" element={<BrandPage />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-        </GenderProvider>
-      </FavoritesProvider>
-    </I18nProvider>
+    <AuthProvider>
+      <I18nProvider>
+        <FavoritesProvider>
+          <GenderProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <ScrollToTop />
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/category/:slug" element={<CategoryPage />} />
+                <Route path="/deal/:id" element={<DealPage />} />
+                <Route path="/favorites" element={<FavoritesPage />} />
+                <Route path="/trends" element={<TrendsPage />} />
+                <Route path="/sellers" element={<SellersPage />} />
+                <Route path="/brand/:brand" element={<BrandPage />} />
+                <Route path="/auth" element={<AuthPage />} />
+                <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+          </GenderProvider>
+        </FavoritesProvider>
+      </I18nProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
