@@ -56,7 +56,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
         .eq("user_id", user.id);
 
       if (!error && data) {
-        const dbFavs = new Set((data as any[]).map((r: any) => r.deal_id as string));
+        const dbFavs = new Set(data.map((r) => r.deal_id));
 
         // On first login, merge localStorage favorites into DB
         if (!syncedRef.current) {
