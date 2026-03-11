@@ -146,6 +146,14 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
               />
             </button>
             <ShareMenu url={`/deal/${deal.id}`} title={deal.title} />
+            <button
+              onClick={() => add(deal)}
+              className={`p-2 hover:bg-accent/50 rounded-sm transition-colors ${comparing ? "text-foreground" : "text-foreground/40"}`}
+              aria-label={t.addToCompare}
+              title={t.addToCompare}
+            >
+              <GitCompareArrows className="w-4 h-4" strokeWidth={1.5} />
+            </button>
           </div>
           <a
             href={deal.product_url}

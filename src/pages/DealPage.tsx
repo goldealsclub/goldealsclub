@@ -153,6 +153,7 @@ const DealPage = () => {
                 {t.save}
               </button>
               <ShareMenu url={`/deal/${deal.id}`} title={deal.title} />
+              <PriceAlertButton dealId={deal.id} dealTitle={deal.title} />
               <div className="flex items-center gap-1 text-foreground/35 ml-auto">
                 <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />
                 <span className="text-[10px] font-body">{deal.popularity}</span>

@@ -60,6 +60,7 @@ const App = () => (
               </Routes>
             </BrowserRouter>
           </TooltipProvider>
+          </CompareProvider>
           </GenderProvider>
         </FavoritesProvider>
       </I18nProvider>
