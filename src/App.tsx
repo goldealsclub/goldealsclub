@@ -34,9 +34,11 @@ const App = () => (
       <I18nProvider>
         <FavoritesProvider>
           <GenderProvider>
+          <CompareProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
+            <OnboardingModal />
             <BrowserRouter>
               <ScrollToTop />
               <NewDealNotifier />
