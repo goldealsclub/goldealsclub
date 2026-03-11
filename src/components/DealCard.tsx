@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ExternalLink, Star, Clock } from "lucide-react";
 import { Deal, isTrustedMerchant } from "@/lib/data";
@@ -32,18 +33,29 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const trusted = isTrustedMerchant(deal.merchant);
   const startDate = formatDate(deal.promo_start_date);
   const endDate = formatDate(deal.promo_end_date);
+  const [imageLoaded, setImageLoaded] = useState(false);
 
   return (
     <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
       {/* Image */}
       <Link to={`/deal/${deal.id}`} className="block relative overflow-hidden aspect-square">
+        {/* Skeleton shimmer */}
+        {!imageLoaded && (
+          <div className="absolute inset-0 bg-muted animate-pulse">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/[0.03] to-transparent animate-[shimmer_1.5s_infinite]" />
+          </div>
+        )}
         <img
           src={deal.image_url}
           alt={deal.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03] bg-muted"
+          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] bg-muted ${
+            imageLoaded ? "opacity-100" : "opacity-0"
+          }`}
           loading="lazy"
+          onLoad={() => setImageLoaded(true)}
           onError={(e) => {
             (e.target as HTMLImageElement).src = "/placeholder.svg";
+            setImageLoaded(true);
           }}
         />
         {/* Hover overlay */}
