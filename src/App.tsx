@@ -7,6 +7,8 @@ import { I18nProvider } from "@/lib/i18n";
 import { FavoritesProvider } from "@/lib/favorites";
 import { GenderProvider } from "@/lib/gender-context";
 import { AuthProvider } from "@/lib/auth-context";
+import { CompareProvider } from "./components/CompareDrawer";
+import OnboardingModal from "./components/OnboardingModal";
 import Index from "./pages/Index";
 import CategoryPage from "./pages/CategoryPage";
 import DealPage from "./pages/DealPage";
