@@ -29,12 +29,8 @@ const Index = () => {
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity);
   const newDeals = [...deals].sort(sortByDate);
 
-  // Brand counters
-  const brandCounts: Record<string, number> = {};
-  deals.forEach(d => { brandCounts[d.brand] = (brandCounts[d.brand] || 0) + 1; });
-  const brands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]);
 
-  const categoryKeys: Record<string, string> = {
+
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
     tshirts: t.tshirts, pants: t.pants, pantalons: "Pantalons",
     accessories: t.accessories, accessoires: "Accessoires", vestes: t.jackets, autres: "Autres",
