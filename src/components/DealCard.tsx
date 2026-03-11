@@ -67,7 +67,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         )}
         {/* Gender badge */}
         {deal.gender_label && (
-          <div className="absolute bottom-3 left-3 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">
+          <div className="absolute bottom-3 right-3 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">
             {deal.gender_label}
           </div>
         )}
