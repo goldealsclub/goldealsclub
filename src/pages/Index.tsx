@@ -49,26 +49,8 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <Header />
 
-      {/* Hero */}
-      <section className="relative min-h-[90vh] flex items-end">
-        <img src={heroImage} alt="Fashion editorial" className="absolute inset-0 w-full h-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent" />
-        <div className="relative container mx-auto px-4 pb-16 md:pb-24">
-          <h1 className="font-display text-4xl md:text-7xl text-background tracking-wider mb-4">
-            {t.heroTitle}
-          </h1>
-          <p className="font-body text-sm md:text-base text-background/70 max-w-lg mb-8 leading-relaxed">
-            {t.heroSub}
-          </p>
-          <Link
-            to="/category/all"
-            className="inline-flex items-center gap-3 bg-background text-foreground px-8 py-4 text-[11px] font-display uppercase tracking-[0.2em] hover:bg-background/90 transition-colors"
-          >
-            {t.heroCta}
-            <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
-          </Link>
-        </div>
-      </section>
+      {/* Hero Slideshow */}
+      <HeroSlideshow t={t} />
 
 
 
