@@ -90,6 +90,8 @@ const translations = {
     maxPrice: "Max",
     minDiscount: "Min %",
     noResults: "Aucun deal ne correspond à vos filtres.",
+    recentlyViewed: "Récemment consultés",
+    youMayAlsoLike: "Vous aimerez aussi",
   },
   en: {
     heroTitle: "GOLDEALS CLUB",
