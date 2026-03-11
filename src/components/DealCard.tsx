@@ -68,11 +68,15 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             {deal.gender_label}
           </div>
         )}
-        {/* Promo end date */}
-        {endDate && (
+        {/* Promo dates */}
+        {(startDate || endDate) && (
           <div className="absolute bottom-3 right-14 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body tracking-wider border border-foreground/10 flex items-center gap-1">
             <Clock className="w-2.5 h-2.5" strokeWidth={1.5} />
-            {endDate}
+            {startDate && endDate
+              ? `${startDate} — ${endDate}`
+              : startDate
+              ? `Dès ${startDate}`
+              : `Fin ${endDate}`}
           </div>
         )}
         {/* Flame indicator */}

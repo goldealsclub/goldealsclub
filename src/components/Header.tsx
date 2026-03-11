@@ -119,6 +119,16 @@ const Header = () => {
               )}
             </Link>
 
+            {user ? (
+              <button onClick={signOut} className="p-2" title="Se déconnecter">
+                <LogOut className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
+              </button>
+            ) : (
+              <Link to="/auth" className="p-2" title="Se connecter">
+                <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
+              </Link>
+            )}
+
             <div className="flex items-center gap-1 border-l border-foreground/10 pl-3 ml-1">
               {languages.map((l) => (
                 <button
