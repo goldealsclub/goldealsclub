@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import RecentlyViewed from "@/components/RecentlyViewed";
+import BrandBanner from "@/components/BrandBanner";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
@@ -52,8 +53,8 @@ const Index = () => {
       {/* Hero Slideshow */}
       <HeroSlideshow t={t} />
 
-
-
+      {/* Brand Banner - only on homepage, below hero */}
+      <BrandBanner deals={deals} />
 
       {/* Scroll target for gender filter */}
       <div id="deals-section" />
