@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Search, Heart, Menu, X, RefreshCw } from "lucide-react";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
