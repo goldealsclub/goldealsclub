@@ -7,6 +7,7 @@ import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
+import RecentlyViewed from "@/components/RecentlyViewed";
 import heroImage from "@/assets/hero-image.jpg";
 import { ArrowRight, ShieldCheck } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
