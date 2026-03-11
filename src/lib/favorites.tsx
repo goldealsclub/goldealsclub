@@ -1,15 +1,18 @@
-import React, { createContext, useContext, useState, useCallback } from "react";
+import React, { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
 
 interface FavoritesContextType {
   favorites: Set<string>;
   toggle: (id: string) => void;
   isFav: (id: string) => boolean;
+  loading: boolean;
 }
 
 const STORAGE_KEY = "goldeals-favorites";
 
-function loadFavorites(): Set<string> {
+function loadLocalFavorites(): Set<string> {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) return new Set(JSON.parse(stored));
@@ -17,7 +20,7 @@ function loadFavorites(): Set<string> {
   return new Set();
 }
 
-function saveFavorites(favs: Set<string>) {
+function saveLocalFavorites(favs: Set<string>) {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify([...favs]));
   } catch {}
@@ -27,26 +30,100 @@ const FavoritesContext = createContext<FavoritesContextType>({
   favorites: new Set(),
   toggle: () => {},
   isFav: () => false,
+  loading: false,
 });
 
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [favorites, setFavorites] = useState<Set<string>>(loadFavorites);
-  const toggle = useCallback((id: string) => {
-    setFavorites((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) {
-        next.delete(id);
-        toast({ title: "Retiré des favoris" });
-      } else {
-        next.add(id);
-        toast({ title: "Ajouté aux favoris ♥" });
+  const { user } = useAuth();
+  const [favorites, setFavorites] = useState<Set<string>>(loadLocalFavorites);
+  const [loading, setLoading] = useState(false);
+  const syncedRef = useRef(false);
+
+  // Load favorites from DB when user logs in
+  useEffect(() => {
+    if (!user) {
+      syncedRef.current = false;
+      // Keep localStorage favorites when logged out
+      setFavorites(loadLocalFavorites());
+      return;
+    }
+
+    const loadFromDb = async () => {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from("favorites" as any)
+        .select("deal_id")
+        .eq("user_id", user.id);
+
+      if (!error && data) {
+        const dbFavs = new Set((data as any[]).map((r: any) => r.deal_id as string));
+
+        // On first login, merge localStorage favorites into DB
+        if (!syncedRef.current) {
+          const localFavs = loadLocalFavorites();
+          const toSync = [...localFavs].filter((id) => !dbFavs.has(id));
+          if (toSync.length > 0) {
+            await supabase
+              .from("favorites" as any)
+              .insert(toSync.map((deal_id) => ({ user_id: user.id, deal_id })) as any);
+            toSync.forEach((id) => dbFavs.add(id));
+          }
+          // Clear localStorage after merge
+          localStorage.removeItem(STORAGE_KEY);
+          syncedRef.current = true;
+        }
+
+        setFavorites(dbFavs);
       }
-      saveFavorites(next);
-      return next;
-    });
-  }, []);
+      setLoading(false);
+    };
+
+    loadFromDb();
+  }, [user]);
+
+  const toggle = useCallback(
+    async (id: string) => {
+      const wasAdded = !favorites.has(id);
+
+      // Optimistic update
+      setFavorites((prev) => {
+        const next = new Set(prev);
+        if (next.has(id)) next.delete(id);
+        else next.add(id);
+
+        // Save to localStorage for non-auth users
+        if (!user) saveLocalFavorites(next);
+
+        return next;
+      });
+
+      toast({ title: wasAdded ? "Ajouté aux favoris ♥" : "Retiré des favoris" });
+
+      // Sync to DB for authenticated users
+      if (user) {
+        if (wasAdded) {
+          await supabase
+            .from("favorites" as any)
+            .insert({ user_id: user.id, deal_id: id } as any);
+        } else {
+          await supabase
+            .from("favorites" as any)
+            .delete()
+            .eq("user_id", user.id)
+            .eq("deal_id", id);
+        }
+      }
+    },
+    [favorites, user]
+  );
+
   const isFav = useCallback((id: string) => favorites.has(id), [favorites]);
-  return <FavoritesContext.Provider value={{ favorites, toggle, isFav }}>{children}</FavoritesContext.Provider>;
+
+  return (
+    <FavoritesContext.Provider value={{ favorites, toggle, isFav, loading }}>
+      {children}
+    </FavoritesContext.Provider>
+  );
 };
 
 export const useFavorites = () => useContext(FavoritesContext);
