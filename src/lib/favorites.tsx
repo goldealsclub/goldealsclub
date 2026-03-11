@@ -51,7 +51,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
     const loadFromDb = async () => {
       setLoading(true);
       const { data, error } = await supabase
-        .from("favorites" as any)
+        .from("favorites")
         .select("deal_id")
         .eq("user_id", user.id);
 
