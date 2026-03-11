@@ -7,6 +7,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import heroImage from "@/assets/hero-image.jpg";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+import BrandBanner from "@/components/BrandBanner";
 
 function sortByDate(a: Deal, b: Deal): number {
   const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
@@ -27,11 +28,6 @@ const Index = () => {
   const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortByDate);
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity);
   const newDeals = [...deals].sort(sortByDate);
-
-  // Brand counters
-  const brandCounts: Record<string, number> = {};
-  deals.forEach(d => { brandCounts[d.brand] = (brandCounts[d.brand] || 0) + 1; });
-  const brands = Object.entries(brandCounts).sort((a, b) => b[1] - a[1]);
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
@@ -64,23 +60,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Brands bar */}
-      <section className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40">{deals.length} deals</span>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {brands.map(([brand, count]) => (
-            <Link
-              key={brand}
-              to={`/brand/${encodeURIComponent(brand)}`}
-              className="text-[11px] font-display uppercase tracking-wider border border-foreground/10 px-4 py-2 text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors"
-            >
-              {brand} <span className="text-foreground/30 ml-1">({count})</span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Brand logos banner */}
+      <BrandBanner deals={deals} />
 
       {/* Hot Deals — APERÇU */}
       {hotDeals.length > 0 && (
