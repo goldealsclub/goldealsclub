@@ -268,6 +268,8 @@ const translations = {
     maxPrice: "Máx",
     minDiscount: "Mín %",
     noResults: "Ninguna oferta coincide con tus filtros.",
+    recentlyViewed: "Vistos recientemente",
+    youMayAlsoLike: "También te puede gustar",
   },
 } as const;
 
