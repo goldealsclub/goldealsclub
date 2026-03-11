@@ -160,10 +160,10 @@ const DealPage = () => {
           </div>
         </div>
 
-        {/* Similar */}
+        {/* Similar — "Vous aimerez aussi" */}
         {similar.length > 0 && (
           <div className="mt-20">
-            <h2 className="font-display text-xl tracking-wider mb-8">{t.similarDeals}</h2>
+            <h2 className="font-display text-xl tracking-wider mb-8">{t.youMayAlsoLike}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
               {similar.map((d) => (
                 <DealCard key={d.id} deal={d} />
@@ -171,6 +171,9 @@ const DealPage = () => {
             </div>
           </div>
         )}
+
+        {/* Recently viewed */}
+        <RecentlyViewed excludeId={deal.id} />
       </div>
       <Footer />
     </div>

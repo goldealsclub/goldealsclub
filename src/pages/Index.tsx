@@ -196,6 +196,9 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Recently Viewed */}
+      <RecentlyViewed />
+
       {/* Newsletter */}
       <NewsletterSection />
 
