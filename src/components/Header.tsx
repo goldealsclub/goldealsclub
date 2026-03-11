@@ -68,7 +68,7 @@ const Header = () => {
           {genderTabs.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setGender(tab.key)}
+              onClick={() => handleGenderClick(tab.key)}
               className={`text-[10px] font-display uppercase tracking-[0.2em] transition-colors ${
                 gender === tab.key
                   ? "text-foreground"
