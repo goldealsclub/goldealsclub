@@ -20,8 +20,19 @@ const Header = () => {
   const { t, lang, setLang } = useI18n();
   const { favorites } = useFavorites();
   const { gender, setGender } = useGender();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const handleGenderClick = (key: Gender | "all") => {
+    setGender(key);
+    // On homepage, scroll to deals section
+    if (location.pathname === "/" || location.pathname === "/index") {
+      setTimeout(() => {
+        document.getElementById("deals-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    }
+  };
 
   const genderTabs: { key: Gender | "all"; label: string }[] = [
     { key: "all", label: t.all },
