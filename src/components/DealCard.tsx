@@ -30,7 +30,8 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const { toggle, isFav } = useFavorites();
   const saved = isFav(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
-  const endDate = formatEndDate(deal.promo_end_date);
+  const startDate = formatDate(deal.promo_start_date);
+  const endDate = formatDate(deal.promo_end_date);
 
   return (
     <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
