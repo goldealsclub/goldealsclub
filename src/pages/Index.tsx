@@ -60,23 +60,8 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Brands bar */}
-      <section className="container mx-auto px-4 py-8">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="text-[10px] font-display uppercase tracking-widest text-foreground/40">{deals.length} deals</span>
-        </div>
-        <div className="flex flex-wrap gap-3">
-          {brands.map(([brand, count]) => (
-            <Link
-              key={brand}
-              to={`/brand/${encodeURIComponent(brand)}`}
-              className="text-[11px] font-display uppercase tracking-wider border border-foreground/10 px-4 py-2 text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors"
-            >
-              {brand} <span className="text-foreground/30 ml-1">({count})</span>
-            </Link>
-          ))}
-        </div>
-      </section>
+      {/* Brand logos banner */}
+      <BrandBanner deals={deals} />
 
       {/* Hot Deals — APERÇU */}
       {hotDeals.length > 0 && (
