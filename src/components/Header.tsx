@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Search, Heart, Menu, X, RefreshCw } from "lucide-react";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
@@ -20,8 +20,19 @@ const Header = () => {
   const { t, lang, setLang } = useI18n();
   const { favorites } = useFavorites();
   const { gender, setGender } = useGender();
+  const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+
+  const handleGenderClick = (key: Gender | "all") => {
+    setGender(key);
+    // On homepage, scroll to deals section
+    if (location.pathname === "/" || location.pathname === "/index") {
+      setTimeout(() => {
+        document.getElementById("deals-section")?.scrollIntoView({ behavior: "smooth" });
+      }, 50);
+    }
+  };
 
   const genderTabs: { key: Gender | "all"; label: string }[] = [
     { key: "all", label: t.all },
@@ -57,7 +68,7 @@ const Header = () => {
           {genderTabs.map((tab) => (
             <button
               key={tab.key}
-              onClick={() => setGender(tab.key)}
+              onClick={() => handleGenderClick(tab.key)}
               className={`text-[10px] font-display uppercase tracking-[0.2em] transition-colors ${
                 gender === tab.key
                   ? "text-foreground"

@@ -63,6 +63,9 @@ const Index = () => {
       {/* Brand logos banner */}
       <BrandBanner deals={deals} />
 
+      {/* Scroll target for gender filter */}
+      <div id="deals-section" />
+
       {/* Hot Deals — APERÇU */}
       {hotDeals.length > 0 && (
         <section className="container mx-auto px-4 py-20">
