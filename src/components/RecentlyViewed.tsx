@@ -25,7 +25,7 @@ const RecentlyViewed = ({ excludeId, limit = 4 }: Props) => {
     <section className="container mx-auto px-4 py-16">
       <div className="flex items-center gap-2 mb-8">
         <Clock className="w-4 h-4 text-foreground/30" strokeWidth={1.5} />
-        <h2 className="font-display text-xl tracking-wider">{"recentlyViewed" in t ? (t as any).recentlyViewed : "Récemment consultés"}</h2>
+        <h2 className="font-display text-xl tracking-wider">{t.recentlyViewed}</h2>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
         {recentDeals.map((deal) => (
