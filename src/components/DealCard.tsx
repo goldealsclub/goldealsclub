@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Heart, ExternalLink, Star, Clock } from "lucide-react";
 import { Deal, isTrustedMerchant } from "@/lib/data";
