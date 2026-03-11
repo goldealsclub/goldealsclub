@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { categoryList, sellers, Deal } from "@/lib/data";
@@ -8,8 +8,13 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import RecentlyViewed from "@/components/RecentlyViewed";
-import heroImage from "@/assets/hero-image.jpg";
+import hero1 from "@/assets/hero-1.jpg";
+import hero2 from "@/assets/hero-2.jpg";
+import hero3 from "@/assets/hero-3.jpg";
+import hero4 from "@/assets/hero-4.jpg";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+
+const heroImages = [hero1, hero2, hero3, hero4];
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
 
