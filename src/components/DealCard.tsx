@@ -40,8 +40,11 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         <img
           src={deal.image_url}
           alt={deal.title}
-          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-[1.03] bg-muted"
           loading="lazy"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = "/placeholder.svg";
+          }}
         />
         {/* Hover overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-foreground/10">
@@ -64,19 +67,21 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         )}
         {/* Gender badge */}
         {deal.gender_label && (
-          <div className="absolute bottom-3 left-3 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">
+          <div className="absolute bottom-3 right-3 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">
             {deal.gender_label}
           </div>
         )}
         {/* Promo dates */}
         {(startDate || endDate) && (
-          <div className="absolute bottom-3 right-14 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body tracking-wider border border-foreground/10 flex items-center gap-1">
-            <Clock className="w-2.5 h-2.5" strokeWidth={1.5} />
-            {startDate && endDate
-              ? `${startDate} — ${endDate}`
-              : startDate
-              ? `Dès ${startDate}`
-              : `Fin ${endDate}`}
+          <div className="absolute bottom-3 left-3 mt-6 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[8px] font-body tracking-wider border border-foreground/10 flex items-center gap-1">
+            <Clock className="w-2.5 h-2.5 flex-shrink-0" strokeWidth={1.5} />
+            <span className="truncate">
+              {startDate && endDate
+                ? `${startDate} — ${endDate}`
+                : startDate
+                ? `Dès ${startDate}`
+                : `Fin ${endDate}`}
+            </span>
           </div>
         )}
         {/* Flame indicator */}

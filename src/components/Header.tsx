@@ -9,6 +9,7 @@ import type { Gender } from "@/lib/data";
 import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
 import BrandBanner from "@/components/BrandBanner";
+import SearchOverlay from "@/components/SearchOverlay";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -106,7 +107,7 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center gap-3">
-            <button onClick={() => setSearchOpen(!searchOpen)} className="p-2">
+            <button onClick={() => setSearchOpen(true)} className="p-2">
               <Search className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
             </button>
 
@@ -145,16 +146,7 @@ const Header = () => {
           </div>
         </div>
 
-        {searchOpen && (
-          <div className="pb-4 animate-fade-in">
-            <input
-              type="text"
-              placeholder={t.search}
-              className="w-full bg-transparent border-b border-foreground/15 py-2 text-sm font-body placeholder:text-foreground/30 focus:outline-none focus:border-foreground/40"
-              autoFocus
-            />
-          </div>
-        )}
+        <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       </div>
 
       {menuOpen && (

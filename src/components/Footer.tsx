@@ -67,10 +67,10 @@ const Footer = () => {
         <div className="border-t border-background/10 mt-12 pt-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <p className="text-[10px] font-body text-background/30">© 2026 GOLDEALS CLUB. All rights reserved.</p>
           <div className="flex gap-6">
-            <a href="#" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerAbout}</a>
-            <a href="#" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerContact}</a>
-            <a href="#" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerPrivacy}</a>
-            <a href="#" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerTerms}</a>
+            <Link to="/about" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerAbout}</Link>
+            <Link to="/contact" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerContact}</Link>
+            <Link to="/privacy" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerPrivacy}</Link>
+            <Link to="/terms" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerTerms}</Link>
           </div>
         </div>
       </div>
