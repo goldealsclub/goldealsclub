@@ -1,11 +1,14 @@
+import { useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, ArrowLeft, Eye, ExternalLink, Star, Clock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { deals, isTrustedMerchant } from "@/lib/data";
 import { useFavorites } from "@/lib/favorites";
+import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import FlameIndicator from "@/components/FlameIndicator";
 import ShareMenu from "@/components/ShareMenu";
 import DealCard from "@/components/DealCard";
+import RecentlyViewed from "@/components/RecentlyViewed";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 
