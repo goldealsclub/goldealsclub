@@ -64,8 +64,8 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
           const toSync = [...localFavs].filter((id) => !dbFavs.has(id));
           if (toSync.length > 0) {
             await supabase
-              .from("favorites" as any)
-              .insert(toSync.map((deal_id) => ({ user_id: user.id, deal_id })) as any);
+              .from("favorites")
+              .insert(toSync.map((deal_id) => ({ user_id: user.id, deal_id })));
             toSync.forEach((id) => dbFavs.add(id));
           }
           // Clear localStorage after merge
