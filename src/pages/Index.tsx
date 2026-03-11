@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { categoryList, sellers, Deal } from "@/lib/data";
@@ -5,8 +6,11 @@ import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import BackToTop from "@/components/BackToTop";
 import heroImage from "@/assets/hero-image.jpg";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 
 function sortByDate(a: Deal, b: Deal): number {
