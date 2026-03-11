@@ -122,14 +122,21 @@ function normalizeDeals(raw: any[]): Deal[] {
 
 export const deals: Deal[] = normalizeDeals(dealsJson as any[]);
 
+import catSneakers from "@/assets/cat-sneakers.jpg";
+import catJackets from "@/assets/cat-jackets.jpg";
+import catHoodies from "@/assets/cat-hoodies.jpg";
+import catTshirts from "@/assets/cat-tshirts.jpg";
+import catPants from "@/assets/cat-pants.jpg";
+import catAccessories from "@/assets/cat-accessories.jpg";
+
 export const categoryList: { key: Category; image: string }[] = [
-  { key: "sneakers", image: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?w=400&h=400&fit=crop" },
-  { key: "jackets", image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=400&fit=crop" },
-  { key: "hoodies", image: "https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?w=400&h=400&fit=crop" },
-  { key: "tshirts", image: "https://images.unsplash.com/photo-1576566588028-4147f3842f27?w=400&h=400&fit=crop" },
-  { key: "pantalons", image: "https://images.unsplash.com/photo-1584370848010-d7fe6bc767ec?w=400&h=400&fit=crop" },
-  { key: "vestes", image: "https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=400&h=400&fit=crop" },
-  { key: "accessoires", image: "https://images.unsplash.com/photo-1588850561407-ed78c334e67a?w=400&h=400&fit=crop" },
+  { key: "sneakers", image: catSneakers },
+  { key: "jackets", image: catJackets },
+  { key: "hoodies", image: catHoodies },
+  { key: "tshirts", image: catTshirts },
+  { key: "pantalons", image: catPants },
+  { key: "vestes", image: catJackets },
+  { key: "accessoires", image: catAccessories },
 ];
 
 /** Get the most recent deal date as the "last updated" timestamp */
