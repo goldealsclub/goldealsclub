@@ -161,6 +161,7 @@ const Header = () => {
           </nav>
         </div>
       )}
+      <BrandBanner deals={filteredDeals} />
     </header>
   );
 };
