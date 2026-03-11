@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Deal } from "@/lib/data";
-import { useMemo } from "react";
+import { useMemo, useEffect, useState } from "react";
 
 /** Brand logo URLs (transparent PNGs from public CDNs) */
 const brandLogos: Record<string, string> = {
