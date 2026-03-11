@@ -30,7 +30,9 @@ function formatDate(date: string | null): string | null {
 const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const { t } = useI18n();
   const { toggle, isFav } = useFavorites();
+  const { add, isComparing } = useCompare();
   const saved = isFav(deal.id);
+  const comparing = isComparing(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
   const startDate = formatDate(deal.promo_start_date);
   const endDate = formatDate(deal.promo_end_date);
