@@ -22,6 +22,7 @@ const Header = () => {
   const { t, lang, setLang } = useI18n();
   const { favorites } = useFavorites();
   const { gender, setGender, filteredDeals } = useGender();
+  const { user, signOut } = useAuth();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
