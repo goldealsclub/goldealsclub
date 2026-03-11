@@ -196,25 +196,63 @@ const Index = () => {
       </section>
 
       {/* Newsletter */}
-      <section className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 py-20 text-center">
-          <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.newsletter}</h2>
-          <p className="font-body text-xs text-primary-foreground/60 mb-8 max-w-md mx-auto">{t.newsletterSub}</p>
-          <div className="flex max-w-md mx-auto">
-            <input
-              type="email"
-              placeholder={t.emailPlaceholder}
-              className="flex-1 bg-transparent border border-primary-foreground/20 px-4 py-3 text-xs font-body text-primary-foreground placeholder:text-primary-foreground/30 focus:outline-none focus:border-primary-foreground/50"
-            />
-            <button className="bg-primary-foreground text-primary px-6 py-3 text-[10px] font-display uppercase tracking-widest hover:bg-primary-foreground/90 transition-colors">
-              {t.subscribe}
-            </button>
-          </div>
-        </div>
-      </section>
+      <NewsletterSection />
 
+      <BackToTop />
       <Footer />
     </div>
+  );
+};
+
+const NewsletterSection = () => {
+  const { t } = useI18n();
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleSubscribe = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email.trim()) return;
+    setLoading(true);
+    const { error } = await supabase
+      .from("newsletter_subscribers" as any)
+      .insert({ email: email.trim() } as any);
+    setLoading(false);
+    if (error) {
+      if (error.code === "23505") {
+        toast({ title: "Vous êtes déjà inscrit(e) !", description: "Cet email est déjà dans notre liste." });
+      } else {
+        toast({ title: "Erreur", description: "Veuillez réessayer.", variant: "destructive" });
+      }
+    } else {
+      toast({ title: "Bienvenue ! 🎉", description: "Vous recevrez nos meilleures offres par email." });
+      setEmail("");
+    }
+  };
+
+  return (
+    <section className="bg-primary text-primary-foreground">
+      <div className="container mx-auto px-4 py-20 text-center">
+        <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.newsletter}</h2>
+        <p className="font-body text-xs text-primary-foreground/60 mb-8 max-w-md mx-auto">{t.newsletterSub}</p>
+        <form onSubmit={handleSubscribe} className="flex max-w-md mx-auto">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={t.emailPlaceholder}
+            className="flex-1 bg-transparent border border-primary-foreground/20 px-4 py-3 text-xs font-body text-primary-foreground placeholder:text-primary-foreground/30 focus:outline-none focus:border-primary-foreground/50"
+          />
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-primary-foreground text-primary px-6 py-3 text-[10px] font-display uppercase tracking-widest hover:bg-primary-foreground/90 transition-colors disabled:opacity-50"
+          >
+            {loading ? "..." : t.subscribe}
+          </button>
+        </form>
+      </div>
+    </section>
   );
 };
 

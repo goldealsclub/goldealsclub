@@ -16,6 +16,10 @@ import SellersPage from "./pages/SellersPage";
 import BrandPage from "./pages/BrandPage";
 import AuthPage from "./pages/AuthPage";
 import ResetPasswordPage from "./pages/ResetPasswordPage";
+import AboutPage from "./pages/AboutPage";
+import ContactPage from "./pages/ContactPage";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
 import ScrollToTop from "./components/ScrollToTop";
 import NotFound from "./pages/NotFound";
 
@@ -42,6 +46,10 @@ const App = () => (
                 <Route path="/brand/:brand" element={<BrandPage />} />
                 <Route path="/auth" element={<AuthPage />} />
                 <Route path="/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="/terms" element={<TermsPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </BrowserRouter>
