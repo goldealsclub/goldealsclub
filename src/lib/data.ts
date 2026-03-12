@@ -54,13 +54,17 @@ export function isTrustedMerchant(merchant: string): boolean {
   return false;
 }
 
-/** Upgrade Nike/Adidas thumbnail URLs to high-res */
+/** Upgrade Nike/Adidas/JD Sports thumbnail URLs to high-res */
 function upgradeImageUrl(url: string): string {
   if (url.includes("static.nike.com") && url.includes("t_PDP_144")) {
     return url.replace("t_PDP_144_v1", "t_PDP_864_v1");
   }
   if (url.includes("assets.adidas.com") && url.includes("w_600")) {
     return url.replace("w_600", "w_960");
+  }
+  // JD Sports images are often too zoomed - adjust to show more of the product
+  if (url.includes("jdplc.com") && url.includes("w_300")) {
+    return url.replace("w_300", "w_800");
   }
   return url;
 }
