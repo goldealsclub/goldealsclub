@@ -54,7 +54,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
                   <img
                     src={logo}
                     alt={name}
-                    className="h-5 w-auto object-contain"
+                    className="h-10 w-auto object-contain"
                   />
                 ) : (
                   <span className="font-display text-[10px] uppercase tracking-wider text-foreground font-bold">
