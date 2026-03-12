@@ -1,17 +1,7 @@
 import { Link } from "react-router-dom";
+import { Flame } from "lucide-react";
 import { Deal } from "@/lib/data";
 import { useMemo, useEffect, useState } from "react";
-
-/** Brand logo URLs (transparent PNGs from public CDNs) */
-const brandLogos: Record<string, string> = {
-  Nike: "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a6/Logo_NIKE.svg/200px-Logo_NIKE.svg.png",
-  Adidas: "https://upload.wikimedia.org/wikipedia/commons/thumb/2/20/Adidas_Logo.svg/200px-Adidas_Logo.svg.png",
-  Puma: "https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Puma_logo.svg/200px-Puma_logo.svg.png",
-  "New Balance": "https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/New_Balance_logo.svg/200px-New_Balance_logo.svg.png",
-  Reebok: "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Reebok_2019_logo.svg/200px-Reebok_2019_logo.svg.png",
-  Converse: "https://upload.wikimedia.org/wikipedia/commons/thumb/3/30/Converse_logo.svg/200px-Converse_logo.svg.png",
-  Vans: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/91/Vans-logo.svg/200px-Vans-logo.svg.png",
-};
 
 interface BrandBannerProps {
   deals: Deal[];
@@ -45,27 +35,33 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-5 overflow-x-auto py-2 scrollbar-hide">
           {brands.map(({ name, count }) => {
-            const logo = brandLogos[name];
             return (
               <Link
                 key={name}
                 to={`/brand/${encodeURIComponent(name)}`}
-                className="group flex flex-col items-center gap-1 min-w-[70px] shrink-0 opacity-40 hover:opacity-90 transition-opacity duration-200"
+                className="group flex items-center gap-2 min-w-fit shrink-0 opacity-50 hover:opacity-100 transition-opacity duration-200"
               >
-                {logo ? (
-                  <img
-                    src={logo}
-                    alt={name}
-                    className="h-5 w-auto object-contain dark:invert"
-                    loading="lazy"
-                  />
-                ) : (
-                  <span className="font-display text-[10px] uppercase tracking-wider text-foreground">
-                    {name}
-                  </span>
-                )}
-                <span className="text-[8px] font-body text-foreground/25 group-hover:text-foreground/50 transition-colors">
-                  {count} deals
+                <span className="inline-flex items-center gap-0.5">
+                  {Array.from({ length: Math.min(Math.ceil(count / 5), 3) }).map((_, i) => (
+                    <Flame
+                      key={i}
+                      className={`w-3.5 h-3.5 animate-pulse ${
+                        Math.min(Math.ceil(count / 5), 3) >= 3
+                          ? "text-orange-500 fill-orange-500/50"
+                          : Math.min(Math.ceil(count / 5), 3) >= 2
+                          ? "text-amber-500 fill-amber-500/40"
+                          : "text-foreground/50 fill-foreground/10"
+                      }`}
+                      strokeWidth={1.8}
+                      style={{ animationDelay: `${i * 0.2}s` }}
+                    />
+                  ))}
+                </span>
+                <span className="font-display text-[10px] uppercase tracking-wider text-foreground">
+                  {name}
+                </span>
+                <span className="text-[8px] font-body text-foreground/30">
+                  {count}
                 </span>
               </Link>
             );
