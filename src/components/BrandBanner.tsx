@@ -45,12 +45,12 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
                   {Array.from({ length: Math.min(Math.ceil(count / 5), 3) }).map((_, i) => (
                     <Flame
                       key={i}
-                      className={`w-3.5 h-3.5 animate-pulse ${
+                      className={`w-3.5 h-3.5 animate-pulse group-hover:scale-125 group-hover:brightness-125 transition-all duration-300 ${
                         Math.min(Math.ceil(count / 5), 3) >= 3
-                          ? "text-orange-500 fill-orange-500/50"
+                          ? "text-orange-500 fill-orange-500/50 group-hover:text-orange-400 group-hover:fill-orange-400/60"
                           : Math.min(Math.ceil(count / 5), 3) >= 2
-                          ? "text-amber-500 fill-amber-500/40"
-                          : "text-foreground/50 fill-foreground/10"
+                          ? "text-amber-500 fill-amber-500/40 group-hover:text-amber-400 group-hover:fill-amber-400/50"
+                          : "text-foreground/50 fill-foreground/10 group-hover:text-foreground/70 group-hover:fill-foreground/20"
                       }`}
                       strokeWidth={1.8}
                       style={{ animationDelay: `${i * 0.2}s` }}
