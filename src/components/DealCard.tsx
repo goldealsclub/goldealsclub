@@ -52,7 +52,9 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           src={deal.image_url}
           alt={deal.title}
           className={`w-full h-full transition-all duration-500 group-hover:scale-[1.03] ${
-            deal.category?.toLowerCase() === "sneakers" ? "object-contain" : "object-cover"
+            deal.image_url?.includes("amplience.net") && !deal.image_url?.includes("h=531")
+              ? "object-cover"
+              : "object-contain"
           } ${imageLoaded ? "opacity-100" : "opacity-0"}`}
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
