@@ -51,9 +51,9 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         <img
           src={deal.image_url}
           alt={deal.title}
-          className={`w-full h-full object-contain transition-all duration-500 group-hover:scale-[1.03] ${
-            imageLoaded ? "opacity-100" : "opacity-0"
-          }`}
+          className={`w-full h-full transition-all duration-500 group-hover:scale-[1.03] ${
+            deal.category?.toLowerCase() === "sneakers" ? "object-contain" : "object-cover"
+          } ${imageLoaded ? "opacity-100" : "opacity-0"}`}
           loading="lazy"
           onLoad={() => setImageLoaded(true)}
           onError={(e) => {
