@@ -62,10 +62,9 @@ function upgradeImageUrl(url: string): string {
   if (url.includes("assets.adidas.com") && url.includes("w_600")) {
     return url.replace("w_600", "w_960");
   }
-  // JD Sports / Amplience: force background color to match site bg (warm cream #f5f0eb)
+  // JD Sports / Amplience: keep original URL to avoid ORB blocking
   if (url.includes("amplience.net")) {
-    const separator = url.includes("?") ? "&" : "?";
-    return `${url}${separator}bg=f5f0eb`;
+    return url;
   }
   return url;
 }
