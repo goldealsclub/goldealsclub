@@ -99,6 +99,12 @@ export default {
           "80%": { transform: "scale(0.92) rotate(2deg)", opacity: "0.8", filter: "brightness(1.1)" },
           "100%": { transform: "scale(0.85) rotate(0deg)", opacity: "0.6", filter: "brightness(0.8)" },
         },
+        sparkle: {
+          "0%, 100%": { transform: "scale(0) translate(0,0)", opacity: "0" },
+          "20%": { transform: "scale(1.2) translate(2px,-3px)", opacity: "1" },
+          "50%": { transform: "scale(0.8) translate(-1px,-5px)", opacity: "0.7" },
+          "80%": { transform: "scale(1) translate(1px,-2px)", opacity: "0.9" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
