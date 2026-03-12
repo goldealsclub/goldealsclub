@@ -89,7 +89,7 @@ const Header = () => {
         </div>
       </div>
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-16 md:h-20">
+        <div className="flex items-center justify-between h-20 md:h-24">
           <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-5 h-5" strokeWidth={1.5} /> : <Menu className="w-5 h-5" strokeWidth={1.5} />}
           </button>
