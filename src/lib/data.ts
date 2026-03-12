@@ -54,7 +54,7 @@ export function isTrustedMerchant(merchant: string): boolean {
   return false;
 }
 
-/** Upgrade Nike/Adidas/JD Sports thumbnail URLs to high-res */
+/** Upgrade Nike/Adidas thumbnail URLs to high-res & fix JD Sports zoom */
 function upgradeImageUrl(url: string): string {
   if (url.includes("static.nike.com") && url.includes("t_PDP_144")) {
     return url.replace("t_PDP_144_v1", "t_PDP_864_v1");
@@ -62,9 +62,9 @@ function upgradeImageUrl(url: string): string {
   if (url.includes("assets.adidas.com") && url.includes("w_600")) {
     return url.replace("w_600", "w_960");
   }
-  // JD Sports images are often too zoomed - adjust to show more of the product
-  if (url.includes("jdplc.com") && url.includes("w_300")) {
-    return url.replace("w_300", "w_800");
+  // JD Sports / Amplience images: request square crop to avoid zoom in aspect-square containers
+  if (url.includes("amplience.net") && url.includes("w=750")) {
+    return url.replace(/w=750&h=\d+/, "w=600&h=600");
   }
   return url;
 }
