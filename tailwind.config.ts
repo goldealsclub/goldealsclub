@@ -27,6 +27,7 @@ export default {
         taupe: "hsl(var(--taupe))",
         sable: "hsl(var(--sable))",
         noir: "hsl(var(--noir))",
+        photo: "hsl(var(--photo-surface))",
         primary: {
           DEFAULT: "hsl(var(--primary))",
           foreground: "hsl(var(--primary-foreground))",

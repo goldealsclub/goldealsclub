@@ -41,10 +41,10 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   return (
     <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
       {/* Image */}
-      <Link to={`/deal/${deal.id}`} className="block relative overflow-hidden aspect-square bg-muted">
+      <Link to={`/deal/${deal.id}`} className="block relative overflow-hidden aspect-square bg-photo">
         {/* Skeleton shimmer */}
         {!imageLoaded && (
-          <div className="absolute inset-0 bg-muted animate-pulse">
+          <div className="absolute inset-0 bg-photo animate-pulse">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-foreground/[0.03] to-transparent animate-[shimmer_1.5s_infinite]" />
           </div>
         )}
