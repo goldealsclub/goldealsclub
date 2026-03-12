@@ -82,12 +82,19 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             Super Deal
           </div>
         )}
-        {/* Gender badge */}
-        {deal.gender_label && (
-          <div className="absolute bottom-3 right-3 bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">
-            {deal.gender_label}
-          </div>
-        )}
+        {/* Category & Gender badges */}
+        <div className="absolute bottom-3 right-3 flex items-center gap-1.5">
+          {deal.category && (
+            <div className="bg-primary/80 backdrop-blur-sm text-primary-foreground px-2 py-0.5 text-[9px] font-body uppercase tracking-wider">
+              {deal.category}
+            </div>
+          )}
+          {deal.gender_label && (
+            <div className="bg-muted/80 backdrop-blur-sm text-foreground/60 px-2 py-0.5 text-[9px] font-body uppercase tracking-wider border border-foreground/10">
+              {deal.gender_label}
+            </div>
+          )}
+        </div>
         {/* Flame indicator */}
         <div className="absolute top-3 right-3">
           <FlameIndicator count={deal.flame_count} />
