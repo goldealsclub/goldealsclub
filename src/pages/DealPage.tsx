@@ -70,8 +70,8 @@ const DealPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Image */}
-          <div className="relative aspect-square overflow-hidden">
-            <img src={deal.image_url} alt={deal.title} className="w-full h-full object-cover" />
+          <div className="relative aspect-square overflow-hidden bg-photo">
+            <img src={deal.image_url} alt={deal.title} className="w-full h-full object-contain" />
             {deal.discount_percent && deal.discount_percent > 0 && (
               <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1.5 text-xs font-display tracking-wider">
                 -{deal.discount_percent}%
