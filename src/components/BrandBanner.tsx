@@ -35,7 +35,6 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-5 overflow-x-auto py-2 scrollbar-hide">
           {brands.map(({ name, count }) => {
-            const logo = brandLogos[name];
             return (
               <Link
                 key={name}
