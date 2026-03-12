@@ -1,6 +1,14 @@
 import { Link } from "react-router-dom";
 import { Deal } from "@/lib/data";
 import { useMemo, useEffect, useState } from "react";
+import brandAdidas from "@/assets/brand-adidas.png";
+import brandJd from "@/assets/brand-jdsports.png";
+
+const brandLogos: Record<string, string> = {
+  Adidas: brandAdidas,
+  adidas: brandAdidas,
+  "JD Sports": brandJd,
+};
 
 interface BrandBannerProps {
   deals: Deal[];
@@ -33,20 +41,31 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-5 overflow-x-auto py-2 scrollbar-hide">
-          {brands.map(({ name, count }) => (
-            <Link
-              key={name}
-              to={`/brand/${encodeURIComponent(name)}`}
-              className="group flex items-center gap-2 min-w-fit shrink-0 opacity-50 hover:opacity-100 transition-opacity duration-200"
-            >
-              <span className="font-display text-[10px] uppercase tracking-wider text-foreground">
-                {name}
-              </span>
-              <span className="text-[8px] font-body text-foreground/30">
-                {count}
-              </span>
-            </Link>
-          ))}
+          {brands.map(({ name, count }) => {
+            const logo = brandLogos[name];
+            return (
+              <Link
+                key={name}
+                to={`/brand/${encodeURIComponent(name)}`}
+                className="group flex items-center gap-2 min-w-fit shrink-0 opacity-50 hover:opacity-100 transition-opacity duration-200"
+              >
+                {logo ? (
+                  <img
+                    src={logo}
+                    alt={name}
+                    className="h-4 w-auto object-contain dark:invert"
+                  />
+                ) : (
+                  <span className="font-display text-[10px] uppercase tracking-wider text-foreground font-bold">
+                    {name}
+                  </span>
+                )}
+                <span className="text-[8px] font-body text-foreground/30">
+                  {count}
+                </span>
+              </Link>
+            );
+          })}
         </div>
       </div>
     </section>
