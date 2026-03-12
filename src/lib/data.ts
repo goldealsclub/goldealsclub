@@ -62,9 +62,14 @@ function upgradeImageUrl(url: string): string {
   if (url.includes("assets.adidas.com") && url.includes("w_600")) {
     return url.replace("w_600", "w_960");
   }
-  // JD Sports / Amplience: keep original URL to avoid ORB blocking
+  // JD Sports / Amplience: keep shoes as-is (landscape h=531), remove resize for clothing
   if (url.includes("amplience.net")) {
-    return url;
+    // Shoes use landscape ratio (h=531), keep their params
+    if (url.includes("h=531")) {
+      return url;
+    }
+    // For clothing/other items, strip w & h params to use original size
+    return url.replace(/&w=\d+/, "").replace(/&h=\d+/, "");
   }
   return url;
 }
