@@ -90,10 +90,14 @@ export default {
           "100%": { transform: "translateX(100%)" },
         },
         flicker: {
-          "0%, 100%": { transform: "scale(1)", opacity: "1" },
-          "25%": { transform: "scale(1.15) rotate(-3deg)", opacity: "0.9" },
-          "50%": { transform: "scale(0.95) rotate(2deg)", opacity: "1" },
-          "75%": { transform: "scale(1.1) rotate(-1deg)", opacity: "0.85" },
+          "0%": { transform: "scale(0.85) rotate(0deg)", opacity: "0.6", filter: "brightness(0.8)" },
+          "10%": { transform: "scale(1.1) rotate(-4deg)", opacity: "1", filter: "brightness(1.3)" },
+          "20%": { transform: "scale(0.95) rotate(3deg)", opacity: "0.85", filter: "brightness(1)" },
+          "35%": { transform: "scale(1.18) rotate(-2deg)", opacity: "1", filter: "brightness(1.4)" },
+          "50%": { transform: "scale(0.9) rotate(1deg)", opacity: "0.75", filter: "brightness(0.9)" },
+          "65%": { transform: "scale(1.12) rotate(-3deg)", opacity: "1", filter: "brightness(1.35)" },
+          "80%": { transform: "scale(0.92) rotate(2deg)", opacity: "0.8", filter: "brightness(1.1)" },
+          "100%": { transform: "scale(0.85) rotate(0deg)", opacity: "0.6", filter: "brightness(0.8)" },
         },
       },
       animation: {
