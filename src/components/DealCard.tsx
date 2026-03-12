@@ -41,7 +41,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   return (
     <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
       {/* Image */}
-      <Link to={`/deal/${deal.id}`} className="block relative overflow-hidden aspect-square">
+      <Link to={`/deal/${deal.id}`} className="block relative overflow-hidden aspect-square bg-[#f0efed]">
         {/* Skeleton shimmer */}
         {!imageLoaded && (
           <div className="absolute inset-0 bg-muted animate-pulse">
@@ -51,7 +51,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         <img
           src={deal.image_url}
           alt={deal.title}
-          className={`w-full h-full object-cover transition-all duration-500 group-hover:scale-[1.03] bg-muted ${
+          className={`w-full h-full object-contain transition-all duration-500 group-hover:scale-[1.03] ${
             imageLoaded ? "opacity-100" : "opacity-0"
           }`}
           loading="lazy"
