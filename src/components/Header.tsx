@@ -60,16 +60,8 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
       {/* Update date bar */}
-      {getLastUpdatedDate() && (
-        <div className="bg-primary/5 border-b border-foreground/6">
-          <div className="container mx-auto px-4 flex items-center justify-center gap-1.5 h-7">
-            <RefreshCw className="w-3 h-3 text-foreground/40" />
-            <span className="text-[10px] font-body text-foreground/50">
-              Deals actualisés le {format(new Date(getLastUpdatedDate()), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-            </span>
-          </div>
-        </div>
-      )}
+      {/* Bandeau des dates supprimé */}
+      {/*
       {/* Gender bar */}
       <div className="border-b border-foreground/6 bg-muted/30">
         <div className="container mx-auto px-4 flex items-center justify-center gap-6 h-9">
@@ -95,7 +87,7 @@ const Header = () => {
           </button>
 
           <Link to="/" className="flex-shrink-0">
-            <img src={logo} alt="GOLDEALS CLUB" className="h-28 md:h-36 w-auto" />
+            <img src={logo} alt="GOLDEALS CLUB" className="h-32 md:h-44 w-auto" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
