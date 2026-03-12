@@ -10,15 +10,9 @@ const FlameIndicator = ({ count, className = "", size = "md" }: FlameIndicatorPr
   if (count <= 0) return null;
 
   const sizeClasses = {
-    sm: "w-3.5 h-3.5",
+    sm: "w-4 h-4",
     md: "w-5 h-5",
-    lg: "w-6 h-6",
-  };
-
-  const containerPadding = {
-    sm: "px-1 py-0.5",
-    md: "px-1.5 py-1",
-    lg: "px-2 py-1.5",
+    lg: "w-7 h-7",
   };
 
   const isHot = count >= 3;
@@ -26,27 +20,21 @@ const FlameIndicator = ({ count, className = "", size = "md" }: FlameIndicatorPr
 
   return (
     <span
-      className={`inline-flex items-center gap-0.5 rounded-sm backdrop-blur-sm ${
-        isHot
-          ? "bg-orange-500/15 border border-orange-500/30"
-          : isGood
-          ? "bg-amber-500/10 border border-amber-500/20"
-          : "bg-foreground/5 border border-foreground/10"
-      } ${containerPadding[size]} ${className}`}
+      className={`inline-flex items-center gap-0 ${className}`}
       title={`${count}/3`}
     >
       {Array.from({ length: count }).map((_, i) => (
         <Flame
           key={i}
-          className={`${sizeClasses[size]} drop-shadow-sm animate-[flicker_1.5s_ease-in-out_infinite] ${
+          className={`${sizeClasses[size]} animate-[flicker_1.5s_ease-in-out_infinite] drop-shadow-[0_0_6px_rgba(255,160,0,0.7)] ${
             isHot
-              ? "text-orange-500 fill-orange-500/50"
+              ? "text-red-500 fill-yellow-400/80"
               : isGood
-              ? "text-amber-500 fill-amber-500/40"
-              : "text-foreground/50 fill-foreground/10"
+              ? "text-orange-500 fill-yellow-300/70"
+              : "text-amber-500 fill-yellow-200/60"
           }`}
-          strokeWidth={1.8}
-          style={{ animationDelay: `${i * 0.3}s` }}
+          strokeWidth={1.5}
+          style={{ animationDelay: `${i * 0.25}s`, marginLeft: i > 0 ? "-4px" : "0" }}
         />
       ))}
     </span>
