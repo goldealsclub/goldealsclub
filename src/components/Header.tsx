@@ -95,7 +95,7 @@ const Header = () => {
           </button>
 
           <Link to="/" className="flex-shrink-0">
-            <img src={logo} alt="GOLDEALS CLUB" className="h-24 md:h-32 w-auto" />
+            <img src={logo} alt="GOLDEALS CLUB" className="h-28 md:h-36 w-auto" />
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
