@@ -89,6 +89,12 @@ export default {
           "0%": { transform: "translateX(-100%)" },
           "100%": { transform: "translateX(100%)" },
         },
+        flicker: {
+          "0%, 100%": { transform: "scale(1)", opacity: "1" },
+          "25%": { transform: "scale(1.15) rotate(-3deg)", opacity: "0.9" },
+          "50%": { transform: "scale(0.95) rotate(2deg)", opacity: "1" },
+          "75%": { transform: "scale(1.1) rotate(-1deg)", opacity: "0.85" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

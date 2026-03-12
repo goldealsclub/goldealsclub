@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import { Flame } from "lucide-react";
 import { Deal } from "@/lib/data";
 import { useMemo, useEffect, useState } from "react";
 
@@ -34,38 +33,20 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
     >
       <div className="container mx-auto px-4">
         <div className="flex items-center gap-5 overflow-x-auto py-2 scrollbar-hide">
-          {brands.map(({ name, count }) => {
-            return (
-              <Link
-                key={name}
-                to={`/brand/${encodeURIComponent(name)}`}
-                className="group flex items-center gap-2 min-w-fit shrink-0 opacity-50 hover:opacity-100 transition-opacity duration-200"
-              >
-                <span className="inline-flex items-center gap-0.5">
-                  {Array.from({ length: Math.min(Math.ceil(count / 5), 3) }).map((_, i) => (
-                    <Flame
-                      key={i}
-                      className={`w-3.5 h-3.5 animate-pulse group-hover:scale-125 group-hover:brightness-125 transition-all duration-300 ${
-                        Math.min(Math.ceil(count / 5), 3) >= 3
-                          ? "text-orange-500 fill-orange-500/50 group-hover:text-orange-400 group-hover:fill-orange-400/60"
-                          : Math.min(Math.ceil(count / 5), 3) >= 2
-                          ? "text-amber-500 fill-amber-500/40 group-hover:text-amber-400 group-hover:fill-amber-400/50"
-                          : "text-foreground/50 fill-foreground/10 group-hover:text-foreground/70 group-hover:fill-foreground/20"
-                      }`}
-                      strokeWidth={1.8}
-                      style={{ animationDelay: `${i * 0.2}s` }}
-                    />
-                  ))}
-                </span>
-                <span className="font-display text-[10px] uppercase tracking-wider text-foreground">
-                  {name}
-                </span>
-                <span className="text-[8px] font-body text-foreground/30">
-                  {count}
-                </span>
-              </Link>
-            );
-          })}
+          {brands.map(({ name, count }) => (
+            <Link
+              key={name}
+              to={`/brand/${encodeURIComponent(name)}`}
+              className="group flex items-center gap-2 min-w-fit shrink-0 opacity-50 hover:opacity-100 transition-opacity duration-200"
+            >
+              <span className="font-display text-[10px] uppercase tracking-wider text-foreground">
+                {name}
+              </span>
+              <span className="text-[8px] font-body text-foreground/30">
+                {count}
+              </span>
+            </Link>
+          ))}
         </div>
       </div>
     </section>

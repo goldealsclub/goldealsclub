@@ -38,7 +38,7 @@ const FlameIndicator = ({ count, className = "", size = "md" }: FlameIndicatorPr
       {Array.from({ length: count }).map((_, i) => (
         <Flame
           key={i}
-          className={`${sizeClasses[size]} drop-shadow-sm ${
+          className={`${sizeClasses[size]} drop-shadow-sm animate-[flicker_1.5s_ease-in-out_infinite] ${
             isHot
               ? "text-orange-500 fill-orange-500/50"
               : isGood
@@ -46,6 +46,7 @@ const FlameIndicator = ({ count, className = "", size = "md" }: FlameIndicatorPr
               : "text-foreground/50 fill-foreground/10"
           }`}
           strokeWidth={1.8}
+          style={{ animationDelay: `${i * 0.3}s` }}
         />
       ))}
     </span>
