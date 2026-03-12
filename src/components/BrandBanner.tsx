@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
 import { Deal } from "@/lib/data";
 import { useMemo, useEffect, useState } from "react";
-import brandAdidas from "@/assets/brand-adidas.png";
-import brandJd from "@/assets/brand-jdsports.png";
+import brandNike from "@/assets/brand-nike.svg";
+import brandAdidas from "@/assets/brand-adidas.svg";
 
 const brandLogos: Record<string, string> = {
+  Nike: brandNike,
+  nike: brandNike,
   Adidas: brandAdidas,
   adidas: brandAdidas,
-  "JD Sports": brandJd,
 };
 
 interface BrandBannerProps {
@@ -40,7 +41,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
       }`}
     >
       <div className="container mx-auto px-4">
-        <div className="flex items-center gap-5 overflow-x-auto py-2 scrollbar-hide">
+        <div className="flex items-center gap-6 overflow-x-auto py-2 scrollbar-hide">
           {brands.map(({ name, count }) => {
             const logo = brandLogos[name];
             return (
@@ -53,7 +54,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
                   <img
                     src={logo}
                     alt={name}
-                    className="h-4 w-auto object-contain dark:invert"
+                    className="h-5 w-auto object-contain"
                   />
                 ) : (
                   <span className="font-display text-[10px] uppercase tracking-wider text-foreground font-bold">
