@@ -62,11 +62,9 @@ function upgradeImageUrl(url: string): string {
   if (url.includes("assets.adidas.com") && url.includes("w_600")) {
     return url.replace("w_600", "w_960");
   }
-  // JD Sports / Amplience: remove forced height (white side/border padding) and increase width
+  // JD Sports / Amplience: keep original dimensions, just ensure matching background
   if (url.includes("amplience.net")) {
-    let adjusted = url.replace(/([?&])w=\d+/, "$1w=900").replace(/&h=\d+/g, "");
-    if (!adjusted.includes("bg=")) adjusted += "&bg=f0efed";
-    return adjusted;
+    return url;
   }
   return url;
 }
