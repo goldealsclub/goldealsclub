@@ -66,6 +66,15 @@ function upgradeImageUrl(url: string): string {
   if (url.includes("amplience.net")) {
     return url;
   }
+  // Snipes: convert landscape padded images to square filled images
+  if (url.includes("asset.snipes.com")) {
+    return url
+      .replace(/w_\d+/, "w_800")
+      .replace(/h_\d+/, "h_800")
+      .replace("c_pad", "c_fill")
+      .replace(/,bo_\d+px_solid_rgb:[a-fA-F0-9]+/, "")
+      .replace(/,b_rgb:[a-fA-F0-9]+/, "");
+  }
   return url;
 }
 
