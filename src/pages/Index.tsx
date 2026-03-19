@@ -79,6 +79,54 @@ const Index = () => {
         </section>
       )}
 
+      {/* Nike Spotlight */}
+      {(() => {
+        const nikeDeals = deals.filter(d => d.brand.toLowerCase() === "nike" || d.source?.toLowerCase() === "nike").sort(sortByDate);
+        return nikeDeals.length > 0 ? (
+          <section className="bg-foreground text-background">
+            <div className="container mx-auto px-4 py-20">
+              <div className="flex items-end justify-between mb-12">
+                <div>
+                  <h2 className="font-display text-2xl md:text-3xl tracking-wider">Nike</h2>
+                  <p className="font-body text-xs text-background/50 mt-2">{nikeDeals.length} offres exclusives</p>
+                </div>
+                <Link to="/brand/Nike" className="text-[10px] font-display uppercase tracking-[0.15em] text-background/40 hover:text-background transition-colors flex items-center gap-1">
+                  Tout voir <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+                </Link>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-background/10">
+                {nikeDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
+                  <DealCard key={deal.id} deal={deal} />
+                ))}
+              </div>
+            </div>
+          </section>
+        ) : null;
+      })()}
+
+      {/* Snipes Spotlight */}
+      {(() => {
+        const snipesDeals = deals.filter(d => d.source?.toLowerCase() === "snipes" || d.merchant?.toLowerCase().includes("snipes")).sort(sortByDate);
+        return snipesDeals.length > 0 ? (
+          <section className="container mx-auto px-4 py-20">
+            <div className="flex items-end justify-between mb-12">
+              <div>
+                <h2 className="font-display text-2xl md:text-3xl tracking-wider">Snipes</h2>
+                <p className="font-body text-xs text-foreground/50 mt-2">{snipesDeals.length} offres sélectionnées</p>
+              </div>
+              <Link to="/brand/Snipes" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
+                Tout voir <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+              {snipesDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
+                <DealCard key={deal.id} deal={deal} />
+              ))}
+            </div>
+          </section>
+        ) : null;
+      })()}
+
       {/* Categories */}
       <section className="bg-sable/30">
         <div className="container mx-auto px-4 py-20">
