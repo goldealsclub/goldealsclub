@@ -143,7 +143,20 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     if (filters.maxPrice !== null) result = result.filter((d) => (d.sale_price ?? 0) <= filters.maxPrice!);
     if (filters.minDiscount !== null) result = result.filter((d) => (d.discount_percent ?? 0) >= filters.minDiscount!);
 
+    // Boost Snipes & Nike to the top
+    const isBoost = (d: Deal) => {
+      const src = d.source?.toLowerCase() || "";
+      const merchant = d.merchant?.toLowerCase() || "";
+      const brand = d.brand?.toLowerCase() || "";
+      if (src === "snipes" || merchant.includes("snipes")) return 2;
+      if (brand === "nike" || src === "nike") return 1;
+      return 0;
+    };
+
     result.sort((a, b) => {
+      const boostDiff = isBoost(b) - isBoost(a);
+      if (boostDiff !== 0) return boostDiff;
+
       if (sort === "discount") return (b.discount_percent ?? 0) - (a.discount_percent ?? 0);
       if (sort === "popularity") return b.popularity - a.popularity;
       if (sort === "priceAsc") return (a.sale_price ?? 0) - (b.sale_price ?? 0);
