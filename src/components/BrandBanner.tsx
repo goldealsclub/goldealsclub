@@ -61,7 +61,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
                     {name}
                   </span>
                 )}
-                <span className="text-[8px] font-body text-foreground/30">
+                <span className="text-[11px] font-body font-semibold text-foreground/60">
                   {count}
                 </span>
               </Link>
