@@ -60,11 +60,20 @@ const Header = () => {
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
       {/* Partner bar */}
-      <div className="bg-primary text-primary-foreground">
-        <div className="container mx-auto px-4 flex items-center justify-center gap-1.5 h-6">
-          <span className="text-[9px] font-display uppercase tracking-[0.2em]">
-            En partenariat avec <span className="font-bold">Snipes</span> & <span className="font-bold">Kappa</span>
-          </span>
+      <div className="border-b border-foreground/6 bg-muted/20">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-3 h-7">
+          <span className="text-[9px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
+          <div className="flex items-center gap-3">
+            <Link to="/brand/Snipes" className="flex items-center">
+              <img src="/partners/snipes-logo.png" alt="Snipes" className="h-3.5 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling && ((e.target as HTMLImageElement).nextElementSibling as HTMLElement).classList.remove('hidden'); }} />
+              <span className="hidden font-display text-[10px] uppercase tracking-wider font-bold text-[#E30613]">Snipes</span>
+            </Link>
+            <span className="text-foreground/20 text-[10px]">&</span>
+            <Link to="/brand/Kappa" className="flex items-center">
+              <img src="/partners/kappa-logo.png" alt="Kappa" className="h-3.5 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling && ((e.target as HTMLImageElement).nextElementSibling as HTMLElement).classList.remove('hidden'); }} />
+              <span className="hidden font-display text-[10px] uppercase tracking-wider font-bold text-[#1B3C8F]">Kappa</span>
+            </Link>
+          </div>
         </div>
       </div>
       {/* Update date bar */}
