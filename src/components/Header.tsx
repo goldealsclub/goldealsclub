@@ -32,9 +32,22 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Track scroll for compact header
+  // Track scroll with hysteresis to prevent jitter
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          setScrolled((prev) => {
+            if (prev && window.scrollY < 30) return false;
+            if (!prev && window.scrollY > 80) return true;
+            return prev;
+          });
+          ticking = false;
+        });
+      }
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
