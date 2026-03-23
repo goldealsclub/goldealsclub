@@ -119,17 +119,17 @@ function genderToLabel(gender: Gender): string {
 
 /** Infer category from title keywords when source category seems wrong */
 function inferCategory(category: string, title: string): Category {
-  const t = (title || "").toLowerCase();
+  const t = ` ${(title || "").toLowerCase()} `;
 
   // Sneakers – check first so shoes aren't caught by other rules
-  const sneakerKw = ["sneaker","basket ","baskets","chaussure","shoe","footwear","air max","air force","dunk","jordan post","jordan 1 ","jordan 4 ","jordan 5 ","jordan 11","yeezy","new balance ","574","990","2002r","gel-","gel ","asics","old skool","sk8-","chuck taylor","converse","all star","stan smith","superstar","forum","gazelle","samba","campus","ozweego","ultraboost","slide","mule","sandale","tong","tongs","adilette","claquette","arizona eva","dr. martens","dr martens","vans ","era "];
+  const sneakerKw = ["sneaker","basket ","baskets","chaussure","shoe","footwear","air max","air force","dunk","jordan post","jordan 1 ","jordan 4 ","jordan 5 ","jordan 11","yeezy","new balance ","574","990","2002r","gel-","gel ","asics","old skool","sk8-","chuck taylor","converse","all star","stan smith","superstar","forum","gazelle","samba","campus","ozweego","ultraboost","slide","mule","sandale","tong","tongs","adilette","claquette","arizona eva","dr. martens","dr martens","vans ","era ","runner ","runner,","palermo","suede ","classic az","croco ","offcourt","slingback","reebok classic","puma cali"];
   if (sneakerKw.some(k => t.includes(k))) return "sneakers";
 
-  const tshirtKw = ["t-shirt","tee ","tee,","tee-","jersey","polo","maillot","débardeur","tank top","tanktop","shortsleeve","short sleeve","short-sleeve","crew ","trikot","chemise","pintuck t ","cropped t ","script ","embleme","baseball shirt","baseballshirt"];
-  const hoodieKw = ["hoodie","sweat","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top"];
-  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","coupe-vent","bomber","puffer","vest ","gilet","weste","denim vest"];
-  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short ","shorts","bermuda","cargo","jogging","jean ","jeans","denim","flared","slim fit","baggy","pintuck","survêtement","ensemble","trainingsanzüge"];
-  const accessKw = ["casquette","cap ","cap,","sac ","bag ","bag,","backpack","bagpack","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","9fifty","59fifty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain","bikini","trunk ","trunks","cache-cou","cache-oreilles","brassard","bracelet","caleçon","boxer","boxers","briefs","underwear","slip ","underpant","sous-vêtement","blitzing","knit ","cuff ","fitted ","visor","brim","tumbler","stanley","quencher","ball ","deflated","romper","hipbag","fanny"];
+  const tshirtKw = ["t-shirt","tee ","tee,","tee-","jersey","polo ","maillot","débardeur","tank top","tanktop","shortsleeve","short sleeve","short-sleeve"," crew ","trikot","chemise","pintuck t ","cropped t ","baseball shirt","baseballshirt"," shirt ","shirt,"];
+  const hoodieKw = ["hoodie","sweat","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","zip "];
+  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","wind breaker","coupe-vent","bomber","puffer","gilet","weste","overshirt"];
+  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short ","shorts","bermuda","cargo","jogging","jean ","jeans","denim","flared","slim fit","baggy","survêtement","ensemble","trainingsanzüge","straight tp","tracküants","trackpant"];
+  const accessKw = ["casquette","cap ","cap,","sac ","bag ","bag,","backpack","bagpack","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","9fifty","59fifty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain ","bikini","trunk ","trunks","cache-cou","cache-oreilles","brassard","bracelet","caleçon","boxer","boxers","briefs","underwear","slip ","underpant","sous-vêtement","blitzing","knit ","cuff ","fitted ","visor","brim","tumbler","stanley","quencher"," ball ","deflated","romper","hipbag","fanny","springer","duffle","airliner","casio","watch ","montre"];
 
   if (tshirtKw.some(k => t.includes(k))) return "t-shirts";
   if (hoodieKw.some(k => t.includes(k))) return "hoodies";
