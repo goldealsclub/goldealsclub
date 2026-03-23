@@ -227,25 +227,6 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {/* Mobile CTA */}
-            {isHomePage ? (
-              <button
-                onClick={() => { handleCtaClick(); setMenuOpen(false); }}
-                className="flex items-center justify-center gap-2 mt-2 px-4 py-3 bg-primary text-primary-foreground text-xs font-display uppercase tracking-[0.15em] rounded-sm"
-              >
-                <Flame className="w-4 h-4" />
-                {t.heroCta}
-              </button>
-            ) : (
-              <Link
-                to="/"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 mt-2 px-4 py-3 bg-primary text-primary-foreground text-xs font-display uppercase tracking-[0.15em] rounded-sm"
-              >
-                <Flame className="w-4 h-4" />
-                {t.heroCta}
-              </Link>
-            )}
             {/* Mobile language selector */}
             <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-foreground/5">
               {languages.map((l) => (
