@@ -144,10 +144,8 @@ function inferCategory(category: string, title: string): Category {
 function normalizeDeals(raw: any[]): Deal[] {
   return raw
     .filter((d) => {
-      // Exclude deals with broken/placeholder Snipes images
-      if (!isValidSnipesImage(d.image_url || "")) return false;
       // Exclude deals with no image
-      if (!d.image_url || d.image_url.trim() === "") return false;
+      if (!isValidImage(d.image_url || "")) return false;
       return true;
     })
     .map((d, i) => {
