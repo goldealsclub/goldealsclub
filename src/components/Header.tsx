@@ -59,6 +59,14 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
+      {/* Partner bar */}
+      <div className="bg-primary text-primary-foreground">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-1.5 h-6">
+          <span className="text-[9px] font-display uppercase tracking-[0.2em]">
+            En partenariat avec <span className="font-bold">Snipes</span> & <span className="font-bold">Kappa</span>
+          </span>
+        </div>
+      </div>
       {/* Update date bar */}
       {getLastUpdatedDate() && (
         <div className="bg-primary/5 border-b border-foreground/6">

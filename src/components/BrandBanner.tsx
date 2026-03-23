@@ -113,11 +113,6 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
                     {name}
                   </span>
                 )}
-                {PARTNERS.has(name.toLowerCase()) && (
-                  <span className="text-[7px] font-display uppercase tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded-sm">
-                    Partenaire
-                  </span>
-                )}
                 <span className="text-[11px] font-body font-semibold text-foreground/60">
                   {count}
                 </span>
