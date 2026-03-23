@@ -72,6 +72,19 @@ const Header = () => {
           </div>
         </div>
       )}
+      {/* Partner bar */}
+      <div className="border-b border-foreground/6 bg-background">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-5 h-14">
+          <span className="text-[10px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
+          <Link to="/brand/Snipes" className="hover:opacity-80 transition-opacity shrink-0">
+            <img src={partnerSnipes} alt="Snipes" className="h-10 md:h-11 w-auto object-contain" />
+          </Link>
+          <span className="text-foreground/20 text-sm">×</span>
+          <Link to="/brand/Kappa" className="hover:opacity-80 transition-opacity shrink-0">
+            <img src={partnerKappa} alt="Kappa" className="h-11 md:h-12 w-auto object-contain" />
+          </Link>
+        </div>
+      </div>
       {/*
       {/* Gender bar */}
       <div className="border-b border-foreground/6 bg-muted/30">
@@ -89,19 +102,6 @@ const Header = () => {
               {tab.label}
             </button>
           ))}
-        </div>
-      </div>
-      {/* Partner bar */}
-      <div className="border-b border-foreground/6 bg-background">
-        <div className="container mx-auto px-4 flex items-center justify-center gap-5 h-14">
-          <span className="text-[10px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
-          <Link to="/brand/Snipes" className="hover:opacity-80 transition-opacity shrink-0">
-            <img src={partnerSnipes} alt="Snipes" className="h-10 md:h-11 w-auto object-contain" />
-          </Link>
-          <span className="text-foreground/20 text-sm">×</span>
-          <Link to="/brand/Kappa" className="hover:opacity-80 transition-opacity shrink-0">
-            <img src={partnerKappa} alt="Kappa" className="h-11 md:h-12 w-auto object-contain" />
-          </Link>
         </div>
       </div>
       <div className="container mx-auto px-4">
