@@ -54,6 +54,14 @@ export function isTrustedMerchant(merchant: string): boolean {
   return false;
 }
 
+/** Check if a Snipes image URL is a usable product photo (not a placeholder/logo) */
+function isValidSnipesImage(url: string): boolean {
+  if (!url.includes("asset.snipes.com")) return true;
+  // Snipes placeholder thumbnails use small dimensions like w_527,h_274 with c_pad
+  if (/w_\d{2,3},h_\d{2,3}/.test(url) && url.includes("c_pad")) return false;
+  return true;
+}
+
 /** Upgrade Nike/Adidas thumbnail URLs to high-res & fix JD Sports framing */
 function upgradeImageUrl(url: string): string {
   if (url.includes("static.nike.com") && url.includes("t_PDP_144")) {
@@ -115,13 +123,17 @@ function genderToLabel(gender: Gender): string {
 /** Infer category from title keywords when source category seems wrong */
 function inferCategory(category: string, title: string): Category {
   const t = (title || "").toLowerCase();
-  const tshirtKw = ["t-shirt","tee ","tee,","jersey","polo","maillot","débardeur","tank top"];
-  const hoodieKw = ["hoodie","sweat","capuche","pullover","crew neck","crewneck"];
-  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","coupe-vent","bomber"];
-  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short","bermuda","cargo","jogging"];
-  const accessKw = ["casquette","cap ","sac ","bag ","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat "];
 
-  // Only re-categorize if the current category doesn't match the title
+  // Sneakers – check first so shoes aren't caught by other rules
+  const sneakerKw = ["sneaker","basket ","baskets","chaussure","shoe","footwear","air max","air force","dunk","jordan ","yeezy","new balance ","574","990","2002r","gel-","old skool","sk8-","chuck taylor","converse","stan smith","superstar","forum","gazelle","samba","campus","ozweego","ultraboost","slide","mule","sandale","tong","tongs","adilette","claquette","arizona evA"];
+  if (sneakerKw.some(k => t.includes(k))) return "sneakers";
+
+  const tshirtKw = ["t-shirt","tee ","tee,","jersey","polo","maillot","débardeur","tank top","tanktop","shortsleeve","short sleeve","crew ","trikot","romper","chemise"];
+  const hoodieKw = ["hoodie","sweat","capuche","pullover","crew neck","crewneck","sweater","sweatjacket"];
+  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","coupe-vent","bomber","puffer","vest ","gilet"];
+  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short ","shorts","bermuda","cargo","jogging","jean ","jeans","denim","flared","slim fit","baggy","pintuck","survêtement","ensemble","trainingsanzüge"];
+  const accessKw = ["casquette","cap ","sac ","bag ","bag,","backpack","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain","bikini","trunk ","trunks","cache-cou","cache-oreilles","brassard","bracelet"];
+
   if (tshirtKw.some(k => t.includes(k))) return "t-shirts";
   if (hoodieKw.some(k => t.includes(k))) return "hoodies";
   if (jacketKw.some(k => t.includes(k))) return "vestes";
@@ -131,9 +143,17 @@ function inferCategory(category: string, title: string): Category {
   return category as Category;
 }
 
-/** Normalize raw JSON deals */
+/** Normalize raw JSON deals, filtering out broken entries */
 function normalizeDeals(raw: any[]): Deal[] {
-  return raw.map((d, i) => {
+  return raw
+    .filter((d) => {
+      // Exclude deals with broken/placeholder Snipes images
+      if (!isValidSnipesImage(d.image_url || "")) return false;
+      // Exclude deals with no image
+      if (!d.image_url || d.image_url.trim() === "") return false;
+      return true;
+    })
+    .map((d, i) => {
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
     const category = inferCategory(d.category || "autres", d.title || "");
     let discountPercent = d.discount_percent ?? null;
@@ -166,8 +186,6 @@ function normalizeDeals(raw: any[]): Deal[] {
     };
   });
 }
-
-// Mutable shared array – all importers see the same reference
 export const deals: Deal[] = [];
 let _loading = false;
 let _loaded = false;
