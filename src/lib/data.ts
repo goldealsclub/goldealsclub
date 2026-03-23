@@ -128,11 +128,11 @@ function inferCategory(category: string, title: string): Category {
   const sneakerKw = ["sneaker","basket ","baskets","chaussure","shoe","footwear","air max","air force","dunk","jordan ","yeezy","new balance ","574","990","2002r","gel-","old skool","sk8-","chuck taylor","converse","stan smith","superstar","forum","gazelle","samba","campus","ozweego","ultraboost","slide","mule","sandale","tong","tongs","adilette","claquette","arizona evA"];
   if (sneakerKw.some(k => t.includes(k))) return "sneakers";
 
-  const tshirtKw = ["t-shirt","tee ","tee,","jersey","polo","maillot","débardeur","tank top","tanktop","shortsleeve","short sleeve","crew ","trikot","romper"];
+  const tshirtKw = ["t-shirt","tee ","tee,","jersey","polo","maillot","débardeur","tank top","tanktop","shortsleeve","short sleeve","crew ","trikot","romper","chemise"];
   const hoodieKw = ["hoodie","sweat","capuche","pullover","crew neck","crewneck","sweater","sweatjacket"];
   const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","coupe-vent","bomber","puffer","vest ","gilet"];
-  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short ","shorts","bermuda","cargo","jogging","jean ","jeans","denim","flared","slim fit","baggy","pintuck"];
-  const accessKw = ["casquette","cap ","sac ","bag ","bag,","backpack","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain","bikini","trunk ","trunks"];
+  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short ","shorts","bermuda","cargo","jogging","jean ","jeans","denim","flared","slim fit","baggy","pintuck","survêtement","ensemble","trainingsanzüge"];
+  const accessKw = ["casquette","cap ","sac ","bag ","bag,","backpack","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain","bikini","trunk ","trunks","cache-cou","cache-oreilles","brassard","bracelet"];
 
   if (tshirtKw.some(k => t.includes(k))) return "t-shirts";
   if (hoodieKw.some(k => t.includes(k))) return "hoodies";
