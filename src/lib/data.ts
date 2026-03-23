@@ -117,19 +117,58 @@ function genderToLabel(gender: Gender): string {
   }
 }
 
+/** Known multi-word brands (order matters – check longer first) */
+const MULTI_WORD_BRANDS: string[] = [
+  "New Balance","New Era","Karl Kani","Polo Ralph Lauren","Polo Sport",
+  "Dr. Martens","Under Armour","Smoke Rise","Sergio Tacchini","True Religion",
+  "Von Dutch","Mitchell & Ness","G-SHOCK","Another Cotton",
+];
+
+/** Single-word brands we recognise from Snipes titles */
+const SINGLE_WORD_BRANDS = new Set([
+  "Nike","adidas","Jordan","UGG","ASICS","PUMA","Converse","Vans","Pegador",
+  "Dickies","Lacoste","Timberland","On","Prohibited","HALO","Salomon",
+  "Reebok","Fila","Casio","Carhartt","Champion","Ellesse","Kappa","Starter",
+  "Columbia","Levi's","Stance","Oakley","The North Face","Tommy","Birkenstock",
+  "Saucony","Crocs","Merrell","Clarks","Hoka","Stanley","2Y","Small",
+]);
+
+/** Extract real brand from title when merchant set brand to "Snipes" */
+function inferBrand(brand: string, title: string, merchant: string): string {
+  // Only fix when the brand is the merchant itself (Snipes issue)
+  if (brand.toLowerCase() !== "snipes" && brand.toLowerCase() !== "kappa") return brand;
+  if (brand.toLowerCase() === "kappa") return "Kappa";
+
+  const t = title || "";
+
+  // Try multi-word brands first
+  for (const mw of MULTI_WORD_BRANDS) {
+    if (t.toLowerCase().startsWith(mw.toLowerCase())) return mw;
+  }
+
+  // Try single-word brand (first word of title)
+  const firstWord = t.split(/\s+/)[0];
+  if (firstWord && SINGLE_WORD_BRANDS.has(firstWord)) return firstWord;
+
+  // Fallback: use first word capitalised
+  if (firstWord && firstWord.length > 1) return firstWord;
+
+  return brand;
+}
+
 /** Infer category from title keywords when source category seems wrong */
 function inferCategory(category: string, title: string): Category {
   const t = ` ${(title || "").toLowerCase()} `;
 
   // Sneakers – check first so shoes aren't caught by other rules
-  const sneakerKw = ["sneaker","basket ","baskets","chaussure","shoe","footwear","air max","air force","dunk","jordan post","jordan 1 ","jordan 4 ","jordan 5 ","jordan 11","yeezy","new balance ","574","990","2002r","gel-","gel ","asics","old skool","sk8-","chuck taylor","converse","all star","stan smith","superstar","forum","gazelle","samba","campus","ozweego","ultraboost","slide","mule","sandale","tong","tongs","adilette","claquette","arizona eva","dr. martens","dr martens","vans ","era ","runner ","runner,","palermo","suede ","classic az","croco ","offcourt","slingback","reebok classic","puma cali"];
+  const sneakerKw = ["sneaker","basket ","baskets","chaussure","shoe","footwear","air max","air force","dunk","jordan post","jordan 1 ","jordan 4 ","jordan 5 ","jordan 11","yeezy","new balance ","574","990","2002r","gel-","gel ","asics","old skool","sk8-","chuck taylor","converse","all star","stan smith","superstar","forum","gazelle","samba","campus","ozweego","ultraboost","slide","mule","sandale","tong","tongs","adilette","claquette","arizona eva","dr. martens","dr martens","vans ","era ","runner ","runner,","palermo","suede ","classic az","croco ","offcourt","slingback","reebok classic","puma cali","knu skool","lowpro","stealthform","cloudmonster","cloudswift","speedcross","xt-6","v2 ","Made in ","fresh foam","fuelcell","1906","hoka ","clifton","bondi ","arahi","timberland ","premium 6","chukka","boat shoe","loafer","mocassin","espadrille","sabot","birkenstock"];
   if (sneakerKw.some(k => t.includes(k))) return "sneakers";
 
-  const tshirtKw = ["t-shirt","tee ","tee,","tee-","jersey","polo ","maillot","débardeur","tank top","tanktop","shortsleeve","short sleeve","short-sleeve"," crew ","trikot","chemise","pintuck t ","cropped t ","baseball shirt","baseballshirt"," shirt ","shirt,"];
-  const hoodieKw = ["hoodie","sweat","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","zip "];
-  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","wind breaker","coupe-vent","bomber","puffer","gilet","weste","overshirt"];
-  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short ","shorts","bermuda","cargo","jogging","jean ","jeans","denim","flared","slim fit","baggy","survêtement","ensemble","trainingsanzüge","straight tp","tracküants","trackpant"];
-  const accessKw = ["casquette","cap ","cap,","sac ","bag ","bag,","backpack","bagpack","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","9fifty","59fifty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain ","bikini","trunk ","trunks","cache-cou","cache-oreilles","brassard","bracelet","caleçon","boxer","boxers","briefs","underwear","slip ","underpant","sous-vêtement","blitzing","knit ","cuff ","fitted ","visor","brim","tumbler","stanley","quencher"," ball ","deflated","romper","hipbag","fanny","springer","duffle","airliner","casio","watch ","montre"];
+  const tshirtKw = ["t-shirt","tee ","tee,","tee-","jersey","polo ","maillot","débardeur","tank top","tanktop","shortsleeve","short sleeve","short-sleeve"," crew ","trikot","chemise","pintuck t ","cropped t ","baseball shirt","baseballshirt"," shirt ","shirt,","crop top"];
+  const hoodieKw = ["hoodie","sweat","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","zip ","fleece"];
+  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","wind breaker","coupe-vent","bomber","puffer","gilet","weste","overshirt","vest ","anorak","softshell","teddy "];
+  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short ","shorts","bermuda","cargo","jogging","jean ","jeans","denim","flared","slim fit","baggy","survêtement","ensemble","trainingsanzüge","straight tp","tracküants","trackpant","track pant","sweatpant","training pant"];
+  const accessKw = ["casquette","cap ","cap,","sac ","bag ","bag,","backpack","bagpack","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","9fifty","59fifty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain ","bikini","trunk ","trunks","cache-cou","cache-oreilles","brassard","bracelet","caleçon","boxer","boxers","briefs","underwear","slip ","underpant","sous-vêtement","blitzing","knit ","cuff ","fitted ","visor","brim","tumbler","stanley","quencher"," ball ","deflated","romper","hipbag","fanny","springer","duffle","airliner","casio","watch ","montre","snapback","bucket ","trucker","strapback","dad cap","waist bag","mini bag","shoulder bag","tote ","clutch","keychain","porte-clé","sunglasses","lunettes"];
 
   if (tshirtKw.some(k => t.includes(k))) return "t-shirts";
   if (hoodieKw.some(k => t.includes(k))) return "hoodies";
@@ -140,6 +179,8 @@ function inferCategory(category: string, title: string): Category {
   return category as Category;
 }
 
+
+
 /** Normalize raw JSON deals, filtering out broken entries */
 function normalizeDeals(raw: any[]): Deal[] {
   return raw
@@ -149,6 +190,7 @@ function normalizeDeals(raw: any[]): Deal[] {
       return true;
     })
     .map((d, i) => {
+    const brand = inferBrand(d.brand || "", d.title || "", d.merchant || "");
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
     const category = inferCategory(d.category || "autres", d.title || "");
     let discountPercent = d.discount_percent ?? null;
@@ -168,6 +210,7 @@ function normalizeDeals(raw: any[]): Deal[] {
       ...d,
       id: d.id || `deal-${i}-${(d.title || "").slice(0, 30).replace(/\s+/g, "-").toLowerCase()}`,
       image_url: upgradeImageUrl(d.image_url || ""),
+      brand,
       category,
       gender,
       gender_label: genderToLabel(gender),
