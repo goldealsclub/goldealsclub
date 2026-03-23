@@ -210,6 +210,7 @@ function normalizeDeals(raw: any[]): Deal[] {
       ...d,
       id: d.id || `deal-${i}-${(d.title || "").slice(0, 30).replace(/\s+/g, "-").toLowerCase()}`,
       image_url: upgradeImageUrl(d.image_url || ""),
+      brand,
       category,
       gender,
       gender_label: genderToLabel(gender),
