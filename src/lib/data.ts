@@ -119,9 +119,9 @@ function genderToLabel(gender: Gender): string {
 
 /** Known multi-word brands (order matters – check longer first) */
 const MULTI_WORD_BRANDS: string[] = [
-  "New Balance","New Era","Karl Kani","Polo Ralph Lauren","Polo Sport",
+  "Low Lights Studios","New Balance","New Era","Karl Kani","Polo Ralph Lauren","Polo Sport",
   "Dr. Martens","Under Armour","Smoke Rise","Sergio Tacchini","True Religion",
-  "Von Dutch","Mitchell & Ness","G-SHOCK","Another Cotton",
+  "Von Dutch","Mitchell & Ness","G-SHOCK","Another Cotton","Nike SB",
 ];
 
 /** Single-word brands we recognise from Snipes titles */
