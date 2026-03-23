@@ -62,11 +62,9 @@ function upgradeImageUrl(url: string): string {
   if (url.includes("assets.adidas.com") && url.includes("w_600")) {
     return url.replace("w_600", "w_960");
   }
-  // JD Sports / Amplience: keep original URL to avoid ORB blocking
   if (url.includes("amplience.net")) {
     return url;
   }
-  // Snipes: convert landscape padded images to square filled images
   if (url.includes("asset.snipes.com")) {
     return url
       .replace(/w_\d+/, "w_800")
@@ -94,7 +92,6 @@ function inferGender(genderField: string, description: string, title: string): G
     return "enfant";
   }
 
-  // Fallback to the original gender field
   const g = (genderField || "").toLowerCase();
   if (g === "homme" || g === "men") return "homme";
   if (g === "femme" || g === "women") return "femme";
@@ -119,13 +116,11 @@ function genderToLabel(gender: Gender): string {
 function normalizeDeals(raw: any[]): Deal[] {
   return raw.map((d, i) => {
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
-    // Recalculate discount_percent from actual prices when both are available
     let discountPercent = d.discount_percent ?? null;
     if (d.original_price && d.sale_price && d.original_price > d.sale_price) {
       discountPercent = Math.round(((d.original_price - d.sale_price) / d.original_price) * 100);
     }
 
-    // Derive deal_level and flame_count from recalculated discount
     let dealLevel = d.deal_level || "promo-normale";
     let flameCount = d.flame_count ?? 1;
     if (discountPercent !== null) {
@@ -151,7 +146,37 @@ function normalizeDeals(raw: any[]): Deal[] {
   });
 }
 
-export const deals: Deal[] = normalizeDeals(dealsJson as any[]);
+// Mutable shared array – all importers see the same reference
+export const deals: Deal[] = [];
+let _loading = false;
+let _loaded = false;
+let _listeners: Array<() => void> = [];
+
+/** Fetch and cache deals from JSON file */
+export async function loadDeals(): Promise<Deal[]> {
+  if (_loaded) return deals;
+  if (_loading) {
+    return new Promise((resolve) => {
+      _listeners.push(() => resolve(deals));
+    });
+  }
+  _loading = true;
+  try {
+    const resp = await fetch("/deals.json");
+    const raw = await resp.json();
+    const normalized = normalizeDeals(raw);
+    deals.length = 0;
+    deals.push(...normalized);
+    _loaded = true;
+  } catch (e) {
+    console.error("Failed to load deals:", e);
+    _loaded = true;
+  }
+  _loading = false;
+  _listeners.forEach((fn) => fn());
+  _listeners = [];
+  return deals;
+}
 
 import catSneakers from "@/assets/cat-sneakers.jpg";
 import catJackets from "@/assets/cat-jackets.jpg";
@@ -173,21 +198,17 @@ export const categoryList: { key: Category; image: string }[] = [
 /** Get the most recent deal date as the "last updated" timestamp */
 export function getLastUpdatedDate(): string {
   if (deals.length === 0) return "";
-  const latest = deals.reduce((max, d) => {
-    const t = new Date(d.detected_at || d.promo_start_date).getTime();
+  const latest = deals.reduce((max, deal) => {
+    const t = new Date(deal.detected_at || deal.promo_start_date).getTime();
     return t > max ? t : max;
   }, 0);
   return new Date(latest).toISOString();
 }
 
 // Sort by promo_start_date desc, then detected_at desc
-function sortByDate(a: Deal, b: Deal): number {
+export function sortByDate(a: Deal, b: Deal): number {
   const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
   const dateB = new Date(b.promo_start_date || b.detected_at).getTime();
   if (dateB !== dateA) return dateB - dateA;
   return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
 }
-
-export const hotDeals = deals.filter(d => d.deal_level === "hot-deal").sort(sortByDate);
-export const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortByDate);
-export const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortByDate);
