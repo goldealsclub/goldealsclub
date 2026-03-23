@@ -12,6 +12,8 @@ const brandLogos: Record<string, string> = {
   adidas: brandAdidas,
 };
 
+const PARTNERS = new Set(["snipes", "kappa"]);
+
 interface BrandBannerProps {
   deals: Deal[];
 }
