@@ -54,12 +54,9 @@ export function isTrustedMerchant(merchant: string): boolean {
   return false;
 }
 
-/** Check if a Snipes image URL is a usable product photo (not a placeholder/logo) */
-function isValidSnipesImage(url: string): boolean {
-  if (!url.includes("asset.snipes.com")) return true;
-  // Snipes placeholder thumbnails use small dimensions like w_527,h_274 with c_pad
-  if (/w_\d{2,3},h_\d{2,3}/.test(url) && url.includes("c_pad")) return false;
-  return true;
+/** Check if an image URL is usable (not empty) */
+function isValidImage(url: string): boolean {
+  return !!url && url.trim() !== "";
 }
 
 /** Upgrade Nike/Adidas thumbnail URLs to high-res & fix JD Sports framing */
@@ -147,10 +144,8 @@ function inferCategory(category: string, title: string): Category {
 function normalizeDeals(raw: any[]): Deal[] {
   return raw
     .filter((d) => {
-      // Exclude deals with broken/placeholder Snipes images
-      if (!isValidSnipesImage(d.image_url || "")) return false;
       // Exclude deals with no image
-      if (!d.image_url || d.image_url.trim() === "") return false;
+      if (!isValidImage(d.image_url || "")) return false;
       return true;
     })
     .map((d, i) => {
