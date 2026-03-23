@@ -8,6 +8,8 @@ import { useGender } from "@/lib/gender-context";
 import type { Gender } from "@/lib/data";
 import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
+import partnerSnipes from "@/assets/partner-snipes.png";
+import partnerKappa from "@/assets/partner-kappa.png";
 import BrandBanner from "@/components/BrandBanner";
 import SearchOverlay from "@/components/SearchOverlay";
 import AlertPreferences from "@/components/AlertPreferences";
@@ -59,23 +61,6 @@ const Header = () => {
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
-      {/* Partner bar */}
-      <div className="border-b border-foreground/6 bg-muted/20">
-        <div className="container mx-auto px-4 flex items-center justify-center gap-3 h-7">
-          <span className="text-[9px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
-          <div className="flex items-center gap-3">
-            <Link to="/brand/Snipes" className="flex items-center">
-              <img src="/partners/snipes-logo.png" alt="Snipes" className="h-3.5 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling && ((e.target as HTMLImageElement).nextElementSibling as HTMLElement).classList.remove('hidden'); }} />
-              <span className="hidden font-display text-[10px] uppercase tracking-wider font-bold text-[#E30613]">Snipes</span>
-            </Link>
-            <span className="text-foreground/20 text-[10px]">&</span>
-            <Link to="/brand/Kappa" className="flex items-center">
-              <img src="/partners/kappa-logo.png" alt="Kappa" className="h-3.5 w-auto object-contain" onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; (e.target as HTMLImageElement).nextElementSibling && ((e.target as HTMLImageElement).nextElementSibling as HTMLElement).classList.remove('hidden'); }} />
-              <span className="hidden font-display text-[10px] uppercase tracking-wider font-bold text-[#1B3C8F]">Kappa</span>
-            </Link>
-          </div>
-        </div>
-      </div>
       {/* Update date bar */}
       {getLastUpdatedDate() && (
         <div className="bg-primary/5 border-b border-foreground/6">
@@ -104,6 +89,19 @@ const Header = () => {
               {tab.label}
             </button>
           ))}
+        </div>
+      </div>
+      {/* Partner bar */}
+      <div className="border-b border-foreground/6 bg-background">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-3 h-8">
+          <span className="text-[9px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
+          <Link to="/brand/Snipes" className="hover:opacity-80 transition-opacity">
+            <img src={partnerSnipes} alt="Snipes" className="h-5 w-auto object-contain" />
+          </Link>
+          <span className="text-foreground/20 text-[10px]">&</span>
+          <Link to="/brand/Kappa" className="hover:opacity-80 transition-opacity">
+            <img src={partnerKappa} alt="Kappa" className="h-6 w-auto object-contain" />
+          </Link>
         </div>
       </div>
       <div className="container mx-auto px-4">
