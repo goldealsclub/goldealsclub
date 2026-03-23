@@ -217,44 +217,6 @@ const Index = () => {
         </div>
       </section>
 
-      {/* Partners Spotlight */}
-      <section className="bg-primary/5 border-y border-foreground/8">
-        <div className="container mx-auto px-4 py-16">
-          <div className="text-center mb-10">
-            <span className="text-[9px] font-display uppercase tracking-[0.3em] text-primary/70">Partenaires officiels</span>
-            <h2 className="font-display text-2xl md:text-3xl tracking-wider mt-2">Nos Partenaires</h2>
-            <p className="font-body text-xs text-foreground/50 mt-2 max-w-md mx-auto">Des marques et enseignes de confiance avec qui nous collaborons pour vous dénicher les meilleurs deals.</p>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-            {[
-              { name: "Snipes", desc: "Retailer streetwear européen de référence", link: "/brand/Snipes" },
-              { name: "Kappa", desc: "Marque sportswear italienne iconique", link: "/brand/Kappa" },
-            ].map((partner) => {
-              const partnerDeals = deals.filter(d =>
-                d.brand.toLowerCase() === partner.name.toLowerCase() ||
-                d.source?.toLowerCase() === partner.name.toLowerCase() ||
-                d.merchant?.toLowerCase().includes(partner.name.toLowerCase())
-              );
-              return (
-                <Link
-                  key={partner.name}
-                  to={partner.link}
-                  className="group border border-foreground/10 bg-background p-8 flex flex-col items-center gap-3 hover:border-primary/30 hover:shadow-lg transition-all duration-300"
-                >
-                  <span className="text-[8px] font-display uppercase tracking-[0.25em] text-primary bg-primary/10 px-3 py-1 rounded-sm">Partenaire</span>
-                  <span className="font-display text-xl uppercase tracking-wider group-hover:text-primary transition-colors">{partner.name}</span>
-                  <span className="font-body text-xs text-foreground/50 text-center">{partner.desc}</span>
-                  <span className="font-body text-[10px] text-foreground/40 mt-1">{partnerDeals.length} offres disponibles</span>
-                  <span className="text-[10px] font-display uppercase tracking-[0.15em] text-primary/60 group-hover:text-primary mt-2 flex items-center gap-1 transition-colors">
-                    Voir les offres <ArrowRight className="w-3 h-3" strokeWidth={1.5} />
-                  </span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      </section>
-
       {/* Trusted Sellers */}
       <section className="container mx-auto px-4 py-20">
         <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.trustedSellers}</h2>
