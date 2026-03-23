@@ -112,10 +112,30 @@ function genderToLabel(gender: Gender): string {
   }
 }
 
+/** Infer category from title keywords when source category seems wrong */
+function inferCategory(category: string, title: string): Category {
+  const t = (title || "").toLowerCase();
+  const tshirtKw = ["t-shirt","tee ","tee,","jersey","polo","maillot","débardeur","tank top"];
+  const hoodieKw = ["hoodie","sweat","capuche","pullover","crew neck","crewneck"];
+  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","coupe-vent","bomber"];
+  const pantsKw = ["pantalon","jogger","pant ","pants","legging","short","bermuda","cargo","jogging"];
+  const accessKw = ["casquette","cap ","sac ","bag ","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat "];
+
+  // Only re-categorize if the current category doesn't match the title
+  if (tshirtKw.some(k => t.includes(k))) return "t-shirts";
+  if (hoodieKw.some(k => t.includes(k))) return "hoodies";
+  if (jacketKw.some(k => t.includes(k))) return "vestes";
+  if (pantsKw.some(k => t.includes(k))) return "pantalons";
+  if (accessKw.some(k => t.includes(k))) return "accessoires";
+
+  return category as Category;
+}
+
 /** Normalize raw JSON deals */
 function normalizeDeals(raw: any[]): Deal[] {
   return raw.map((d, i) => {
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
+    const category = inferCategory(d.category || "autres", d.title || "");
     let discountPercent = d.discount_percent ?? null;
     if (d.original_price && d.sale_price && d.original_price > d.sale_price) {
       discountPercent = Math.round(((d.original_price - d.sale_price) / d.original_price) * 100);
