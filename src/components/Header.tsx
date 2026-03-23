@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, Menu, X, RefreshCw, User, LogOut } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw, User } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
@@ -180,12 +180,12 @@ const Header = () => {
             {user ? (
               <>
                 <AlertPreferences />
-                <button onClick={signOut} className="p-2" title="Se déconnecter">
-                  <LogOut className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
-                </button>
+                <Link to="/profile" className="p-2" title="Mon compte">
+                  <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
+                </Link>
               </>
             ) : (
-              <Link to="/auth" className="p-2" title="Se connecter">
+              <Link to="/auth" state={{ from: location.pathname }} className="p-2" title="Se connecter">
                 <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
               </Link>
             )}
