@@ -74,9 +74,9 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const [showFilters, setShowFilters] = useState(false);
 
   // Use ALL deals for filter options so gender filtering doesn't hide categories
-  const allBrands = useMemo(() => getUniqueValues(allDealsGlobal, "brand"), []);
-  const allMerchants = useMemo(() => getUniqueValues(allDealsGlobal, "merchant"), []);
-  const allCategories = useMemo(() => getUniqueValues(allDealsGlobal, "category") as Category[], []);
+  const allBrands = useMemo(() => getUniqueValues(allDealsGlobal, "brand"), [allDealsGlobal.length]);
+  const allMerchants = useMemo(() => getUniqueValues(allDealsGlobal, "merchant"), [allDealsGlobal.length]);
+  const allCategories = useMemo(() => getUniqueValues(allDealsGlobal, "category") as Category[], [allDealsGlobal.length]);
 
   // Counters from sourceDeals (reflects current gender/page filter)
   const brandCounts = useMemo(() => {
