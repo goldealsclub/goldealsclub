@@ -91,6 +91,19 @@ const Header = () => {
           ))}
         </div>
       </div>
+      {/* Partner bar */}
+      <div className="border-b border-foreground/6 bg-background">
+        <div className="container mx-auto px-4 flex items-center justify-center gap-3 h-8">
+          <span className="text-[9px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
+          <Link to="/brand/Snipes" className="hover:opacity-80 transition-opacity">
+            <img src={partnerSnipes} alt="Snipes" className="h-5 w-auto object-contain" />
+          </Link>
+          <span className="text-foreground/20 text-[10px]">&</span>
+          <Link to="/brand/Kappa" className="hover:opacity-80 transition-opacity">
+            <img src={partnerKappa} alt="Kappa" className="h-6 w-auto object-contain" />
+          </Link>
+        </div>
+      </div>
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-20 md:h-24">
           <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
