@@ -131,6 +131,7 @@ const SINGLE_WORD_BRANDS = new Set([
   "Reebok","Fila","Casio","Carhartt","Champion","Ellesse","Kappa","Starter",
   "Columbia","Levi's","Stance","Oakley","The North Face","Tommy","Birkenstock",
   "Saucony","Crocs","Merrell","Clarks","Hoka","Stanley","2Y","Small",
+  "DC","Buffalo","Decibel","Eastpak","Umbro",
 ]);
 
 /** Extract real brand from title when merchant set brand to "Snipes" */
