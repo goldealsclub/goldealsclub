@@ -190,6 +190,7 @@ function normalizeDeals(raw: any[]): Deal[] {
       return true;
     })
     .map((d, i) => {
+    const brand = inferBrand(d.brand || "", d.title || "", d.merchant || "");
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
     const category = inferCategory(d.category || "autres", d.title || "");
     let discountPercent = d.discount_percent ?? null;
