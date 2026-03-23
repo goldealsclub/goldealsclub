@@ -8,6 +8,8 @@ import { useGender } from "@/lib/gender-context";
 import type { Gender } from "@/lib/data";
 import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
+import partnerSnipes from "@/assets/partner-snipes.png";
+import partnerKappa from "@/assets/partner-kappa.png";
 import BrandBanner from "@/components/BrandBanner";
 import SearchOverlay from "@/components/SearchOverlay";
 import AlertPreferences from "@/components/AlertPreferences";
