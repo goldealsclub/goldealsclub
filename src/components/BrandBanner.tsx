@@ -12,6 +12,8 @@ const brandLogos: Record<string, string> = {
   adidas: brandAdidas,
 };
 
+const PARTNERS = new Set(["snipes", "kappa"]);
+
 interface BrandBannerProps {
   deals: Deal[];
 }
@@ -100,7 +102,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
                 to={`/brand/${encodeURIComponent(name)}`}
                 className="group flex items-center gap-2 min-w-fit shrink-0 opacity-50 hover:opacity-100 transition-opacity duration-200"
               >
-                {logo ? (
+              {logo ? (
                   <img
                     src={logo}
                     alt={name}
@@ -109,6 +111,11 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
                 ) : (
                   <span className="font-display text-[10px] uppercase tracking-wider text-foreground font-bold">
                     {name}
+                  </span>
+                )}
+                {PARTNERS.has(name.toLowerCase()) && (
+                  <span className="text-[7px] font-display uppercase tracking-wider bg-primary text-primary-foreground px-1.5 py-0.5 rounded-sm">
+                    Partenaire
                   </span>
                 )}
                 <span className="text-[11px] font-body font-semibold text-foreground/60">
