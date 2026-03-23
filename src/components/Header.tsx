@@ -180,12 +180,12 @@ const Header = () => {
             {user ? (
               <>
                 <AlertPreferences />
-                <button onClick={signOut} className="p-2" title="Se déconnecter">
-                  <LogOut className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
-                </button>
+                <Link to="/profile" className="p-2" title="Mon compte">
+                  <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
+                </Link>
               </>
             ) : (
-              <Link to="/auth" className="p-2" title="Se connecter">
+              <Link to="/auth" state={{ from: location.pathname }} className="p-2" title="Se connecter">
                 <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
               </Link>
             )}

@@ -24,6 +24,7 @@ import PrivacyPage from "./pages/PrivacyPage";
 import TermsPage from "./pages/TermsPage";
 import ScrollToTop from "./components/ScrollToTop";
 import NewDealNotifier from "./components/NewDealNotifier";
+import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
