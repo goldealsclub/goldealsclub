@@ -78,11 +78,6 @@ const Header = () => {
     { to: "/trends", label: t.trends },
   ];
 
-  const handleCtaClick = () => {
-    if (isHomePage) {
-      document.getElementById("deals-section")?.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
