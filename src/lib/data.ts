@@ -146,45 +146,37 @@ function normalizeDeals(raw: any[]): Deal[] {
   });
 }
 
-// Cached deals – loaded async
-let _deals: Deal[] = [];
+// Mutable shared array – all importers see the same reference
+export const deals: Deal[] = [];
 let _loading = false;
 let _loaded = false;
 let _listeners: Array<() => void> = [];
 
 /** Fetch and cache deals from JSON file */
 export async function loadDeals(): Promise<Deal[]> {
-  if (_loaded) return _deals;
+  if (_loaded) return deals;
   if (_loading) {
     return new Promise((resolve) => {
-      _listeners.push(() => resolve(_deals));
+      _listeners.push(() => resolve(deals));
     });
   }
   _loading = true;
   try {
     const resp = await fetch("/deals.json");
     const raw = await resp.json();
-    _deals = normalizeDeals(raw);
+    const normalized = normalizeDeals(raw);
+    deals.length = 0;
+    deals.push(...normalized);
     _loaded = true;
   } catch (e) {
     console.error("Failed to load deals:", e);
-    _deals = [];
     _loaded = true;
   }
   _loading = false;
   _listeners.forEach((fn) => fn());
   _listeners = [];
-  return _deals;
+  return deals;
 }
-
-/** Synchronous access — returns whatever is cached so far */
-export function getDeals(): Deal[] {
-  return _deals;
-}
-
-// Keep backward compat for modules that import `deals` directly
-// They'll get an empty array initially, then populated after load
-export const deals: Deal[] = _deals;
 
 import catSneakers from "@/assets/cat-sneakers.jpg";
 import catJackets from "@/assets/cat-jackets.jpg";
@@ -205,9 +197,8 @@ export const categoryList: { key: Category; image: string }[] = [
 
 /** Get the most recent deal date as the "last updated" timestamp */
 export function getLastUpdatedDate(): string {
-  const d = getDeals();
-  if (d.length === 0) return "";
-  const latest = d.reduce((max, deal) => {
+  if (deals.length === 0) return "";
+  const latest = deals.reduce((max, deal) => {
     const t = new Date(deal.detected_at || deal.promo_start_date).getTime();
     return t > max ? t : max;
   }, 0);
@@ -221,8 +212,3 @@ export function sortByDate(a: Deal, b: Deal): number {
   if (dateB !== dateA) return dateB - dateA;
   return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
 }
-
-// These are kept for backward compat but will be empty until loadDeals() resolves
-export const hotDeals: Deal[] = [];
-export const bonDeals: Deal[] = [];
-export const promoNormales: Deal[] = [];
