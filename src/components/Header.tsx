@@ -77,7 +77,7 @@ const Header = () => {
         <div className="container mx-auto px-4 flex items-center justify-center gap-5 h-14">
           <span className="text-[10px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
           <Link to="/brand/Snipes" className="hover:opacity-80 transition-opacity shrink-0">
-            <img src={partnerSnipes} alt="Snipes" className="h-10 md:h-11 w-auto object-contain" />
+            <img src={partnerSnipes} alt="Snipes" className="h-12 md:h-14 w-auto object-contain" />
           </Link>
           <span className="text-foreground/20 text-sm">×</span>
           <Link to="/brand/Kappa" className="hover:opacity-80 transition-opacity shrink-0">
