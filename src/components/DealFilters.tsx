@@ -6,6 +6,8 @@ import FlameIndicator from "./FlameIndicator";
 
 export type SortKey = "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
 
+const PAGE_SIZE = 48;
+
 interface Filters {
   dealLevel: DealLevel | "all";
   categories: Category[];
@@ -72,6 +74,10 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [sort, setSort] = useState<SortKey>("newest");
   const [showFilters, setShowFilters] = useState(false);
+  const [page, setPage] = useState(1);
+
+  // Reset page when filters/sort/source change
+  const resetPage = () => setPage(1);
 
   // Use ALL deals for filter options so gender filtering doesn't hide categories
   const allBrands = useMemo(() => getUniqueValues(allDealsGlobal, "brand"), [allDealsGlobal.length]);
@@ -131,7 +137,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     (filters.maxPrice !== null ? 1 : 0) +
     (filters.minDiscount !== null ? 1 : 0);
 
-  // NO slice, NO limit — all deals shown
   const filtered = useMemo(() => {
     let result = [...sourceDeals];
 
@@ -161,7 +166,6 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
       if (sort === "popularity") return b.popularity - a.popularity;
       if (sort === "priceAsc") return (a.sale_price ?? 0) - (b.sale_price ?? 0);
       if (sort === "priceDesc") return (b.sale_price ?? 0) - (a.sale_price ?? 0);
-      // newest: promo_start_date desc, then detected_at desc
       const dateA = new Date(a.promo_start_date || a.detected_at).getTime();
       const dateB = new Date(b.promo_start_date || b.detected_at).getTime();
       if (dateB !== dateA) return dateB - dateA;
@@ -171,12 +175,25 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     return result;
   }, [sourceDeals, filters, sort]);
 
+  // Paginated slice
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
+  const currentPage = Math.min(page, totalPages || 1);
+  const paginatedDeals = useMemo(
+    () => filtered.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE),
+    [filtered, currentPage]
+  );
+
   // Level counts for tabs
   const levelCounts = useMemo(() => {
     const counts: Record<string, number> = { all: sourceDeals.length };
     sourceDeals.forEach(d => { counts[d.deal_level] = (counts[d.deal_level] || 0) + 1; });
     return counts;
   }, [sourceDeals]);
+
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   return (
     <div>
@@ -185,7 +202,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
         {levelTabs.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setFilters((f) => ({ ...f, dealLevel: tab.key }))}
+            onClick={() => { setFilters((f) => ({ ...f, dealLevel: tab.key })); resetPage(); }}
             className={`flex items-center gap-2 text-[10px] font-display uppercase tracking-wider px-4 py-2 border transition-all whitespace-nowrap ${
               filters.dealLevel === tab.key
                 ? "bg-primary text-primary-foreground border-primary"
@@ -207,7 +224,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
           {sortOptions.map((opt) => (
             <button
               key={opt.key}
-              onClick={() => setSort(opt.key)}
+              onClick={() => { setSort(opt.key); resetPage(); }}
               className={`text-[10px] font-display uppercase tracking-wider px-3 py-1.5 transition-colors whitespace-nowrap ${
                 sort === opt.key ? "bg-primary text-primary-foreground" : "text-foreground/40 hover:text-foreground"
               }`}
@@ -238,7 +255,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
             <div className="flex items-center gap-3">
               {activeCount > 0 && (
                 <button
-                  onClick={() => setFilters(defaultFilters)}
+                  onClick={() => { setFilters(defaultFilters); resetPage(); }}
                   className="text-[10px] font-body text-foreground/40 hover:text-foreground underline transition-colors"
                 >
                   {t.clearAll}
@@ -258,7 +275,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                   label={categoryLabels[cat] || cat}
                   count={categoryCounts[cat] || 0}
                   active={filters.categories.includes(cat)}
-                  onClick={() => setFilters((f) => ({ ...f, categories: toggleArray(f.categories, cat) }))}
+                  onClick={() => { setFilters((f) => ({ ...f, categories: toggleArray(f.categories, cat) })); resetPage(); }}
                 />
               ))}
             </FilterSection>
@@ -270,7 +287,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                   label={b}
                   count={brandCounts[b] || 0}
                   active={filters.brands.includes(b)}
-                  onClick={() => setFilters((f) => ({ ...f, brands: toggleArray(f.brands, b) }))}
+                  onClick={() => { setFilters((f) => ({ ...f, brands: toggleArray(f.brands, b) })); resetPage(); }}
                 />
               ))}
             </FilterSection>
@@ -282,7 +299,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                   label={s}
                   count={merchantCounts[s] || 0}
                   active={filters.merchants.includes(s)}
-                  onClick={() => setFilters((f) => ({ ...f, merchants: toggleArray(f.merchants, s) }))}
+                  onClick={() => { setFilters((f) => ({ ...f, merchants: toggleArray(f.merchants, s) })); resetPage(); }}
                 />
               ))}
             </FilterSection>
@@ -293,7 +310,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                   type="number"
                   placeholder={t.minPrice}
                   value={filters.minPrice ?? ""}
-                  onChange={(e) => setFilters((f) => ({ ...f, minPrice: e.target.value ? Number(e.target.value) : null }))}
+                  onChange={(e) => { setFilters((f) => ({ ...f, minPrice: e.target.value ? Number(e.target.value) : null })); resetPage(); }}
                   className="w-20 bg-transparent border border-foreground/15 px-2 py-1.5 text-[11px] font-body text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-foreground/40"
                 />
                 <span className="text-foreground/30 text-[10px]">—</span>
@@ -301,7 +318,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                   type="number"
                   placeholder={t.maxPrice}
                   value={filters.maxPrice ?? ""}
-                  onChange={(e) => setFilters((f) => ({ ...f, maxPrice: e.target.value ? Number(e.target.value) : null }))}
+                  onChange={(e) => { setFilters((f) => ({ ...f, maxPrice: e.target.value ? Number(e.target.value) : null })); resetPage(); }}
                   className="w-20 bg-transparent border border-foreground/15 px-2 py-1.5 text-[11px] font-body text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-foreground/40"
                 />
                 <span className="text-[10px] font-body text-foreground/30">€</span>
@@ -314,7 +331,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
                   type="number"
                   placeholder={t.minDiscount}
                   value={filters.minDiscount ?? ""}
-                  onChange={(e) => setFilters((f) => ({ ...f, minDiscount: e.target.value ? Number(e.target.value) : null }))}
+                  onChange={(e) => { setFilters((f) => ({ ...f, minDiscount: e.target.value ? Number(e.target.value) : null })); resetPage(); }}
                   className="w-20 bg-transparent border border-foreground/15 px-2 py-1.5 text-[11px] font-body text-foreground placeholder:text-foreground/30 focus:outline-none focus:border-foreground/40"
                 />
                 <span className="text-[10px] font-body text-foreground/30">%</span>
@@ -324,12 +341,61 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
         </div>
       )}
 
-      <p className="font-body text-xs text-foreground/50 mb-6">{filtered.length} deals</p>
+      <p className="font-body text-xs text-foreground/50 mb-6">
+        {filtered.length} deals — page {currentPage}/{totalPages || 1}
+      </p>
 
       {filtered.length === 0 ? (
         <p className="font-body text-sm text-foreground/40 text-center py-16">{t.noResults}</p>
       ) : (
-        children(filtered)
+        <>
+          {children(paginatedDeals)}
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-12 pb-8">
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage <= 1}
+                className="text-[10px] font-display uppercase tracking-wider px-4 py-2 border border-foreground/10 text-foreground/50 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                ←
+              </button>
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let pageNum: number;
+                if (totalPages <= 7) {
+                  pageNum = i + 1;
+                } else if (currentPage <= 4) {
+                  pageNum = i + 1;
+                } else if (currentPage >= totalPages - 3) {
+                  pageNum = totalPages - 6 + i;
+                } else {
+                  pageNum = currentPage - 3 + i;
+                }
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => handlePageChange(pageNum)}
+                    className={`text-[10px] font-display w-8 h-8 flex items-center justify-center border transition-colors ${
+                      pageNum === currentPage
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "border-foreground/10 text-foreground/50 hover:text-foreground hover:border-foreground/30"
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                );
+              })}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage >= totalPages}
+                className="text-[10px] font-display uppercase tracking-wider px-4 py-2 border border-foreground/10 text-foreground/50 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-30 disabled:pointer-events-none"
+              >
+                →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
