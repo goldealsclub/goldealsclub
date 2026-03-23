@@ -143,9 +143,17 @@ function inferCategory(category: string, title: string): Category {
   return category as Category;
 }
 
-/** Normalize raw JSON deals */
+/** Normalize raw JSON deals, filtering out broken entries */
 function normalizeDeals(raw: any[]): Deal[] {
-  return raw.map((d, i) => {
+  return raw
+    .filter((d) => {
+      // Exclude deals with broken/placeholder Snipes images
+      if (!isValidSnipesImage(d.image_url || "")) return false;
+      // Exclude deals with no image
+      if (!d.image_url || d.image_url.trim() === "") return false;
+      return true;
+    })
+    .map((d, i) => {
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
     const category = inferCategory(d.category || "autres", d.title || "");
     let discountPercent = d.discount_percent ?? null;
@@ -178,8 +186,6 @@ function normalizeDeals(raw: any[]): Deal[] {
     };
   });
 }
-
-// Mutable shared array – all importers see the same reference
 export const deals: Deal[] = [];
 let _loading = false;
 let _loaded = false;
