@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Deal } from "@/lib/data";
-import { useMemo, useEffect, useState } from "react";
+import { useMemo, useEffect, useState, useRef, useCallback } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import brandNike from "@/assets/brand-nike.svg";
 import brandAdidas from "@/assets/brand-adidas.svg";
 
@@ -17,12 +18,40 @@ interface BrandBannerProps {
 
 const BrandBanner = ({ deals }: BrandBannerProps) => {
   const [visible, setVisible] = useState(true);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const onScroll = () => setVisible(window.scrollY < 80);
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  const checkScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 2);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    checkScroll();
+    el.addEventListener("scroll", checkScroll, { passive: true });
+    window.addEventListener("resize", checkScroll);
+    return () => {
+      el.removeEventListener("scroll", checkScroll);
+      window.removeEventListener("resize", checkScroll);
+    };
+  }, [checkScroll]);
+
+  const scroll = (dir: "left" | "right") => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dir === "left" ? -200 : 200, behavior: "smooth" });
+  };
 
   const brands = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -40,8 +69,29 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
         visible ? "max-h-14 opacity-100" : "max-h-0 opacity-0 border-b-0"
       }`}
     >
-      <div className="container mx-auto px-4">
-        <div className="flex items-center gap-6 overflow-x-auto py-2 scrollbar-hide">
+      <div className="container mx-auto px-4 relative">
+        {canScrollLeft && (
+          <button
+            onClick={() => scroll("left")}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-gradient-to-r from-background via-background/90 to-transparent pl-1 pr-4 h-full flex items-center"
+            aria-label="Scroll left"
+          >
+            <ChevronLeft className="h-4 w-4 text-foreground/60" />
+          </button>
+        )}
+        {canScrollRight && (
+          <button
+            onClick={() => scroll("right")}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-gradient-to-l from-background via-background/90 to-transparent pr-1 pl-4 h-full flex items-center"
+            aria-label="Scroll right"
+          >
+            <ChevronRight className="h-4 w-4 text-foreground/60" />
+          </button>
+        )}
+        <div
+          ref={scrollRef}
+          className="flex items-center gap-6 overflow-x-auto py-2 scrollbar-hide"
+        >
           {brands.map(({ name, count }) => {
             const logo = brandLogos[name];
             return (
