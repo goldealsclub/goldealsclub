@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, Menu, X, RefreshCw, User, LogOut, Flame } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw, User, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
