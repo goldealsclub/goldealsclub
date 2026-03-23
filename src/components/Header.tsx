@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, Menu, X, RefreshCw, User, LogOut, Flame } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw, User, LogOut } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
@@ -32,9 +32,22 @@ const Header = () => {
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
-  // Track scroll for compact header
+  // Track scroll with hysteresis to prevent jitter
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 60);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        ticking = true;
+        requestAnimationFrame(() => {
+          setScrolled((prev) => {
+            if (prev && window.scrollY < 30) return false;
+            if (!prev && window.scrollY > 80) return true;
+            return prev;
+          });
+          ticking = false;
+        });
+      }
+    };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -65,11 +78,6 @@ const Header = () => {
     { to: "/trends", label: t.trends },
   ];
 
-  const handleCtaClick = () => {
-    if (isHomePage) {
-      document.getElementById("deals-section")?.scrollIntoView({ behavior: "smooth" });
-    }
-  };
 
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
@@ -94,13 +102,13 @@ const Header = () => {
         <div className="border-b border-foreground/6 bg-background">
           <div className="container mx-auto px-4 flex items-center justify-center gap-5 h-14">
             <span className="text-[10px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
-            <Link to="/brand/Snipes" className="hover:opacity-80 transition-opacity shrink-0">
+            <span className="shrink-0">
               <img src={partnerSnipes} alt="Snipes" className="h-12 md:h-14 w-auto object-contain" />
-            </Link>
+            </span>
             <span className="text-foreground/20 text-sm">×</span>
-            <Link to="/brand/Kappa" className="hover:opacity-80 transition-opacity shrink-0">
+            <span className="shrink-0">
               <img src={partnerKappa} alt="Kappa" className="h-11 md:h-12 w-auto object-contain" />
-            </Link>
+            </span>
           </div>
         </div>
       </div>
@@ -153,24 +161,6 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {/* CTA Button */}
-            {isHomePage ? (
-              <button
-                onClick={handleCtaClick}
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] font-display uppercase tracking-[0.15em] rounded-sm hover:bg-primary/90 transition-colors"
-              >
-                <Flame className="w-3.5 h-3.5" />
-                {t.heroCta}
-              </button>
-            ) : (
-              <Link
-                to="/"
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] font-display uppercase tracking-[0.15em] rounded-sm hover:bg-primary/90 transition-colors"
-              >
-                <Flame className="w-3.5 h-3.5" />
-                {t.heroCta}
-              </Link>
-            )}
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
@@ -233,25 +223,6 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {/* Mobile CTA */}
-            {isHomePage ? (
-              <button
-                onClick={() => { handleCtaClick(); setMenuOpen(false); }}
-                className="flex items-center justify-center gap-2 mt-2 px-4 py-3 bg-primary text-primary-foreground text-xs font-display uppercase tracking-[0.15em] rounded-sm"
-              >
-                <Flame className="w-4 h-4" />
-                {t.heroCta}
-              </button>
-            ) : (
-              <Link
-                to="/"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center justify-center gap-2 mt-2 px-4 py-3 bg-primary text-primary-foreground text-xs font-display uppercase tracking-[0.15em] rounded-sm"
-              >
-                <Flame className="w-4 h-4" />
-                {t.heroCta}
-              </Link>
-            )}
             {/* Mobile language selector */}
             <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-foreground/5">
               {languages.map((l) => (
