@@ -54,6 +54,14 @@ export function isTrustedMerchant(merchant: string): boolean {
   return false;
 }
 
+/** Check if a Snipes image URL is a usable product photo (not a placeholder/logo) */
+function isValidSnipesImage(url: string): boolean {
+  if (!url.includes("asset.snipes.com")) return true;
+  // Snipes placeholder thumbnails use small dimensions like w_527,h_274 with c_pad
+  if (/w_\d{2,3},h_\d{2,3}/.test(url) && url.includes("c_pad")) return false;
+  return true;
+}
+
 /** Upgrade Nike/Adidas thumbnail URLs to high-res & fix JD Sports framing */
 function upgradeImageUrl(url: string): string {
   if (url.includes("static.nike.com") && url.includes("t_PDP_144")) {
