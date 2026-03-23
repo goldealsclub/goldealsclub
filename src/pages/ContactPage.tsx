@@ -18,6 +18,10 @@ const ContactPage = () => {
       <Header />
       <div className="container mx-auto px-4 py-16 max-w-lg">
         <h1 className="font-display text-3xl md:text-4xl tracking-wider mb-8">Contact</h1>
+        <p className="font-body text-sm text-foreground/60 mb-8">
+          Vous pouvez aussi nous écrire directement à{" "}
+          <a href="mailto:contact@goldealsclub.com" className="text-primary hover:underline">contact@goldealsclub.com</a>
+        </p>
 
         {sent ? (
           <div className="text-center py-16">
