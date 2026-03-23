@@ -165,25 +165,6 @@ const Header = () => {
               >
                 {link.label}
               </Link>
-            ))}
-            {/* CTA Button */}
-            {isHomePage ? (
-              <button
-                onClick={handleCtaClick}
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] font-display uppercase tracking-[0.15em] rounded-sm hover:bg-primary/90 transition-colors"
-              >
-                <Flame className="w-3.5 h-3.5" />
-                {t.heroCta}
-              </button>
-            ) : (
-              <Link
-                to="/"
-                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] font-display uppercase tracking-[0.15em] rounded-sm hover:bg-primary/90 transition-colors"
-              >
-                <Flame className="w-3.5 h-3.5" />
-                {t.heroCta}
-              </Link>
-            )}
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
