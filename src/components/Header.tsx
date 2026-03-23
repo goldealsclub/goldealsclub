@@ -165,6 +165,7 @@ const Header = () => {
               >
                 {link.label}
               </Link>
+            ))}
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
