@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, Menu, X, RefreshCw, User, LogOut } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw, User, LogOut, Flame } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
@@ -30,13 +30,19 @@ const Header = () => {
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
 
-  // Hide BrandBanner on homepage, show on other pages
+  // Track scroll for compact header
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 60);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   const isHomePage = location.pathname === "/" || location.pathname === "/index";
 
   const handleGenderClick = (key: Gender | "all") => {
     setGender(key);
-    // On homepage, scroll to deals section
     if (isHomePage) {
       setTimeout(() => {
         document.getElementById("deals-section")?.scrollIntoView({ behavior: "smooth" });
@@ -59,34 +65,47 @@ const Header = () => {
     { to: "/trends", label: t.trends },
   ];
 
+  const handleCtaClick = () => {
+    if (isHomePage) {
+      document.getElementById("deals-section")?.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
-      {/* Update date bar */}
-      {getLastUpdatedDate() && (
-        <div className="bg-primary/5 border-b border-foreground/6">
-          <div className="container mx-auto px-4 flex items-center justify-center gap-1.5 h-7">
-            <RefreshCw className="w-3 h-3 text-foreground/40" />
-            <span className="text-[10px] font-body text-foreground/50">
-              Deals actualisés le {format(new Date(getLastUpdatedDate()), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
-            </span>
+      {/* Collapsible top bars */}
+      <div
+        className={`transition-all duration-300 overflow-hidden ${
+          scrolled ? "max-h-0 opacity-0" : "max-h-40 opacity-100"
+        }`}
+      >
+        {/* Update date bar */}
+        {getLastUpdatedDate() && (
+          <div className="bg-primary/5 border-b border-foreground/6">
+            <div className="container mx-auto px-4 flex items-center justify-center gap-1.5 h-7">
+              <RefreshCw className="w-3 h-3 text-foreground/40" />
+              <span className="text-[10px] font-body text-foreground/50">
+                Deals actualisés le {format(new Date(getLastUpdatedDate()), "dd MMM yyyy 'à' HH:mm", { locale: fr })}
+              </span>
+            </div>
+          </div>
+        )}
+        {/* Partner bar */}
+        <div className="border-b border-foreground/6 bg-background">
+          <div className="container mx-auto px-4 flex items-center justify-center gap-5 h-14">
+            <span className="text-[10px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
+            <Link to="/brand/Snipes" className="hover:opacity-80 transition-opacity shrink-0">
+              <img src={partnerSnipes} alt="Snipes" className="h-12 md:h-14 w-auto object-contain" />
+            </Link>
+            <span className="text-foreground/20 text-sm">×</span>
+            <Link to="/brand/Kappa" className="hover:opacity-80 transition-opacity shrink-0">
+              <img src={partnerKappa} alt="Kappa" className="h-11 md:h-12 w-auto object-contain" />
+            </Link>
           </div>
         </div>
-      )}
-      {/* Partner bar */}
-      <div className="border-b border-foreground/6 bg-background">
-        <div className="container mx-auto px-4 flex items-center justify-center gap-5 h-14">
-          <span className="text-[10px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
-          <Link to="/brand/Snipes" className="hover:opacity-80 transition-opacity shrink-0">
-            <img src={partnerSnipes} alt="Snipes" className="h-12 md:h-14 w-auto object-contain" />
-          </Link>
-          <span className="text-foreground/20 text-sm">×</span>
-          <Link to="/brand/Kappa" className="hover:opacity-80 transition-opacity shrink-0">
-            <img src={partnerKappa} alt="Kappa" className="h-11 md:h-12 w-auto object-contain" />
-          </Link>
-        </div>
       </div>
-      {/*
-      {/* Gender bar */}
+
+      {/* Gender bar - always visible */}
       <div className="border-b border-foreground/6 bg-muted/30">
         <div className="container mx-auto px-4 flex items-center justify-center gap-6 h-9">
           {genderTabs.map((tab) => (
@@ -104,17 +123,27 @@ const Header = () => {
           ))}
         </div>
       </div>
+
+      {/* Main nav */}
       <div className="container mx-auto px-4">
-        <div className="flex items-center justify-between h-20 md:h-24">
+        <div className={`flex items-center justify-between transition-all duration-300 ${
+          scrolled ? "h-14 md:h-16" : "h-16 md:h-24"
+        }`}>
           <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-5 h-5" strokeWidth={1.5} /> : <Menu className="w-5 h-5" strokeWidth={1.5} />}
           </button>
 
           <Link to="/" className="flex-shrink-0">
-            <img src={logo} alt="GOLDEALS CLUB" className="h-32 md:h-44 w-auto" />
+            <img
+              src={logo}
+              alt="GOLDEALS CLUB"
+              className={`transition-all duration-300 w-auto ${
+                scrolled ? "h-20 md:h-28" : "h-28 md:h-44"
+              }`}
+            />
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-6">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
@@ -124,9 +153,27 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
+            {/* CTA Button */}
+            {isHomePage ? (
+              <button
+                onClick={handleCtaClick}
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] font-display uppercase tracking-[0.15em] rounded-sm hover:bg-primary/90 transition-colors"
+              >
+                <Flame className="w-3.5 h-3.5" />
+                {t.heroCta}
+              </button>
+            ) : (
+              <Link
+                to="/"
+                className="flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground text-[10px] font-display uppercase tracking-[0.15em] rounded-sm hover:bg-primary/90 transition-colors"
+              >
+                <Flame className="w-3.5 h-3.5" />
+                {t.heroCta}
+              </Link>
+            )}
           </nav>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3">
             <button onClick={() => setSearchOpen(true)} className="p-2">
               <Search className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
             </button>
@@ -153,7 +200,7 @@ const Header = () => {
               </Link>
             )}
 
-            <div className="flex items-center gap-1 border-l border-foreground/10 pl-3 ml-1">
+            <div className="hidden md:flex items-center gap-1 border-l border-foreground/10 pl-3 ml-1">
               {languages.map((l) => (
                 <button
                   key={l.code}
@@ -172,23 +219,56 @@ const Header = () => {
         <SearchOverlay open={searchOpen} onClose={() => setSearchOpen(false)} />
       </div>
 
+      {/* Mobile menu */}
       {menuOpen && (
         <div className="md:hidden border-t border-foreground/8 bg-background animate-fade-in">
-          <nav className="container mx-auto px-4 py-4 flex flex-col gap-3">
+          <nav className="container mx-auto px-4 py-3 flex flex-col gap-1">
             {navLinks.map((link) => (
               <Link
                 key={link.to}
                 to={link.to}
                 onClick={() => setMenuOpen(false)}
-                className="text-xs font-display uppercase tracking-[0.15em] text-foreground/60 hover:text-foreground py-2"
+                className="text-xs font-display uppercase tracking-[0.15em] text-foreground/60 hover:text-foreground py-2.5 border-b border-foreground/5 last:border-0"
               >
                 {link.label}
               </Link>
             ))}
+            {/* Mobile CTA */}
+            {isHomePage ? (
+              <button
+                onClick={() => { handleCtaClick(); setMenuOpen(false); }}
+                className="flex items-center justify-center gap-2 mt-2 px-4 py-3 bg-primary text-primary-foreground text-xs font-display uppercase tracking-[0.15em] rounded-sm"
+              >
+                <Flame className="w-4 h-4" />
+                {t.heroCta}
+              </button>
+            ) : (
+              <Link
+                to="/"
+                onClick={() => setMenuOpen(false)}
+                className="flex items-center justify-center gap-2 mt-2 px-4 py-3 bg-primary text-primary-foreground text-xs font-display uppercase tracking-[0.15em] rounded-sm"
+              >
+                <Flame className="w-4 h-4" />
+                {t.heroCta}
+              </Link>
+            )}
+            {/* Mobile language selector */}
+            <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-foreground/5">
+              {languages.map((l) => (
+                <button
+                  key={l.code}
+                  onClick={() => setLang(l.code)}
+                  className={`text-[10px] font-display uppercase tracking-wider px-2 py-1 transition-colors ${
+                    lang === l.code ? "text-foreground" : "text-foreground/30 hover:text-foreground/60"
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
           </nav>
         </div>
       )}
-      {/* Show BrandBanner with fade effect on non-home pages */}
       {!isHomePage && <BrandBanner deals={filteredDeals} />}
     </header>
   );
