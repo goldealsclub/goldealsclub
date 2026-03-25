@@ -72,7 +72,7 @@ const FilterSection = ({ title, children, defaultOpen = false }: { title: string
 const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const { t } = useI18n();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const [sort, setSort] = useState<SortKey>("newest");
+  const [sort, setSort] = useState<SortKey>("relevance");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
 
