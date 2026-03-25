@@ -12,23 +12,14 @@ const brandLogos: Record<string, string> = {
   adidas: brandAdidas,
 };
 
-
-
 interface BrandBannerProps {
   deals: Deal[];
 }
 
 const BrandBanner = ({ deals }: BrandBannerProps) => {
-  const [visible, setVisible] = useState(true);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const onScroll = () => setVisible(window.scrollY < 80);
-    window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
-  }, []);
 
   const checkScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -66,11 +57,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
   }, [deals]);
 
   return (
-    <section
-      className={`border-b border-foreground/5 bg-background/60 backdrop-blur-sm transition-all duration-300 overflow-hidden ${
-        visible ? "max-h-14 opacity-100" : "max-h-0 opacity-0 border-b-0"
-      }`}
-    >
+    <section className="border-b border-foreground/5 bg-background/60 backdrop-blur-sm">
       <div className="container mx-auto px-4 relative">
         {canScrollLeft && (
           <button
@@ -102,7 +89,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
                 to={`/brand/${encodeURIComponent(name)}`}
                 className="group flex items-center gap-2 min-w-fit shrink-0 opacity-50 hover:opacity-100 transition-opacity duration-200"
               >
-              {logo ? (
+                {logo ? (
                   <img
                     src={logo}
                     alt={name}
