@@ -4,7 +4,7 @@ import { Deal, DealLevel, Category, deals as allDealsGlobal } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
 
-export type SortKey = "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
+export type SortKey = "relevance" | "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
 
 const PAGE_SIZE = 48;
 
