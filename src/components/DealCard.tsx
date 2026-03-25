@@ -7,6 +7,7 @@ import { useFavorites } from "@/lib/favorites";
 import { useCompare } from "./CompareDrawer";
 import FlameIndicator from "./FlameIndicator";
 import ShareMenu from "./ShareMenu";
+import { trackOutboundClick } from "@/lib/track-click";
 
 interface DealCardProps {
   deal: Deal;
