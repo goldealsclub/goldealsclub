@@ -3,6 +3,7 @@ import { Deal } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { X, GitCompareArrows, ExternalLink } from "lucide-react";
 import FlameIndicator from "./FlameIndicator";
+import { trackOutboundClick } from "@/lib/track-click";
 
 interface CompareContextType {
   items: Deal[];
