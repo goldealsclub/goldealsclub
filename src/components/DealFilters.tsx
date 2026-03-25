@@ -4,7 +4,7 @@ import { Deal, DealLevel, Category, deals as allDealsGlobal } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
 
-export type SortKey = "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
+export type SortKey = "relevance" | "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
 
 const PAGE_SIZE = 48;
 
@@ -72,7 +72,7 @@ const FilterSection = ({ title, children, defaultOpen = false }: { title: string
 const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const { t } = useI18n();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const [sort, setSort] = useState<SortKey>("newest");
+  const [sort, setSort] = useState<SortKey>("relevance");
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
 
@@ -118,9 +118,10 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   ];
 
   const sortOptions: { key: SortKey; label: string }[] = [
+    { key: "relevance", label: "Top deals" },
     { key: "newest", label: t.newest },
-    { key: "popularity", label: t.popularity },
     { key: "discount", label: t.discount },
+    { key: "popularity", label: t.popularity },
     { key: "priceAsc", label: t.priceAsc },
     { key: "priceDesc", label: t.priceDesc },
   ];
@@ -148,20 +149,39 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     if (filters.maxPrice !== null) result = result.filter((d) => (d.sale_price ?? 0) <= filters.maxPrice!);
     if (filters.minDiscount !== null) result = result.filter((d) => (d.discount_percent ?? 0) >= filters.minDiscount!);
 
-    // Boost Snipes & Nike to the top
-    const isBoost = (d: Deal) => {
+    // Hype brands get a boost in relevance sorting
+    const HYPE_BRANDS: Record<string, number> = {
+      nike: 15, jordan: 15, adidas: 12, "new balance": 10, puma: 8,
+      converse: 7, vans: 7, "the north face": 8, lacoste: 6, asics: 7,
+      hoka: 7, salomon: 7, "dr. martens": 6, timberland: 6, reebok: 5,
+      ugg: 8, carhartt: 6, champion: 4, fila: 4, crocs: 5,
+    };
+
+    /** Compute attractiveness score for relevance sort */
+    const getScore = (d: Deal): number => {
+      let score = 0;
+      // Discount weight (0-40 points)
+      score += Math.min((d.discount_percent ?? 0) * 0.8, 40);
+      // Deal level bonus
+      if (d.deal_level === "hot-deal") score += 20;
+      else if (d.deal_level === "bon-deal") score += 10;
+      // Brand hype bonus (0-15 points)
+      score += HYPE_BRANDS[d.brand.toLowerCase()] || 0;
+      // Source boost (Snipes partner)
       const src = d.source?.toLowerCase() || "";
       const merchant = d.merchant?.toLowerCase() || "";
-      const brand = d.brand?.toLowerCase() || "";
-      if (src === "snipes" || merchant.includes("snipes")) return 2;
-      if (brand === "nike" || src === "nike") return 1;
-      return 0;
+      if (src === "snipes" || merchant.includes("snipes")) score += 8;
+      // Recency bonus (last 7 days = up to 10 points)
+      const ageMs = Date.now() - new Date(d.detected_at || d.promo_start_date).getTime();
+      const ageDays = ageMs / (1000 * 60 * 60 * 24);
+      if (ageDays < 7) score += Math.round(10 * (1 - ageDays / 7));
+      // Super deal bonus
+      if (d.is_super_deal) score += 10;
+      return score;
     };
 
     result.sort((a, b) => {
-      const boostDiff = isBoost(b) - isBoost(a);
-      if (boostDiff !== 0) return boostDiff;
-
+      if (sort === "relevance") return getScore(b) - getScore(a);
       if (sort === "discount") return (b.discount_percent ?? 0) - (a.discount_percent ?? 0);
       if (sort === "popularity") return b.popularity - a.popularity;
       if (sort === "priceAsc") return (a.sale_price ?? 0) - (b.sale_price ?? 0);
