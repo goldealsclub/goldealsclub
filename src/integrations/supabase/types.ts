@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       deals: {
         Row: {
+          affiliate_url: string | null
           brand: string
           category: string
           created_at: string | null
@@ -43,6 +44,7 @@ export type Database = {
           title: string
         }
         Insert: {
+          affiliate_url?: string | null
           brand: string
           category: string
           created_at?: string | null
@@ -70,6 +72,7 @@ export type Database = {
           title: string
         }
         Update: {
+          affiliate_url?: string | null
           brand?: string
           category?: string
           created_at?: string | null
