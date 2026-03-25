@@ -3,6 +3,7 @@ import { Deal } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { X, GitCompareArrows, ExternalLink } from "lucide-react";
 import FlameIndicator from "./FlameIndicator";
+import { trackOutboundClick } from "@/lib/track-click";
 
 interface CompareContextType {
   items: Deal[];
@@ -148,6 +149,7 @@ const CompareBar = () => {
                     href={deal.affiliate_url || deal.product_url}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => trackOutboundClick(deal.id, deal.affiliate_url || deal.product_url)}
                     className="mt-4 inline-flex items-center justify-center gap-2 bg-primary text-primary-foreground px-4 py-2.5 text-[10px] font-display uppercase tracking-wider hover:bg-foreground/80 transition-colors"
                   >
                     {t.seeOffer}

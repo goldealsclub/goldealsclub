@@ -167,6 +167,33 @@ export type Database = {
         }
         Relationships: []
       }
+      outbound_clicks: {
+        Row: {
+          clicked_at: string
+          deal_id: string
+          destination_url: string | null
+          id: string
+          referrer: string | null
+          user_id: string | null
+        }
+        Insert: {
+          clicked_at?: string
+          deal_id: string
+          destination_url?: string | null
+          id?: string
+          referrer?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          clicked_at?: string
+          deal_id?: string
+          destination_url?: string | null
+          id?: string
+          referrer?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
