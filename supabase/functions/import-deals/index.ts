@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     const allowedKeys = new Set([
       "id", "title", "brand", "category", "gender", "gender_label",
       "sale_price", "original_price", "discount_percent", "image_url",
-      "product_url", "merchant", "source", "currency", "description",
+      "product_url", "affiliate_url", "merchant", "source", "currency", "description",
       "promo_start_date", "promo_end_date", "is_super_deal", "detected_at",
       "deal_level", "flame_count", "display_score", "popularity", "saved",
     ]);

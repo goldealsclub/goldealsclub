@@ -134,7 +134,7 @@ const DealPage = () => {
 
             {/* CTA */}
             <a
-              href={deal.product_url}
+              href={deal.affiliate_url || deal.product_url}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-8 py-4 text-[11px] font-display uppercase tracking-[0.2em] hover:bg-foreground/80 transition-colors mb-6"

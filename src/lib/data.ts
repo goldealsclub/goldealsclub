@@ -16,6 +16,7 @@ export interface Deal {
   discount_percent: number | null;
   image_url: string;
   product_url: string;
+  affiliate_url: string | null;
   merchant: string;
   source: string;
   currency: string;
