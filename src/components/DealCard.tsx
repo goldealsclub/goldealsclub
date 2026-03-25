@@ -159,6 +159,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             href={deal.affiliate_url || deal.product_url}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackOutboundClick(deal.id, deal.affiliate_url || deal.product_url)}
             className="inline-flex items-center gap-1.5 text-[10px] font-display uppercase tracking-wider text-foreground/50 hover:text-foreground transition-colors"
           >
             {t.seeOffer}
