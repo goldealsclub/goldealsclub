@@ -26,22 +26,31 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate IDs if missing
-    const dealsWithIds = deals.map((d: any, i: number) => ({
-      ...d,
-      id:
-        d.id ||
-        `deal-${i}-${(d.title || "")
-          .slice(0, 30)
-          .replace(/\s+/g, "-")
-          .toLowerCase()}`,
-    }));
+    // Allowed columns in the deals table
+    const allowedKeys = new Set([
+      "id", "title", "brand", "category", "gender", "gender_label",
+      "sale_price", "original_price", "discount_percent", "image_url",
+      "product_url", "merchant", "source", "currency", "description",
+      "promo_start_date", "promo_end_date", "is_super_deal", "detected_at",
+      "deal_level", "flame_count", "display_score", "popularity", "saved",
+    ]);
+
+    // Clean deals: generate IDs, strip unknown columns
+    const cleaned = deals.map((d: any, i: number) => {
+      const row: Record<string, any> = {};
+      for (const [k, v] of Object.entries(d)) {
+        if (allowedKeys.has(k)) row[k] = v;
+      }
+      // Generate ID if missing
+      row.id = row.id || `deal-${i}-${(d.title || "").slice(0, 30).replace(/\s+/g, "-").toLowerCase()}`;
+      return row;
+    });
 
     // Upsert in batches of 500
     const batchSize = 500;
     let inserted = 0;
-    for (let i = 0; i < dealsWithIds.length; i += batchSize) {
-      const batch = dealsWithIds.slice(i, i + batchSize);
+    for (let i = 0; i < cleaned.length; i += batchSize) {
+      const batch = cleaned.slice(i, i + batchSize);
       const { error } = await supabase
         .from("deals")
         .upsert(batch, { onConflict: "id" });
