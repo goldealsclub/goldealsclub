@@ -60,7 +60,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
   }, [deals]);
 
   return (
-    <section className="border-b border-foreground/5 bg-background/60 backdrop-blur-sm">
+    <section className="border-b border-foreground/5 bg-background">
       <div className="container mx-auto px-4 relative">
         {canScrollLeft && (
           <button
