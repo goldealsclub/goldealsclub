@@ -76,7 +76,7 @@ interface ChartData {
 type Tab = "overview" | "analytics" | "awin" | "users";
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const { filteredDeals } = useGender();
   const [tab, setTab] = useState<Tab>("overview");
@@ -106,29 +106,36 @@ const AdminDashboard = () => {
       .then(({ count }) => setTotalFavorites(count || 0));
   };
 
-  const loadUsersData = () => {
+  const loadUsersData = async () => {
     setUsersLoading(true);
-    supabase.functions
-      .invoke("admin-users")
-      .then(({ data, error }) => {
-        console.log("[admin-users] raw response:", { data, error, type: typeof data });
-        if (error) {
-          console.error("[admin-users] error:", error);
-        } else if (data) {
-          const parsed = typeof data === "string" ? JSON.parse(data) : data;
-          console.log("[admin-users] parsed:", { users: parsed.users?.length, stats: parsed.stats });
-          setAdminUsers(parsed.users || []);
-          setSiteStats(parsed.stats || null);
-          setCharts(parsed.charts || null);
-        }
-        setUsersLoading(false);
-        setUsersLoaded(true);
-      })
-      .catch((err) => {
-        console.error("[admin-users] catch:", err);
-        setUsersLoading(false);
-        setUsersLoaded(true);
+
+    try {
+      const currentSession = session ?? (await supabase.auth.getSession()).data.session;
+      const accessToken = currentSession?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Session admin introuvable");
+      }
+
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: {},
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
+
+      if (error) throw error;
+
+      const parsed = typeof data === "string" ? JSON.parse(data) : data;
+      setAdminUsers(Array.isArray(parsed?.users) ? parsed.users : []);
+      setSiteStats(parsed?.stats || null);
+      setCharts(parsed?.charts || null);
+      setUsersLoaded(true);
+    } catch (err) {
+      console.error("[admin-users] load failed:", err);
+    } finally {
+      setUsersLoading(false);
+    }
   };
 
   const handleRefresh = async () => {
@@ -182,7 +189,7 @@ const AdminDashboard = () => {
 
   const topDeals = useMemo(() => clicks.slice(0, 10), [clicks]);
 
-  if (adminLoading) {
+  if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-foreground/40" />
@@ -850,9 +857,9 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
   }, [users, search, sortBy]);
 
   const exportCSV = () => {
-    const header = "Email,Nom,Provider,Confirmé,Rôles,Favoris,Clics,Votes,Alertes,Inscrit le,Dernière connexion\n";
+    const header = "ID,Email,Nom,Téléphone,Provider,Confirmé,Rôles,Favoris,Clics,Votes,Alerte active,Fréquence alerte,Inscrit le,Dernière connexion\n";
     const rows = filtered.map((u) =>
-      `"${u.email || ""}","${u.user_metadata.full_name || ""}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.roles.join(", ") || "user"}","${u.favorites_count}","${u.clicks_count}","${u.votes_count}","${u.alert_enabled ? "Oui" : "Non"}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
+      `"${u.id}","${u.email || ""}","${u.user_metadata.full_name || ""}","${u.phone || ""}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.roles.join(", ") || "user"}","${u.favorites_count}","${u.clicks_count}","${u.votes_count}","${u.alert_enabled ? "Oui" : "Non"}","${u.alert_frequency || ""}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
     ).join("\n");
     const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
@@ -914,6 +921,7 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
               <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">#</th>
               <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Utilisateur</th>
               <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Provider</th>
+              <th className="text-left p-3 font-display uppercase tracking-wider text-[10px] hidden lg:table-cell">Téléphone</th>
               <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Rôle</th>
               <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Confirmé</th>
               <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">
@@ -925,31 +933,32 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
               <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">
                 <ThumbsUp className="w-3 h-3 mx-auto" />
               </th>
-              <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">
-                <Bell className="w-3 h-3 mx-auto" />
-              </th>
+              <th className="text-center p-3 font-display uppercase tracking-wider text-[10px] hidden lg:table-cell">Alerte</th>
+              <th className="text-right p-3 font-display uppercase tracking-wider text-[10px] hidden xl:table-cell">ID</th>
               <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Inscrit le</th>
               <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Dernière co.</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((u, i) => (
-              <tr key={u.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
+              <tr key={u.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors align-top">
                 <td className="p-3 text-foreground/40">{i + 1}</td>
                 <td className="p-3">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-start gap-2">
                     {u.user_metadata.avatar_url ? (
-                      <img src={u.user_metadata.avatar_url} className="w-5 h-5 rounded-full" alt="" />
+                      <img src={u.user_metadata.avatar_url} className="w-5 h-5 rounded-full mt-0.5 shrink-0" alt="" />
                     ) : (
-                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-display text-primary">
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-display text-primary mt-0.5 shrink-0">
                         {(u.email || "?")[0].toUpperCase()}
                       </div>
                     )}
-                    <div className="min-w-0">
+                    <div className="min-w-0 space-y-0.5">
                       {u.user_metadata.full_name && (
                         <p className="text-[10px] text-foreground/50 truncate">{u.user_metadata.full_name}</p>
                       )}
-                      <p className="truncate max-w-[180px]">{u.email || "—"}</p>
+                      <p className="truncate max-w-[220px]">{u.email || "—"}</p>
+                      <p className="text-[10px] text-foreground/35 xl:hidden">ID: {u.id.slice(0, 8)}…</p>
+                      {u.phone && <p className="text-[10px] text-foreground/35 lg:hidden">{u.phone}</p>}
                     </div>
                   </div>
                 </td>
@@ -959,6 +968,7 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
                     {u.provider}
                   </span>
                 </td>
+                <td className="p-3 hidden lg:table-cell text-foreground/60">{u.phone || "—"}</td>
                 <td className="p-3 text-center">
                   {u.roles.length > 0 ? (
                     u.roles.map((r) => (
@@ -981,12 +991,8 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
                 <td className="p-3 text-center">{u.favorites_count || <span className="text-foreground/15">0</span>}</td>
                 <td className="p-3 text-center">{u.clicks_count || <span className="text-foreground/15">0</span>}</td>
                 <td className="p-3 text-center">{u.votes_count || <span className="text-foreground/15">0</span>}</td>
-                <td className="p-3 text-center">
-                  {u.alert_enabled
-                    ? <Bell className="w-3.5 h-3.5 text-primary mx-auto" />
-                    : <span className="text-foreground/15">—</span>
-                  }
-                </td>
+                <td className="p-3 text-center hidden lg:table-cell">{u.alert_enabled ? (u.alert_frequency || "active") : "—"}</td>
+                <td className="p-3 text-right text-foreground/40 hidden xl:table-cell font-mono text-[10px]">{u.id}</td>
                 <td className="p-3 text-right text-foreground/60">
                   {u.created_at ? format(new Date(u.created_at), "dd MMM yyyy", { locale: fr }) : "—"}
                 </td>
@@ -996,7 +1002,7 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={11} className="p-8 text-center text-foreground/30">Aucun utilisateur trouvé</td></tr>
+              <tr><td colSpan={13} className="p-8 text-center text-foreground/30">Aucun utilisateur trouvé</td></tr>
             )}
           </tbody>
         </table>
