@@ -82,7 +82,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
         )}
         <div
           ref={scrollRef}
-          className="flex items-center gap-6 overflow-x-auto py-2 scrollbar-hide"
+          className="flex items-center gap-6 overflow-x-auto py-2 brand-scroll"
         >
           {brands.map(({ name, count }) => {
             const logo = brandLogos[name];
