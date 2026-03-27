@@ -14,10 +14,10 @@ const CategoryPage = () => {
   const { filteredDeals } = useGender();
 
   const categoryLabels: Record<string, string> = {
-    sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
-    tshirts: t.tshirts, "t-shirts": "T-shirts", pants: t.pants,
-    pantalons: "Pantalons", accessories: t.accessories, accessoires: t.accessories,
-    vestes: t.jackets, autres: "Autres", all: t.all,
+    sneakers: t.sneakers, hoodies: t.hoodies,
+    "t-shirts": "T-shirts", pantalons: "Pantalons",
+    accessoires: t.accessories, vestes: t.jackets,
+    autres: "Autres", all: t.all,
   };
 
   const isAll = slug === "all";
@@ -26,7 +26,7 @@ const CategoryPage = () => {
   const categoryDeals = useMemo(
     () => isAll
       ? filteredDeals
-      : filteredDeals.filter((d) => d.category === slug || (slug === "tshirts" && d.category === "t-shirts") || (slug === "jackets" && d.category === "vestes") || (slug === "pants" && d.category === "pantalons") || (slug === "accessories" && d.category === "accessoires")),
+      : filteredDeals.filter((d) => d.category === slug),
     [slug, filteredDeals, isAll]
   );
 

@@ -274,11 +274,10 @@ import catAccessories from "@/assets/cat-accessories.jpg";
 
 export const categoryList: { key: Category; image: string }[] = [
   { key: "sneakers", image: catSneakers },
-  { key: "jackets", image: catJackets },
-  { key: "hoodies", image: catHoodies },
-  { key: "tshirts", image: catTshirts },
-  { key: "pantalons", image: catPants },
   { key: "vestes", image: catJackets },
+  { key: "hoodies", image: catHoodies },
+  { key: "t-shirts", image: catTshirts },
+  { key: "pantalons", image: catPants },
   { key: "accessoires", image: catAccessories },
 ];
 
