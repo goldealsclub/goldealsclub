@@ -1,10 +1,15 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useContext } from "react";
 import { X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { Deal, DealLevel, Category, deals as allDealsGlobal } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
+import { useLoadVotes } from "@/hooks/use-deal-votes";
+import React from "react";
 
-export type SortKey = "relevance" | "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
+// Access votes context directly for sort
+const VotesContext = React.createContext<{ votes: Record<string, { score: number }> } | null>(null);
+
+export type SortKey = "relevance" | "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc" | "communityScore";
 
 const PAGE_SIZE = 48;
 
