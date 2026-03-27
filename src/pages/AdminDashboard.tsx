@@ -307,13 +307,13 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
       </div>
 
       {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
         {charts?.signup_timeline && charts.signup_timeline.length > 0 && (
           <ChartCard title="Inscriptions (30 derniers jours)">
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={charts.signup_timeline}>
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Area type="monotone" dataKey="count" stroke="hsl(30,40%,45%)" fill="hsl(30,40%,45%)" fillOpacity={0.15} name="Inscriptions" />
               </AreaChart>
@@ -323,10 +323,10 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 
         {charts?.click_timeline && charts.click_timeline.length > 0 && (
           <ChartCard title="Clics sortants (30 derniers jours)">
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={charts.click_timeline}>
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Area type="monotone" dataKey="count" stroke="hsl(30,30%,55%)" fill="hsl(30,30%,55%)" fillOpacity={0.15} name="Clics" />
               </AreaChart>
