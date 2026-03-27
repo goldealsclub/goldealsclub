@@ -8,6 +8,9 @@ import { useCompare } from "./CompareDrawer";
 import FlameIndicator from "./FlameIndicator";
 import ShareMenu from "./ShareMenu";
 import { trackOutboundClick } from "@/lib/track-click";
+import { motion } from "framer-motion";
+import { ThumbsUp, ThumbsDown } from "lucide-react";
+import { useDealVotes } from "@/hooks/use-deal-votes";
 
 interface DealCardProps {
   deal: Deal;
@@ -32,6 +35,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const { t } = useI18n();
   const { toggle, isFav } = useFavorites();
   const { add, isComparing } = useCompare();
+  const { score, userVote, vote } = useDealVotes(deal.id);
   const saved = isFav(deal.id);
   const comparing = isComparing(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
@@ -140,10 +144,12 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
               className="p-2 hover:bg-accent/50 rounded-sm transition-colors"
               aria-label={t.save}
             >
-              <Heart
-                className={`w-4 h-4 transition-colors ${saved ? "fill-foreground text-foreground" : "text-foreground/40 group-hover:text-foreground"}`}
-                strokeWidth={1.5}
-              />
+              <motion.div whileTap={{ scale: 1.4 }} transition={{ type: "spring", stiffness: 400 }}>
+                <Heart
+                  className={`w-4 h-4 transition-colors ${saved ? "fill-foreground text-foreground" : "text-foreground/40 group-hover:text-foreground"}`}
+                  strokeWidth={1.5}
+                />
+              </motion.div>
             </button>
             <ShareMenu url={`/deal/${deal.id}`} title={deal.title} />
             <button
@@ -154,6 +160,15 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             >
               <GitCompareArrows className="w-4 h-4" strokeWidth={1.5} />
             </button>
+            <div className="flex items-center gap-0.5 ml-1">
+              <button onClick={() => vote(1)} className={`p-1 rounded-sm transition-colors ${userVote === 1 ? "text-foreground" : "text-foreground/30 hover:text-foreground/60"}`}>
+                <ThumbsUp className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </button>
+              {score !== 0 && <span className="text-[10px] font-body text-foreground/50 min-w-[1ch] text-center">{score}</span>}
+              <button onClick={() => vote(-1)} className={`p-1 rounded-sm transition-colors ${userVote === -1 ? "text-foreground" : "text-foreground/30 hover:text-foreground/60"}`}>
+                <ThumbsDown className="w-3.5 h-3.5" strokeWidth={1.5} />
+              </button>
+            </div>
           </div>
           <a
             href={deal.affiliate_url || deal.product_url}

@@ -5,6 +5,8 @@ import { useI18n } from "@/lib/i18n";
 import { deals, isTrustedMerchant } from "@/lib/data";
 import { useFavorites } from "@/lib/favorites";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
+import SEOHead from "@/components/SEOHead";
+import { motion } from "framer-motion";
 import FlameIndicator from "@/components/FlameIndicator";
 import ShareMenu from "@/components/ShareMenu";
 import PriceAlertButton from "@/components/PriceAlertButton";
@@ -62,6 +64,28 @@ const DealPage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title={`${deal.title} — GOLDEALS CLUB`}
+        description={`${deal.title} à ${deal.sale_price}${deal.currency === "EUR" ? "€" : deal.currency} chez ${deal.merchant}. ${deal.discount_percent ? `-${deal.discount_percent}%` : ""}`}
+        canonical={`https://goldealsclub.lovable.app/deal/${deal.id}`}
+        image={deal.image_url || undefined}
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "Product",
+          name: deal.title,
+          image: deal.image_url,
+          brand: { "@type": "Brand", name: deal.brand },
+          offers: {
+            "@type": "Offer",
+            price: deal.sale_price,
+            priceCurrency: deal.currency,
+            availability: "https://schema.org/InStock",
+            url: deal.affiliate_url || deal.product_url,
+            seller: { "@type": "Organization", name: deal.merchant },
+            ...(deal.original_price ? { priceValidUntil: deal.promo_end_date } : {}),
+          },
+        }}
+      />
       <Header />
       <div className="container mx-auto px-4 py-8">
         <button onClick={() => navigate(-1)} className="inline-flex items-center gap-2 text-[10px] font-display uppercase tracking-widest text-foreground/40 hover:text-foreground transition-colors mb-8">
@@ -71,7 +95,12 @@ const DealPage = () => {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
           {/* Image */}
-          <div className="relative aspect-square overflow-hidden bg-photo">
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="relative aspect-square overflow-hidden bg-photo"
+          >
             <img src={deal.image_url} alt={deal.title} className="w-full h-full object-contain" />
             {deal.discount_percent && deal.discount_percent > 0 && (
               <div className="absolute top-4 left-4 bg-primary text-primary-foreground px-3 py-1.5 text-xs font-display tracking-wider">
@@ -87,10 +116,15 @@ const DealPage = () => {
             <div className="absolute top-4 right-4">
               <FlameIndicator count={deal.flame_count} />
             </div>
-          </div>
+          </motion.div>
 
           {/* Details */}
-          <div className="flex flex-col justify-center">
+          <motion.div
+            initial={{ opacity: 0, x: 30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.15, ease: "easeOut" }}
+            className="flex flex-col justify-center"
+          >
             <div className="flex items-center gap-2 mb-4 flex-wrap">
               <span className="text-[10px] font-body uppercase tracking-wider text-foreground/50">{deal.merchant}</span>
               {trusted && (
@@ -161,7 +195,7 @@ const DealPage = () => {
                 <span className="text-[10px] font-body">{deal.popularity}</span>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
 
         {/* Similar — "Vous aimerez aussi" */}
