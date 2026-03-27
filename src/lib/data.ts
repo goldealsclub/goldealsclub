@@ -1,4 +1,4 @@
-import dealsJson from "../../public/deals.json";
+import { inferBrand } from "@/lib/brand-normalization";
 
 export type DealLevel = "hot-deal" | "bon-deal" | "promo-normale";
 export type Category = "sneakers" | "jackets" | "hoodies" | "tshirts" | "t-shirts" | "pants" | "pantalons" | "accessories" | "accessoires" | "vestes" | "autres";
@@ -118,46 +118,6 @@ function genderToLabel(gender: Gender): string {
   }
 }
 
-/** Known multi-word brands (order matters – check longer first) */
-const MULTI_WORD_BRANDS: string[] = [
-  "Low Lights Studios","New Balance","New Era","Karl Kani","Polo Ralph Lauren","Polo Sport",
-  "Dr. Martens","Under Armour","Smoke Rise","Sergio Tacchini","True Religion",
-  "Von Dutch","Mitchell & Ness","G-SHOCK","Another Cotton","Nike SB",
-];
-
-/** Single-word brands we recognise from Snipes titles */
-const SINGLE_WORD_BRANDS = new Set([
-  "Nike","adidas","Jordan","UGG","ASICS","PUMA","Converse","Vans","Pegador",
-  "Dickies","Lacoste","Timberland","On","Prohibited","HALO","Salomon",
-  "Reebok","Fila","Casio","Carhartt","Champion","Ellesse","Kappa","Starter",
-  "Columbia","Levi's","Stance","Oakley","The North Face","Tommy","Birkenstock",
-  "Saucony","Crocs","Merrell","Clarks","Hoka","Stanley","2Y","Small",
-  "DC","Buffalo","Decibel","Eastpak","Umbro",
-]);
-
-/** Extract real brand from title when merchant set brand to "Snipes" */
-function inferBrand(brand: string, title: string, merchant: string): string {
-  // Only fix when the brand is the merchant itself (Snipes issue)
-  if (brand.toLowerCase() !== "snipes" && brand.toLowerCase() !== "kappa") return brand;
-  if (brand.toLowerCase() === "kappa") return "Kappa";
-
-  const t = title || "";
-
-  // Try multi-word brands first
-  for (const mw of MULTI_WORD_BRANDS) {
-    if (t.toLowerCase().startsWith(mw.toLowerCase())) return mw;
-  }
-
-  // Try single-word brand (first word of title)
-  const firstWord = t.split(/\s+/)[0];
-  if (firstWord && SINGLE_WORD_BRANDS.has(firstWord)) return firstWord;
-
-  // Fallback: use first word capitalised
-  if (firstWord && firstWord.length > 1) return firstWord;
-
-  return brand;
-}
-
 /** Infer category from title keywords when source category seems wrong */
 function inferCategory(category: string, title: string): Category {
   const t = ` ${(title || "").toLowerCase()} `;
@@ -200,7 +160,7 @@ function normalizeDeals(raw: any[]): Deal[] {
       return true;
     })
     .map((d, i) => {
-    const brand = inferBrand(d.brand || "", d.title || "", d.merchant || "");
+    const brand = inferBrand(d.brand || "", d.title || "");
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
     const category = inferCategory(d.category || "autres", d.title || "");
     let discountPercent = d.discount_percent ?? null;
