@@ -38,6 +38,7 @@ const App = () => (
         <FavoritesProvider>
           <GenderProvider>
           <CompareProvider>
+          <VotesProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
