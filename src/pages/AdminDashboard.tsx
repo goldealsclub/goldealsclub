@@ -868,9 +868,6 @@ const UsersTab = ({ users, stats, loading, error }: { users: AdminUser[]; stats:
   }, [users, search, sortBy]);
 
   const exportCSV = () => {
-    const header = "ID,Email,Nom,Téléphone,Provider,Confirmé,Rôles,Favoris,Clics,Votes,Alerte active,Fréquence alerte,Inscrit le,Dernière connexion\n";
-    const rows = filtered.map((u) =>
-      `"${u.id}","${u.email || ""}","${u.user_metadata.full_name || ""}","${u.phone || ""}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.roles.join(", ") || "user"}","${u.favorites_count}","${u.clicks_count}","${u.votes_count}","${u.alert_enabled ? "Oui" : "Non"}","${u.alert_frequency || ""}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
     const header = "ID,Email,Nom,Date naissance,Genre,Ville,Pays,Téléphone,Instagram,Taille,Pointure,Marques,Bio,Provider,Confirmé,Rôles,Favoris,Clics,Votes,Alerte,Fréquence,Inscrit le,Dernière connexion\n";
     const rows = filtered.map((u) =>
       `"${u.id}","${u.email || ""}","${u.profile?.full_name || u.user_metadata.full_name || ""}","${u.profile?.date_of_birth || ""}","${u.profile?.gender || ""}","${u.profile?.city || ""}","${u.profile?.country || ""}","${u.profile?.phone || u.phone || ""}","${u.profile?.instagram_handle || ""}","${u.profile?.clothing_size || ""}","${u.profile?.shoe_size || ""}","${(u.profile?.preferred_brands || []).join("; ")}","${(u.profile?.bio || "").replace(/"/g, '""')}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.roles.join(", ") || "user"}","${u.favorites_count}","${u.clicks_count}","${u.votes_count}","${u.alert_enabled ? "Oui" : "Non"}","${u.alert_frequency || ""}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
