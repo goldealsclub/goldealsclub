@@ -318,21 +318,28 @@ Deno.serve(async (req) => {
       inserted += batch.length;
     }
 
-    // Delete deals not in this import batch
+    // Delete deals not in this import batch (paginate to avoid 1000-row limit)
     const importedIds = new Set(cleaned.map((d: any) => d.id));
-    const { data: existingDeals } = await supabase.from("deals").select("id");
-    if (existingDeals) {
-      const toDelete = existingDeals.filter((d: any) => !importedIds.has(d.id)).map((d: any) => d.id);
+    let deletedCount = 0;
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data: page } = await supabase.from("deals").select("id").range(from, from + pageSize - 1);
+      if (!page || page.length === 0) break;
+      const toDelete = page.filter((d: any) => !importedIds.has(d.id)).map((d: any) => d.id);
       if (toDelete.length > 0) {
         for (let i = 0; i < toDelete.length; i += 500) {
           const batch = toDelete.slice(i, i + 500);
           await supabase.from("deals").delete().in("id", batch);
         }
+        deletedCount += toDelete.length;
       }
+      if (page.length < pageSize) break;
+      from += pageSize;
     }
 
     return new Response(
-      JSON.stringify({ success: true, count: inserted, cleaned: existingDeals ? existingDeals.length - inserted : 0 }),
+      JSON.stringify({ success: true, count: inserted, deleted: deletedCount }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
