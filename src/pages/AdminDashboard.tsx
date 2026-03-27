@@ -195,33 +195,35 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="font-display text-3xl tracking-wider">ADMINISTRATION</h1>
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <h1 className="font-display text-xl sm:text-3xl tracking-wider">ADMINISTRATION</h1>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 border border-foreground/10 text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-foreground/10 text-[10px] sm:text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            Rafraîchir
+            <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">Rafraîchir</span>
+            <span className="sm:hidden">↻</span>
           </button>
         </div>
-        <p className="font-body text-xs text-foreground/50 mb-8">Dashboard administrateur — données en temps réel</p>
+        <p className="font-body text-[10px] sm:text-xs text-foreground/50 mb-6 sm:mb-8">Dashboard administrateur — données en temps réel</p>
 
-        <div className="flex gap-1 mb-10 border-b border-foreground/8 overflow-x-auto">
+        <div className="flex gap-0.5 sm:gap-1 mb-6 sm:mb-10 border-b border-foreground/8 overflow-x-auto scrollbar-none">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-5 py-3 text-[11px] font-display uppercase tracking-widest transition-colors border-b-2 -mb-px whitespace-nowrap ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 text-[10px] sm:text-[11px] font-display uppercase tracking-widest transition-colors border-b-2 -mb-px whitespace-nowrap ${
                 tab === t.key
                   ? "border-primary text-foreground"
                   : "border-transparent text-foreground/40 hover:text-foreground/70"
               }`}
             >
               {t.icon}
-              {t.label}
+              <span className="hidden xs:inline">{t.label}</span>
+              <span className="xs:hidden">{t.key === "overview" ? "Vue" : t.key === "analytics" ? "Stats" : t.key === "awin" ? "Awin" : "Users"}</span>
             </button>
           ))}
         </div>
