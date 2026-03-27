@@ -113,9 +113,7 @@ const Index = () => {
       )}
 
       {/* Nike Spotlight */}
-      {(() => {
-        const nikeDeals = deals.filter(d => d.brand.toLowerCase() === "nike" || d.source?.toLowerCase() === "nike").sort(sortByDate);
-        return nikeDeals.length > 0 ? (
+      {nikeDeals.length > 0 && (
           <section className="bg-foreground text-background">
             <div className="container mx-auto px-4 py-20">
               <div className="flex items-end justify-between mb-12">
@@ -134,8 +132,7 @@ const Index = () => {
               </div>
             </div>
           </section>
-        ) : null;
-      })()}
+      )}
 
       {/* Snipes Spotlight */}
       {(() => {
