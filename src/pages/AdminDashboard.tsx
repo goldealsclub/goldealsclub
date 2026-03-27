@@ -14,7 +14,7 @@ import {
   Loader2, TrendingUp, MousePointerClick, ShoppingBag, Heart, Users,
   Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download,
   Eye, UserCheck, UserX, Activity, Star, Clock, Calendar,
-  ExternalLink, Link2,
+  ExternalLink, Link2, RefreshCw,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -88,9 +88,10 @@ const AdminDashboard = () => {
   const [charts, setCharts] = useState<ChartData | null>(null);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (!isAdmin) return;
+  const loadClicksData = () => {
+    setClicksLoading(true);
     supabase
       .from("click_stats")
       .select("*")
@@ -103,11 +104,9 @@ const AdminDashboard = () => {
       .from("favorites")
       .select("id", { count: "exact", head: true })
       .then(({ count }) => setTotalFavorites(count || 0));
-  }, [isAdmin]);
+  };
 
-  // Load users data once (for overview + users tabs)
-  useEffect(() => {
-    if (!isAdmin || usersLoaded) return;
+  const loadUsersData = () => {
     setUsersLoading(true);
     supabase.functions
       .invoke("admin-users")
@@ -122,6 +121,23 @@ const AdminDashboard = () => {
         setUsersLoading(false);
         setUsersLoaded(true);
       });
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    loadClicksData();
+    loadUsersData();
+    setTimeout(() => setRefreshing(false), 1500);
+  };
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadClicksData();
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin || usersLoaded) return;
+    loadUsersData();
   }, [isAdmin, usersLoaded]);
 
   const totalClicks = useMemo(() => clicks.reduce((s, c) => s + c.click_count, 0), [clicks]);
@@ -180,7 +196,17 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-12">
-        <h1 className="font-display text-3xl tracking-wider mb-2">ADMINISTRATION</h1>
+        <div className="flex items-center justify-between mb-2">
+          <h1 className="font-display text-3xl tracking-wider">ADMINISTRATION</h1>
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2 border border-foreground/10 text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            Rafraîchir
+          </button>
+        </div>
         <p className="font-body text-xs text-foreground/50 mb-8">Dashboard administrateur — données en temps réel</p>
 
         <div className="flex gap-1 mb-10 border-b border-foreground/8 overflow-x-auto">
