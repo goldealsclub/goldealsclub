@@ -25,9 +25,7 @@ export function useAdmin() {
       };
     }
 
-    setLoading(true);
-
-    supabase
+    void supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id)
@@ -37,8 +35,7 @@ export function useAdmin() {
         if (!isMounted) return;
         setIsAdmin(Boolean(data) && !error);
         setLoading(false);
-      })
-      .catch(() => {
+      }, () => {
         if (!isMounted) return;
         setIsAdmin(false);
         setLoading(false);
