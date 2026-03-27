@@ -126,17 +126,18 @@ function inferCategory(category: string, title: string): Category {
   const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","wind breaker","windrunner","coupe-vent","bomber","puffer","gilet","weste","overshirt","vest ","anorak","softshell","teddy ","cagoule","firebird tt","jacke ","sherpa","traningsjacke","sst tt","cardigan","mount hope","winterized","wr fz","adverzip"];
   if (jacketKw.some(k => t.includes(k))) return "vestes";
 
-  // 2. Hoodies — exclude items that also match pants/shorts keywords
+  // 2. Hoodies — exclude items that also match pants/shorts/skirt keywords
   const hoodieKw = ["hoodie","sweat ","sweat,","sweats ","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","flc po ","troyer"];
-  const hoodieExclude = ["short","pant","jogger","legging","bermuda","cargo","jogging","jeans","jean ","tracksuit","track suit","sweatpant"];
+  const hoodieExclude = ["short","pant","jogger","legging","bermuda","cargo","jogging","jeans","jean ","tracksuit","track suit","sweatpant","skirt","jupe","robe ","dress "];
   if (hoodieKw.some(k => t.includes(k)) && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
 
-  // 2b. Fleece tops only (exclude fleece shorts/pants)
+  // 2b. Fleece tops only (exclude fleece shorts/pants/skirts)
   if (t.includes("fleece") && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
 
-  // 3. Pants – removed "short " and "denim" (too broad)
+  // 3. Pants — use pantsExclude to avoid "shorts" matching "shortsleeve"
   const pantsKw = ["pantalon","jogger","pant ","pants","legging","shorts","bermuda","cargo","jogging","jean ","jeans","flared","flare ","slim fit","baggy","survêtement","ensemble","trainingsanzüge","straight tp","tracküants","trackpant","track pant","sweatpant","sweatpants","training pant","tracksuit","trainingsanzug","track suit","inseam","trainingshose","jggr ","bootcut"];
-  if (pantsKw.some(k => t.includes(k))) return "pantalons";
+  const pantsExclude = ["shortsleeve","short sleeve","short-sleeve"];
+  if (pantsKw.some(k => t.includes(k)) && !pantsExclude.some(k => t.includes(k))) return "pantalons";
 
   // 4. T-shirts
   const tshirtKw = ["t-shirt","tee ","tee,","tee-","jersey","polo ","maillot","débardeur","tank top","tanktop","shortsleeve","short sleeve","short-sleeve"," crew ","trikot","chemise","pintuck t ","cropped t ","baseball shirt","baseballshirt"," shirt ","shirt,","crop top","v-neck","mesh button front","dress ","swingman"];
