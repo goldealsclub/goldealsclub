@@ -26,7 +26,7 @@ const CategoryPage = () => {
   const categoryDeals = useMemo(
     () => isAll
       ? filteredDeals
-      : filteredDeals.filter((d) => d.category === slug || (slug === "tshirts" && d.category === "t-shirts")),
+      : filteredDeals.filter((d) => d.category === slug || (slug === "tshirts" && d.category === "t-shirts") || (slug === "jackets" && d.category === "vestes") || (slug === "pants" && d.category === "pantalons") || (slug === "accessories" && d.category === "accessoires")),
     [slug, filteredDeals, isAll]
   );
 
