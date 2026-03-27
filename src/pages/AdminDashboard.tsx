@@ -111,13 +111,21 @@ const AdminDashboard = () => {
     supabase.functions
       .invoke("admin-users")
       .then(({ data, error }) => {
+        console.log("[admin-users] raw response:", { data, error, type: typeof data });
         if (error) {
-          console.error("Failed to load users:", error);
+          console.error("[admin-users] error:", error);
         } else if (data) {
-          setAdminUsers(data.users || []);
-          setSiteStats(data.stats || null);
-          setCharts(data.charts || null);
+          const parsed = typeof data === "string" ? JSON.parse(data) : data;
+          console.log("[admin-users] parsed:", { users: parsed.users?.length, stats: parsed.stats });
+          setAdminUsers(parsed.users || []);
+          setSiteStats(parsed.stats || null);
+          setCharts(parsed.charts || null);
         }
+        setUsersLoading(false);
+        setUsersLoaded(true);
+      })
+      .catch((err) => {
+        console.error("[admin-users] catch:", err);
         setUsersLoading(false);
         setUsersLoaded(true);
       });
