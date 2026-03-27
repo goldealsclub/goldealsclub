@@ -519,6 +519,224 @@ const AnalyticsTab = ({
   </>
 );
 
+/* ─── Awin Tracking Tab ─── */
+interface AwinClick {
+  id: string;
+  deal_id: string;
+  destination_url: string | null;
+  clicked_at: string;
+  user_id: string | null;
+  referrer: string | null;
+  deal_title?: string;
+  brand?: string;
+  merchant?: string;
+}
+
+const AwinTab = () => {
+  const [awinClicks, setAwinClicks] = useState<AwinClick[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [period, setPeriod] = useState<"7d" | "30d" | "all">("30d");
+
+  useEffect(() => {
+    const fetchClicks = async () => {
+      setLoading(true);
+      let query = supabase
+        .from("outbound_clicks")
+        .select("*")
+        .order("clicked_at", { ascending: false });
+
+      if (period === "7d") {
+        query = query.gte("clicked_at", new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString());
+      } else if (period === "30d") {
+        query = query.gte("clicked_at", new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+      }
+
+      const { data: clicksData } = await query.limit(500);
+      if (!clicksData) { setLoading(false); return; }
+
+      // Enrich with deal info
+      const dealIds = [...new Set(clicksData.map((c: any) => c.deal_id))];
+      const { data: dealsData } = await supabase
+        .from("deals")
+        .select("id, title, brand, merchant")
+        .in("id", dealIds);
+
+      const dealsMap = new Map((dealsData || []).map((d: any) => [d.id, d]));
+      const enriched = clicksData.map((c: any) => {
+        const deal = dealsMap.get(c.deal_id);
+        return { ...c, deal_title: deal?.title, brand: deal?.brand, merchant: deal?.merchant };
+      });
+
+      setAwinClicks(enriched);
+      setLoading(false);
+    };
+    fetchClicks();
+  }, [period]);
+
+  const awinOnly = awinClicks.filter((c) => c.destination_url?.includes("awin"));
+  const withClickref = awinOnly.filter((c) => c.destination_url?.includes("clickref"));
+  const totalAwin = awinOnly.length;
+  const totalAll = awinClicks.length;
+  const awinRate = totalAll > 0 ? ((totalAwin / totalAll) * 100).toFixed(1) : "0";
+
+  // Clicks by day for chart
+  const clicksByDay = useMemo(() => {
+    const map: Record<string, { total: number; awin: number }> = {};
+    awinClicks.forEach((c) => {
+      const day = c.clicked_at.slice(0, 10);
+      if (!map[day]) map[day] = { total: 0, awin: 0 };
+      map[day].total++;
+      if (c.destination_url?.includes("awin")) map[day].awin++;
+    });
+    return Object.entries(map)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, v]) => ({ date, total: v.total, awin: v.awin }));
+  }, [awinClicks]);
+
+  // Top deals by Awin clicks
+  const topAwinDeals = useMemo(() => {
+    const map: Record<string, { title: string; brand: string; merchant: string; count: number }> = {};
+    awinOnly.forEach((c) => {
+      const key = c.deal_id;
+      if (!map[key]) map[key] = { title: c.deal_title || c.deal_id, brand: c.brand || "—", merchant: c.merchant || "—", count: 0 };
+      map[key].count++;
+    });
+    return Object.values(map).sort((a, b) => b.count - a.count).slice(0, 15);
+  }, [awinOnly]);
+
+  // Extract clickref from URL
+  const extractClickref = (url: string | null): string => {
+    if (!url) return "—";
+    try {
+      const u = new URL(url);
+      return u.searchParams.get("clickref") || "—";
+    } catch {
+      return "—";
+    }
+  };
+
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>;
+  }
+
+  return (
+    <>
+      {/* Period selector */}
+      <div className="flex gap-2 mb-8">
+        {(["7d", "30d", "all"] as const).map((p) => (
+          <button
+            key={p}
+            onClick={() => setPeriod(p)}
+            className={`px-4 py-2 text-[11px] font-display uppercase tracking-widest border transition-colors ${
+              period === p ? "border-primary bg-primary/10 text-foreground" : "border-foreground/10 text-foreground/40 hover:text-foreground/70"
+            }`}
+          >
+            {p === "7d" ? "7 jours" : p === "30d" ? "30 jours" : "Tout"}
+          </button>
+        ))}
+      </div>
+
+      {/* KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <KpiCard icon={<MousePointerClick className="w-5 h-5" />} label="Clics totaux" value={totalAll} />
+        <KpiCard icon={<Link2 className="w-5 h-5" />} label="Clics Awin" value={totalAwin} />
+        <KpiCard icon={<ExternalLink className="w-5 h-5" />} label="Avec clickref" value={withClickref.length} />
+        <div className="border border-foreground/8 p-5">
+          <div className="flex items-center gap-2 mb-2 text-foreground/40">
+            <TrendingUp className="w-5 h-5" />
+            <span className="text-[10px] font-display uppercase tracking-widest">Taux Awin</span>
+          </div>
+          <p className="font-display text-2xl tracking-wider">{awinRate}%</p>
+        </div>
+      </div>
+
+      {/* Chart */}
+      {clicksByDay.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+          <ChartCard title="Clics par jour (total vs Awin)">
+            <ResponsiveContainer width="100%" height={280}>
+              <BarChart data={clicksByDay}>
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
+                <Bar dataKey="total" fill="hsl(30,15%,72%)" name="Total" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="awin" fill="hsl(30,40%,45%)" name="Awin" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+
+          {topAwinDeals.length > 0 && (
+            <ChartCard title="Top deals Awin (par clics)">
+              <ResponsiveContainer width="100%" height={280}>
+                <BarChart data={topAwinDeals.slice(0, 8)} layout="vertical" margin={{ left: 100 }}>
+                  <XAxis type="number" tick={{ fontSize: 10 }} />
+                  <YAxis dataKey="title" type="category" tick={{ fontSize: 9 }} width={95} />
+                  <Tooltip contentStyle={{ fontSize: 11 }} />
+                  <Bar dataKey="count" fill="hsl(30,40%,45%)" radius={[0, 4, 4, 0]} name="Clics" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartCard>
+          )}
+        </div>
+      )}
+
+      {/* Recent Awin clicks table */}
+      <div className="mb-12">
+        <h3 className="font-display text-sm uppercase tracking-widest mb-4">Derniers clics Awin avec clickref</h3>
+        <div className="border border-foreground/8 overflow-x-auto">
+          <table className="w-full text-xs font-body">
+            <thead>
+              <tr className="border-b border-foreground/8 bg-muted/30">
+                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Date</th>
+                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Deal</th>
+                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Marque</th>
+                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Marchand</th>
+                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Clickref</th>
+                <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">User</th>
+              </tr>
+            </thead>
+            <tbody>
+              {awinOnly.slice(0, 50).map((c) => (
+                <tr key={c.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
+                  <td className="p-3 text-foreground/60 whitespace-nowrap">
+                    {format(new Date(c.clicked_at), "dd/MM HH:mm", { locale: fr })}
+                  </td>
+                  <td className="p-3 max-w-[200px] truncate">{c.deal_title || c.deal_id}</td>
+                  <td className="p-3 text-foreground/60">{c.brand || "—"}</td>
+                  <td className="p-3 text-foreground/60">{c.merchant || "—"}</td>
+                  <td className="p-3 font-mono text-[10px] text-primary max-w-[180px] truncate">{extractClickref(c.destination_url)}</td>
+                  <td className="p-3 text-center">
+                    {c.user_id ? <UserCheck className="w-3.5 h-3.5 text-foreground/40 mx-auto" /> : <span className="text-foreground/20">anon</span>}
+                  </td>
+                </tr>
+              ))}
+              {awinOnly.length === 0 && (
+                <tr><td colSpan={6} className="p-8 text-center text-foreground/30">Aucun clic Awin enregistré</td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[10px] font-body text-foreground/30 mt-3">
+          {awinOnly.length} clic{awinOnly.length > 1 ? "s" : ""} Awin — Les conversions sont trackées via le clickref dans votre dashboard Awin
+        </p>
+      </div>
+
+      {/* Info box */}
+      <div className="border border-foreground/8 bg-muted/20 p-6">
+        <h4 className="font-display text-xs uppercase tracking-widest mb-3">💡 Suivi des conversions</h4>
+        <p className="text-xs font-body text-foreground/60 leading-relaxed">
+          Chaque clic sortant vers Awin contient un <span className="font-mono text-primary">clickref</span> unique
+          (format : <span className="font-mono">dealId__timestamp</span>). Pour voir les conversions, connectez-vous à votre{" "}
+          <a href="https://ui.awin.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">
+            dashboard Awin
+          </a>{" "}
+          et filtrez par clickref pour corréler les ventes avec les deals de GOLDEALS CLUB.
+        </p>
+      </div>
+    </>
+  );
+};
+
 /* ─── Users Tab ─── */
 const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteStats | null; loading: boolean }) => {
   const [search, setSearch] = useState("");
