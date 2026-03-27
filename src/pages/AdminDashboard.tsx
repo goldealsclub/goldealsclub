@@ -650,42 +650,42 @@ const AwinTab = () => {
   return (
     <>
       {/* Period selector */}
-      <div className="flex gap-2 mb-8">
+      <div className="flex gap-1.5 sm:gap-2 mb-6 sm:mb-8">
         {(["7d", "30d", "all"] as const).map((p) => (
           <button
             key={p}
             onClick={() => setPeriod(p)}
-            className={`px-4 py-2 text-[11px] font-display uppercase tracking-widest border transition-colors ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-[11px] font-display uppercase tracking-widest border transition-colors ${
               period === p ? "border-primary bg-primary/10 text-foreground" : "border-foreground/10 text-foreground/40 hover:text-foreground/70"
             }`}
           >
-            {p === "7d" ? "7 jours" : p === "30d" ? "30 jours" : "Tout"}
+            {p === "7d" ? "7j" : p === "30d" ? "30j" : "Tout"}
           </button>
         ))}
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <KpiCard icon={<MousePointerClick className="w-5 h-5" />} label="Clics totaux" value={totalAll} />
-        <KpiCard icon={<Link2 className="w-5 h-5" />} label="Clics Awin" value={totalAwin} />
-        <KpiCard icon={<ExternalLink className="w-5 h-5" />} label="Avec clickref" value={withClickref.length} />
-        <div className="border border-foreground/8 p-5">
-          <div className="flex items-center gap-2 mb-2 text-foreground/40">
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-[10px] font-display uppercase tracking-widest">Taux Awin</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics totaux" value={totalAll} />
+        <KpiCard icon={<Link2 className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics Awin" value={totalAwin} />
+        <KpiCard icon={<ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />} label="Avec clickref" value={withClickref.length} />
+        <div className="border border-foreground/8 p-3 sm:p-5">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 text-foreground/40">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-[9px] sm:text-[10px] font-display uppercase tracking-widest">Taux Awin</span>
           </div>
-          <p className="font-display text-2xl tracking-wider">{awinRate}%</p>
+          <p className="font-display text-lg sm:text-2xl tracking-wider">{awinRate}%</p>
         </div>
       </div>
 
       {/* Chart */}
       {clicksByDay.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
           <ChartCard title="Clics par jour (total vs Awin)">
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={clicksByDay}>
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Bar dataKey="total" fill="hsl(30,15%,72%)" name="Total" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="awin" fill="hsl(30,40%,45%)" name="Awin" radius={[4, 4, 0, 0]} />
@@ -695,10 +695,10 @@ const AwinTab = () => {
 
           {topAwinDeals.length > 0 && (
             <ChartCard title="Top deals Awin (par clics)">
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={topAwinDeals.slice(0, 8)} layout="vertical" margin={{ left: 100 }}>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={topAwinDeals.slice(0, 8)} layout="vertical" margin={{ left: 70 }}>
                   <XAxis type="number" tick={{ fontSize: 10 }} />
-                  <YAxis dataKey="title" type="category" tick={{ fontSize: 9 }} width={95} />
+                  <YAxis dataKey="title" type="category" tick={{ fontSize: 8 }} width={65} />
                   <Tooltip contentStyle={{ fontSize: 11 }} />
                   <Bar dataKey="count" fill="hsl(30,40%,45%)" radius={[0, 4, 4, 0]} name="Clics" />
                 </BarChart>
@@ -709,56 +709,56 @@ const AwinTab = () => {
       )}
 
       {/* Recent Awin clicks table */}
-      <div className="mb-12">
-        <h3 className="font-display text-sm uppercase tracking-widest mb-4">Derniers clics Awin avec clickref</h3>
+      <div className="mb-8 sm:mb-12">
+        <h3 className="font-display text-xs sm:text-sm uppercase tracking-widest mb-3 sm:mb-4">Derniers clics Awin</h3>
         <div className="border border-foreground/8 overflow-x-auto">
-          <table className="w-full text-xs font-body">
+          <table className="w-full text-[10px] sm:text-xs font-body">
             <thead>
               <tr className="border-b border-foreground/8 bg-muted/30">
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Date</th>
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Deal</th>
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Marque</th>
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Marchand</th>
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Clickref</th>
-                <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">User</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Date</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Deal</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Marque</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden md:table-cell">Marchand</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden lg:table-cell">Clickref</th>
+                <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">User</th>
               </tr>
             </thead>
             <tbody>
               {awinOnly.slice(0, 50).map((c) => (
                 <tr key={c.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
-                  <td className="p-3 text-foreground/60 whitespace-nowrap">
+                  <td className="p-2 sm:p-3 text-foreground/60 whitespace-nowrap">
                     {format(new Date(c.clicked_at), "dd/MM HH:mm", { locale: fr })}
                   </td>
-                  <td className="p-3 max-w-[200px] truncate">{c.deal_title || c.deal_id}</td>
-                  <td className="p-3 text-foreground/60">{c.brand || "—"}</td>
-                  <td className="p-3 text-foreground/60">{c.merchant || "—"}</td>
-                  <td className="p-3 font-mono text-[10px] text-primary max-w-[180px] truncate">{extractClickref(c.destination_url)}</td>
-                  <td className="p-3 text-center">
-                    {c.user_id ? <UserCheck className="w-3.5 h-3.5 text-foreground/40 mx-auto" /> : <span className="text-foreground/20">anon</span>}
+                  <td className="p-2 sm:p-3 max-w-[120px] sm:max-w-[200px] truncate">{c.deal_title || c.deal_id}</td>
+                  <td className="p-2 sm:p-3 text-foreground/60 hidden sm:table-cell">{c.brand || "—"}</td>
+                  <td className="p-2 sm:p-3 text-foreground/60 hidden md:table-cell">{c.merchant || "—"}</td>
+                  <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] text-primary max-w-[150px] truncate hidden lg:table-cell">{extractClickref(c.destination_url)}</td>
+                  <td className="p-2 sm:p-3 text-center">
+                    {c.user_id ? <UserCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-foreground/40 mx-auto" /> : <span className="text-foreground/20 text-[9px]">anon</span>}
                   </td>
                 </tr>
               ))}
               {awinOnly.length === 0 && (
-                <tr><td colSpan={6} className="p-8 text-center text-foreground/30">Aucun clic Awin enregistré</td></tr>
+                <tr><td colSpan={6} className="p-6 sm:p-8 text-center text-foreground/30">Aucun clic Awin enregistré</td></tr>
               )}
             </tbody>
           </table>
         </div>
-        <p className="text-[10px] font-body text-foreground/30 mt-3">
-          {awinOnly.length} clic{awinOnly.length > 1 ? "s" : ""} Awin — Les conversions sont trackées via le clickref dans votre dashboard Awin
+        <p className="text-[9px] sm:text-[10px] font-body text-foreground/30 mt-2 sm:mt-3">
+          {awinOnly.length} clic{awinOnly.length > 1 ? "s" : ""} Awin — Conversions trackées via clickref dans votre dashboard Awin
         </p>
       </div>
 
       {/* Info box */}
-      <div className="border border-foreground/8 bg-muted/20 p-6">
-        <h4 className="font-display text-xs uppercase tracking-widest mb-3">💡 Suivi des conversions</h4>
-        <p className="text-xs font-body text-foreground/60 leading-relaxed">
-          Chaque clic sortant vers Awin contient un <span className="font-mono text-primary">clickref</span> unique
-          (format : <span className="font-mono">dealId__timestamp</span>). Pour voir les conversions, connectez-vous à votre{" "}
+      <div className="border border-foreground/8 bg-muted/20 p-4 sm:p-6">
+        <h4 className="font-display text-[10px] sm:text-xs uppercase tracking-widest mb-2 sm:mb-3">💡 Suivi des conversions</h4>
+        <p className="text-[11px] sm:text-xs font-body text-foreground/60 leading-relaxed">
+          Chaque clic sortant vers Awin contient un <span className="font-mono text-primary">clickref</span> unique.
+          Connectez-vous à votre{" "}
           <a href="https://ui.awin.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">
             dashboard Awin
           </a>{" "}
-          et filtrez par clickref pour corréler les ventes avec les deals de GOLDEALS CLUB.
+          pour corréler les ventes avec vos deals.
         </p>
       </div>
     </>
