@@ -148,7 +148,7 @@ const Header = () => {
             <img
               src={logo}
               alt="GOLDEALS CLUB"
-              className={`transition-all duration-300 w-auto ${
+              className={`transition-all duration-300 w-auto logo-invert ${
                 scrolled ? "h-20 md:h-28" : "h-28 md:h-44"
               }`}
             />
