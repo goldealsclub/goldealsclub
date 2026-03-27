@@ -53,6 +53,19 @@ interface AdminUser {
     full_name: string | null;
     avatar_url: string | null;
   };
+  profile: {
+    full_name: string | null;
+    date_of_birth: string | null;
+    city: string | null;
+    country: string | null;
+    clothing_size: string | null;
+    shoe_size: string | null;
+    preferred_brands: string[];
+    bio: string | null;
+    phone: string | null;
+    gender: string | null;
+    instagram_handle: string | null;
+  } | null;
 }
 
 interface SiteStats {
@@ -941,7 +954,7 @@ const UsersTab = ({ users, stats, loading, error }: { users: AdminUser[]; stats:
               <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">#</th>
               <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Utilisateur</th>
               <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Provider</th>
-              <th className="text-left p-3 font-display uppercase tracking-wider text-[10px] hidden lg:table-cell">Téléphone</th>
+              <th className="text-left p-3 font-display uppercase tracking-wider text-[10px] hidden lg:table-cell">Localisation</th>
               <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Rôle</th>
               <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Confirmé</th>
               <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">
@@ -983,12 +996,37 @@ const UsersTab = ({ users, stats, loading, error }: { users: AdminUser[]; stats:
                   </div>
                 </td>
                 <td className="p-3">
-                  <span className="inline-flex items-center gap-1 text-foreground/60">
-                    <Shield className="w-3 h-3" />
-                    {u.provider}
-                  </span>
+                  <div className="space-y-0.5 text-[10px]">
+                    <span className="inline-flex items-center gap-1 text-foreground/60">
+                      <Shield className="w-3 h-3" />
+                      {u.provider}
+                    </span>
+                    {u.profile?.gender && u.profile.gender !== "non-précisé" && (
+                      <p className="text-foreground/40">{u.profile.gender}</p>
+                    )}
+                    {u.profile?.date_of_birth && (
+                      <p className="text-foreground/40">Né(e) {format(new Date(u.profile.date_of_birth), "dd/MM/yyyy")}</p>
+                    )}
+                    {(u.profile?.clothing_size || u.profile?.shoe_size) && (
+                      <p className="text-foreground/40">
+                        {u.profile.clothing_size ? `Taille: ${u.profile.clothing_size}` : ""}
+                        {u.profile.shoe_size ? ` P: ${u.profile.shoe_size}` : ""}
+                      </p>
+                    )}
+                    {u.profile?.instagram_handle && (
+                      <p className="text-primary/70">{u.profile.instagram_handle}</p>
+                    )}
+                  </div>
                 </td>
-                <td className="p-3 hidden lg:table-cell text-foreground/60">{u.phone || "—"}</td>
+                <td className="p-3 hidden lg:table-cell">
+                  <div className="space-y-0.5 text-[10px]">
+                    <p className="text-foreground/60">{[u.profile?.city, u.profile?.country].filter(Boolean).join(", ") || "—"}</p>
+                    {(u.profile?.phone || u.phone) && <p className="text-foreground/40">{u.profile?.phone || u.phone}</p>}
+                    {u.profile?.preferred_brands && u.profile.preferred_brands.length > 0 && (
+                      <p className="text-foreground/40 truncate max-w-[180px]">♥ {u.profile.preferred_brands.join(", ")}</p>
+                    )}
+                  </div>
+                </td>
                 <td className="p-3 text-center">
                   {u.roles.length > 0 ? (
                     u.roles.map((r) => (
