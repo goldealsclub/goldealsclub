@@ -120,6 +120,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
   const sortOptions: { key: SortKey; label: string }[] = [
     { key: "relevance", label: "Top deals" },
+    { key: "communityScore", label: "❤️ Communauté" },
     { key: "newest", label: t.newest },
     { key: "discount", label: t.discount },
     { key: "popularity", label: t.popularity },
