@@ -88,9 +88,10 @@ const AdminDashboard = () => {
   const [charts, setCharts] = useState<ChartData | null>(null);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
-  useEffect(() => {
-    if (!isAdmin) return;
+  const loadClicksData = () => {
+    setClicksLoading(true);
     supabase
       .from("click_stats")
       .select("*")
@@ -103,11 +104,9 @@ const AdminDashboard = () => {
       .from("favorites")
       .select("id", { count: "exact", head: true })
       .then(({ count }) => setTotalFavorites(count || 0));
-  }, [isAdmin]);
+  };
 
-  // Load users data once (for overview + users tabs)
-  useEffect(() => {
-    if (!isAdmin || usersLoaded) return;
+  const loadUsersData = () => {
     setUsersLoading(true);
     supabase.functions
       .invoke("admin-users")
@@ -122,6 +121,23 @@ const AdminDashboard = () => {
         setUsersLoading(false);
         setUsersLoaded(true);
       });
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    loadClicksData();
+    loadUsersData();
+    setTimeout(() => setRefreshing(false), 1500);
+  };
+
+  useEffect(() => {
+    if (!isAdmin) return;
+    loadClicksData();
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin || usersLoaded) return;
+    loadUsersData();
   }, [isAdmin, usersLoaded]);
 
   const totalClicks = useMemo(() => clicks.reduce((s, c) => s + c.click_count, 0), [clicks]);
