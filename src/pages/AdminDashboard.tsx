@@ -195,33 +195,35 @@ const AdminDashboard = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      <div className="container mx-auto px-4 py-12">
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="font-display text-3xl tracking-wider">ADMINISTRATION</h1>
+      <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
+        <div className="flex items-center justify-between gap-3 mb-2">
+          <h1 className="font-display text-xl sm:text-3xl tracking-wider">ADMINISTRATION</h1>
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 border border-foreground/10 text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
+            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-foreground/10 text-[10px] sm:text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
           >
-            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            Rafraîchir
+            <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+            <span className="hidden sm:inline">Rafraîchir</span>
+            <span className="sm:hidden">↻</span>
           </button>
         </div>
-        <p className="font-body text-xs text-foreground/50 mb-8">Dashboard administrateur — données en temps réel</p>
+        <p className="font-body text-[10px] sm:text-xs text-foreground/50 mb-6 sm:mb-8">Dashboard administrateur — données en temps réel</p>
 
-        <div className="flex gap-1 mb-10 border-b border-foreground/8 overflow-x-auto">
+        <div className="flex gap-0.5 sm:gap-1 mb-6 sm:mb-10 border-b border-foreground/8 overflow-x-auto scrollbar-none">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-5 py-3 text-[11px] font-display uppercase tracking-widest transition-colors border-b-2 -mb-px whitespace-nowrap ${
+              className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-5 py-2.5 sm:py-3 text-[10px] sm:text-[11px] font-display uppercase tracking-widest transition-colors border-b-2 -mb-px whitespace-nowrap ${
                 tab === t.key
                   ? "border-primary text-foreground"
                   : "border-transparent text-foreground/40 hover:text-foreground/70"
               }`}
             >
               {t.icon}
-              {t.label}
+              <span className="hidden xs:inline">{t.label}</span>
+              <span className="xs:hidden">{t.key === "overview" ? "Vue" : t.key === "analytics" ? "Stats" : t.key === "awin" ? "Awin" : "Users"}</span>
             </button>
           ))}
         </div>
@@ -288,30 +290,30 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   return (
     <>
       {/* Main KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
-        <KpiCard icon={<Users className="w-5 h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
-        <KpiCard icon={<ShoppingBag className="w-5 h-5" />} label="Deals actifs" value={dealsCount} />
-        <KpiCard icon={<MousePointerClick className="w-5 h-5" />} label="Clics totaux" value={stats?.total_clicks || totalClicks} />
-        <KpiCard icon={<Heart className="w-5 h-5" />} label="Favoris totaux" value={stats?.total_favorites || totalFavorites} />
-        <KpiCard icon={<ThumbsUp className="w-5 h-5" />} label="Votes totaux" value={stats?.total_votes || 0} />
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
+        <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={dealsCount} />
+        <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics totaux" value={stats?.total_clicks || totalClicks} />
+        <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris totaux" value={stats?.total_favorites || totalFavorites} />
+        <KpiCard icon={<ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Votes totaux" value={stats?.total_votes || 0} />
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <KpiCard icon={<UserCheck className="w-5 h-5" />} label="Email confirmé" value={stats?.confirmed_users || 0} accent="green" />
-        <KpiCard icon={<UserX className="w-5 h-5" />} label="Non confirmé" value={stats?.unconfirmed_users || 0} accent="red" />
-        <KpiCard icon={<Mail className="w-5 h-5" />} label="Newsletter" value={stats?.newsletter_subscribers || 0} />
-        <KpiCard icon={<Bell className="w-5 h-5" />} label="Alertes actives" value={stats?.active_alerts || 0} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<UserCheck className="w-4 h-4 sm:w-5 sm:h-5" />} label="Email confirmé" value={stats?.confirmed_users || 0} accent="green" />
+        <KpiCard icon={<UserX className="w-4 h-4 sm:w-5 sm:h-5" />} label="Non confirmé" value={stats?.unconfirmed_users || 0} accent="red" />
+        <KpiCard icon={<Mail className="w-4 h-4 sm:w-5 sm:h-5" />} label="Newsletter" value={stats?.newsletter_subscribers || 0} />
+        <KpiCard icon={<Bell className="w-4 h-4 sm:w-5 sm:h-5" />} label="Alertes actives" value={stats?.active_alerts || 0} />
       </div>
 
       {/* Charts row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
         {charts?.signup_timeline && charts.signup_timeline.length > 0 && (
           <ChartCard title="Inscriptions (30 derniers jours)">
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={charts.signup_timeline}>
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Area type="monotone" dataKey="count" stroke="hsl(30,40%,45%)" fill="hsl(30,40%,45%)" fillOpacity={0.15} name="Inscriptions" />
               </AreaChart>
@@ -321,10 +323,10 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 
         {charts?.click_timeline && charts.click_timeline.length > 0 && (
           <ChartCard title="Clics sortants (30 derniers jours)">
-            <ResponsiveContainer width="100%" height={250}>
+            <ResponsiveContainer width="100%" height={200}>
               <AreaChart data={charts.click_timeline}>
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Area type="monotone" dataKey="count" stroke="hsl(30,30%,55%)" fill="hsl(30,30%,55%)" fillOpacity={0.15} name="Clics" />
               </AreaChart>
@@ -334,12 +336,12 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
       </div>
 
       {/* Provider breakdown + Active users */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-12">
         {charts?.provider_breakdown && (
           <ChartCard title="Méthodes d'inscription">
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={180}>
               <PieChart>
-                <Pie data={charts.provider_breakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                <Pie data={charts.provider_breakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
                   {charts.provider_breakdown.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ fontSize: 11 }} />
@@ -349,8 +351,8 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         )}
 
         <ChartCard title="Utilisateurs actifs (7j)">
-          <div className="flex flex-col items-center justify-center h-[200px]">
-            <p className="font-display text-4xl tracking-wider">{activeUsers.length}</p>
+          <div className="flex flex-col items-center justify-center h-[160px] sm:h-[180px]">
+            <p className="font-display text-3xl sm:text-4xl tracking-wider">{activeUsers.length}</p>
             <p className="text-[10px] font-body text-foreground/40 mt-1">sur {users.length} inscrits</p>
             <div className="w-full mt-4 bg-foreground/5 rounded-full h-2">
               <div
@@ -373,11 +375,11 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
                   {u.user_metadata.avatar_url ? (
                     <img src={u.user_metadata.avatar_url} className="w-6 h-6 rounded-full" alt="" />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-display text-primary">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-display text-primary shrink-0">
                       {(u.email || "?")[0].toUpperCase()}
                     </div>
                   )}
-                  <span className="text-xs font-body truncate">{u.user_metadata.full_name || u.email}</span>
+                  <span className="text-[11px] sm:text-xs font-body truncate">{u.user_metadata.full_name || u.email}</span>
                 </div>
                 <span className="text-[9px] font-body text-foreground/30 whitespace-nowrap">
                   {format(new Date(u.created_at), "dd/MM", { locale: fr })}
@@ -391,36 +393,36 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 
       {/* Top engaged users */}
       {topUsers.length > 0 && (
-        <div className="mb-12">
-          <h3 className="font-display text-sm uppercase tracking-widest mb-4">Utilisateurs les plus engagés</h3>
+        <div className="mb-8 sm:mb-12">
+          <h3 className="font-display text-xs sm:text-sm uppercase tracking-widest mb-3 sm:mb-4">Utilisateurs les plus engagés</h3>
           <div className="border border-foreground/8 overflow-x-auto">
-            <table className="w-full text-xs font-body">
+            <table className="w-full text-[10px] sm:text-xs font-body">
               <thead>
                 <tr className="border-b border-foreground/8 bg-muted/30">
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Utilisateur</th>
-                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Clics</th>
-                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Favoris</th>
-                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Votes</th>
-                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Score</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Utilisateur</th>
+                  <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Clics</th>
+                  <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Favoris</th>
+                  <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Votes</th>
+                  <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Score</th>
                 </tr>
               </thead>
               <tbody>
                 {topUsers.map((u) => (
                   <tr key={u.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
-                    <td className="p-3 flex items-center gap-2">
+                    <td className="p-2 sm:p-3 flex items-center gap-1.5 sm:gap-2">
                       {u.user_metadata.avatar_url ? (
-                        <img src={u.user_metadata.avatar_url} className="w-5 h-5 rounded-full" alt="" />
+                        <img src={u.user_metadata.avatar_url} className="w-5 h-5 rounded-full shrink-0" alt="" />
                       ) : (
-                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-display text-primary">
+                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-display text-primary shrink-0">
                           {(u.email || "?")[0].toUpperCase()}
                         </div>
                       )}
-                      <span className="truncate max-w-[180px]">{u.email}</span>
+                      <span className="truncate max-w-[120px] sm:max-w-[180px]">{u.email}</span>
                     </td>
-                    <td className="p-3 text-center">{u.clicks_count}</td>
-                    <td className="p-3 text-center">{u.favorites_count}</td>
-                    <td className="p-3 text-center">{u.votes_count}</td>
-                    <td className="p-3 text-center font-semibold">{u.clicks_count + u.favorites_count + u.votes_count}</td>
+                    <td className="p-2 sm:p-3 text-center">{u.clicks_count}</td>
+                    <td className="p-2 sm:p-3 text-center">{u.favorites_count}</td>
+                    <td className="p-2 sm:p-3 text-center hidden sm:table-cell">{u.votes_count}</td>
+                    <td className="p-2 sm:p-3 text-center font-semibold">{u.clicks_count + u.favorites_count + u.votes_count}</td>
                   </tr>
                 ))}
               </tbody>
@@ -438,23 +440,23 @@ const AnalyticsTab = ({
   clicksByBrand, clicksByCategory, clicksByMerchant, dealsByCategory, dealsByBrand, topDeals,
 }: any) => (
   <>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-      <KpiCard icon={<ShoppingBag className="w-5 h-5" />} label="Deals actifs" value={filteredDeals.length} />
-      <KpiCard icon={<MousePointerClick className="w-5 h-5" />} label="Clics sortants" value={totalClicks} />
-      <KpiCard icon={<Heart className="w-5 h-5" />} label="Favoris total" value={totalFavorites} />
-      <KpiCard icon={<TrendingUp className="w-5 h-5" />} label="Deals cliqués" value={clicks.length} />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-8 sm:mb-12">
+      <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={filteredDeals.length} />
+      <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics sortants" value={totalClicks} />
+      <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris total" value={totalFavorites} />
+      <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals cliqués" value={clicks.length} />
     </div>
 
     {clicksLoading ? (
       <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>
     ) : (
       <>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
           <ChartCard title="Clics par marque (top 10)">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={clicksByBrand} layout="vertical" margin={{ left: 80 }}>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={clicksByBrand} layout="vertical" margin={{ left: 60 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={75} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={55} />
                 <Tooltip contentStyle={{ fontSize: 11 }} />
                 <Bar dataKey="value" fill="hsl(30,40%,45%)" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -462,9 +464,9 @@ const AnalyticsTab = ({
           </ChartCard>
 
           <ChartCard title="Clics par catégorie">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={clicksByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                <Pie data={clicksByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
                   {clicksByCategory.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ fontSize: 11 }} />
@@ -473,12 +475,12 @@ const AnalyticsTab = ({
           </ChartCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
           <ChartCard title="Deals par marque (top 10)">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dealsByBrand} layout="vertical" margin={{ left: 80 }}>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={dealsByBrand} layout="vertical" margin={{ left: 60 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={75} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={55} />
                 <Tooltip contentStyle={{ fontSize: 11 }} />
                 <Bar dataKey="value" fill="hsl(30,30%,55%)" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -486,9 +488,9 @@ const AnalyticsTab = ({
           </ChartCard>
 
           <ChartCard title="Deals par catégorie">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={dealsByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                <Pie data={dealsByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
                   {dealsByCategory.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ fontSize: 11 }} />
@@ -498,39 +500,39 @@ const AnalyticsTab = ({
         </div>
 
         <ChartCard title="Clics par marchand">
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={clicksByMerchant}>
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
+              <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+              <YAxis tick={{ fontSize: 10 }} width={30} />
               <Tooltip contentStyle={{ fontSize: 11 }} />
               <Bar dataKey="value" fill="hsl(30,20%,65%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        <div className="mt-12">
-          <h3 className="font-display text-sm uppercase tracking-widest mb-4">Top 10 deals les plus cliqués</h3>
+        <div className="mt-8 sm:mt-12">
+          <h3 className="font-display text-xs sm:text-sm uppercase tracking-widest mb-3 sm:mb-4">Top 10 deals les plus cliqués</h3>
           <div className="border border-foreground/8 overflow-x-auto">
-            <table className="w-full text-xs font-body">
+            <table className="w-full text-[10px] sm:text-xs font-body">
               <thead>
                 <tr className="border-b border-foreground/8 bg-muted/30">
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">#</th>
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Deal</th>
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Marque</th>
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Catégorie</th>
-                  <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Clics</th>
-                  <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Dernier clic</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">#</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Deal</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Marque</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden md:table-cell">Catégorie</th>
+                  <th className="text-right p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Clics</th>
+                  <th className="text-right p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Dernier clic</th>
                 </tr>
               </thead>
               <tbody>
                 {topDeals.map((d: any, i: number) => (
                   <tr key={d.deal_id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
-                    <td className="p-3 text-foreground/40">{i + 1}</td>
-                    <td className="p-3 max-w-[200px] truncate">{d.deal_title || d.deal_id}</td>
-                    <td className="p-3 text-foreground/60">{d.brand || "—"}</td>
-                    <td className="p-3 text-foreground/60">{d.category || "—"}</td>
-                    <td className="p-3 text-right font-semibold">{d.click_count}</td>
-                    <td className="p-3 text-right text-foreground/40">{d.last_click ? new Date(d.last_click).toLocaleDateString("fr-FR") : "—"}</td>
+                    <td className="p-2 sm:p-3 text-foreground/40">{i + 1}</td>
+                    <td className="p-2 sm:p-3 max-w-[140px] sm:max-w-[200px] truncate">{d.deal_title || d.deal_id}</td>
+                    <td className="p-2 sm:p-3 text-foreground/60 hidden sm:table-cell">{d.brand || "—"}</td>
+                    <td className="p-2 sm:p-3 text-foreground/60 hidden md:table-cell">{d.category || "—"}</td>
+                    <td className="p-2 sm:p-3 text-right font-semibold">{d.click_count}</td>
+                    <td className="p-2 sm:p-3 text-right text-foreground/40 hidden sm:table-cell">{d.last_click ? new Date(d.last_click).toLocaleDateString("fr-FR") : "—"}</td>
                   </tr>
                 ))}
                 {topDeals.length === 0 && (
@@ -648,42 +650,42 @@ const AwinTab = () => {
   return (
     <>
       {/* Period selector */}
-      <div className="flex gap-2 mb-8">
+      <div className="flex gap-1.5 sm:gap-2 mb-6 sm:mb-8">
         {(["7d", "30d", "all"] as const).map((p) => (
           <button
             key={p}
             onClick={() => setPeriod(p)}
-            className={`px-4 py-2 text-[11px] font-display uppercase tracking-widest border transition-colors ${
+            className={`px-3 sm:px-4 py-1.5 sm:py-2 text-[10px] sm:text-[11px] font-display uppercase tracking-widest border transition-colors ${
               period === p ? "border-primary bg-primary/10 text-foreground" : "border-foreground/10 text-foreground/40 hover:text-foreground/70"
             }`}
           >
-            {p === "7d" ? "7 jours" : p === "30d" ? "30 jours" : "Tout"}
+            {p === "7d" ? "7j" : p === "30d" ? "30j" : "Tout"}
           </button>
         ))}
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <KpiCard icon={<MousePointerClick className="w-5 h-5" />} label="Clics totaux" value={totalAll} />
-        <KpiCard icon={<Link2 className="w-5 h-5" />} label="Clics Awin" value={totalAwin} />
-        <KpiCard icon={<ExternalLink className="w-5 h-5" />} label="Avec clickref" value={withClickref.length} />
-        <div className="border border-foreground/8 p-5">
-          <div className="flex items-center gap-2 mb-2 text-foreground/40">
-            <TrendingUp className="w-5 h-5" />
-            <span className="text-[10px] font-display uppercase tracking-widest">Taux Awin</span>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics totaux" value={totalAll} />
+        <KpiCard icon={<Link2 className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics Awin" value={totalAwin} />
+        <KpiCard icon={<ExternalLink className="w-4 h-4 sm:w-5 sm:h-5" />} label="Avec clickref" value={withClickref.length} />
+        <div className="border border-foreground/8 p-3 sm:p-5">
+          <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 text-foreground/40">
+            <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+            <span className="text-[9px] sm:text-[10px] font-display uppercase tracking-widest">Taux Awin</span>
           </div>
-          <p className="font-display text-2xl tracking-wider">{awinRate}%</p>
+          <p className="font-display text-lg sm:text-2xl tracking-wider">{awinRate}%</p>
         </div>
       </div>
 
       {/* Chart */}
       {clicksByDay.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
           <ChartCard title="Clics par jour (total vs Awin)">
-            <ResponsiveContainer width="100%" height={280}>
+            <ResponsiveContainer width="100%" height={220}>
               <BarChart data={clicksByDay}>
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
-                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Bar dataKey="total" fill="hsl(30,15%,72%)" name="Total" radius={[4, 4, 0, 0]} />
                 <Bar dataKey="awin" fill="hsl(30,40%,45%)" name="Awin" radius={[4, 4, 0, 0]} />
@@ -693,10 +695,10 @@ const AwinTab = () => {
 
           {topAwinDeals.length > 0 && (
             <ChartCard title="Top deals Awin (par clics)">
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={topAwinDeals.slice(0, 8)} layout="vertical" margin={{ left: 100 }}>
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={topAwinDeals.slice(0, 8)} layout="vertical" margin={{ left: 70 }}>
                   <XAxis type="number" tick={{ fontSize: 10 }} />
-                  <YAxis dataKey="title" type="category" tick={{ fontSize: 9 }} width={95} />
+                  <YAxis dataKey="title" type="category" tick={{ fontSize: 8 }} width={65} />
                   <Tooltip contentStyle={{ fontSize: 11 }} />
                   <Bar dataKey="count" fill="hsl(30,40%,45%)" radius={[0, 4, 4, 0]} name="Clics" />
                 </BarChart>
@@ -707,56 +709,56 @@ const AwinTab = () => {
       )}
 
       {/* Recent Awin clicks table */}
-      <div className="mb-12">
-        <h3 className="font-display text-sm uppercase tracking-widest mb-4">Derniers clics Awin avec clickref</h3>
+      <div className="mb-8 sm:mb-12">
+        <h3 className="font-display text-xs sm:text-sm uppercase tracking-widest mb-3 sm:mb-4">Derniers clics Awin</h3>
         <div className="border border-foreground/8 overflow-x-auto">
-          <table className="w-full text-xs font-body">
+          <table className="w-full text-[10px] sm:text-xs font-body">
             <thead>
               <tr className="border-b border-foreground/8 bg-muted/30">
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Date</th>
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Deal</th>
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Marque</th>
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Marchand</th>
-                <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Clickref</th>
-                <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">User</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Date</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Deal</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Marque</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden md:table-cell">Marchand</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden lg:table-cell">Clickref</th>
+                <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">User</th>
               </tr>
             </thead>
             <tbody>
               {awinOnly.slice(0, 50).map((c) => (
                 <tr key={c.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
-                  <td className="p-3 text-foreground/60 whitespace-nowrap">
+                  <td className="p-2 sm:p-3 text-foreground/60 whitespace-nowrap">
                     {format(new Date(c.clicked_at), "dd/MM HH:mm", { locale: fr })}
                   </td>
-                  <td className="p-3 max-w-[200px] truncate">{c.deal_title || c.deal_id}</td>
-                  <td className="p-3 text-foreground/60">{c.brand || "—"}</td>
-                  <td className="p-3 text-foreground/60">{c.merchant || "—"}</td>
-                  <td className="p-3 font-mono text-[10px] text-primary max-w-[180px] truncate">{extractClickref(c.destination_url)}</td>
-                  <td className="p-3 text-center">
-                    {c.user_id ? <UserCheck className="w-3.5 h-3.5 text-foreground/40 mx-auto" /> : <span className="text-foreground/20">anon</span>}
+                  <td className="p-2 sm:p-3 max-w-[120px] sm:max-w-[200px] truncate">{c.deal_title || c.deal_id}</td>
+                  <td className="p-2 sm:p-3 text-foreground/60 hidden sm:table-cell">{c.brand || "—"}</td>
+                  <td className="p-2 sm:p-3 text-foreground/60 hidden md:table-cell">{c.merchant || "—"}</td>
+                  <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] text-primary max-w-[150px] truncate hidden lg:table-cell">{extractClickref(c.destination_url)}</td>
+                  <td className="p-2 sm:p-3 text-center">
+                    {c.user_id ? <UserCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-foreground/40 mx-auto" /> : <span className="text-foreground/20 text-[9px]">anon</span>}
                   </td>
                 </tr>
               ))}
               {awinOnly.length === 0 && (
-                <tr><td colSpan={6} className="p-8 text-center text-foreground/30">Aucun clic Awin enregistré</td></tr>
+                <tr><td colSpan={6} className="p-6 sm:p-8 text-center text-foreground/30">Aucun clic Awin enregistré</td></tr>
               )}
             </tbody>
           </table>
         </div>
-        <p className="text-[10px] font-body text-foreground/30 mt-3">
-          {awinOnly.length} clic{awinOnly.length > 1 ? "s" : ""} Awin — Les conversions sont trackées via le clickref dans votre dashboard Awin
+        <p className="text-[9px] sm:text-[10px] font-body text-foreground/30 mt-2 sm:mt-3">
+          {awinOnly.length} clic{awinOnly.length > 1 ? "s" : ""} Awin — Conversions trackées via clickref dans votre dashboard Awin
         </p>
       </div>
 
       {/* Info box */}
-      <div className="border border-foreground/8 bg-muted/20 p-6">
-        <h4 className="font-display text-xs uppercase tracking-widest mb-3">💡 Suivi des conversions</h4>
-        <p className="text-xs font-body text-foreground/60 leading-relaxed">
-          Chaque clic sortant vers Awin contient un <span className="font-mono text-primary">clickref</span> unique
-          (format : <span className="font-mono">dealId__timestamp</span>). Pour voir les conversions, connectez-vous à votre{" "}
+      <div className="border border-foreground/8 bg-muted/20 p-4 sm:p-6">
+        <h4 className="font-display text-[10px] sm:text-xs uppercase tracking-widest mb-2 sm:mb-3">💡 Suivi des conversions</h4>
+        <p className="text-[11px] sm:text-xs font-body text-foreground/60 leading-relaxed">
+          Chaque clic sortant vers Awin contient un <span className="font-mono text-primary">clickref</span> unique.
+          Connectez-vous à votre{" "}
           <a href="https://ui.awin.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">
             dashboard Awin
           </a>{" "}
-          et filtrez par clickref pour corréler les ventes avec les deals de GOLDEALS CLUB.
+          pour corréler les ventes avec vos deals.
         </p>
       </div>
     </>
@@ -951,15 +953,18 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
 
 /* ─── Shared Components ─── */
 const KpiCard = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent?: "green" | "red" }) => (
-  <div className={`border p-5 ${accent === "green" ? "border-green-500/20" : accent === "red" ? "border-red-500/20" : "border-foreground/8"}`}>
-    <div className="flex items-center gap-2 mb-2 text-foreground/40">{icon}<span className="text-[10px] font-display uppercase tracking-widest">{label}</span></div>
-    <p className={`font-display text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>{value.toLocaleString("fr-FR")}</p>
+  <div className={`border p-3 sm:p-5 ${accent === "green" ? "border-green-500/20" : accent === "red" ? "border-red-500/20" : "border-foreground/8"}`}>
+    <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 text-foreground/40">
+      {icon}
+      <span className="text-[9px] sm:text-[10px] font-display uppercase tracking-widest leading-tight">{label}</span>
+    </div>
+    <p className={`font-display text-lg sm:text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>{value.toLocaleString("fr-FR")}</p>
   </div>
 );
 
 const ChartCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="border border-foreground/8 p-6">
-    <h3 className="font-display text-xs uppercase tracking-widest text-foreground/50 mb-4">{title}</h3>
+  <div className="border border-foreground/8 p-3 sm:p-6">
+    <h3 className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-foreground/50 mb-3 sm:mb-4">{title}</h3>
     {children}
   </div>
 );
