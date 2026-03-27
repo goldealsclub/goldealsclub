@@ -123,9 +123,3 @@ export function useLoadVotes(dealIds: string[]) {
     }
   }, [dealIds.join(",")]);
 }
-
-/** Hook to access the full votes map (for sorting) */
-export function useVotesMap(): Record<string, VoteData> {
-  const ctx = useContext(VotesContext);
-  return ctx?.votes || {};
-}
