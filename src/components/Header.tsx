@@ -83,7 +83,7 @@ const Header = () => {
 
 
   return (
-    <header className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-foreground/8">
+    <header className="sticky top-0 z-50 bg-background border-b border-foreground/8 will-change-transform">
       {/* Collapsible top bars */}
       <div
         className={`transition-all duration-300 overflow-hidden ${
