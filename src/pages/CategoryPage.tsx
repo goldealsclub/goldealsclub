@@ -55,8 +55,8 @@ const CategoryPage = () => {
           >
             {t.all} ({filteredDeals.length})
           </Link>
-          {[...categoryList.map(c => c.key), "t-shirts", "autres"].filter((cat, i, arr) => arr.indexOf(cat) === i).map((cat) => {
-            const count = filteredDeals.filter(d => d.category === cat || (cat === "tshirts" && d.category === "t-shirts")).length;
+          {[...categoryList.map(c => c.key), "autres"].filter((cat, i, arr) => arr.indexOf(cat) === i).map((cat) => {
+            const count = filteredDeals.filter(d => d.category === cat).length;
             if (count === 0) return null;
             return (
               <Link
