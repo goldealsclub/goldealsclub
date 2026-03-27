@@ -201,7 +201,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     });
 
     return result;
-  }, [sourceDeals, filters, sort]);
+  }, [sourceDeals, filters, sort, votesMap]);
 
   // Paginated slice
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
