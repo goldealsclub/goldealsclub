@@ -37,7 +37,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Check admin role
     const { data: roleData } = await supabase
       .from("user_roles")
       .select("role")
@@ -56,26 +55,108 @@ Deno.serve(async (req) => {
     const { data: { users }, error } = await supabase.auth.admin.listUsers({
       perPage: 1000,
     });
-
     if (error) throw error;
 
-    // Fetch newsletter subscribers count
-    const { count: newsletterCount } = await supabase
-      .from("newsletter_subscribers")
-      .select("id", { count: "exact", head: true });
+    // Fetch all data in parallel
+    const [
+      { count: newsletterCount },
+      { count: alertCount },
+      { count: votesCount },
+      { count: totalClicks },
+      { count: totalFavorites },
+      { count: totalDeals },
+      { data: favoritesPerUser },
+      { data: clicksPerUser },
+      { data: votesPerUser },
+      { data: allRoles },
+      { data: recentClicks },
+      { data: alertPrefs },
+    ] = await Promise.all([
+      supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
+      supabase.from("email_alert_preferences").select("id", { count: "exact", head: true }).eq("enabled", true),
+      supabase.from("deal_votes").select("id", { count: "exact", head: true }),
+      supabase.from("outbound_clicks").select("id", { count: "exact", head: true }),
+      supabase.from("favorites").select("id", { count: "exact", head: true }),
+      supabase.from("deals").select("id", { count: "exact", head: true }),
+      supabase.rpc("raw_sql", undefined).catch(() => null) || 
+        supabase.from("favorites").select("user_id"),
+      supabase.from("outbound_clicks").select("user_id"),
+      supabase.from("deal_votes").select("user_id"),
+      supabase.from("user_roles").select("user_id, role"),
+      supabase.from("outbound_clicks").select("clicked_at").order("clicked_at", { ascending: false }).limit(500),
+      supabase.from("email_alert_preferences").select("user_id, enabled, frequency"),
+    ]);
 
-    // Fetch alert preferences count
-    const { count: alertCount } = await supabase
-      .from("email_alert_preferences")
-      .select("id", { count: "exact", head: true })
-      .eq("enabled", true);
+    // Build per-user maps
+    const favCountMap: Record<string, number> = {};
+    (favoritesPerUser || []).forEach((f: any) => {
+      favCountMap[f.user_id] = (favCountMap[f.user_id] || 0) + 1;
+    });
 
-    // Fetch votes count
-    const { count: votesCount } = await supabase
-      .from("deal_votes")
-      .select("id", { count: "exact", head: true });
+    const clickCountMap: Record<string, number> = {};
+    (clicksPerUser || []).forEach((c: any) => {
+      if (c.user_id) clickCountMap[c.user_id] = (clickCountMap[c.user_id] || 0) + 1;
+    });
 
-    // Map users to safe format
+    const voteCountMap: Record<string, number> = {};
+    (votesPerUser || []).forEach((v: any) => {
+      voteCountMap[v.user_id] = (voteCountMap[v.user_id] || 0) + 1;
+    });
+
+    const roleMap: Record<string, string[]> = {};
+    (allRoles || []).forEach((r: any) => {
+      if (!roleMap[r.user_id]) roleMap[r.user_id] = [];
+      roleMap[r.user_id].push(r.role);
+    });
+
+    const alertMap: Record<string, { enabled: boolean; frequency: string }> = {};
+    (alertPrefs || []).forEach((a: any) => {
+      alertMap[a.user_id] = { enabled: a.enabled, frequency: a.frequency || "daily" };
+    });
+
+    // Signups over time (last 30 days)
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const signupsByDay: Record<string, number> = {};
+    (users || []).forEach((u) => {
+      const d = u.created_at?.slice(0, 10);
+      if (d && new Date(d) >= thirtyDaysAgo) {
+        signupsByDay[d] = (signupsByDay[d] || 0) + 1;
+      }
+    });
+    const signupTimeline = Object.entries(signupsByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, count]) => ({ date, count }));
+
+    // Clicks over last 30 days
+    const clicksByDay: Record<string, number> = {};
+    (recentClicks || []).forEach((c: any) => {
+      const d = c.clicked_at?.slice(0, 10);
+      if (d && new Date(d) >= thirtyDaysAgo) {
+        clicksByDay[d] = (clicksByDay[d] || 0) + 1;
+      }
+    });
+    const clickTimeline = Object.entries(clicksByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, count]) => ({ date, count }));
+
+    // Provider breakdown
+    const providerCount: Record<string, number> = {};
+    (users || []).forEach((u) => {
+      const p = u.app_metadata?.provider || "email";
+      providerCount[p] = (providerCount[p] || 0) + 1;
+    });
+    const providerBreakdown = Object.entries(providerCount).map(([name, value]) => ({ name, value }));
+
+    // Confirmed vs unconfirmed
+    let confirmedCount = 0;
+    let unconfirmedCount = 0;
+    (users || []).forEach((u) => {
+      if (u.email_confirmed_at) confirmedCount++;
+      else unconfirmedCount++;
+    });
+
+    // Map users to enriched format
     const safeUsers = (users || []).map((u) => ({
       id: u.id,
       email: u.email,
@@ -83,6 +164,17 @@ Deno.serve(async (req) => {
       last_sign_in_at: u.last_sign_in_at,
       provider: u.app_metadata?.provider || "email",
       confirmed: !!u.email_confirmed_at,
+      favorites_count: favCountMap[u.id] || 0,
+      clicks_count: clickCountMap[u.id] || 0,
+      votes_count: voteCountMap[u.id] || 0,
+      roles: roleMap[u.id] || [],
+      alert_enabled: alertMap[u.id]?.enabled || false,
+      alert_frequency: alertMap[u.id]?.frequency || null,
+      phone: u.phone || null,
+      user_metadata: {
+        full_name: u.user_metadata?.full_name || u.user_metadata?.name || null,
+        avatar_url: u.user_metadata?.avatar_url || null,
+      },
     }));
 
     return new Response(
@@ -93,6 +185,16 @@ Deno.serve(async (req) => {
           newsletter_subscribers: newsletterCount || 0,
           active_alerts: alertCount || 0,
           total_votes: votesCount || 0,
+          total_clicks: totalClicks || 0,
+          total_favorites: totalFavorites || 0,
+          total_deals: totalDeals || 0,
+          confirmed_users: confirmedCount,
+          unconfirmed_users: unconfirmedCount,
+        },
+        charts: {
+          signup_timeline: signupTimeline,
+          click_timeline: clickTimeline,
+          provider_breakdown: providerBreakdown,
         },
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
