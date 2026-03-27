@@ -952,13 +952,15 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
 };
 
 /* ─── Shared Components ─── */
-const KpiCard = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent?: "green" | "red" }) => (
+const KpiCard = ({ icon, label, value, accent, suffix }: { icon: React.ReactNode; label: string; value: number | string; accent?: "green" | "red"; suffix?: string }) => (
   <div className={`border p-3 sm:p-5 ${accent === "green" ? "border-green-500/20" : accent === "red" ? "border-red-500/20" : "border-foreground/8"}`}>
     <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 text-foreground/40">
       {icon}
       <span className="text-[9px] sm:text-[10px] font-display uppercase tracking-widest leading-tight">{label}</span>
     </div>
-    <p className={`font-display text-lg sm:text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>{value.toLocaleString("fr-FR")}</p>
+    <p className={`font-display text-lg sm:text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>
+      {typeof value === "number" ? value.toLocaleString("fr-FR") : value}{suffix && <span className="text-sm text-foreground/40 ml-0.5">{suffix}</span>}
+    </p>
   </div>
 );
 
