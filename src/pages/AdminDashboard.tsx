@@ -236,6 +236,7 @@ const AdminDashboard = () => {
             totalClicks={totalClicks}
             totalFavorites={totalFavorites}
             dealsCount={filteredDeals.length}
+            filteredDeals={filteredDeals}
             loading={usersLoading || clicksLoading}
           />
         )}
