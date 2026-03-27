@@ -953,15 +953,18 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
 
 /* ─── Shared Components ─── */
 const KpiCard = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent?: "green" | "red" }) => (
-  <div className={`border p-5 ${accent === "green" ? "border-green-500/20" : accent === "red" ? "border-red-500/20" : "border-foreground/8"}`}>
-    <div className="flex items-center gap-2 mb-2 text-foreground/40">{icon}<span className="text-[10px] font-display uppercase tracking-widest">{label}</span></div>
-    <p className={`font-display text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>{value.toLocaleString("fr-FR")}</p>
+  <div className={`border p-3 sm:p-5 ${accent === "green" ? "border-green-500/20" : accent === "red" ? "border-red-500/20" : "border-foreground/8"}`}>
+    <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 text-foreground/40">
+      {icon}
+      <span className="text-[9px] sm:text-[10px] font-display uppercase tracking-widest leading-tight">{label}</span>
+    </div>
+    <p className={`font-display text-lg sm:text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>{value.toLocaleString("fr-FR")}</p>
   </div>
 );
 
 const ChartCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
-  <div className="border border-foreground/8 p-6">
-    <h3 className="font-display text-xs uppercase tracking-widest text-foreground/50 mb-4">{title}</h3>
+  <div className="border border-foreground/8 p-3 sm:p-6">
+    <h3 className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-foreground/50 mb-3 sm:mb-4">{title}</h3>
     {children}
   </div>
 );
