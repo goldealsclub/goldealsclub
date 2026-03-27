@@ -11,7 +11,7 @@ import FlameIndicator from "@/components/FlameIndicator";
 import ShareMenu from "@/components/ShareMenu";
 import PriceAlertButton from "@/components/PriceAlertButton";
 import DealCard from "@/components/DealCard";
-import { trackOutboundClick } from "@/lib/track-click";
+import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
