@@ -290,20 +290,20 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   return (
     <>
       {/* Main KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
-        <KpiCard icon={<Users className="w-5 h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
-        <KpiCard icon={<ShoppingBag className="w-5 h-5" />} label="Deals actifs" value={dealsCount} />
-        <KpiCard icon={<MousePointerClick className="w-5 h-5" />} label="Clics totaux" value={stats?.total_clicks || totalClicks} />
-        <KpiCard icon={<Heart className="w-5 h-5" />} label="Favoris totaux" value={stats?.total_favorites || totalFavorites} />
-        <KpiCard icon={<ThumbsUp className="w-5 h-5" />} label="Votes totaux" value={stats?.total_votes || 0} />
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
+        <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={dealsCount} />
+        <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics totaux" value={stats?.total_clicks || totalClicks} />
+        <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris totaux" value={stats?.total_favorites || totalFavorites} />
+        <KpiCard icon={<ThumbsUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Votes totaux" value={stats?.total_votes || 0} />
       </div>
 
       {/* Secondary KPIs */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
-        <KpiCard icon={<UserCheck className="w-5 h-5" />} label="Email confirmé" value={stats?.confirmed_users || 0} accent="green" />
-        <KpiCard icon={<UserX className="w-5 h-5" />} label="Non confirmé" value={stats?.unconfirmed_users || 0} accent="red" />
-        <KpiCard icon={<Mail className="w-5 h-5" />} label="Newsletter" value={stats?.newsletter_subscribers || 0} />
-        <KpiCard icon={<Bell className="w-5 h-5" />} label="Alertes actives" value={stats?.active_alerts || 0} />
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<UserCheck className="w-4 h-4 sm:w-5 sm:h-5" />} label="Email confirmé" value={stats?.confirmed_users || 0} accent="green" />
+        <KpiCard icon={<UserX className="w-4 h-4 sm:w-5 sm:h-5" />} label="Non confirmé" value={stats?.unconfirmed_users || 0} accent="red" />
+        <KpiCard icon={<Mail className="w-4 h-4 sm:w-5 sm:h-5" />} label="Newsletter" value={stats?.newsletter_subscribers || 0} />
+        <KpiCard icon={<Bell className="w-4 h-4 sm:w-5 sm:h-5" />} label="Alertes actives" value={stats?.active_alerts || 0} />
       </div>
 
       {/* Charts row */}
