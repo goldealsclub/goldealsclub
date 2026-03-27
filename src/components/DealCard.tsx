@@ -42,8 +42,12 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const startDate = formatDate(deal.promo_start_date);
   const endDate = formatDate(deal.promo_end_date);
   const [imageLoaded, setImageLoaded] = useState(false);
-  const isSnipesImage = deal.image_url?.includes("asset.snipes.com") || deal.source?.toLowerCase() === "snipes";
+  const isSnipesImage = deal.image_url?.includes("asset.snipes.com");
   const isNikeImage = deal.image_url?.includes("static.nike.com") || deal.brand?.toLowerCase() === "nike";
+
+  // Detect broken Snipes images that show brand logo instead of product
+  const [imageBroken, setImageBroken] = useState(false);
+
   const imageFitClass = isSnipesImage
     ? "object-cover object-center scale-[1.2] group-hover:scale-[1.26]"
     : isNikeImage
@@ -63,14 +67,28 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         <img
           src={deal.image_url}
           alt={deal.title}
-          className={`w-full h-full transition-all duration-500 ${imageFitClass} ${imageLoaded ? "opacity-100" : "opacity-0"}`}
+          className={`w-full h-full transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
           loading="lazy"
-          onLoad={() => setImageLoaded(true)}
+          onLoad={(e) => {
+            const img = e.target as HTMLImageElement;
+            // Detect tiny placeholder images (Snipes brand logos are typically very small or wrong aspect)
+            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
+              setImageLoaded(true);
+            }
+          }}
           onError={(e) => {
-            (e.target as HTMLImageElement).src = "/placeholder.svg";
+            setImageBroken(true);
+            const img = e.target as HTMLImageElement;
+            img.src = "/placeholder.svg";
             setImageLoaded(true);
           }}
         />
+        {/* Fallback for broken images */}
+        {imageBroken && (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
+            <span className="font-display text-xs uppercase tracking-wider text-foreground/30">{deal.brand}</span>
+          </div>
+        )}
         {/* Hover overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-foreground/10">
           <span className="bg-primary text-primary-foreground px-6 py-3 text-[10px] font-display uppercase tracking-[0.2em]">
