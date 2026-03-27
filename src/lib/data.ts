@@ -126,9 +126,13 @@ function inferCategory(category: string, title: string): Category {
   const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","wind breaker","windrunner","coupe-vent","bomber","puffer","gilet","weste","overshirt","vest ","anorak","softshell","teddy ","cagoule","firebird tt","jacke ","sherpa","traningsjacke","sst tt","cardigan","mount hope","winterized","wr fz","adverzip"];
   if (jacketKw.some(k => t.includes(k))) return "vestes";
 
-  // 2. Hoodies
-  const hoodieKw = ["hoodie","sweat ","sweat,","sweats ","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","fleece","flc po ","troyer","full zip track"];
-  if (hoodieKw.some(k => t.includes(k))) return "hoodies";
+  // 2. Hoodies — exclude items that also match pants/shorts keywords
+  const hoodieKw = ["hoodie","sweat ","sweat,","sweats ","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","flc po ","troyer"];
+  const hoodieExclude = ["short","pant","jogger","legging","bermuda","cargo","jogging","jeans","jean ","tracksuit","track suit","sweatpant"];
+  if (hoodieKw.some(k => t.includes(k)) && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
+
+  // 2b. Fleece tops only (exclude fleece shorts/pants)
+  if (t.includes("fleece") && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
 
   // 3. Pants – removed "short " and "denim" (too broad)
   const pantsKw = ["pantalon","jogger","pant ","pants","legging","shorts","bermuda","cargo","jogging","jean ","jeans","flared","flare ","slim fit","baggy","survêtement","ensemble","trainingsanzüge","straight tp","tracküants","trackpant","track pant","sweatpant","sweatpants","training pant","tracksuit","trainingsanzug","track suit","inseam","trainingshose","jggr ","bootcut"];
