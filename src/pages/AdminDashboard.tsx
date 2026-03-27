@@ -857,9 +857,9 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
   }, [users, search, sortBy]);
 
   const exportCSV = () => {
-    const header = "Email,Nom,Provider,Confirmé,Rôles,Favoris,Clics,Votes,Alertes,Inscrit le,Dernière connexion\n";
+    const header = "ID,Email,Nom,Téléphone,Provider,Confirmé,Rôles,Favoris,Clics,Votes,Alerte active,Fréquence alerte,Inscrit le,Dernière connexion\n";
     const rows = filtered.map((u) =>
-      `"${u.email || ""}","${u.user_metadata.full_name || ""}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.roles.join(", ") || "user"}","${u.favorites_count}","${u.clicks_count}","${u.votes_count}","${u.alert_enabled ? "Oui" : "Non"}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
+      `"${u.id}","${u.email || ""}","${u.user_metadata.full_name || ""}","${u.phone || ""}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.roles.join(", ") || "user"}","${u.favorites_count}","${u.clicks_count}","${u.votes_count}","${u.alert_enabled ? "Oui" : "Non"}","${u.alert_frequency || ""}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
     ).join("\n");
     const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
