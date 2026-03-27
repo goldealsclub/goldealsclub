@@ -7,7 +7,7 @@ import { useGender } from "@/lib/gender-context";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Loader2, TrendingUp, MousePointerClick, ShoppingBag, Heart, Users, Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle } from "lucide-react";
+import { Loader2, TrendingUp, MousePointerClick, ShoppingBag, Heart, Users, Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
