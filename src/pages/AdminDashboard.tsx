@@ -336,12 +336,12 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
       </div>
 
       {/* Provider breakdown + Active users */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-12">
         {charts?.provider_breakdown && (
           <ChartCard title="Méthodes d'inscription">
-            <ResponsiveContainer width="100%" height={200}>
+            <ResponsiveContainer width="100%" height={180}>
               <PieChart>
-                <Pie data={charts.provider_breakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                <Pie data={charts.provider_breakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={65} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
                   {charts.provider_breakdown.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ fontSize: 11 }} />
@@ -351,8 +351,8 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         )}
 
         <ChartCard title="Utilisateurs actifs (7j)">
-          <div className="flex flex-col items-center justify-center h-[200px]">
-            <p className="font-display text-4xl tracking-wider">{activeUsers.length}</p>
+          <div className="flex flex-col items-center justify-center h-[160px] sm:h-[180px]">
+            <p className="font-display text-3xl sm:text-4xl tracking-wider">{activeUsers.length}</p>
             <p className="text-[10px] font-body text-foreground/40 mt-1">sur {users.length} inscrits</p>
             <div className="w-full mt-4 bg-foreground/5 rounded-full h-2">
               <div
@@ -375,11 +375,11 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
                   {u.user_metadata.avatar_url ? (
                     <img src={u.user_metadata.avatar_url} className="w-6 h-6 rounded-full" alt="" />
                   ) : (
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-display text-primary">
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-display text-primary shrink-0">
                       {(u.email || "?")[0].toUpperCase()}
                     </div>
                   )}
-                  <span className="text-xs font-body truncate">{u.user_metadata.full_name || u.email}</span>
+                  <span className="text-[11px] sm:text-xs font-body truncate">{u.user_metadata.full_name || u.email}</span>
                 </div>
                 <span className="text-[9px] font-body text-foreground/30 whitespace-nowrap">
                   {format(new Date(u.created_at), "dd/MM", { locale: fr })}
