@@ -7,7 +7,7 @@ import { useFavorites } from "@/lib/favorites";
 import { useCompare } from "./CompareDrawer";
 import FlameIndicator from "./FlameIndicator";
 import ShareMenu from "./ShareMenu";
-import { trackOutboundClick } from "@/lib/track-click";
+import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
 import { motion } from "framer-motion";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { useDealVotes } from "@/hooks/use-deal-votes";
