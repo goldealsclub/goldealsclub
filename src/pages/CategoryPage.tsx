@@ -14,10 +14,10 @@ const CategoryPage = () => {
   const { filteredDeals } = useGender();
 
   const categoryLabels: Record<string, string> = {
-    sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
-    tshirts: t.tshirts, "t-shirts": "T-shirts", pants: t.pants,
-    pantalons: "Pantalons", accessories: t.accessories, accessoires: t.accessories,
-    vestes: t.jackets, autres: "Autres", all: t.all,
+    sneakers: t.sneakers, hoodies: t.hoodies,
+    "t-shirts": "T-shirts", pantalons: "Pantalons",
+    accessoires: t.accessories, vestes: t.jackets,
+    autres: "Autres", all: t.all,
   };
 
   const isAll = slug === "all";
@@ -26,7 +26,7 @@ const CategoryPage = () => {
   const categoryDeals = useMemo(
     () => isAll
       ? filteredDeals
-      : filteredDeals.filter((d) => d.category === slug || (slug === "tshirts" && d.category === "t-shirts") || (slug === "jackets" && d.category === "vestes") || (slug === "pants" && d.category === "pantalons") || (slug === "accessories" && d.category === "accessoires")),
+      : filteredDeals.filter((d) => d.category === slug),
     [slug, filteredDeals, isAll]
   );
 
@@ -55,8 +55,8 @@ const CategoryPage = () => {
           >
             {t.all} ({filteredDeals.length})
           </Link>
-          {[...categoryList.map(c => c.key), "t-shirts", "autres"].filter((cat, i, arr) => arr.indexOf(cat) === i).map((cat) => {
-            const count = filteredDeals.filter(d => d.category === cat || (cat === "tshirts" && d.category === "t-shirts")).length;
+          {[...categoryList.map(c => c.key), "autres"].filter((cat, i, arr) => arr.indexOf(cat) === i).map((cat) => {
+            const count = filteredDeals.filter(d => d.category === cat).length;
             if (count === 0) return null;
             return (
               <Link
