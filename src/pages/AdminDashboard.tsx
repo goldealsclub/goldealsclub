@@ -14,6 +14,7 @@ import {
   Loader2, TrendingUp, MousePointerClick, ShoppingBag, Heart, Users,
   Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download,
   Eye, UserCheck, UserX, Activity, Star, Clock, Calendar,
+  ExternalLink, Link2,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
