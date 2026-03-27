@@ -46,24 +46,62 @@ function inferBrand(brand: string, title: string): string {
     "Low Lights Studios","New Balance","New Era","Karl Kani","Polo Ralph Lauren","Polo Sport",
     "Dr. Martens","Under Armour","Smoke Rise","Sergio Tacchini","True Religion",
     "Von Dutch","Mitchell & Ness","G-SHOCK","Another Cotton","Nike SB",
+    "The North Face","2Y Studios","47 Brand",
   ];
   const SINGLE_WORD_BRANDS = new Set([
     "Nike","adidas","Jordan","UGG","ASICS","PUMA","Converse","Vans","Pegador",
     "Dickies","Lacoste","Timberland","On","Prohibited","HALO","Salomon",
     "Reebok","Fila","Casio","Carhartt","Champion","Ellesse","Kappa","Starter",
-    "Columbia","Levi's","Stance","Oakley","The North Face","Tommy","Birkenstock",
+    "Columbia","Levi's","Stance","Oakley","Tommy","Birkenstock",
     "Saucony","Crocs","Merrell","Clarks","Hoka","Stanley","2Y","Small",
-    "DC","Buffalo","Decibel","Eastpak","Umbro",
+    "DC","Buffalo","Decibel","Eastpak","Umbro","Snipes",
   ]);
 
+  // Keyword-based brand detection for Nike sub-lines etc.
+  const KEYWORD_BRANDS: [string[], string][] = [
+    [["air max","air force","air jordan","air zoom","air huarache","sportswear","dri-fit","dri fit","tech fleece","club ","acg ","wmns ","nsw ","sb force","sb chron","sb dunk","blazer","cortez","pegasus","vomero","shox ","total 90","windrunner","tech woven","one dri-fit"], "Nike"],
+    [["superstar","adicolor","firebird","ozweego","forum ","campus ","gazelle","samba","stan smith","nmd ","yeezy","ultraboost","spezial","adilette","zx ","la franc","taekwondo","italia 70s","spiritain","spiritian","galaxy og","dame x ","spacer cutline"], "adidas"],
+    [["jumpman","jordan ","jdb ","j brkln","flight ","los ","brooklyn "], "Jordan"],
+    [["chuck taylor","chuck 70","pro blaze","puff taylor","puff player","all star"], "Converse"],
+    [["classic mini","tazz","disquette","lowmel","funkette","tazzelle","tasman","classic ultra","dipper"], "UGG"],
+    [["old skool","sk8-","knu skool"], "Vans"],
+    [["speedcat","mostro","suede xl","suede ","cali ","fenty","avanti ","rs-x","rs x","mayze","ca pro"], "PUMA"],
+    [["gel-","gel ","tiger runner","lyte classic","japan w ","tokyo w "], "ASICS"],
+    [["classic nylon","club c ","cardi slide","question ","answer ","nano x"], "Reebok"],
+    [["fresh foam","fuelcell","2002","574 ","990 ","327 ","1906"], "New Balance"],
+    [["acs+","acs +","xt-6","xt-whisper","speedcross","xt-4"], "Salomon"],
+    [["cloud 6","cloudtilt","cloudsurfer","cloudvista","cloudnova","cloudmonster","cloudswift","cloudzone"], "On"],
+    [["clifton","bondi ","arahi","motion 6"], "Hoka"],
+    [["t-clip","l003 ","croco "], "Lacoste"],
+    [["train 89","masters court","bedford","hrt "], "Polo Ralph Lauren"],
+    [["stag ","court graffik","infinite pro"], "DC"],
+    [["9forty","9twenty","9fifty","59fifty","mvp base","base runner","clean up","a frame","5 panel"], "New Era"],
+    [["sprint trekker","euro trekker","field trekker","premium 6"], "Timberland"],
+    [["89 2k","89 prm","89 up","89 tailor","89 classic","89 lxry","89 tongue","89 logo","prime runner","kani runner","small signature","s emblem","s cube"], "Karl Kani"],
+    [["inhale ","citigo","serenus","neo run","204 ","471 ","1000 ","runner prm","goalgetter","goldenglow","session ","stadium 90","play off","echo ","aura ","pluto ","shadow skate","venice skate","skate low","command ","club low ","h-street","delta "], "Snipes"],
+    [["mlb ","nba ","nfl ","collegiate script","washed script","poly track set"], "Mitchell & Ness"],
+    [["arizona","boston ","gizeh"], "Birkenstock"],
+    [["hidden in plain","far away from","box logo","reflective globe","another ","vortex knit","union jacquard","metal signature"], "Snipes"],
+  ];
+
   const t = title || "";
+  const tl = ` ${t.toLowerCase()} `;
+
+  // Multi-word brand prefix match
   for (const mw of MULTI_WORD_BRANDS) {
     if (t.toLowerCase().startsWith(mw.toLowerCase())) return mw;
   }
+  // Single-word brand prefix match
   const firstWord = t.split(/\s+/)[0];
   if (firstWord && SINGLE_WORD_BRANDS.has(firstWord)) return firstWord;
-  if (firstWord && firstWord.length > 1) return firstWord;
-  return brand;
+
+  // Keyword-based detection
+  for (const [keywords, brandName] of KEYWORD_BRANDS) {
+    if (keywords.some(k => tl.includes(k))) return brandName;
+  }
+
+  // If merchant is Snipes and we can't determine brand, keep "Snipes"
+  return "Snipes";
 }
 
 /** Infer gender from description and title */
