@@ -440,23 +440,23 @@ const AnalyticsTab = ({
   clicksByBrand, clicksByCategory, clicksByMerchant, dealsByCategory, dealsByBrand, topDeals,
 }: any) => (
   <>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
-      <KpiCard icon={<ShoppingBag className="w-5 h-5" />} label="Deals actifs" value={filteredDeals.length} />
-      <KpiCard icon={<MousePointerClick className="w-5 h-5" />} label="Clics sortants" value={totalClicks} />
-      <KpiCard icon={<Heart className="w-5 h-5" />} label="Favoris total" value={totalFavorites} />
-      <KpiCard icon={<TrendingUp className="w-5 h-5" />} label="Deals cliqués" value={clicks.length} />
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-8 sm:mb-12">
+      <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={filteredDeals.length} />
+      <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics sortants" value={totalClicks} />
+      <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris total" value={totalFavorites} />
+      <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals cliqués" value={clicks.length} />
     </div>
 
     {clicksLoading ? (
       <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>
     ) : (
       <>
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
           <ChartCard title="Clics par marque (top 10)">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={clicksByBrand} layout="vertical" margin={{ left: 80 }}>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={clicksByBrand} layout="vertical" margin={{ left: 60 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={75} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={55} />
                 <Tooltip contentStyle={{ fontSize: 11 }} />
                 <Bar dataKey="value" fill="hsl(30,40%,45%)" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -464,9 +464,9 @@ const AnalyticsTab = ({
           </ChartCard>
 
           <ChartCard title="Clics par catégorie">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={clicksByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                <Pie data={clicksByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
                   {clicksByCategory.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ fontSize: 11 }} />
@@ -475,12 +475,12 @@ const AnalyticsTab = ({
           </ChartCard>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
           <ChartCard title="Deals par marque (top 10)">
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={dealsByBrand} layout="vertical" margin={{ left: 80 }}>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={dealsByBrand} layout="vertical" margin={{ left: 60 }}>
                 <XAxis type="number" tick={{ fontSize: 10 }} />
-                <YAxis dataKey="name" type="category" tick={{ fontSize: 10 }} width={75} />
+                <YAxis dataKey="name" type="category" tick={{ fontSize: 9 }} width={55} />
                 <Tooltip contentStyle={{ fontSize: 11 }} />
                 <Bar dataKey="value" fill="hsl(30,30%,55%)" radius={[0, 4, 4, 0]} />
               </BarChart>
@@ -488,9 +488,9 @@ const AnalyticsTab = ({
           </ChartCard>
 
           <ChartCard title="Deals par catégorie">
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250}>
               <PieChart>
-                <Pie data={dealsByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={100} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                <Pie data={dealsByCategory} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={9}>
                   {dealsByCategory.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                 </Pie>
                 <Tooltip contentStyle={{ fontSize: 11 }} />
@@ -500,39 +500,39 @@ const AnalyticsTab = ({
         </div>
 
         <ChartCard title="Clics par marchand">
-          <ResponsiveContainer width="100%" height={280}>
+          <ResponsiveContainer width="100%" height={220}>
             <BarChart data={clicksByMerchant}>
-              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
+              <XAxis dataKey="name" tick={{ fontSize: 9 }} />
+              <YAxis tick={{ fontSize: 10 }} width={30} />
               <Tooltip contentStyle={{ fontSize: 11 }} />
               <Bar dataKey="value" fill="hsl(30,20%,65%)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </ChartCard>
 
-        <div className="mt-12">
-          <h3 className="font-display text-sm uppercase tracking-widest mb-4">Top 10 deals les plus cliqués</h3>
+        <div className="mt-8 sm:mt-12">
+          <h3 className="font-display text-xs sm:text-sm uppercase tracking-widest mb-3 sm:mb-4">Top 10 deals les plus cliqués</h3>
           <div className="border border-foreground/8 overflow-x-auto">
-            <table className="w-full text-xs font-body">
+            <table className="w-full text-[10px] sm:text-xs font-body">
               <thead>
                 <tr className="border-b border-foreground/8 bg-muted/30">
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">#</th>
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Deal</th>
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Marque</th>
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Catégorie</th>
-                  <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Clics</th>
-                  <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Dernier clic</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">#</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Deal</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Marque</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden md:table-cell">Catégorie</th>
+                  <th className="text-right p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Clics</th>
+                  <th className="text-right p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Dernier clic</th>
                 </tr>
               </thead>
               <tbody>
                 {topDeals.map((d: any, i: number) => (
                   <tr key={d.deal_id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
-                    <td className="p-3 text-foreground/40">{i + 1}</td>
-                    <td className="p-3 max-w-[200px] truncate">{d.deal_title || d.deal_id}</td>
-                    <td className="p-3 text-foreground/60">{d.brand || "—"}</td>
-                    <td className="p-3 text-foreground/60">{d.category || "—"}</td>
-                    <td className="p-3 text-right font-semibold">{d.click_count}</td>
-                    <td className="p-3 text-right text-foreground/40">{d.last_click ? new Date(d.last_click).toLocaleDateString("fr-FR") : "—"}</td>
+                    <td className="p-2 sm:p-3 text-foreground/40">{i + 1}</td>
+                    <td className="p-2 sm:p-3 max-w-[140px] sm:max-w-[200px] truncate">{d.deal_title || d.deal_id}</td>
+                    <td className="p-2 sm:p-3 text-foreground/60 hidden sm:table-cell">{d.brand || "—"}</td>
+                    <td className="p-2 sm:p-3 text-foreground/60 hidden md:table-cell">{d.category || "—"}</td>
+                    <td className="p-2 sm:p-3 text-right font-semibold">{d.click_count}</td>
+                    <td className="p-2 sm:p-3 text-right text-foreground/40 hidden sm:table-cell">{d.last_click ? new Date(d.last_click).toLocaleDateString("fr-FR") : "—"}</td>
                   </tr>
                 ))}
                 {topDeals.length === 0 && (
