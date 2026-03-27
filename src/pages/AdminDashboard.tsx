@@ -470,13 +470,27 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 const AnalyticsTab = ({
   filteredDeals, totalClicks, totalFavorites, clicks, clicksLoading,
   clicksByBrand, clicksByCategory, clicksByMerchant, dealsByCategory, dealsByBrand, topDeals,
-}: any) => (
+}: any) => {
+  const avgDiscount = filteredDeals.length > 0
+    ? (filteredDeals.reduce((s: number, d: any) => s + (d.discount_percent || 0), 0) / filteredDeals.filter((d: any) => d.discount_percent).length).toFixed(0)
+    : "0";
+  const superDeals = filteredDeals.filter((d: any) => d.is_super_deal).length;
+  const clicksPerDeal = filteredDeals.length > 0 ? (totalClicks / filteredDeals.length).toFixed(1) : "0";
+  const favsPerDeal = filteredDeals.length > 0 ? (totalFavorites / filteredDeals.length).toFixed(2) : "0";
+
+  return (
   <>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-8 sm:mb-12">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
       <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={filteredDeals.length} />
       <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics sortants" value={totalClicks} />
       <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris total" value={totalFavorites} />
       <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals cliqués" value={clicks.length} />
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-8 sm:mb-12">
+      <KpiCard icon={<Star className="w-4 h-4 sm:w-5 sm:h-5" />} label="Super deals" value={superDeals} accent="green" />
+      <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Réduction moy." value={`${avgDiscount}%`} />
+      <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics / deal" value={clicksPerDeal} />
+      <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris / deal" value={favsPerDeal} />
     </div>
 
     {clicksLoading ? (
