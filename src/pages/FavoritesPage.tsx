@@ -12,6 +12,7 @@ const FavoritesPage = () => {
   const { favorites } = useFavorites();
 
   const favDeals = deals.filter((d) => favorites.has(d.id));
+  useLoadVotes(favDeals.map(d => d.id));
 
   return (
     <div className="min-h-screen bg-background">

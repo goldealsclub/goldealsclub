@@ -9,6 +9,7 @@ import { useLoadVotes } from "@/hooks/use-deal-votes";
 const TrendsPage = () => {
   const { t } = useI18n();
   const { filteredDeals: deals } = useGender();
+  useLoadVotes(deals.slice(0, 50).map(d => d.id));
 
   return (
     <div className="min-h-screen bg-background">

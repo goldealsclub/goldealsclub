@@ -19,6 +19,8 @@ const BrandPage = () => {
     [brandName, filteredDeals]
   );
 
+  useLoadVotes(useMemo(() => brandDeals.slice(0, 50).map(d => d.id), [brandDeals]));
+
   // Stats
   const genderCounts: Record<string, number> = {};
   const categoryCounts: Record<string, number> = {};

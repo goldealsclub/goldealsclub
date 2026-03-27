@@ -37,6 +37,9 @@ const CategoryPage = () => {
     return Array.from(cats);
   }, [filteredDeals]);
 
+  // Batch-load votes for visible deals (first page)
+  useLoadVotes(useMemo(() => categoryDeals.slice(0, 50).map(d => d.id), [categoryDeals]));
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
