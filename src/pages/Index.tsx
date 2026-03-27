@@ -303,20 +303,20 @@ const HeroSlideshow = ({ t }: { t: any }) => {
         />
       ))}
 
-      {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-t from-foreground/70 via-foreground/20 to-transparent z-[3]" />
+      {/* Gradient overlay – always dark regardless of theme */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent z-[3]" />
 
-      {/* Content */}
+      {/* Content – always white text over dark overlay */}
       <div className="relative z-[4] container mx-auto px-4 pb-16 md:pb-24">
-        <h1 className="font-display text-4xl md:text-7xl text-background tracking-wider mb-4">
+        <h1 className="font-display text-4xl md:text-7xl text-white tracking-wider mb-4">
           {t.heroTitle}
         </h1>
-        <p className="font-body text-sm md:text-base text-background/70 max-w-lg mb-8 leading-relaxed">
+        <p className="font-body text-sm md:text-base text-white/70 max-w-lg mb-8 leading-relaxed">
           {t.heroSub}
         </p>
         <Link
           to="/category/all"
-          className="inline-flex items-center gap-3 bg-background text-foreground px-8 py-4 text-[11px] font-display uppercase tracking-[0.2em] hover:bg-background/90 transition-colors"
+          className="inline-flex items-center gap-3 bg-white text-black px-8 py-4 text-[11px] font-display uppercase tracking-[0.2em] hover:bg-white/90 transition-colors"
         >
           {t.heroCta}
           <ArrowRight className="w-4 h-4" strokeWidth={1.5} />
@@ -329,7 +329,7 @@ const HeroSlideshow = ({ t }: { t: any }) => {
               key={i}
               onClick={() => { setPrev(current); setCurrent(i); }}
               className={`h-[2px] transition-all duration-500 ${
-                i === current ? "w-8 bg-background" : "w-4 bg-background/30"
+                i === current ? "w-8 bg-white" : "w-4 bg-white/30"
               }`}
               aria-label={`Slide ${i + 1}`}
             />
