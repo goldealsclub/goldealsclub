@@ -8,6 +8,7 @@ import { useCompare } from "./CompareDrawer";
 import FlameIndicator from "./FlameIndicator";
 import ShareMenu from "./ShareMenu";
 import { trackOutboundClick } from "@/lib/track-click";
+import { motion } from "framer-motion";
 
 interface DealCardProps {
   deal: Deal;
@@ -140,10 +141,12 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
               className="p-2 hover:bg-accent/50 rounded-sm transition-colors"
               aria-label={t.save}
             >
-              <Heart
-                className={`w-4 h-4 transition-colors ${saved ? "fill-foreground text-foreground" : "text-foreground/40 group-hover:text-foreground"}`}
-                strokeWidth={1.5}
-              />
+              <motion.div whileTap={{ scale: 1.4 }} transition={{ type: "spring", stiffness: 400 }}>
+                <Heart
+                  className={`w-4 h-4 transition-colors ${saved ? "fill-foreground text-foreground" : "text-foreground/40 group-hover:text-foreground"}`}
+                  strokeWidth={1.5}
+                />
+              </motion.div>
             </button>
             <ShareMenu url={`/deal/${deal.id}`} title={deal.title} />
             <button

@@ -16,6 +16,7 @@ import AlertPreferences from "@/components/AlertPreferences";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAdmin } from "@/hooks/use-admin";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const languages: { code: Lang; label: string }[] = [
   { code: "fr", label: "FR" },
@@ -166,6 +167,7 @@ const Header = () => {
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
+            <ThemeToggle />
             <button onClick={() => setSearchOpen(true)} className="p-2">
               <Search className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
             </button>

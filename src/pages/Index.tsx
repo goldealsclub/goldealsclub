@@ -14,6 +14,9 @@ import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
 import hero4 from "@/assets/hero-4.jpg";
 import { ArrowRight, ShieldCheck } from "lucide-react";
+import AnimatedSection from "@/components/AnimatedSection";
+import AnimatedDealCard from "@/components/AnimatedDealCard";
+import SEOHead from "@/components/SEOHead";
 
 const heroImages = [hero1, hero2, hero3, hero4];
 import { supabase } from "@/integrations/supabase/client";
@@ -48,6 +51,23 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEOHead
+        title="GOLDEALS CLUB — Les meilleures promos mode & sneakers"
+        description="Découvrez les meilleures promos mode, streetwear et sneakers sélectionnées chez des vendeurs fiables. Jusqu'à -70% sur Nike, Adidas, New Balance et plus."
+        canonical="https://goldealsclub.lovable.app/"
+        jsonLd={{
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "GOLDEALS CLUB",
+          url: "https://goldealsclub.lovable.app",
+          description: "Les meilleures promos mode, streetwear et sneakers",
+          potentialAction: {
+            "@type": "SearchAction",
+            target: "https://goldealsclub.lovable.app/category/all?q={search_term_string}",
+            "query-input": "required name=search_term_string",
+          },
+        }}
+      />
       <Header />
 
       {/* Hero Slideshow */}
@@ -61,7 +81,7 @@ const Index = () => {
 
       {/* Hot Deals — APERÇU */}
       {hotDeals.length > 0 && (
-        <section className="container mx-auto px-4 py-20">
+        <AnimatedSection className="container mx-auto px-4 py-20">
           <div className="flex items-end justify-between mb-12">
             <div>
               <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.hotDeals} 🔥</h2>
@@ -72,11 +92,11 @@ const Index = () => {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-            {hotDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
-              <DealCard key={deal.id} deal={deal} />
+            {hotDeals.slice(0, PREVIEW_LIMIT).map((deal, i) => (
+              <AnimatedDealCard key={deal.id} deal={deal} index={i} />
             ))}
           </div>
-        </section>
+        </AnimatedSection>
       )}
 
       {/* Nike Spotlight */}
@@ -153,7 +173,7 @@ const Index = () => {
 
       {/* Bons Deals — APERÇU */}
       {bonDeals.length > 0 && (
-        <section className="container mx-auto px-4 py-20">
+        <AnimatedSection className="container mx-auto px-4 py-20">
           <div className="flex items-end justify-between mb-12">
             <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.goodDeals}</h2>
             <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
@@ -161,15 +181,15 @@ const Index = () => {
             </Link>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-            {bonDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
-              <DealCard key={deal.id} deal={deal} />
+            {bonDeals.slice(0, PREVIEW_LIMIT).map((deal, i) => (
+              <AnimatedDealCard key={deal.id} deal={deal} index={i} />
             ))}
           </div>
-        </section>
+        </AnimatedSection>
       )}
 
       {/* Popular — APERÇU */}
-      <section className="container mx-auto px-4 py-20">
+      <AnimatedSection className="container mx-auto px-4 py-20">
         <div className="flex items-end justify-between mb-12">
           <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.popular}</h2>
           <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
@@ -177,11 +197,11 @@ const Index = () => {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-          {popularDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
-            <DealCard key={deal.id} deal={deal} />
+          {popularDeals.slice(0, PREVIEW_LIMIT).map((deal, i) => (
+            <AnimatedDealCard key={deal.id} deal={deal} index={i} />
           ))}
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Promos Normales — APERÇU */}
       {promoNormales.length > 0 && (
@@ -203,7 +223,7 @@ const Index = () => {
       )}
 
       {/* New Deals — APERÇU */}
-      <section className="container mx-auto px-4 py-20">
+      <AnimatedSection className="container mx-auto px-4 py-20">
         <div className="flex items-end justify-between mb-12">
           <h2 className="font-display text-2xl md:text-3xl tracking-wider">{t.newDeals}</h2>
           <Link to="/trends" className="text-[10px] font-display uppercase tracking-[0.15em] text-foreground/40 hover:text-foreground transition-colors flex items-center gap-1">
@@ -211,11 +231,11 @@ const Index = () => {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-          {newDeals.slice(0, PREVIEW_LIMIT).map((deal) => (
-            <DealCard key={deal.id} deal={deal} />
+          {newDeals.slice(0, PREVIEW_LIMIT).map((deal, i) => (
+            <AnimatedDealCard key={deal.id} deal={deal} index={i} />
           ))}
         </div>
-      </section>
+      </AnimatedSection>
 
       {/* Trusted Sellers */}
       <section className="container mx-auto px-4 py-20">
