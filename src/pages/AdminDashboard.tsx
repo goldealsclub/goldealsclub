@@ -338,8 +338,8 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
         </div>
       )}
 
-      {/* Search */}
-      <div className="mb-6">
+      {/* Search + Export */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
           type="text"
           value={search}
@@ -347,6 +347,25 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
           placeholder="Rechercher par email ou provider..."
           className="w-full max-w-md bg-muted/30 border border-foreground/10 px-4 py-2.5 text-xs font-body placeholder:text-foreground/30 focus:outline-none focus:border-foreground/30"
         />
+        <button
+          onClick={() => {
+            const header = "Email,Provider,Confirmé,Inscrit le,Dernière connexion\n";
+            const rows = filtered.map((u) =>
+              `"${u.email || ""}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
+            ).join("\n");
+            const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = `utilisateurs_${new Date().toISOString().slice(0, 10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+          }}
+          className="flex items-center gap-2 px-4 py-2.5 border border-foreground/10 text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors shrink-0"
+        >
+          <Download className="w-3.5 h-3.5" />
+          Exporter CSV
+        </button>
       </div>
 
       {/* Users table */}
