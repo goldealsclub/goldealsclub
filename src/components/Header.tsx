@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, Menu, X, RefreshCw, User } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw, User, TrendingUp } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
@@ -15,6 +15,7 @@ import SearchOverlay from "@/components/SearchOverlay";
 import AlertPreferences from "@/components/AlertPreferences";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { useAdmin } from "@/hooks/use-admin";
 
 const languages: { code: Lang; label: string }[] = [
   { code: "fr", label: "FR" },
@@ -27,6 +28,7 @@ const Header = () => {
   const { favorites } = useFavorites();
   const { gender, setGender, filteredDeals } = useGender();
   const { user, signOut } = useAuth();
+  const { isAdmin } = useAdmin();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -180,6 +182,11 @@ const Header = () => {
             {user ? (
               <>
                 <AlertPreferences />
+                {isAdmin && (
+                  <Link to="/admin" className="p-2" title="Dashboard admin">
+                    <TrendingUp className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
+                  </Link>
+                )}
                 <Link to="/profile" className="p-2" title="Mon compte">
                   <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
                 </Link>
