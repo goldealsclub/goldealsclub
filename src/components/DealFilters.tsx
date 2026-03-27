@@ -104,10 +104,9 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   }, [sourceDeals]);
 
   const categoryLabels: Record<string, string> = {
-    sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
-    tshirts: t.tshirts, "t-shirts": "T-shirts", pants: t.pants,
-    pantalons: "Pantalons", accessories: t.accessories, accessoires: t.accessories,
-    vestes: t.jackets, autres: "Autres",
+    sneakers: t.sneakers, hoodies: t.hoodies,
+    "t-shirts": "T-shirts", pantalons: "Pantalons",
+    accessoires: t.accessories, vestes: t.jackets, autres: "Autres",
   };
 
   const levelTabs: { key: DealLevel | "all"; label: string; flames: number }[] = [
