@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { categoryList, sellers, Deal } from "@/lib/data";
 import { useGender } from "@/lib/gender-context";
+import { useLoadVotes } from "@/hooks/use-deal-votes";
 import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -42,6 +43,18 @@ const Index = () => {
   const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortByDate);
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity);
   const newDeals = [...deals].sort(sortByDate);
+
+  // Batch-load votes for all visible deals
+  const nikeDeals = useMemo(() => deals.filter(d => d.brand.toLowerCase() === "nike" || d.source?.toLowerCase() === "nike").sort(sortByDate), [deals]);
+  const snipesDeals = useMemo(() => deals.filter(d => d.source?.toLowerCase() === "snipes" || d.merchant?.toLowerCase().includes("snipes")).sort(sortByDate), [deals]);
+  const visibleDealIds = useMemo(() => {
+    const ids = new Set<string>();
+    [hotDeals, bonDeals, promoNormales, popularDeals, newDeals, nikeDeals, snipesDeals].forEach(arr =>
+      arr.slice(0, PREVIEW_LIMIT).forEach(d => ids.add(d.id))
+    );
+    return Array.from(ids);
+  }, [hotDeals, bonDeals, promoNormales, popularDeals, newDeals, nikeDeals, snipesDeals]);
+  useLoadVotes(visibleDealIds);
 
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
@@ -100,9 +113,7 @@ const Index = () => {
       )}
 
       {/* Nike Spotlight */}
-      {(() => {
-        const nikeDeals = deals.filter(d => d.brand.toLowerCase() === "nike" || d.source?.toLowerCase() === "nike").sort(sortByDate);
-        return nikeDeals.length > 0 ? (
+      {nikeDeals.length > 0 && (
           <section className="bg-foreground text-background">
             <div className="container mx-auto px-4 py-20">
               <div className="flex items-end justify-between mb-12">
@@ -121,13 +132,10 @@ const Index = () => {
               </div>
             </div>
           </section>
-        ) : null;
-      })()}
+      )}
 
       {/* Snipes Spotlight */}
-      {(() => {
-        const snipesDeals = deals.filter(d => d.source?.toLowerCase() === "snipes" || d.merchant?.toLowerCase().includes("snipes")).sort(sortByDate);
-        return snipesDeals.length > 0 ? (
+      {snipesDeals.length > 0 && (
           <section className="container mx-auto px-4 py-20">
             <div className="flex items-end justify-between mb-12">
               <div>
@@ -144,8 +152,7 @@ const Index = () => {
               ))}
             </div>
           </section>
-        ) : null;
-      })()}
+      )}
 
       {/* Categories */}
       <section className="bg-sable/30">

@@ -5,12 +5,14 @@ import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Heart } from "lucide-react";
+import { useLoadVotes } from "@/hooks/use-deal-votes";
 
 const FavoritesPage = () => {
   const { t } = useI18n();
   const { favorites } = useFavorites();
 
   const favDeals = deals.filter((d) => favorites.has(d.id));
+  useLoadVotes(favDeals.map(d => d.id));
 
   return (
     <div className="min-h-screen bg-background">

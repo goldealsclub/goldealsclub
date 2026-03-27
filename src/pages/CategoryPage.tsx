@@ -7,6 +7,7 @@ import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useMemo } from "react";
+import { useLoadVotes } from "@/hooks/use-deal-votes";
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -35,6 +36,9 @@ const CategoryPage = () => {
     const cats = new Set(filteredDeals.map(d => d.category));
     return Array.from(cats);
   }, [filteredDeals]);
+
+  // Batch-load votes for visible deals (first page)
+  useLoadVotes(useMemo(() => categoryDeals.slice(0, 50).map(d => d.id), [categoryDeals]));
 
   return (
     <div className="min-h-screen bg-background">
