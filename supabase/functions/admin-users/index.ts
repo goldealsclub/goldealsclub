@@ -5,6 +5,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+const jsonHeaders = {
+  ...corsHeaders,
+  "Content-Type": "application/json",
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
@@ -20,7 +25,7 @@ Deno.serve(async (req) => {
     if (!authHeader) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: jsonHeaders,
       });
     }
 
@@ -33,7 +38,7 @@ Deno.serve(async (req) => {
     if (!user) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: jsonHeaders,
       });
     }
 
@@ -47,7 +52,7 @@ Deno.serve(async (req) => {
     if (!roleData) {
       return new Response(JSON.stringify({ error: "Forbidden" }), {
         status: 403,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: jsonHeaders,
       });
     }
 
@@ -59,18 +64,18 @@ Deno.serve(async (req) => {
 
     // Fetch all data in parallel
     const [
-      { count: newsletterCount },
-      { count: alertCount },
-      { count: votesCount },
-      { count: totalClicks },
-      { count: totalFavorites },
-      { count: totalDeals },
-      { data: favoritesPerUser },
-      { data: clicksPerUser },
-      { data: votesPerUser },
-      { data: allRoles },
-      { data: recentClicks },
-      { data: alertPrefs },
+      newsletterResult,
+      alertResult,
+      votesResult,
+      totalClicksResult,
+      totalFavoritesResult,
+      totalDealsResult,
+      favoritesResult,
+      clicksResult,
+      votesPerUserResult,
+      rolesResult,
+      recentClicksResult,
+      alertPrefsResult,
     ] = await Promise.all([
       supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
       supabase.from("email_alert_preferences").select("id", { count: "exact", head: true }).eq("enabled", true),
@@ -78,14 +83,45 @@ Deno.serve(async (req) => {
       supabase.from("outbound_clicks").select("id", { count: "exact", head: true }),
       supabase.from("favorites").select("id", { count: "exact", head: true }),
       supabase.from("deals").select("id", { count: "exact", head: true }),
-      supabase.rpc("raw_sql", undefined).catch(() => null) || 
-        supabase.from("favorites").select("user_id"),
+      supabase.from("favorites").select("user_id"),
       supabase.from("outbound_clicks").select("user_id"),
       supabase.from("deal_votes").select("user_id"),
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("outbound_clicks").select("clicked_at").order("clicked_at", { ascending: false }).limit(500),
       supabase.from("email_alert_preferences").select("user_id, enabled, frequency"),
     ]);
+
+    const queryErrors = [
+      newsletterResult.error,
+      alertResult.error,
+      votesResult.error,
+      totalClicksResult.error,
+      totalFavoritesResult.error,
+      totalDealsResult.error,
+      favoritesResult.error,
+      clicksResult.error,
+      votesPerUserResult.error,
+      rolesResult.error,
+      recentClicksResult.error,
+      alertPrefsResult.error,
+    ].filter(Boolean);
+
+    if (queryErrors.length > 0) {
+      throw queryErrors[0];
+    }
+
+    const newsletterCount = newsletterResult.count || 0;
+    const alertCount = alertResult.count || 0;
+    const votesCount = votesResult.count || 0;
+    const totalClicks = totalClicksResult.count || 0;
+    const totalFavorites = totalFavoritesResult.count || 0;
+    const totalDeals = totalDealsResult.count || 0;
+    const favoritesPerUser = favoritesResult.data || [];
+    const clicksPerUser = clicksResult.data || [];
+    const votesPerUser = votesPerUserResult.data || [];
+    const allRoles = rolesResult.data || [];
+    const recentClicks = recentClicksResult.data || [];
+    const alertPrefs = alertPrefsResult.data || [];
 
     // Build per-user maps
     const favCountMap: Record<string, number> = {};
@@ -197,12 +233,14 @@ Deno.serve(async (req) => {
           provider_breakdown: providerBreakdown,
         },
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: jsonHeaders }
     );
   } catch (err) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error("admin-users failed", err);
+
+    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
       status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: jsonHeaders,
     });
   }
 });
