@@ -122,3 +122,22 @@
     text-wrap: balance;
   }
 }
+
+/* Discrete scrollbar for brand banner */
+.brand-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--foreground) / 0.15) transparent;
+}
+.brand-scroll::-webkit-scrollbar {
+  height: 4px;
+}
+.brand-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.brand-scroll::-webkit-scrollbar-thumb {
+  background: hsl(var(--foreground) / 0.15);
+  border-radius: 2px;
+}
+.brand-scroll::-webkit-scrollbar-thumb:hover {
+  background: hsl(var(--foreground) / 0.3);
+}
