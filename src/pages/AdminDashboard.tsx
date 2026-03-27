@@ -6,12 +6,22 @@ import { useAuth } from "@/lib/auth-context";
 import { useGender } from "@/lib/gender-context";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
-import { Loader2, TrendingUp, MousePointerClick, ShoppingBag, Heart, Users, Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download } from "lucide-react";
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
+  PieChart, Pie, Cell, LineChart, Line, AreaChart, Area,
+} from "recharts";
+import {
+  Loader2, TrendingUp, MousePointerClick, ShoppingBag, Heart, Users,
+  Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download,
+  Eye, UserCheck, UserX, Activity, Star, Clock, Calendar,
+} from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-const COLORS = ["hsl(30,40%,45%)", "hsl(30,30%,55%)", "hsl(30,20%,65%)", "hsl(30,15%,72%)", "hsl(30,10%,78%)", "hsl(30,5%,84%)", "hsl(0,0%,88%)", "hsl(0,0%,92%)"];
+const COLORS = [
+  "hsl(30,40%,45%)", "hsl(30,30%,55%)", "hsl(30,20%,65%)", "hsl(30,15%,72%)",
+  "hsl(30,10%,78%)", "hsl(30,5%,84%)", "hsl(0,0%,88%)", "hsl(0,0%,92%)",
+];
 
 interface ClickStat {
   deal_id: string;
@@ -31,6 +41,17 @@ interface AdminUser {
   last_sign_in_at: string | null;
   provider: string;
   confirmed: boolean;
+  favorites_count: number;
+  clicks_count: number;
+  votes_count: number;
+  roles: string[];
+  alert_enabled: boolean;
+  alert_frequency: string | null;
+  phone: string | null;
+  user_metadata: {
+    full_name: string | null;
+    avatar_url: string | null;
+  };
 }
 
 interface SiteStats {
@@ -38,25 +59,37 @@ interface SiteStats {
   newsletter_subscribers: number;
   active_alerts: number;
   total_votes: number;
+  total_clicks: number;
+  total_favorites: number;
+  total_deals: number;
+  confirmed_users: number;
+  unconfirmed_users: number;
 }
 
-type Tab = "analytics" | "users";
+interface ChartData {
+  signup_timeline: { date: string; count: number }[];
+  click_timeline: { date: string; count: number }[];
+  provider_breakdown: { name: string; value: number }[];
+}
+
+type Tab = "overview" | "analytics" | "users";
 
 const AdminDashboard = () => {
   const { user } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const { filteredDeals } = useGender();
-  const [tab, setTab] = useState<Tab>("analytics");
+  const [tab, setTab] = useState<Tab>("overview");
   const [clicks, setClicks] = useState<ClickStat[]>([]);
   const [totalFavorites, setTotalFavorites] = useState(0);
   const [clicksLoading, setClicksLoading] = useState(true);
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [siteStats, setSiteStats] = useState<SiteStats | null>(null);
+  const [charts, setCharts] = useState<ChartData | null>(null);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [usersLoaded, setUsersLoaded] = useState(false);
 
   useEffect(() => {
     if (!isAdmin) return;
-
     supabase
       .from("click_stats")
       .select("*")
@@ -65,16 +98,15 @@ const AdminDashboard = () => {
         setClicks((data as ClickStat[]) || []);
         setClicksLoading(false);
       });
-
     supabase
       .from("favorites")
       .select("id", { count: "exact", head: true })
       .then(({ count }) => setTotalFavorites(count || 0));
   }, [isAdmin]);
 
-  // Load users when tab switches
+  // Load users data once (for overview + users tabs)
   useEffect(() => {
-    if (tab !== "users" || !isAdmin || adminUsers.length > 0) return;
+    if (!isAdmin || usersLoaded) return;
     setUsersLoading(true);
     supabase.functions
       .invoke("admin-users")
@@ -84,10 +116,12 @@ const AdminDashboard = () => {
         } else if (data) {
           setAdminUsers(data.users || []);
           setSiteStats(data.stats || null);
+          setCharts(data.charts || null);
         }
         setUsersLoading(false);
+        setUsersLoaded(true);
       });
-  }, [tab, isAdmin]);
+  }, [isAdmin, usersLoaded]);
 
   const totalClicks = useMemo(() => clicks.reduce((s, c) => s + c.click_count, 0), [clicks]);
 
@@ -135,6 +169,7 @@ const AdminDashboard = () => {
   if (!isAdmin) return <Navigate to="/" replace />;
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
+    { key: "overview", label: "Vue d'ensemble", icon: <Eye className="w-4 h-4" /> },
     { key: "analytics", label: "Analytics", icon: <TrendingUp className="w-4 h-4" /> },
     { key: "users", label: "Utilisateurs", icon: <Users className="w-4 h-4" /> },
   ];
@@ -146,13 +181,12 @@ const AdminDashboard = () => {
         <h1 className="font-display text-3xl tracking-wider mb-2">ADMINISTRATION</h1>
         <p className="font-body text-xs text-foreground/50 mb-8">Dashboard administrateur — données en temps réel</p>
 
-        {/* Tabs */}
-        <div className="flex gap-1 mb-10 border-b border-foreground/8">
+        <div className="flex gap-1 mb-10 border-b border-foreground/8 overflow-x-auto">
           {tabs.map((t) => (
             <button
               key={t.key}
               onClick={() => setTab(t.key)}
-              className={`flex items-center gap-2 px-5 py-3 text-[11px] font-display uppercase tracking-widest transition-colors border-b-2 -mb-px ${
+              className={`flex items-center gap-2 px-5 py-3 text-[11px] font-display uppercase tracking-widest transition-colors border-b-2 -mb-px whitespace-nowrap ${
                 tab === t.key
                   ? "border-primary text-foreground"
                   : "border-transparent text-foreground/40 hover:text-foreground/70"
@@ -163,6 +197,18 @@ const AdminDashboard = () => {
             </button>
           ))}
         </div>
+
+        {tab === "overview" && (
+          <OverviewTab
+            stats={siteStats}
+            charts={charts}
+            users={adminUsers}
+            totalClicks={totalClicks}
+            totalFavorites={totalFavorites}
+            dealsCount={filteredDeals.length}
+            loading={usersLoading || clicksLoading}
+          />
+        )}
 
         {tab === "analytics" && (
           <AnalyticsTab
@@ -181,15 +227,176 @@ const AdminDashboard = () => {
         )}
 
         {tab === "users" && (
-          <UsersTab
-            users={adminUsers}
-            stats={siteStats}
-            loading={usersLoading}
-          />
+          <UsersTab users={adminUsers} stats={siteStats} loading={usersLoading} />
         )}
       </div>
       <Footer />
     </div>
+  );
+};
+
+/* ─── Overview Tab ─── */
+const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsCount, loading }: {
+  stats: SiteStats | null;
+  charts: ChartData | null;
+  users: AdminUser[];
+  totalClicks: number;
+  totalFavorites: number;
+  dealsCount: number;
+  loading: boolean;
+}) => {
+  if (loading) {
+    return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>;
+  }
+
+  const recentUsers = [...users].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
+  const activeUsers = users.filter((u) => u.last_sign_in_at && new Date(u.last_sign_in_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000);
+  const topUsers = [...users].sort((a, b) => (b.clicks_count + b.favorites_count + b.votes_count) - (a.clicks_count + a.favorites_count + a.votes_count)).slice(0, 5);
+
+  return (
+    <>
+      {/* Main KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 mb-10">
+        <KpiCard icon={<Users className="w-5 h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
+        <KpiCard icon={<ShoppingBag className="w-5 h-5" />} label="Deals actifs" value={dealsCount} />
+        <KpiCard icon={<MousePointerClick className="w-5 h-5" />} label="Clics totaux" value={stats?.total_clicks || totalClicks} />
+        <KpiCard icon={<Heart className="w-5 h-5" />} label="Favoris totaux" value={stats?.total_favorites || totalFavorites} />
+        <KpiCard icon={<ThumbsUp className="w-5 h-5" />} label="Votes totaux" value={stats?.total_votes || 0} />
+      </div>
+
+      {/* Secondary KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+        <KpiCard icon={<UserCheck className="w-5 h-5" />} label="Email confirmé" value={stats?.confirmed_users || 0} accent="green" />
+        <KpiCard icon={<UserX className="w-5 h-5" />} label="Non confirmé" value={stats?.unconfirmed_users || 0} accent="red" />
+        <KpiCard icon={<Mail className="w-5 h-5" />} label="Newsletter" value={stats?.newsletter_subscribers || 0} />
+        <KpiCard icon={<Bell className="w-5 h-5" />} label="Alertes actives" value={stats?.active_alerts || 0} />
+      </div>
+
+      {/* Charts row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+        {charts?.signup_timeline && charts.signup_timeline.length > 0 && (
+          <ChartCard title="Inscriptions (30 derniers jours)">
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={charts.signup_timeline}>
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
+                <Area type="monotone" dataKey="count" stroke="hsl(30,40%,45%)" fill="hsl(30,40%,45%)" fillOpacity={0.15} name="Inscriptions" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+
+        {charts?.click_timeline && charts.click_timeline.length > 0 && (
+          <ChartCard title="Clics sortants (30 derniers jours)">
+            <ResponsiveContainer width="100%" height={250}>
+              <AreaChart data={charts.click_timeline}>
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
+                <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
+                <Area type="monotone" dataKey="count" stroke="hsl(30,30%,55%)" fill="hsl(30,30%,55%)" fillOpacity={0.15} name="Clics" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+      </div>
+
+      {/* Provider breakdown + Active users */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+        {charts?.provider_breakdown && (
+          <ChartCard title="Méthodes d'inscription">
+            <ResponsiveContainer width="100%" height={200}>
+              <PieChart>
+                <Pie data={charts.provider_breakdown} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={75} label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`} labelLine={false} fontSize={10}>
+                  {charts.provider_breakdown.map((_: any, i: number) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
+                </Pie>
+                <Tooltip contentStyle={{ fontSize: 11 }} />
+              </PieChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+
+        <ChartCard title="Utilisateurs actifs (7j)">
+          <div className="flex flex-col items-center justify-center h-[200px]">
+            <p className="font-display text-4xl tracking-wider">{activeUsers.length}</p>
+            <p className="text-[10px] font-body text-foreground/40 mt-1">sur {users.length} inscrits</p>
+            <div className="w-full mt-4 bg-foreground/5 rounded-full h-2">
+              <div
+                className="bg-primary h-2 rounded-full transition-all"
+                style={{ width: `${users.length > 0 ? (activeUsers.length / users.length) * 100 : 0}%` }}
+              />
+            </div>
+            <p className="text-[10px] font-body text-foreground/30 mt-1">
+              {users.length > 0 ? ((activeUsers.length / users.length) * 100).toFixed(1) : 0}% de taux d'activité
+            </p>
+          </div>
+        </ChartCard>
+
+        {/* Recent signups */}
+        <ChartCard title="Dernières inscriptions">
+          <div className="space-y-3">
+            {recentUsers.map((u) => (
+              <div key={u.id} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  {u.user_metadata.avatar_url ? (
+                    <img src={u.user_metadata.avatar_url} className="w-6 h-6 rounded-full" alt="" />
+                  ) : (
+                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center text-[9px] font-display text-primary">
+                      {(u.email || "?")[0].toUpperCase()}
+                    </div>
+                  )}
+                  <span className="text-xs font-body truncate">{u.user_metadata.full_name || u.email}</span>
+                </div>
+                <span className="text-[9px] font-body text-foreground/30 whitespace-nowrap">
+                  {format(new Date(u.created_at), "dd/MM", { locale: fr })}
+                </span>
+              </div>
+            ))}
+            {recentUsers.length === 0 && <p className="text-xs text-foreground/30">Aucun</p>}
+          </div>
+        </ChartCard>
+      </div>
+
+      {/* Top engaged users */}
+      {topUsers.length > 0 && (
+        <div className="mb-12">
+          <h3 className="font-display text-sm uppercase tracking-widest mb-4">Utilisateurs les plus engagés</h3>
+          <div className="border border-foreground/8 overflow-x-auto">
+            <table className="w-full text-xs font-body">
+              <thead>
+                <tr className="border-b border-foreground/8 bg-muted/30">
+                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Utilisateur</th>
+                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Clics</th>
+                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Favoris</th>
+                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Votes</th>
+                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Score</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topUsers.map((u) => (
+                  <tr key={u.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
+                    <td className="p-3 flex items-center gap-2">
+                      {u.user_metadata.avatar_url ? (
+                        <img src={u.user_metadata.avatar_url} className="w-5 h-5 rounded-full" alt="" />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-display text-primary">
+                          {(u.email || "?")[0].toUpperCase()}
+                        </div>
+                      )}
+                      <span className="truncate max-w-[180px]">{u.email}</span>
+                    </td>
+                    <td className="p-3 text-center">{u.clicks_count}</td>
+                    <td className="p-3 text-center">{u.favorites_count}</td>
+                    <td className="p-3 text-center">{u.votes_count}</td>
+                    <td className="p-3 text-center font-semibold">{u.clicks_count + u.favorites_count + u.votes_count}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 
@@ -207,9 +414,7 @@ const AnalyticsTab = ({
     </div>
 
     {clicksLoading ? (
-      <div className="flex justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-foreground/30" />
-      </div>
+      <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>
     ) : (
       <>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
@@ -311,56 +516,82 @@ const AnalyticsTab = ({
 /* ─── Users Tab ─── */
 const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteStats | null; loading: boolean }) => {
   const [search, setSearch] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "clicks" | "favorites" | "engagement">("date");
 
   const filtered = useMemo(() => {
-    if (!search.trim()) return users;
-    const q = search.toLowerCase();
-    return users.filter((u) => u.email?.toLowerCase().includes(q) || u.provider.toLowerCase().includes(q));
-  }, [users, search]);
+    let list = users;
+    if (search.trim()) {
+      const q = search.toLowerCase();
+      list = list.filter((u) =>
+        u.email?.toLowerCase().includes(q) ||
+        u.provider.toLowerCase().includes(q) ||
+        u.user_metadata.full_name?.toLowerCase().includes(q) ||
+        u.roles.some((r) => r.includes(q))
+      );
+    }
+    // Sort
+    switch (sortBy) {
+      case "clicks":
+        return [...list].sort((a, b) => b.clicks_count - a.clicks_count);
+      case "favorites":
+        return [...list].sort((a, b) => b.favorites_count - a.favorites_count);
+      case "engagement":
+        return [...list].sort((a, b) => (b.clicks_count + b.favorites_count + b.votes_count) - (a.clicks_count + a.favorites_count + a.votes_count));
+      default:
+        return [...list].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+    }
+  }, [users, search, sortBy]);
+
+  const exportCSV = () => {
+    const header = "Email,Nom,Provider,Confirmé,Rôles,Favoris,Clics,Votes,Alertes,Inscrit le,Dernière connexion\n";
+    const rows = filtered.map((u) =>
+      `"${u.email || ""}","${u.user_metadata.full_name || ""}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.roles.join(", ") || "user"}","${u.favorites_count}","${u.clicks_count}","${u.votes_count}","${u.alert_enabled ? "Oui" : "Non"}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
+    ).join("\n");
+    const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `utilisateurs_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="w-6 h-6 animate-spin text-foreground/30" />
-      </div>
-    );
+    return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>;
   }
 
   return (
     <>
-      {/* Site-wide KPIs */}
       {stats && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
           <KpiCard icon={<Users className="w-5 h-5" />} label="Utilisateurs inscrits" value={stats.total_users} />
-          <KpiCard icon={<Mail className="w-5 h-5" />} label="Abonnés newsletter" value={stats.newsletter_subscribers} />
+          <KpiCard icon={<UserCheck className="w-5 h-5" />} label="Confirmés" value={stats.confirmed_users} accent="green" />
+          <KpiCard icon={<Mail className="w-5 h-5" />} label="Newsletter" value={stats.newsletter_subscribers} />
           <KpiCard icon={<Bell className="w-5 h-5" />} label="Alertes actives" value={stats.active_alerts} />
-          <KpiCard icon={<ThumbsUp className="w-5 h-5" />} label="Votes total" value={stats.total_votes} />
         </div>
       )}
 
-      {/* Search + Export */}
+      {/* Search + Sort + Export */}
       <div className="flex flex-col sm:flex-row gap-3 mb-6">
         <input
           type="text"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          placeholder="Rechercher par email ou provider..."
+          placeholder="Rechercher par email, nom, provider, rôle..."
           className="w-full max-w-md bg-muted/30 border border-foreground/10 px-4 py-2.5 text-xs font-body placeholder:text-foreground/30 focus:outline-none focus:border-foreground/30"
         />
+        <select
+          value={sortBy}
+          onChange={(e) => setSortBy(e.target.value as any)}
+          className="bg-muted/30 border border-foreground/10 px-3 py-2.5 text-xs font-body text-foreground/70 focus:outline-none"
+        >
+          <option value="date">Tri: Date</option>
+          <option value="clicks">Tri: Clics</option>
+          <option value="favorites">Tri: Favoris</option>
+          <option value="engagement">Tri: Engagement</option>
+        </select>
         <button
-          onClick={() => {
-            const header = "Email,Provider,Confirmé,Inscrit le,Dernière connexion\n";
-            const rows = filtered.map((u) =>
-              `"${u.email || ""}","${u.provider}","${u.confirmed ? "Oui" : "Non"}","${u.created_at ? new Date(u.created_at).toLocaleDateString("fr-FR") : ""}","${u.last_sign_in_at ? new Date(u.last_sign_in_at).toLocaleString("fr-FR") : "Jamais"}"`
-            ).join("\n");
-            const blob = new Blob(["\uFEFF" + header + rows], { type: "text/csv;charset=utf-8;" });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = `utilisateurs_${new Date().toISOString().slice(0, 10)}.csv`;
-            a.click();
-            URL.revokeObjectURL(url);
-          }}
+          onClick={exportCSV}
           className="flex items-center gap-2 px-4 py-2.5 border border-foreground/10 text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors shrink-0"
         >
           <Download className="w-3.5 h-3.5" />
@@ -374,18 +605,47 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
           <thead>
             <tr className="border-b border-foreground/8 bg-muted/30">
               <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">#</th>
-              <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Email</th>
+              <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Utilisateur</th>
               <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Provider</th>
+              <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Rôle</th>
               <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Confirmé</th>
+              <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">
+                <Heart className="w-3 h-3 mx-auto" />
+              </th>
+              <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">
+                <MousePointerClick className="w-3 h-3 mx-auto" />
+              </th>
+              <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">
+                <ThumbsUp className="w-3 h-3 mx-auto" />
+              </th>
+              <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">
+                <Bell className="w-3 h-3 mx-auto" />
+              </th>
               <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Inscrit le</th>
-              <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Dernière connexion</th>
+              <th className="text-right p-3 font-display uppercase tracking-wider text-[10px]">Dernière co.</th>
             </tr>
           </thead>
           <tbody>
             {filtered.map((u, i) => (
               <tr key={u.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
                 <td className="p-3 text-foreground/40">{i + 1}</td>
-                <td className="p-3">{u.email || "—"}</td>
+                <td className="p-3">
+                  <div className="flex items-center gap-2">
+                    {u.user_metadata.avatar_url ? (
+                      <img src={u.user_metadata.avatar_url} className="w-5 h-5 rounded-full" alt="" />
+                    ) : (
+                      <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-display text-primary">
+                        {(u.email || "?")[0].toUpperCase()}
+                      </div>
+                    )}
+                    <div className="min-w-0">
+                      {u.user_metadata.full_name && (
+                        <p className="text-[10px] text-foreground/50 truncate">{u.user_metadata.full_name}</p>
+                      )}
+                      <p className="truncate max-w-[180px]">{u.email || "—"}</p>
+                    </div>
+                  </div>
+                </td>
                 <td className="p-3">
                   <span className="inline-flex items-center gap-1 text-foreground/60">
                     <Shield className="w-3 h-3" />
@@ -393,9 +653,31 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
                   </span>
                 </td>
                 <td className="p-3 text-center">
+                  {u.roles.length > 0 ? (
+                    u.roles.map((r) => (
+                      <span key={r} className={`inline-block px-2 py-0.5 text-[9px] font-display uppercase tracking-widest ${
+                        r === "admin" ? "bg-primary/15 text-primary" : "bg-muted text-foreground/50"
+                      }`}>
+                        {r}
+                      </span>
+                    ))
+                  ) : (
+                    <span className="text-foreground/20 text-[9px]">user</span>
+                  )}
+                </td>
+                <td className="p-3 text-center">
                   {u.confirmed
                     ? <CheckCircle className="w-4 h-4 text-green-600 mx-auto" />
                     : <XCircle className="w-4 h-4 text-foreground/20 mx-auto" />
+                  }
+                </td>
+                <td className="p-3 text-center">{u.favorites_count || <span className="text-foreground/15">0</span>}</td>
+                <td className="p-3 text-center">{u.clicks_count || <span className="text-foreground/15">0</span>}</td>
+                <td className="p-3 text-center">{u.votes_count || <span className="text-foreground/15">0</span>}</td>
+                <td className="p-3 text-center">
+                  {u.alert_enabled
+                    ? <Bell className="w-3.5 h-3.5 text-primary mx-auto" />
+                    : <span className="text-foreground/15">—</span>
                   }
                 </td>
                 <td className="p-3 text-right text-foreground/60">
@@ -407,7 +689,7 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
               </tr>
             ))}
             {filtered.length === 0 && (
-              <tr><td colSpan={6} className="p-8 text-center text-foreground/30">Aucun utilisateur trouvé</td></tr>
+              <tr><td colSpan={11} className="p-8 text-center text-foreground/30">Aucun utilisateur trouvé</td></tr>
             )}
           </tbody>
         </table>
@@ -417,10 +699,11 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
   );
 };
 
-const KpiCard = ({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) => (
-  <div className="border border-foreground/8 p-5">
+/* ─── Shared Components ─── */
+const KpiCard = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent?: "green" | "red" }) => (
+  <div className={`border p-5 ${accent === "green" ? "border-green-500/20" : accent === "red" ? "border-red-500/20" : "border-foreground/8"}`}>
     <div className="flex items-center gap-2 mb-2 text-foreground/40">{icon}<span className="text-[10px] font-display uppercase tracking-widest">{label}</span></div>
-    <p className="font-display text-2xl tracking-wider">{value.toLocaleString("fr-FR")}</p>
+    <p className={`font-display text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>{value.toLocaleString("fr-FR")}</p>
   </div>
 );
 
