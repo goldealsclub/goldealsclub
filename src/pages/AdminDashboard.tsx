@@ -76,7 +76,7 @@ interface ChartData {
 type Tab = "overview" | "analytics" | "awin" | "users";
 
 const AdminDashboard = () => {
-  const { user } = useAuth();
+  const { user, session, loading: authLoading } = useAuth();
   const { isAdmin, loading: adminLoading } = useAdmin();
   const { filteredDeals } = useGender();
   const [tab, setTab] = useState<Tab>("overview");
@@ -106,29 +106,36 @@ const AdminDashboard = () => {
       .then(({ count }) => setTotalFavorites(count || 0));
   };
 
-  const loadUsersData = () => {
+  const loadUsersData = async () => {
     setUsersLoading(true);
-    supabase.functions
-      .invoke("admin-users")
-      .then(({ data, error }) => {
-        console.log("[admin-users] raw response:", { data, error, type: typeof data });
-        if (error) {
-          console.error("[admin-users] error:", error);
-        } else if (data) {
-          const parsed = typeof data === "string" ? JSON.parse(data) : data;
-          console.log("[admin-users] parsed:", { users: parsed.users?.length, stats: parsed.stats });
-          setAdminUsers(parsed.users || []);
-          setSiteStats(parsed.stats || null);
-          setCharts(parsed.charts || null);
-        }
-        setUsersLoading(false);
-        setUsersLoaded(true);
-      })
-      .catch((err) => {
-        console.error("[admin-users] catch:", err);
-        setUsersLoading(false);
-        setUsersLoaded(true);
+
+    try {
+      const currentSession = session ?? (await supabase.auth.getSession()).data.session;
+      const accessToken = currentSession?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Session admin introuvable");
+      }
+
+      const { data, error } = await supabase.functions.invoke("admin-users", {
+        body: {},
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
       });
+
+      if (error) throw error;
+
+      const parsed = typeof data === "string" ? JSON.parse(data) : data;
+      setAdminUsers(Array.isArray(parsed?.users) ? parsed.users : []);
+      setSiteStats(parsed?.stats || null);
+      setCharts(parsed?.charts || null);
+      setUsersLoaded(true);
+    } catch (err) {
+      console.error("[admin-users] load failed:", err);
+    } finally {
+      setUsersLoading(false);
+    }
   };
 
   const handleRefresh = async () => {
