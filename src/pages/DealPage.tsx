@@ -169,7 +169,7 @@ const DealPage = () => {
 
             {/* CTA */}
             <a
-              href={deal.affiliate_url || deal.product_url}
+              href={buildAwinUrl(deal.affiliate_url || deal.product_url, deal.id)}
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackOutboundClick(deal.id, deal.affiliate_url || deal.product_url)}
