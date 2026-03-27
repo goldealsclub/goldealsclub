@@ -89,6 +89,7 @@ const AdminDashboard = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [usersError, setUsersError] = useState<string | null>(null);
 
   const loadClicksData = () => {
     setClicksLoading(true);
@@ -108,6 +109,7 @@ const AdminDashboard = () => {
 
   const loadUsersData = async () => {
     setUsersLoading(true);
+    setUsersError(null);
 
     try {
       const currentSession = session ?? (await supabase.auth.getSession()).data.session;
@@ -127,12 +129,21 @@ const AdminDashboard = () => {
       if (error) throw error;
 
       const parsed = typeof data === "string" ? JSON.parse(data) : data;
+
+      if (parsed?.error) {
+        throw new Error(parsed.error);
+      }
+
       setAdminUsers(Array.isArray(parsed?.users) ? parsed.users : []);
       setSiteStats(parsed?.stats || null);
       setCharts(parsed?.charts || null);
       setUsersLoaded(true);
     } catch (err) {
       console.error("[admin-users] load failed:", err);
+      setAdminUsers([]);
+      setSiteStats(null);
+      setCharts(null);
+      setUsersError(err instanceof Error ? err.message : "Impossible de charger les utilisateurs");
     } finally {
       setUsersLoading(false);
     }
@@ -277,7 +288,7 @@ const AdminDashboard = () => {
         )}
 
         {tab === "users" && (
-          <UsersTab users={adminUsers} stats={siteStats} loading={usersLoading} />
+          <UsersTab users={adminUsers} stats={siteStats} loading={usersLoading} error={usersError} />
         )}
       </div>
       <Footer />
@@ -828,7 +839,7 @@ const AwinTab = () => {
 };
 
 /* ─── Users Tab ─── */
-const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteStats | null; loading: boolean }) => {
+const UsersTab = ({ users, stats, loading, error }: { users: AdminUser[]; stats: SiteStats | null; loading: boolean; error: string | null }) => {
   const [search, setSearch] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "clicks" | "favorites" | "engagement">("date");
 
@@ -872,6 +883,15 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
 
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="border border-destructive/20 bg-destructive/5 p-6 text-sm text-foreground/70">
+        <p className="font-display text-xs uppercase tracking-widest text-destructive mb-2">Erreur de chargement</p>
+        <p>{error}</p>
+      </div>
+    );
   }
 
   return (
