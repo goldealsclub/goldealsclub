@@ -189,7 +189,7 @@ const AdminDashboard = () => {
 
   const topDeals = useMemo(() => clicks.slice(0, 10), [clicks]);
 
-  if (adminLoading) {
+  if (authLoading || adminLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <Loader2 className="w-6 h-6 animate-spin text-foreground/40" />
