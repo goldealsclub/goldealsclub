@@ -3,8 +3,9 @@ import { X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { Deal, DealLevel, Category, deals as allDealsGlobal } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
+import { useLoadVotes, useVotesMap } from "@/hooks/use-deal-votes";
 
-export type SortKey = "relevance" | "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
+export type SortKey = "relevance" | "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc" | "communityScore";
 
 const PAGE_SIZE = 48;
 
@@ -71,6 +72,7 @@ const FilterSection = ({ title, children, defaultOpen = false }: { title: string
 
 const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
   const { t } = useI18n();
+  const votesMap = useVotesMap();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
   const [sort, setSort] = useState<SortKey>("relevance");
   const [showFilters, setShowFilters] = useState(false);
@@ -118,6 +120,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
   const sortOptions: { key: SortKey; label: string }[] = [
     { key: "relevance", label: "Top deals" },
+    { key: "communityScore", label: "❤️ Communauté" },
     { key: "newest", label: t.newest },
     { key: "discount", label: t.discount },
     { key: "popularity", label: t.popularity },
@@ -181,6 +184,12 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
     result.sort((a, b) => {
       if (sort === "relevance") return getScore(b) - getScore(a);
+      if (sort === "communityScore") {
+        const scoreA = votesMap[a.id]?.score || 0;
+        const scoreB = votesMap[b.id]?.score || 0;
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return getScore(b) - getScore(a); // tie-break by relevance
+      }
       if (sort === "discount") return (b.discount_percent ?? 0) - (a.discount_percent ?? 0);
       if (sort === "popularity") return b.popularity - a.popularity;
       if (sort === "priceAsc") return (a.sale_price ?? 0) - (b.sale_price ?? 0);
@@ -192,7 +201,7 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
     });
 
     return result;
-  }, [sourceDeals, filters, sort]);
+  }, [sourceDeals, filters, sort, votesMap]);
 
   // Paginated slice
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
