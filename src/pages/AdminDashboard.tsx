@@ -228,6 +228,10 @@ const AdminDashboard = () => {
           />
         )}
 
+        {tab === "awin" && (
+          <AwinTab />
+        )}
+
         {tab === "users" && (
           <UsersTab users={adminUsers} stats={siteStats} loading={usersLoading} />
         )}
