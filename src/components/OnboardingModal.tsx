@@ -5,6 +5,7 @@ import { X, Sparkles, ArrowRight } from "lucide-react";
 
 const STORAGE_KEY = "goldeals_onboarding_done";
 const PREFS_KEY = "goldeals_user_prefs";
+const EXCLUDED_ONBOARDING_BRANDS = new Set(["Snipes"]);
 
 export interface UserPrefs {
   brands: string[];
@@ -27,7 +28,7 @@ const OnboardingModal = () => {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
 
-  const allBrands = [...new Set(allDeals.map((d) => d.brand))].sort();
+  const allBrands = [...new Set(allDeals.map((d) => d.brand).filter((brand) => brand && !EXCLUDED_ONBOARDING_BRANDS.has(brand)))].sort();
   const allCategories = [...new Set(allDeals.map((d) => d.category))].sort() as Category[];
 
   const categoryLabels: Record<string, string> = {
