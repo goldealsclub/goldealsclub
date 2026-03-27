@@ -91,6 +91,13 @@ Deno.serve(async (req) => {
       supabase.from("email_alert_preferences").select("user_id, enabled, frequency"),
     ]);
 
+    // Fetch profiles
+    const { data: profilesData } = await supabase.from("profiles").select("*");
+    const profileMap: Record<string, any> = {};
+    (profilesData || []).forEach((p: any) => {
+      profileMap[p.user_id] = p;
+    });
+
     const queryErrors = [
       newsletterResult.error,
       alertResult.error,
@@ -211,6 +218,19 @@ Deno.serve(async (req) => {
         full_name: u.user_metadata?.full_name || u.user_metadata?.name || null,
         avatar_url: u.user_metadata?.avatar_url || null,
       },
+      profile: profileMap[u.id] ? {
+        full_name: profileMap[u.id].full_name || null,
+        date_of_birth: profileMap[u.id].date_of_birth || null,
+        city: profileMap[u.id].city || null,
+        country: profileMap[u.id].country || null,
+        clothing_size: profileMap[u.id].clothing_size || null,
+        shoe_size: profileMap[u.id].shoe_size || null,
+        preferred_brands: profileMap[u.id].preferred_brands || [],
+        bio: profileMap[u.id].bio || null,
+        phone: profileMap[u.id].phone || null,
+        gender: profileMap[u.id].gender || null,
+        instagram_handle: profileMap[u.id].instagram_handle || null,
+      } : null,
     }));
 
     return new Response(
