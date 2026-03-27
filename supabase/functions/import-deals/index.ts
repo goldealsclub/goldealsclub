@@ -318,8 +318,21 @@ Deno.serve(async (req) => {
       inserted += batch.length;
     }
 
+    // Delete deals not in this import batch
+    const importedIds = new Set(cleaned.map((d: any) => d.id));
+    const { data: existingDeals } = await supabase.from("deals").select("id");
+    if (existingDeals) {
+      const toDelete = existingDeals.filter((d: any) => !importedIds.has(d.id)).map((d: any) => d.id);
+      if (toDelete.length > 0) {
+        for (let i = 0; i < toDelete.length; i += 500) {
+          const batch = toDelete.slice(i, i + 500);
+          await supabase.from("deals").delete().in("id", batch);
+        }
+      }
+    }
+
     return new Response(
-      JSON.stringify({ success: true, count: inserted }),
+      JSON.stringify({ success: true, count: inserted, cleaned: existingDeals ? existingDeals.length - inserted : 0 }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
