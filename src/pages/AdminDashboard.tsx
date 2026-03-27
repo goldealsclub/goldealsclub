@@ -591,7 +591,8 @@ const AnalyticsTab = ({
       </>
     )}
   </>
-);
+  );
+};
 
 /* ─── Awin Tracking Tab ─── */
 interface AwinClick {
