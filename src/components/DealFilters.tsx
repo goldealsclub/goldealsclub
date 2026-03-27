@@ -184,6 +184,12 @@ const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
 
     result.sort((a, b) => {
       if (sort === "relevance") return getScore(b) - getScore(a);
+      if (sort === "communityScore") {
+        const scoreA = votesMap[a.id]?.score || 0;
+        const scoreB = votesMap[b.id]?.score || 0;
+        if (scoreB !== scoreA) return scoreB - scoreA;
+        return getScore(b) - getScore(a); // tie-break by relevance
+      }
       if (sort === "discount") return (b.discount_percent ?? 0) - (a.discount_percent ?? 0);
       if (sort === "popularity") return b.popularity - a.popularity;
       if (sort === "priceAsc") return (a.sale_price ?? 0) - (b.sale_price ?? 0);
