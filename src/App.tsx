@@ -8,6 +8,7 @@ import { FavoritesProvider } from "@/lib/favorites";
 import { GenderProvider } from "@/lib/gender-context";
 import { AuthProvider } from "@/lib/auth-context";
 import { CompareProvider } from "./components/CompareDrawer";
+import { VotesProvider } from "@/hooks/use-deal-votes";
 import OnboardingModal from "./components/OnboardingModal";
 import Index from "./pages/Index";
 import CategoryPage from "./pages/CategoryPage";
