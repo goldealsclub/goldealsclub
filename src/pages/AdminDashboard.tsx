@@ -393,36 +393,36 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 
       {/* Top engaged users */}
       {topUsers.length > 0 && (
-        <div className="mb-12">
-          <h3 className="font-display text-sm uppercase tracking-widest mb-4">Utilisateurs les plus engagés</h3>
+        <div className="mb-8 sm:mb-12">
+          <h3 className="font-display text-xs sm:text-sm uppercase tracking-widest mb-3 sm:mb-4">Utilisateurs les plus engagés</h3>
           <div className="border border-foreground/8 overflow-x-auto">
-            <table className="w-full text-xs font-body">
+            <table className="w-full text-[10px] sm:text-xs font-body">
               <thead>
                 <tr className="border-b border-foreground/8 bg-muted/30">
-                  <th className="text-left p-3 font-display uppercase tracking-wider text-[10px]">Utilisateur</th>
-                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Clics</th>
-                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Favoris</th>
-                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Votes</th>
-                  <th className="text-center p-3 font-display uppercase tracking-wider text-[10px]">Score</th>
+                  <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Utilisateur</th>
+                  <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Clics</th>
+                  <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Favoris</th>
+                  <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Votes</th>
+                  <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Score</th>
                 </tr>
               </thead>
               <tbody>
                 {topUsers.map((u) => (
                   <tr key={u.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors">
-                    <td className="p-3 flex items-center gap-2">
+                    <td className="p-2 sm:p-3 flex items-center gap-1.5 sm:gap-2">
                       {u.user_metadata.avatar_url ? (
-                        <img src={u.user_metadata.avatar_url} className="w-5 h-5 rounded-full" alt="" />
+                        <img src={u.user_metadata.avatar_url} className="w-5 h-5 rounded-full shrink-0" alt="" />
                       ) : (
-                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-display text-primary">
+                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-[8px] font-display text-primary shrink-0">
                           {(u.email || "?")[0].toUpperCase()}
                         </div>
                       )}
-                      <span className="truncate max-w-[180px]">{u.email}</span>
+                      <span className="truncate max-w-[120px] sm:max-w-[180px]">{u.email}</span>
                     </td>
-                    <td className="p-3 text-center">{u.clicks_count}</td>
-                    <td className="p-3 text-center">{u.favorites_count}</td>
-                    <td className="p-3 text-center">{u.votes_count}</td>
-                    <td className="p-3 text-center font-semibold">{u.clicks_count + u.favorites_count + u.votes_count}</td>
+                    <td className="p-2 sm:p-3 text-center">{u.clicks_count}</td>
+                    <td className="p-2 sm:p-3 text-center">{u.favorites_count}</td>
+                    <td className="p-2 sm:p-3 text-center hidden sm:table-cell">{u.votes_count}</td>
+                    <td className="p-2 sm:p-3 text-center font-semibold">{u.clicks_count + u.favorites_count + u.votes_count}</td>
                   </tr>
                 ))}
               </tbody>
