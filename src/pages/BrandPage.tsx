@@ -6,6 +6,7 @@ import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useMemo } from "react";
+import { useLoadVotes } from "@/hooks/use-deal-votes";
 
 const BrandPage = () => {
   const { brand } = useParams<{ brand: string }>();

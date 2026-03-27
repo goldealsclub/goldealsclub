@@ -44,6 +44,18 @@ const Index = () => {
   const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity);
   const newDeals = [...deals].sort(sortByDate);
 
+  // Batch-load votes for all visible deals
+  const nikeDeals = useMemo(() => deals.filter(d => d.brand.toLowerCase() === "nike" || d.source?.toLowerCase() === "nike").sort(sortByDate), [deals]);
+  const snipesDeals = useMemo(() => deals.filter(d => d.source?.toLowerCase() === "snipes" || d.merchant?.toLowerCase().includes("snipes")).sort(sortByDate), [deals]);
+  const visibleDealIds = useMemo(() => {
+    const ids = new Set<string>();
+    [hotDeals, bonDeals, promoNormales, popularDeals, newDeals, nikeDeals, snipesDeals].forEach(arr =>
+      arr.slice(0, PREVIEW_LIMIT).forEach(d => ids.add(d.id))
+    );
+    return Array.from(ids);
+  }, [hotDeals, bonDeals, promoNormales, popularDeals, newDeals, nikeDeals, snipesDeals]);
+  useLoadVotes(visibleDealIds);
+
   const categoryKeys: Record<string, string> = {
     sneakers: t.sneakers, jackets: t.jackets, hoodies: t.hoodies,
     tshirts: t.tshirts, pants: t.pants, pantalons: "Pantalons",

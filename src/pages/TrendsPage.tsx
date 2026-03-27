@@ -4,6 +4,7 @@ import DealCard from "@/components/DealCard";
 import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import { useLoadVotes } from "@/hooks/use-deal-votes";
 
 const TrendsPage = () => {
   const { t } = useI18n();
