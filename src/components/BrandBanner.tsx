@@ -12,6 +12,8 @@ const brandLogos: Record<string, string> = {
   adidas: brandAdidas,
 };
 
+const EXCLUDED_BANNER_BRANDS = new Set(["Snipes"]);
+
 interface BrandBannerProps {
   deals: Deal[];
 }
@@ -49,6 +51,7 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
   const brands = useMemo(() => {
     const counts: Record<string, number> = {};
     deals.forEach((d) => {
+      if (!d.brand || EXCLUDED_BANNER_BRANDS.has(d.brand)) return;
       counts[d.brand] = (counts[d.brand] || 0) + 1;
     });
     return Object.entries(counts)
