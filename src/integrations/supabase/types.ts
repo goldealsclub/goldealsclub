@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      deal_votes: {
+        Row: {
+          created_at: string
+          deal_id: string
+          id: string
+          user_id: string
+          vote: number
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          id?: string
+          user_id: string
+          vote?: number
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          id?: string
+          user_id?: string
+          vote?: number
+        }
+        Relationships: []
+      }
       deals: {
         Row: {
           affiliate_url: string | null
