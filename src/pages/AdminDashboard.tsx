@@ -236,6 +236,7 @@ const AdminDashboard = () => {
             totalClicks={totalClicks}
             totalFavorites={totalFavorites}
             dealsCount={filteredDeals.length}
+            filteredDeals={filteredDeals}
             loading={usersLoading || clicksLoading}
           />
         )}
@@ -270,13 +271,14 @@ const AdminDashboard = () => {
 };
 
 /* ─── Overview Tab ─── */
-const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsCount, loading }: {
+const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsCount, filteredDeals, loading }: {
   stats: SiteStats | null;
   charts: ChartData | null;
   users: AdminUser[];
   totalClicks: number;
   totalFavorites: number;
   dealsCount: number;
+  filteredDeals: any[];
   loading: boolean;
 }) => {
   if (loading) {
@@ -286,6 +288,20 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   const recentUsers = [...users].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5);
   const activeUsers = users.filter((u) => u.last_sign_in_at && new Date(u.last_sign_in_at).getTime() > Date.now() - 7 * 24 * 60 * 60 * 1000);
   const topUsers = [...users].sort((a, b) => (b.clicks_count + b.favorites_count + b.votes_count) - (a.clicks_count + a.favorites_count + a.votes_count)).slice(0, 5);
+
+  // Computed KPIs
+  const avgClicksPerUser = users.length > 0 ? (totalClicks / users.length).toFixed(1) : "0";
+  const avgFavsPerUser = users.length > 0 ? (totalFavorites / users.length).toFixed(1) : "0";
+  const engagedUsers = users.filter((u) => u.clicks_count > 0 || u.favorites_count > 0 || u.votes_count > 0);
+  const engagementRate = users.length > 0 ? ((engagedUsers.length / users.length) * 100).toFixed(1) : "0";
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const signupsToday = users.filter((u) => u.created_at?.startsWith(todayStr)).length;
+  const avgDiscount = filteredDeals.length > 0
+    ? (filteredDeals.reduce((s, d) => s + (d.discount_percent || 0), 0) / filteredDeals.filter(d => d.discount_percent).length).toFixed(0)
+    : "0";
+  const superDeals = filteredDeals.filter((d) => d.is_super_deal).length;
+  const highDiscount = filteredDeals.filter((d) => (d.discount_percent || 0) >= 40).length;
+  const clickConversion = dealsCount > 0 ? ((totalClicks / dealsCount)).toFixed(1) : "0";
 
   return (
     <>
@@ -304,6 +320,22 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         <KpiCard icon={<UserX className="w-4 h-4 sm:w-5 sm:h-5" />} label="Non confirmé" value={stats?.unconfirmed_users || 0} accent="red" />
         <KpiCard icon={<Mail className="w-4 h-4 sm:w-5 sm:h-5" />} label="Newsletter" value={stats?.newsletter_subscribers || 0} />
         <KpiCard icon={<Bell className="w-4 h-4 sm:w-5 sm:h-5" />} label="Alertes actives" value={stats?.active_alerts || 0} />
+      </div>
+
+      {/* Computed KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<Activity className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics / utilisateur" value={avgClicksPerUser} />
+        <KpiCard icon={<Star className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris / utilisateur" value={avgFavsPerUser} />
+        <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Taux engagement" value={`${engagementRate}%`} accent="green" />
+        <KpiCard icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />} label="Inscriptions auj." value={signupsToday} />
+        <KpiCard icon={<Clock className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics / deal" value={clickConversion} />
+      </div>
+
+      {/* Deal quality KPIs */}
+      <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<Star className="w-4 h-4 sm:w-5 sm:h-5" />} label="Super deals" value={superDeals} accent="green" />
+        <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Réduction moy." value={`${avgDiscount}%`} />
+        <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals > 40% off" value={highDiscount} />
       </div>
 
       {/* Charts row */}
@@ -438,13 +470,27 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 const AnalyticsTab = ({
   filteredDeals, totalClicks, totalFavorites, clicks, clicksLoading,
   clicksByBrand, clicksByCategory, clicksByMerchant, dealsByCategory, dealsByBrand, topDeals,
-}: any) => (
+}: any) => {
+  const avgDiscount = filteredDeals.length > 0
+    ? (filteredDeals.reduce((s: number, d: any) => s + (d.discount_percent || 0), 0) / filteredDeals.filter((d: any) => d.discount_percent).length).toFixed(0)
+    : "0";
+  const superDeals = filteredDeals.filter((d: any) => d.is_super_deal).length;
+  const clicksPerDeal = filteredDeals.length > 0 ? (totalClicks / filteredDeals.length).toFixed(1) : "0";
+  const favsPerDeal = filteredDeals.length > 0 ? (totalFavorites / filteredDeals.length).toFixed(2) : "0";
+
+  return (
   <>
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-8 sm:mb-12">
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-4 sm:mb-6">
       <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={filteredDeals.length} />
       <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics sortants" value={totalClicks} />
       <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris total" value={totalFavorites} />
       <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals cliqués" value={clicks.length} />
+    </div>
+    <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-8 sm:mb-12">
+      <KpiCard icon={<Star className="w-4 h-4 sm:w-5 sm:h-5" />} label="Super deals" value={superDeals} accent="green" />
+      <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Réduction moy." value={`${avgDiscount}%`} />
+      <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics / deal" value={clicksPerDeal} />
+      <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris / deal" value={favsPerDeal} />
     </div>
 
     {clicksLoading ? (
@@ -545,7 +591,8 @@ const AnalyticsTab = ({
       </>
     )}
   </>
-);
+  );
+};
 
 /* ─── Awin Tracking Tab ─── */
 interface AwinClick {
@@ -952,13 +999,15 @@ const UsersTab = ({ users, stats, loading }: { users: AdminUser[]; stats: SiteSt
 };
 
 /* ─── Shared Components ─── */
-const KpiCard = ({ icon, label, value, accent }: { icon: React.ReactNode; label: string; value: number; accent?: "green" | "red" }) => (
+const KpiCard = ({ icon, label, value, accent, suffix }: { icon: React.ReactNode; label: string; value: number | string; accent?: "green" | "red"; suffix?: string }) => (
   <div className={`border p-3 sm:p-5 ${accent === "green" ? "border-green-500/20" : accent === "red" ? "border-red-500/20" : "border-foreground/8"}`}>
     <div className="flex items-center gap-1.5 sm:gap-2 mb-1.5 sm:mb-2 text-foreground/40">
       {icon}
       <span className="text-[9px] sm:text-[10px] font-display uppercase tracking-widest leading-tight">{label}</span>
     </div>
-    <p className={`font-display text-lg sm:text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>{value.toLocaleString("fr-FR")}</p>
+    <p className={`font-display text-lg sm:text-2xl tracking-wider ${accent === "green" ? "text-green-600" : accent === "red" ? "text-red-500" : ""}`}>
+      {typeof value === "number" ? value.toLocaleString("fr-FR") : value}{suffix && <span className="text-sm text-foreground/40 ml-0.5">{suffix}</span>}
+    </p>
   </div>
 );
 
