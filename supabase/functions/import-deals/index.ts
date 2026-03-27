@@ -57,31 +57,147 @@ function inferBrand(brand: string, title: string): string {
     "DC","Buffalo","Decibel","Eastpak","Umbro","Snipes",
   ]);
 
-  // Keyword-based brand detection for Nike sub-lines etc.
+  // Keyword-based brand detection — order matters (most specific first)
   const KEYWORD_BRANDS: [string[], string][] = [
-    [["air max","air force","air jordan","air zoom","air huarache","sportswear","dri-fit","dri fit","tech fleece","club ","acg ","wmns ","nsw ","sb force","sb chron","sb dunk","blazer","cortez","pegasus","vomero","shox ","total 90","windrunner","tech woven","one dri-fit"], "Nike"],
-    [["superstar","adicolor","firebird","ozweego","forum ","campus ","gazelle","samba","stan smith","nmd ","yeezy","ultraboost","spezial","adilette","zx ","la franc","taekwondo","italia 70s","spiritain","spiritian","galaxy og","dame x ","spacer cutline"], "adidas"],
-    [["jumpman","jordan ","jdb ","j brkln","flight ","los ","brooklyn "], "Jordan"],
-    [["chuck taylor","chuck 70","pro blaze","puff taylor","puff player","all star"], "Converse"],
-    [["classic mini","tazz","disquette","lowmel","funkette","tazzelle","tasman","classic ultra","dipper"], "UGG"],
-    [["old skool","sk8-","knu skool"], "Vans"],
-    [["speedcat","mostro","suede xl","suede ","cali ","fenty","avanti ","rs-x","rs x","mayze","ca pro"], "PUMA"],
-    [["gel-","gel ","tiger runner","lyte classic","japan w ","tokyo w "], "ASICS"],
-    [["classic nylon","club c ","cardi slide","question ","answer ","nano x"], "Reebok"],
-    [["fresh foam","fuelcell","2002","574 ","990 ","327 ","1906"], "New Balance"],
-    [["acs+","acs +","xt-6","xt-whisper","speedcross","xt-4"], "Salomon"],
-    [["cloud 6","cloudtilt","cloudsurfer","cloudvista","cloudnova","cloudmonster","cloudswift","cloudzone"], "On"],
-    [["clifton","bondi ","arahi","motion 6"], "Hoka"],
-    [["t-clip","l003 ","croco "], "Lacoste"],
-    [["train 89","masters court","bedford","hrt "], "Polo Ralph Lauren"],
-    [["stag ","court graffik","infinite pro"], "DC"],
-    [["9forty","9twenty","9fifty","59fifty","mvp base","base runner","clean up","a frame","5 panel"], "New Era"],
-    [["sprint trekker","euro trekker","field trekker","premium 6"], "Timberland"],
-    [["89 2k","89 prm","89 up","89 tailor","89 classic","89 lxry","89 tongue","89 logo","prime runner","kani runner","small signature","s emblem","s cube"], "Karl Kani"],
-    [["inhale ","citigo","serenus","neo run","204 ","471 ","1000 ","runner prm","goalgetter","goldenglow","session ","stadium 90","play off","echo ","aura ","pluto ","shadow skate","venice skate","skate low","command ","club low ","h-street","delta "], "Snipes"],
-    [["mlb ","nba ","nfl ","collegiate script","washed script","poly track set"], "Mitchell & Ness"],
-    [["arizona","boston ","gizeh"], "Birkenstock"],
-    [["hidden in plain","far away from","box logo","reflective globe","another ","vortex knit","union jacquard","metal signature"], "Snipes"],
+    // Nike (including product codes like "M NK", "W NK", "B NK")
+    [["air max","air force","air jordan","air zoom","air huarache","sportswear","dri-fit","dri fit","tech fleece",
+      "acg ","wmns ","nsw ","sb force","sb chron","sb dunk","blazer","cortez","pegasus","vomero",
+      "shox ","total 90","windrunner","tech woven","one dri-fit","dunk low","dunk high",
+      "m nk ","w nk ","b nk ","force 1 ","p-6000","spizike","waffle one","react ","flyknit",
+      "air rift","huarache","indy bra","swoosh","renew","downshifter","revolution ","wearallday",
+      "crater impact","presto ","killshot","tailwind","structure ","zoom fly","vapormax","invincible",
+      "panda retro","nk df ","nk dry","nk club","tech pack","everyday max","everyday plus",
+      "everyday cotton stretch","m nsw","w nsw","nsw essential","nsw club","nike "], "Nike"],
+
+    // adidas
+    [["superstar","adicolor","firebird","ozweego","forum ","campus ","gazelle","samba","stan smith",
+      "nmd ","yeezy","ultraboost","spezial","adilette","zx ","la franc","taekwondo","italia 70s",
+      "spiritain","spiritian","galaxy og","dame x ","spacer cutline","sl 72","climacool",
+      "teamgeist","adistar","megaride","predator","rivalry ","handball spezial","marathon ",
+      "response ","busenitz","3-streifen","3-stripes","trefoil","adibreak","3 stripes",
+      "adiletten","sambae","handball ","badlander","adi2000","adifom","ozelia","retropy",
+      "country og","sl72","centennial","adi ","adicolour"], "adidas"],
+
+    // Jordan
+    [["jumpman","jordan ","jdb ","j brkln","flight ","los ","brooklyn ","spizike low",
+      "jordan remix","jordan los","jordan post","jordan 1","jordan 4","jordan 5","jordan 11",
+      "jordan mvp","j flight"], "Jordan"],
+
+    // New Balance
+    [["fresh foam","fuelcell","2002r","2002 ","574 ","990 ","327 ","1906","9060","740 ","530 ",
+      "1000 ","204 ","550 ","480 ","1080","860 ","linear heritage","nb essentials",
+      "sport essentials","athletics remastered","numeric ","made in usa","made in uk",
+      "hoops "], "New Balance"],
+
+    // PUMA
+    [["speedcat","mostro","suede xl","suede ","cali ","fenty","avanti ","rs-x","rs x","mayze",
+      "ca pro","fade nitro","halo runner","puma ","palermo ","clyde ","blaze of glory",
+      "mb.","lamelo","disc ","rider ","mirage","future rider","wild rider","trinity "], "PUMA"],
+
+    // ASICS
+    [["gel-","gel ","tiger runner","lyte classic","japan w ","tokyo w ","gt-2160","gt-1000",
+      "gt-2000","kayano","nimbus","cumulus","noosa"], "ASICS"],
+
+    // Converse
+    [["chuck taylor","chuck 70","pro blaze","puff taylor","puff player","all star",
+      "one star","weapon ","cons "], "Converse"],
+
+    // UGG
+    [["classic mini","tazz","disquette","lowmel","funkette","tazzelle","tasman","classic ultra",
+      "dipper","classic micro","pipah ","goldenstar","cora sand","scuffette"], "UGG"],
+
+    // Vans
+    [["old skool","sk8-","knu skool","era ","authentic ","slip-on","ultrarange",
+      "rowley classic","lowland"], "Vans"],
+
+    // Reebok
+    [["classic nylon","club c ","cardi slide","question ","answer ","nano x","classic leather",
+      "workout plus","instapump","pump fury","bb 4000"], "Reebok"],
+
+    // Salomon
+    [["acs+","acs +","xt-6","xt-whisper","speedcross","xt-4","acs pro","rx moc"], "Salomon"],
+
+    // On
+    [["cloud 6","cloudtilt","cloudsurfer","cloudvista","cloudnova","cloudmonster","cloudswift",
+      "cloudzone","roger pro","the roger"], "On"],
+
+    // Hoka
+    [["clifton","bondi ","arahi","motion 6","mafate","speedgoat","rincon","mach "], "Hoka"],
+
+    // Lacoste
+    [["t-clip","l003 ","croco ","carnaby","chaymon","lerond","powercourt","run spin",
+      "l spin","l004"], "Lacoste"],
+
+    // Stanley
+    [["quencher","iceflow","flowstate","protour","h2.o"], "Stanley"],
+
+    // Carhartt
+    [["serif logo","pocket tee","single knee","chase ","american script","wip "], "Carhartt"],
+
+    // Under Armour
+    [["heatgear","coldgear","unstoppable","hovr ","blitzing","ua ","charged ","armour fleece",
+      "tech graphic","rival fleece","sportstyle"], "Under Armour"],
+
+    // Dickies
+    [["eisenhower","874 ","dickies ","flex "], "Dickies"],
+
+    // Champion
+    [["powerblend","reverse weave","rochester"], "Champion"],
+
+    // Polo Ralph Lauren
+    [["train 89","masters court","bedford","hrt ","polo bear","big pony"], "Polo Ralph Lauren"],
+
+    // DC
+    [["stag ","court graffik","infinite pro","dc "], "DC"],
+
+    // New Era
+    [["9forty","9twenty","9fifty","59fifty","mvp base","base runner","clean up","a frame",
+      "5 panel","new york yankees","los angeles dodgers","los angeles lakers","chicago bulls",
+      "brooklyn nets","fitted cap","cuff beanie","curve brim","trucker cap","wide cuff beanie",
+      "essential cuff"], "New Era"],
+
+    // Timberland
+    [["sprint trekker","euro trekker","field trekker","premium 6","stone street",
+      "hylane","6-inch","timberland ","euro sprint"], "Timberland"],
+
+    // Karl Kani
+    [["89 2k","89 prm","89 up","89 tailor","89 classic","89 lxry","89 tongue","89 logo",
+      "prime runner","kani runner","kani ","retro "], "Karl Kani"],
+
+    // Mitchell & Ness
+    [["mlb ","nba ","nfl ","collegiate script","washed script","poly track set",
+      "swingman","team logo","varsity satin"], "Mitchell & Ness"],
+
+    // Birkenstock
+    [["arizona","boston ","gizeh","arizona eva","arizona nylon"], "Birkenstock"],
+
+    // Casio / G-SHOCK
+    [["casio","g-shock","mtp-","mrw-"], "Casio"],
+
+    // Fila
+    [["disruptor","fila ray","fila ","grant hill"], "Fila"],
+
+    // Ellesse
+    [["ellesse","lombardy","torices","prado"], "Ellesse"],
+
+    // Columbia
+    [["columbia ","bugaboo","silver ridge","newton ridge"], "Columbia"],
+
+    // Snipes own brand
+    [["inhale ","citigo","serenus","neo run","runner prm","goalgetter","goldenglow","session ",
+      "stadium 90","play off","echo ","aura ","pluto ","shadow skate","venice skate","skate low",
+      "command ","club low ","h-street","delta ","lxry 2k","lxyr 2k",
+      "hidden in plain","far away from","box logo","reflective globe","another ",
+      "vortex knit","union jacquard","metal signature","small logo","small signature",
+      "snipes varsity","snipes essential","snipes box","french terry small",
+      "jersey small logo","varsity raglan","pintuck","sport diamond",
+      "carson ","bobby ","adrik ","in game","coated light","horse racer",
+      "signar ","peak satin","liberty baseball","color block & piping",
+      "shining lights","praying mary","babygal","mini sweat skirt","heart oversized",
+      "running wild","everyday oxford","college tee","hooded-sweatshirt box",
+      "long sleeve-sweatshirt","og trackpants","velvet track","loose jersey",
+      "woven tapered","jersey tee","graphics tee","tech sport","long sleeve full zip",
+      "waist length full zip","long sleeve rugby","sport-tanktop"], "Snipes"],
   ];
 
   const t = title || "";
