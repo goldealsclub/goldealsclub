@@ -135,9 +135,7 @@ const Index = () => {
       )}
 
       {/* Snipes Spotlight */}
-      {(() => {
-        const snipesDeals = deals.filter(d => d.source?.toLowerCase() === "snipes" || d.merchant?.toLowerCase().includes("snipes")).sort(sortByDate);
-        return snipesDeals.length > 0 ? (
+      {snipesDeals.length > 0 && (
           <section className="container mx-auto px-4 py-20">
             <div className="flex items-end justify-between mb-12">
               <div>
@@ -154,8 +152,7 @@ const Index = () => {
               ))}
             </div>
           </section>
-        ) : null;
-      })()}
+      )}
 
       {/* Categories */}
       <section className="bg-sable/30">
