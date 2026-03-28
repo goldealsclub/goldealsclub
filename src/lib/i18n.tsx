@@ -113,6 +113,9 @@ const translations = {
     installAppSub: "Installe l'app pour un accès rapide",
     installIosHint: "Appuie sur Partager puis \"Sur l'écran d'accueil\"",
     installButton: "Installer",
+    updateAvailable: "Mise à jour disponible",
+    updateAvailableSub: "Une nouvelle version de l'app est disponible.",
+    updateNow: "Mettre à jour",
   },
   en: {
     heroTitle: "GOLDEALS CLUB",
