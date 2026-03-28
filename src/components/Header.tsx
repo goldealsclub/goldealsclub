@@ -243,23 +243,11 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {/* Install app button - always visible in mobile menu */}
-            {!isStandalone && (
+            {/* Install app button - only when native prompt is available */}
+            {!isStandalone && canInstall && (
               <button
                 onClick={async () => {
-                  if (canInstall) {
-                    await install();
-                    return;
-                  }
-
-                  if (isIos) {
-                    window.alert(`${t.installIosHint}\n\n${t.installIosHintSub}`);
-                    return;
-                  }
-
-                  if (isMobile) {
-                    window.alert(`${t.installAndroidHint}\n\n${t.installAndroidHintSub}`);
-                  }
+                  await install();
                 }}
                 className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
               >

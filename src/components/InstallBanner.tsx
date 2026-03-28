@@ -22,25 +22,11 @@ const InstallBanner = () => {
   const handleInstallClick = async () => {
     if (canInstall) {
       await install();
-      return;
-    }
-
-    if (isIos) {
-      toast.info(t.installIosHint, {
-        description: t.installIosHintSub,
-      });
-      return;
-    }
-
-    if (isMobile) {
-      toast.info(t.installAndroidHint, {
-        description: t.installAndroidHintSub,
-      });
     }
   };
 
-  if (isStandalone || dismissed) return null;
-  if (!isMobile && !canInstall) return null;
+  // Only show banner when native install prompt is available
+  if (isStandalone || dismissed || !canInstall) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden animate-fade-in">
