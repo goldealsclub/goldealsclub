@@ -243,6 +243,16 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
+            {/* Install app button */}
+            {(canInstall || showIosHint) && !isStandalone && (
+              <button
+                onClick={() => { if (canInstall) install(); }}
+                className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {showIosHint ? "Partager → Sur l'écran d'accueil" : "Installer l'app"}
+              </button>
+            )}
             {/* Mobile language selector */}
             <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-foreground/5">
               {languages.map((l) => (
