@@ -8,33 +8,40 @@ interface BeforeInstallPromptEvent extends Event {
 export function useInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIos, setIsIos] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
+    const userAgent = navigator.userAgent;
+    const ios = /iphone|ipad|ipod/i.test(userAgent);
+    const mobile = ios || /android/i.test(userAgent) || window.matchMedia("(max-width: 767px)").matches;
+
     setIsStandalone(
       window.matchMedia("(display-mode: standalone)").matches ||
-      (navigator as any).standalone === true
+      (navigator as Navigator & { standalone?: boolean }).standalone === true
     );
-    setIsIos(/iphone|ipad|ipod/i.test(navigator.userAgent));
+    setIsIos(ios);
+    setIsMobile(mobile);
 
     const handler = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
     };
+
     window.addEventListener("beforeinstallprompt", handler);
     return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
 
   const install = async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      await deferredPrompt.userChoice;
-      setDeferredPrompt(null);
-    }
+    if (!deferredPrompt) return false;
+
+    await deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    setDeferredPrompt(null);
+    return true;
   };
 
   const canInstall = !!deferredPrompt;
-  const showIosHint = isIos && !deferredPrompt && !isStandalone;
 
-  return { canInstall, showIosHint, isStandalone, install };
+  return { canInstall, isIos, isMobile, isStandalone, install };
 }
