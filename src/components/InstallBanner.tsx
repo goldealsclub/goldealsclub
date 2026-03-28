@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
 import { useInstallPrompt } from "@/hooks/use-install-prompt";
+import { useI18n } from "@/lib/i18n";
 
 const InstallBanner = () => {
   const { canInstall, showIosHint, isStandalone, install } = useInstallPrompt();
+  const { t } = useI18n();
   const [dismissed, setDismissed] = useState(false);
 
   useEffect(() => {
@@ -27,22 +29,16 @@ const InstallBanner = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-display font-semibold tracking-wide">GOLDEALS CLUB</p>
-          {showIosHint ? (
-            <p className="text-[10px] opacity-60 leading-tight mt-0.5">
-              Appuie sur Partager puis "Sur l'écran d'accueil"
-            </p>
-          ) : (
-            <p className="text-[10px] opacity-60 leading-tight mt-0.5">
-              Installe l'app pour un accès rapide
-            </p>
-          )}
+          <p className="text-[10px] opacity-60 leading-tight mt-0.5">
+            {showIosHint ? t.installIosHint : t.installAppSub}
+          </p>
         </div>
         {canInstall && (
           <button
             onClick={install}
             className="shrink-0 text-[10px] font-display uppercase tracking-wider bg-background text-foreground px-3 py-1.5 rounded-lg"
           >
-            Installer
+            {t.installButton}
           </button>
         )}
         <button onClick={handleDismiss} className="shrink-0 p-1 opacity-40 hover:opacity-100">
