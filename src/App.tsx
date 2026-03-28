@@ -29,6 +29,7 @@ import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import InstallBanner from "./components/InstallBanner";
+import UpdateBanner from "./components/UpdateBanner";
 
 const queryClient = new QueryClient();
 
@@ -66,6 +67,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallBanner />
+              <UpdateBanner />
             </BrowserRouter>
           </TooltipProvider>
           </VotesProvider>

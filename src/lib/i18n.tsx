@@ -113,6 +113,9 @@ const translations = {
     installAppSub: "Installe l'app pour un accès rapide",
     installIosHint: "Appuie sur Partager puis \"Sur l'écran d'accueil\"",
     installButton: "Installer",
+    updateAvailable: "Mise à jour disponible",
+    updateAvailableSub: "Une nouvelle version de l'app est disponible.",
+    updateNow: "Mettre à jour",
   },
   en: {
     heroTitle: "GOLDEALS CLUB",
@@ -223,6 +226,9 @@ const translations = {
     installAppSub: "Install the app for quick access",
     installIosHint: "Tap Share then \"Add to Home Screen\"",
     installButton: "Install",
+    updateAvailable: "Update available",
+    updateAvailableSub: "A new version of the app is available.",
+    updateNow: "Update",
   },
   es: {
     heroTitle: "GOLDEALS CLUB",
@@ -333,6 +339,9 @@ const translations = {
     installAppSub: "Instala la app para un acceso rápido",
     installIosHint: "Toca Compartir y luego \"Añadir a pantalla de inicio\"",
     installButton: "Instalar",
+    updateAvailable: "Actualización disponible",
+    updateAvailableSub: "Una nueva versión de la app está disponible.",
+    updateNow: "Actualizar",
   },
 } as const;
 
