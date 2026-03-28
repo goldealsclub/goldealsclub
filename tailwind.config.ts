@@ -105,11 +105,16 @@ export default {
           "50%": { transform: "scale(0.8) translate(-1px,-5px)", opacity: "0.7" },
           "80%": { transform: "scale(1) translate(1px,-2px)", opacity: "0.9" },
         },
+        "slide-up": {
+          from: { transform: "translateY(100%)" },
+          to: { transform: "translateY(0)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out forwards",
+        "slide-up": "slide-up 0.3s ease-out forwards",
       },
     },
   },
