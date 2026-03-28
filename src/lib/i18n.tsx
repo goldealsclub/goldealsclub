@@ -109,6 +109,10 @@ const translations = {
     priceAlertRemoved: "Alerte supprimée",
     priceAlertLoginRequired: "Connexion requise",
     priceAlertLoginDesc: "Connectez-vous pour activer les alertes de prix.",
+    installApp: "Installer l'app",
+    installAppSub: "Installe l'app pour un accès rapide",
+    installIosHint: "Appuie sur Partager puis \"Sur l'écran d'accueil\"",
+    installButton: "Installer",
   },
   en: {
     heroTitle: "GOLDEALS CLUB",
@@ -215,6 +219,10 @@ const translations = {
     priceAlertRemoved: "Alert removed",
     priceAlertLoginRequired: "Login required",
     priceAlertLoginDesc: "Sign in to enable price alerts.",
+    installApp: "Install app",
+    installAppSub: "Install the app for quick access",
+    installIosHint: "Tap Share then \"Add to Home Screen\"",
+    installButton: "Install",
   },
   es: {
     heroTitle: "GOLDEALS CLUB",
@@ -321,6 +329,10 @@ const translations = {
     priceAlertRemoved: "Alerta eliminada",
     priceAlertLoginRequired: "Inicio de sesión requerido",
     priceAlertLoginDesc: "Inicia sesión para activar alertas de precio.",
+    installApp: "Instalar app",
+    installAppSub: "Instala la app para un acceso rápido",
+    installIosHint: "Toca Compartir y luego \"Añadir a pantalla de inicio\"",
+    installButton: "Instalar",
   },
 } as const;
 
