@@ -67,6 +67,7 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallBanner />
+              <UpdateBanner />
             </BrowserRouter>
           </TooltipProvider>
           </VotesProvider>
