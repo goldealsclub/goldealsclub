@@ -28,6 +28,7 @@ import NewDealNotifier from "./components/NewDealNotifier";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
+import InstallPage from "./pages/InstallPage";
 import InstallBanner from "./components/InstallBanner";
 import UpdateBanner from "./components/UpdateBanner";
 
