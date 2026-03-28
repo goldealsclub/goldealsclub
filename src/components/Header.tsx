@@ -177,7 +177,7 @@ const Header = () => {
             )}
           </nav>
 
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
             <ThemeToggle />
             <button onClick={() => setSearchOpen(true)} className="p-2">
               <Search className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
