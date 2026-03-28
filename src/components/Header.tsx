@@ -253,28 +253,29 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {/* Install app button - native or link to tutorial */}
-            {!isStandalone && canInstall && (
-              <button
-                onClick={async () => {
-                  await install();
-                  setMenuOpen(false);
-                }}
-                className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {t.installApp}
-              </button>
-            )}
-            {!isStandalone && !canInstall && isIos && (
-              <Link
-                to="/install"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {t.installApp}
-              </Link>
+            {/* Install app button - always visible */}
+            {!isStandalone && (
+              canInstall ? (
+                <button
+                  onClick={async () => {
+                    await install();
+                    setMenuOpen(false);
+                  }}
+                  className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t.installApp}
+                </button>
+              ) : (
+                <Link
+                  to="/install"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t.installApp}
+                </Link>
+              )
             )}
             {/* Mobile language selector */}
             <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-foreground/5">
