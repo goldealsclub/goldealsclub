@@ -94,7 +94,7 @@ function inferGender(genderField: string, description: string, title: string): G
     "big kids","td ","ps ","gs ","(gs)","(td)","(ps)","youth",
     "jeune enfant","petit enfant","newborn","nouveau-né",
     "tee & short set","short set ","kinder"];
-  const enfantExclude = ["baby tee","bra ","crop","robe di kappa"];
+  const enfantExclude = ["baby tee","bra ","crop","robe di kappa","junior mesure","junior porte"];
   if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
 
   // Femme-specific patterns
