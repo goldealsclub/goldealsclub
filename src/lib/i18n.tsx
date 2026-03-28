@@ -339,6 +339,9 @@ const translations = {
     installAppSub: "Instala la app para un acceso rápido",
     installIosHint: "Toca Compartir y luego \"Añadir a pantalla de inicio\"",
     installButton: "Instalar",
+    updateAvailable: "Actualización disponible",
+    updateAvailableSub: "Una nueva versión de la app está disponible.",
+    updateNow: "Actualizar",
   },
 } as const;
 
