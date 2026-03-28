@@ -166,7 +166,7 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {canInstall && !isStandalone && (
+            {!isStandalone && canInstall && (
               <button
                 onClick={install}
                 className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
@@ -174,6 +174,15 @@ const Header = () => {
                 <Download className="w-3.5 h-3.5" />
                 {t.installButton}
               </button>
+            )}
+            {!isStandalone && !canInstall && (
+              <Link
+                to="/install"
+                className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {t.installApp}
+              </Link>
             )}
           </nav>
 
