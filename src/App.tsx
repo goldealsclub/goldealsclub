@@ -65,6 +65,7 @@ const App = () => (
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/install" element={<InstallPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallBanner />
