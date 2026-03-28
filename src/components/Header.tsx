@@ -151,7 +151,7 @@ const Header = () => {
               src={logo}
               alt="GOLDEALS CLUB"
               className={`transition-all duration-300 w-auto logo-invert ${
-                scrolled ? "h-20 md:h-28" : "h-28 md:h-44"
+                scrolled ? "h-16 md:h-28" : "h-20 md:h-44"
               }`}
             />
           </Link>
