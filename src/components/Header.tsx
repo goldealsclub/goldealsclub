@@ -243,14 +243,14 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {/* Install app button */}
-            {(canInstall || showIosHint) && !isStandalone && (
+            {/* Install app button - always visible in mobile menu */}
+            {!isStandalone && (
               <button
                 onClick={() => { if (canInstall) install(); }}
                 className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
               >
                 <Download className="w-3.5 h-3.5" />
-                {showIosHint ? t.installIosHint : t.installApp}
+                {canInstall ? t.installApp : showIosHint ? t.installIosHint : t.installApp}
               </button>
             )}
             {/* Mobile language selector */}
