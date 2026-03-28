@@ -196,11 +196,11 @@ const Header = () => {
               <>
                 <AlertPreferences />
                 {isAdmin && (
-                  <Link to="/admin" className="p-2" title="Dashboard admin">
+                  <Link to="/admin" className="p-1.5 md:p-2" title="Dashboard admin">
                     <TrendingUp className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
                   </Link>
                 )}
-                <Link to="/profile" className="p-2" title="Mon compte">
+                <Link to="/profile" className="p-1.5 md:p-2" title="Mon compte">
                   <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
                 </Link>
               </>
