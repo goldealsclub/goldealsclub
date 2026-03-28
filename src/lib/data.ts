@@ -88,21 +88,22 @@ function inferGender(genderField: string, description: string, title: string): G
   const ttl = (title || "").toLowerCase();
   const combined = ` ${desc} ${ttl} `;
 
-  // Femme-specific patterns (check BEFORE enfant to avoid "baby tee" → enfant)
+  // Enfant-specific patterns — check FIRST since "Enfant" in title is definitive
+  const enfantKw = ["pour ado","pour enfant"," enfant","enfants","enfant ",
+    "kids","junior","bébé","nourrisson","toddler","infant","little kids",
+    "big kids","td ","ps ","gs ","(gs)","(td)","(ps)","youth",
+    "jeune enfant","petit enfant","newborn","nouveau-né",
+    "tee & short set","short set ","kinder"];
+  const enfantExclude = ["baby tee","bra ","crop","robe di kappa"];
+  if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
+
+  // Femme-specific patterns
   const femmeKw = ["pour femme","pour fille","women","woman","wmns","w's ","ladies",
     "baby tee","bra ","brassière","legging","sports bra","sport bra","crop top",
-    "cropped top","mini skirt","mini jupe","robe ","dress ","bikini top",
-    "yoga ","maternity","enceinte"];
-  if (femmeKw.some(k => combined.includes(k))) return "femme";
-
-  // Enfant-specific patterns
-  const enfantKw = ["pour ado","pour enfant","enfants","kids","junior","bébé",
-    "nourrisson","toddler","infant","little kids","big kids","td ","ps ",
-    "gs ","(gs)","(td)","(ps)","youth","jeune enfant","petit enfant",
-    "newborn","nouveau-né","tee & short set","short set "];
-  // Exclude adult items that happen to have these words
-  const enfantExclude = ["baby tee","bra ","crop"];
-  if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
+    "cropped top","mini skirt","mini jupe","dress ","bikini top",
+    "yoga ","maternity","enceinte","low waist"];
+  const femmeExclude = ["robe di kappa"];
+  if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
 
   // Homme-specific patterns
   if (combined.includes("pour homme") || combined.includes("pour garçon") || combined.includes("men's") || combined.includes("for men")) {
