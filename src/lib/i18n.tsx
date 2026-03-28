@@ -109,6 +109,10 @@ const translations = {
     priceAlertRemoved: "Alerte supprimée",
     priceAlertLoginRequired: "Connexion requise",
     priceAlertLoginDesc: "Connectez-vous pour activer les alertes de prix.",
+    installApp: "Installer l'app",
+    installAppSub: "Installe l'app pour un accès rapide",
+    installIosHint: "Appuie sur Partager puis \"Sur l'écran d'accueil\"",
+    installButton: "Installer",
   },
   en: {
     heroTitle: "GOLDEALS CLUB",
