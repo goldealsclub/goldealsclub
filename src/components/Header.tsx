@@ -151,7 +151,7 @@ const Header = () => {
               src={logo}
               alt="GOLDEALS CLUB"
               className={`transition-all duration-300 w-auto logo-invert ${
-                scrolled ? "h-20 md:h-28" : "h-28 md:h-44"
+                scrolled ? "h-16 md:h-28" : "h-20 md:h-44"
               }`}
             />
           </Link>
@@ -177,13 +177,13 @@ const Header = () => {
             )}
           </nav>
 
-          <div className="flex items-center gap-2 md:gap-3">
+          <div className="flex items-center gap-1 md:gap-3 flex-shrink-0">
             <ThemeToggle />
-            <button onClick={() => setSearchOpen(true)} className="p-2">
+            <button onClick={() => setSearchOpen(true)} className="p-1.5 md:p-2">
               <Search className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
             </button>
 
-            <Link to="/favorites" className="p-2 relative">
+            <Link to="/favorites" className="p-1.5 md:p-2 relative">
               <Heart className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
               {favorites.size > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[8px] font-body flex items-center justify-center rounded-full">
@@ -196,11 +196,11 @@ const Header = () => {
               <>
                 <AlertPreferences />
                 {isAdmin && (
-                  <Link to="/admin" className="p-2" title="Dashboard admin">
+                  <Link to="/admin" className="p-1.5 md:p-2" title="Dashboard admin">
                     <TrendingUp className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
                   </Link>
                 )}
-                <Link to="/profile" className="p-2" title="Mon compte">
+                <Link to="/profile" className="p-1.5 md:p-2" title="Mon compte">
                   <User className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
                 </Link>
               </>
@@ -243,14 +243,14 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {/* Install app button */}
-            {(canInstall || showIosHint) && !isStandalone && (
+            {/* Install app button - always visible in mobile menu */}
+            {!isStandalone && (
               <button
                 onClick={() => { if (canInstall) install(); }}
                 className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
               >
                 <Download className="w-3.5 h-3.5" />
-                {showIosHint ? t.installIosHint : t.installApp}
+                {canInstall ? t.installApp : showIosHint ? t.installIosHint : t.installApp}
               </button>
             )}
             {/* Mobile language selector */}
