@@ -250,7 +250,7 @@ const Header = () => {
                 className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
               >
                 <Download className="w-3.5 h-3.5" />
-                {showIosHint ? "Partager → Sur l'écran d'accueil" : "Installer l'app"}
+                {showIosHint ? t.installIosHint : t.installApp}
               </button>
             )}
             {/* Mobile language selector */}
