@@ -108,6 +108,10 @@
     @apply border-border/15;
   }
 
+  html, body {
+    @apply overflow-x-hidden;
+  }
+
   body {
     @apply bg-background text-foreground font-body antialiased;
   }
