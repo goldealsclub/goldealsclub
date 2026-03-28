@@ -226,12 +226,13 @@ function inferGender(genderField: string, description: string, title: string): s
   const combined = ` ${(description || "").toLowerCase()} ${(title || "").toLowerCase()} `;
 
   // Enfant-specific — check FIRST since "Enfant" in title is definitive
+  // Exclude "junior mesure" which is a model name in Snipes descriptions
   const enfantKw = ["pour ado","pour enfant"," enfant","enfants","enfant ",
     "kids","junior","bébé","nourrisson","toddler","infant","little kids",
     "big kids","td ","ps ","gs ","(gs)","(td)","(ps)","youth",
     "jeune enfant","petit enfant","newborn","nouveau-né",
     "tee & short set","short set ","kinder"];
-  const enfantExclude = ["baby tee","bra ","crop","robe di kappa"];
+  const enfantExclude = ["baby tee","bra ","crop","robe di kappa","junior mesure","junior porte"];
   if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
 
   // Femme-specific
