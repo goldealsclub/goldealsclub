@@ -86,16 +86,27 @@ function upgradeImageUrl(url: string): string {
 function inferGender(genderField: string, description: string, title: string): Gender {
   const desc = (description || "").toLowerCase();
   const ttl = (title || "").toLowerCase();
-  const combined = `${desc} ${ttl}`;
+  const combined = ` ${desc} ${ttl} `;
 
-  if (combined.includes("pour femme") || combined.includes("pour fille") || combined.includes("women") || combined.includes("woman")) {
-    return "femme";
-  }
+  // Femme-specific patterns (check BEFORE enfant to avoid "baby tee" → enfant)
+  const femmeKw = ["pour femme","pour fille","women","woman","wmns","w's ","ladies",
+    "baby tee","bra ","brassière","legging","sports bra","sport bra","crop top",
+    "cropped top","mini skirt","mini jupe","robe ","dress ","bikini top",
+    "yoga ","maternity","enceinte"];
+  if (femmeKw.some(k => combined.includes(k))) return "femme";
+
+  // Enfant-specific patterns
+  const enfantKw = ["pour ado","pour enfant","enfants","kids","junior","bébé",
+    "nourrisson","toddler","infant","little kids","big kids","td ","ps ",
+    "gs ","(gs)","(td)","(ps)","youth","jeune enfant","petit enfant",
+    "newborn","nouveau-né","tee & short set","short set "];
+  // Exclude adult items that happen to have these words
+  const enfantExclude = ["baby tee","bra ","crop"];
+  if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
+
+  // Homme-specific patterns
   if (combined.includes("pour homme") || combined.includes("pour garçon") || combined.includes("men's") || combined.includes("for men")) {
     return "homme";
-  }
-  if (combined.includes("pour ado") || combined.includes("pour enfant") || combined.includes("enfants") || combined.includes("kids") || combined.includes("junior") || combined.includes("bébé") || combined.includes("nourrisson")) {
-    return "enfant";
   }
 
   const g = (genderField || "").toLowerCase();
@@ -148,7 +159,7 @@ function inferCategory(category: string, title: string): Category {
   if (accessKw.some(k => t.includes(k))) return "accessoires";
 
   // 6. Sneakers last
-  const sneakerKw = ["sneaker","basket ","baskets","chaussure","shoe","footwear","air max","air force","dunk","jordan post","jordan 1 ","jordan 4 ","jordan 5 ","jordan 11","yeezy","new balance ","574","990","2002r","gel-","gel ","asics","old skool","sk8-","chuck taylor","converse","all star","stan smith","superstar","forum","gazelle","samba","campus","ozweego","ultraboost","slide","mule","sandale","tong","tongs","adilette","claquette","arizona eva","dr. martens","dr martens","vans ","era ","palermo","suede ","classic az","croco ","offcourt","slingback","reebok classic","puma cali","knu skool","lowpro","stealthform","cloudmonster","cloudswift","speedcross","xt-6","v2 ","made in ","fresh foam","fuelcell","1906","hoka ","clifton","bondi ","arahi","timberland ","premium 6","chukka","boat shoe","loafer","mocassin","espadrille","sabot","birkenstock","speedcat","mostro","predator sala","technochaos","spiritain","spiritian","adistar","megaride","ghostride","taekwondo","firebird lacett","spacer cutline","galaxy og","dame x ","tokyo w ","zx 500","total 90","vertebrae","gato ","sb chron","sb force","inhale ","fade nitro","arizona nylon","creeper","pluto ","neo run","citigo","shadow skate","venice skate","skate low","command ","club low ","h-street","lafranc","la franc","lxry 2k","lxyr 2k","89 2k","89 prm","89 up","89 tailor","89 classic","89 lxry","prime runner","goalgetter","goldenglow","session ","stadium 90","court graffik"," stag ","dc stag","infinite pro","echo ","aura ","ld-1000","play off speckle","jordan los","pipah plateau","classic ultra mini","classic mini ","tazz","disquette","lowmel","funkette","tazzelle","classic micro","cora sand","t-clip","spinor","l003 ","cloud 6","cloudtilt","cloudsurfer","cloudvista","cloudnova","xt-whisper","acs+","acs +","ava rover","avanti ","pointe ","hammer street","r400 ","club c ","skepta ","italia 70s","japan w ","anthony edwards","jordan remix","salomon ","on cloud","tasman","trekker","train 89","masters court","bedford","stone street","hylane","motion 6","cloudzone","sprint trekker","euro trekker","field trekker","lace up"];
+  const sneakerKw = ["sneaker","basket ","baskets","chaussure","shoe","footwear","air max","air force","dunk","jordan post","jordan 1 ","jordan 4 ","jordan 5 ","jordan 11","yeezy","new balance ","574","990","2002r","gel-","gel ","asics","old skool","sk8-","chuck taylor","converse","all star","stan smith","superstar","forum","gazelle","samba","campus","ozweego","ultraboost","slide","mule","sandale","tong","tongs","adilette","claquette","arizona eva","dr. martens","dr martens","vans ","era ","palermo","suede ","classic az","croco ","offcourt","slingback","reebok classic","puma cali","knu skool","lowpro","stealthform","cloudmonster","cloudswift","speedcross","xt-6","v2 ","made in ","fresh foam","fuelcell","1906","hoka ","clifton","bondi ","arahi","timberland ","premium 6","chukka","boat shoe","loafer","mocassin","espadrille","sabot","birkenstock","speedcat","mostro","predator sala","technochaos","spiritain","spiritian","adistar","megaride","ghostride","taekwondo","firebird lacett","spacer cutline","galaxy og","dame x ","tokyo w ","zx 500","total 90","vertebrae","gato ","sb chron","sb force","inhale ","fade nitro","arizona nylon","creeper","pluto ","neo run","citigo","shadow skate","venice skate","skate low","command ","club low ","h-street","lafranc","la franc","lxry 2k","lxyr 2k","89 2k","89 prm","89 up","89 tailor","89 classic","89 lxry","prime runner","goalgetter","goldenglow","session ","stadium 90","court graffik"," stag ","dc stag","infinite pro","echo ","aura ","ld-1000","play off speckle","jordan los","pipah plateau","classic ultra mini","classic mini ","tazz","disquette","lowmel","funkette","tazzelle","classic micro","cora sand","t-clip","spinor","l003 ","cloud 6","cloudtilt","cloudsurfer","cloudvista","cloudnova","xt-whisper","acs+","acs +","ava rover","avanti ","pointe ","hammer street","r400 ","club c ","skepta ","italia 70s","japan w ","anthony edwards","jordan remix","salomon ","on cloud","tasman","trekker","train 89","masters court","bedford","stone street","hylane","motion 6","cloudzone","sprint trekker","euro trekker","field trekker","lace up","spiridon","zoom spiridon","spizike","air zoom","air rift","pegasus","vomero","winflo","react ","flyknit","presto","huarache","tuned ","tn ","air more","uptempo","max 90","max 95","max 97","max 1 ","max 270","max 720"];
   if (sneakerKw.some(k => t.includes(k))) return "sneakers";
 
   return category as Category;
