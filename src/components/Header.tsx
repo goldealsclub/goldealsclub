@@ -172,7 +172,7 @@ const Header = () => {
                 className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
               >
                 <Download className="w-3.5 h-3.5" />
-                Installer
+                {t.installButton}
               </button>
             )}
           </nav>
