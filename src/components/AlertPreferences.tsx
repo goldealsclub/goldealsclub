@@ -69,7 +69,7 @@ const AlertPreferences = () => {
     <button
       onClick={toggle}
       disabled={saving}
-      className={`flex items-center gap-2 px-3 py-1.5 text-[10px] font-display uppercase tracking-[0.15em] border transition-all ${
+      className={`flex items-center gap-1.5 p-1.5 md:px-3 md:py-1.5 text-[10px] font-display uppercase tracking-[0.15em] border transition-all ${
         enabled
           ? "border-primary/30 text-primary bg-primary/5 hover:bg-primary/10"
           : "border-foreground/15 text-foreground/50 hover:text-foreground hover:border-foreground/30"
@@ -83,7 +83,7 @@ const AlertPreferences = () => {
       ) : (
         <BellOff className="w-3.5 h-3.5" strokeWidth={1.5} />
       )}
-      {enabled ? "Alertes ON" : "Alertes OFF"}
+      <span className="hidden md:inline">{enabled ? "Alertes ON" : "Alertes OFF"}</span>
     </button>
   );
 };
