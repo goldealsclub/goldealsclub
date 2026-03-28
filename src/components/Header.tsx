@@ -183,7 +183,7 @@ const Header = () => {
               <Search className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
             </button>
 
-            <Link to="/favorites" className="p-2 relative">
+            <Link to="/favorites" className="p-1.5 md:p-2 relative">
               <Heart className="w-4 h-4 text-foreground/60 hover:text-foreground transition-colors" strokeWidth={1.5} />
               {favorites.size > 0 && (
                 <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-primary-foreground text-[8px] font-body flex items-center justify-center rounded-full">
