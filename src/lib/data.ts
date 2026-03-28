@@ -88,21 +88,22 @@ function inferGender(genderField: string, description: string, title: string): G
   const ttl = (title || "").toLowerCase();
   const combined = ` ${desc} ${ttl} `;
 
-  // Femme-specific patterns (check BEFORE enfant to avoid "baby tee" → enfant)
+  // Enfant-specific patterns — check FIRST since "Enfant" in title is definitive
+  const enfantKw = ["pour ado","pour enfant"," enfant","enfants","enfant ",
+    "kids","junior","bébé","nourrisson","toddler","infant","little kids",
+    "big kids","td ","ps ","gs ","(gs)","(td)","(ps)","youth",
+    "jeune enfant","petit enfant","newborn","nouveau-né",
+    "tee & short set","short set ","kinder"];
+  const enfantExclude = ["baby tee","bra ","crop","robe di kappa"];
+  if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
+
+  // Femme-specific patterns
   const femmeKw = ["pour femme","pour fille","women","woman","wmns","w's ","ladies",
     "baby tee","bra ","brassière","legging","sports bra","sport bra","crop top",
-    "cropped top","mini skirt","mini jupe","robe ","dress ","bikini top",
-    "yoga ","maternity","enceinte"];
-  if (femmeKw.some(k => combined.includes(k))) return "femme";
-
-  // Enfant-specific patterns
-  const enfantKw = ["pour ado","pour enfant","enfants","kids","junior","bébé",
-    "nourrisson","toddler","infant","little kids","big kids","td ","ps ",
-    "gs ","(gs)","(td)","(ps)","youth","jeune enfant","petit enfant",
-    "newborn","nouveau-né","tee & short set","short set "];
-  // Exclude adult items that happen to have these words
-  const enfantExclude = ["baby tee","bra ","crop"];
-  if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
+    "cropped top","mini skirt","mini jupe","dress ","bikini top",
+    "yoga ","maternity","enceinte","low waist"];
+  const femmeExclude = ["robe di kappa"];
+  if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
 
   // Homme-specific patterns
   if (combined.includes("pour homme") || combined.includes("pour garçon") || combined.includes("men's") || combined.includes("for men")) {
@@ -139,7 +140,7 @@ function inferCategory(category: string, title: string): Category {
 
   // 2. Hoodies — exclude items that also match pants/shorts/skirt keywords
   const hoodieKw = ["hoodie","hooded-","sweatshirt","sweat ","sweat,","sweats ","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","flc po ","troyer"];
-  const hoodieExclude = ["short","pant","jogger","legging","bermuda","cargo","jogging","jeans","jean ","tracksuit","track suit","sweatpant","skirt","jupe","robe ","dress "];
+  const hoodieExclude = ["short","pant","jogger","legging","bermuda","cargo","jogging","jeans","jean ","tracksuit","track suit","sweatpant","skirt","jupe","robe ","dress ","sock","socks","socken","chaussette"];
   if (hoodieKw.some(k => t.includes(k)) && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
 
   // 2b. Fleece tops only (exclude fleece shorts/pants/skirts)
@@ -155,7 +156,7 @@ function inferCategory(category: string, title: string): Category {
   if (tshirtKw.some(k => t.includes(k))) return "t-shirts";
 
   // 5. Accessories – removed "knit "
-  const accessKw = ["casquette","cap ","cap,","sac ","bag ","bag,","backpack","bagpack","chaussette","sock","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","9fifty","59fifty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain ","bikini","trunk ","trunks","cache-cou","cache-oreilles","brassard","bracelet","caleçon","boxer","boxers","briefs","underwear","slip ","underpant","sous-vêtement","blitzing","cuff ","fitted ","visor","brim","tumbler","stanley","quencher"," ball ","deflated","romper","hipbag","fanny","springer","duffle","airliner","casio","watch ","montre","snapback","bucket ","trucker","strapback","dad cap","waist bag","mini bag","shoulder bag","tote ","clutch","keychain","porte-clé","sunglasses","lunettes","g-shock","day pak","patrol pack","convertible hood"];
+  const accessKw = ["casquette","cap ","cap,","sac ","bag ","bag,","backpack","bagpack","chaussette","sock","socks","socken","bonnet","beanie","ceinture","belt","écharpe","scarf","gant","glove","porte","wallet","lunette","bandeau","headband","chapeau","hat ","9forty","9twenty","9fifty","59fifty","mvp ","new era","flexfit","durag","balaclava","bauchtasche","crossbody","neckwarmer","chain ","bikini","trunk ","trunks","cache-cou","cache-oreilles","brassard","bracelet","caleçon","boxer","boxers","briefs","underwear","slip ","underpant","sous-vêtement","blitzing","cuff ","fitted ","visor","brim","tumbler","stanley","quencher"," ball ","deflated","romper","hipbag","fanny","springer","duffle","airliner","casio","watch ","montre","snapback","bucket ","trucker","strapback","dad cap","waist bag","mini bag","shoulder bag","tote ","clutch","keychain","porte-clé","sunglasses","lunettes","g-shock","day pak","patrol pack","convertible hood","quarter sock"];
   if (accessKw.some(k => t.includes(k))) return "accessoires";
 
   // 6. Sneakers last
