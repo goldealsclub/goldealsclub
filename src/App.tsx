@@ -28,6 +28,7 @@ import NewDealNotifier from "./components/NewDealNotifier";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
+import InstallBanner from "./components/InstallBanner";
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
+              <InstallBanner />
             </BrowserRouter>
           </TooltipProvider>
           </VotesProvider>
