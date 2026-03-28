@@ -73,6 +73,9 @@ const Footer = () => {
             <Link to="/terms" className="text-[10px] font-body text-background/30 hover:text-background/60 transition-colors">{t.footerTerms}</Link>
           </div>
         </div>
+        <div className="mt-12 pt-6 border-t border-background/10 text-center">
+          <p className="text-[9px] font-body text-background/20">© {new Date().getFullYear()} GOLDEALS CLUB. Tous droits réservés.</p>
+        </div>
       </div>
     </footer>
   );
