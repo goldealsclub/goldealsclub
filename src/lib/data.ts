@@ -140,7 +140,7 @@ function inferCategory(category: string, title: string): Category {
 
   // 2. Hoodies — exclude items that also match pants/shorts/skirt keywords
   const hoodieKw = ["hoodie","hooded-","sweatshirt","sweat ","sweat,","sweats ","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","flc po ","troyer"];
-  const hoodieExclude = ["short","pant","jogger","legging","bermuda","cargo","jogging","jeans","jean ","tracksuit","track suit","sweatpant","skirt","jupe","robe ","dress "];
+  const hoodieExclude = ["short","pant","jogger","legging","bermuda","cargo","jogging","jeans","jean ","tracksuit","track suit","sweatpant","skirt","jupe","robe ","dress ","sock","socks","socken","chaussette"];
   if (hoodieKw.some(k => t.includes(k)) && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
 
   // 2b. Fleece tops only (exclude fleece shorts/pants/skirts)
