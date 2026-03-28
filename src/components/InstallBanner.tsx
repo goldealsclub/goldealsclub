@@ -1,45 +1,15 @@
 import { useState, useEffect } from "react";
 import { Download, X } from "lucide-react";
-import { useI18n } from "@/lib/i18n";
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt(): Promise<void>;
-  userChoice: Promise<{ outcome: "accepted" | "dismissed" }>;
-}
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 const InstallBanner = () => {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const { canInstall, showIosHint, isStandalone, install } = useInstallPrompt();
   const [dismissed, setDismissed] = useState(false);
-  const [isIos, setIsIos] = useState(false);
-  const [isStandalone, setIsStandalone] = useState(false);
 
   useEffect(() => {
-    const standalone = window.matchMedia("(display-mode: standalone)").matches
-      || (navigator as any).standalone === true;
-    setIsStandalone(standalone);
-
-    const ios = /iphone|ipad|ipod/i.test(navigator.userAgent);
-    setIsIos(ios);
-
     const wasDismissed = sessionStorage.getItem("pwa-banner-dismissed");
     if (wasDismissed) setDismissed(true);
-
-    const handler = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
   }, []);
-
-  const handleInstall = async () => {
-    if (deferredPrompt) {
-      await deferredPrompt.prompt();
-      const { outcome } = await deferredPrompt.userChoice;
-      if (outcome === "accepted") setDismissed(true);
-      setDeferredPrompt(null);
-    }
-  };
 
   const handleDismiss = () => {
     setDismissed(true);
@@ -47,10 +17,7 @@ const InstallBanner = () => {
   };
 
   if (isStandalone || dismissed) return null;
-
-  // Show only on mobile when install prompt is available OR on iOS
-  const showBanner = deferredPrompt || isIos;
-  if (!showBanner) return null;
+  if (!canInstall && !showIosHint) return null;
 
   return (
     <div className="fixed bottom-0 left-0 right-0 z-50 md:hidden animate-fade-in">
@@ -60,7 +27,7 @@ const InstallBanner = () => {
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-xs font-display font-semibold tracking-wide">GOLDEALS CLUB</p>
-          {isIos && !deferredPrompt ? (
+          {showIosHint ? (
             <p className="text-[10px] opacity-60 leading-tight mt-0.5">
               Appuie sur Partager puis "Sur l'écran d'accueil"
             </p>
@@ -70,9 +37,9 @@ const InstallBanner = () => {
             </p>
           )}
         </div>
-        {deferredPrompt && (
+        {canInstall && (
           <button
-            onClick={handleInstall}
+            onClick={install}
             className="shrink-0 text-[10px] font-display uppercase tracking-wider bg-background text-foreground px-3 py-1.5 rounded-lg"
           >
             Installer

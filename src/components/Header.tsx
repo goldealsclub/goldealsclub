@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Search, Heart, Menu, X, RefreshCw, User, TrendingUp } from "lucide-react";
+import { Search, Heart, Menu, X, RefreshCw, User, TrendingUp, Download } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { useI18n, Lang } from "@/lib/i18n";
 import { useFavorites } from "@/lib/favorites";
@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAdmin } from "@/hooks/use-admin";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 const languages: { code: Lang; label: string }[] = [
   { code: "fr", label: "FR" },
@@ -30,6 +31,7 @@ const Header = () => {
   const { gender, setGender, filteredDeals } = useGender();
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  const { canInstall, showIosHint, isStandalone, install } = useInstallPrompt();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -164,6 +166,15 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
+            {canInstall && !isStandalone && (
+              <button
+                onClick={install}
+                className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Installer
+              </button>
+            )}
           </nav>
 
           <div className="flex items-center gap-2 md:gap-3">
@@ -232,6 +243,16 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
+            {/* Install app button */}
+            {(canInstall || showIosHint) && !isStandalone && (
+              <button
+                onClick={() => { if (canInstall) install(); }}
+                className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
+              >
+                <Download className="w-3.5 h-3.5" />
+                {showIosHint ? "Partager → Sur l'écran d'accueil" : "Installer l'app"}
+              </button>
+            )}
             {/* Mobile language selector */}
             <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-foreground/5">
               {languages.map((l) => (
