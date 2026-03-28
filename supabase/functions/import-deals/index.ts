@@ -16,7 +16,8 @@ function inferCategory(category: string, title: string): string {
 
   // 2. Hoodies – check before pants so "Sweat" doesn't match sweatpant logic
   const hoodieKw = ["hoodie","sweat ","sweat,","sweats ","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","fleece","flc po ","troyer","full zip track","knit hood","boxy crew","graphic crew","essential crew","logo crew","oversized crew","mohair ","jacquard "];
-  if (hoodieKw.some(k => t.includes(k))) return "hoodies";
+  const hoodieExclude = ["short","pant","jogger","legging","bermuda","cargo","jogging","jeans","jean ","tracksuit","track suit","sweatpant","skirt","jupe","robe ","dress ","sock","socks","socken","chaussette"];
+  if (hoodieKw.some(k => t.includes(k)) && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
 
   // 3. Pants – removed "short " (catches jackets), "denim" (catches denim jackets), tightened "sweat" to "sweatpant"
   const pantsKw = ["pantalon","jogger","pant ","pants","legging","shorts","bermuda","cargo","jogging","jean ","jeans","flared","flare ","slim fit","baggy","survêtement","ensemble","trainingsanzüge","straight tp","tracküants","trackpant","track pant","sweatpant","sweatpants","training pant","tracksuit","trainingsanzug","track suit","inseam","trainingshose","jggr ","bootcut","jogginghose","overall dress"];
