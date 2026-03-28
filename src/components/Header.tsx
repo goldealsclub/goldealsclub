@@ -175,7 +175,7 @@ const Header = () => {
                 {t.installButton}
               </button>
             )}
-            {!isStandalone && !canInstall && (
+            {!isStandalone && !canInstall && isIos && (
               <Link
                 to="/install"
                 className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
