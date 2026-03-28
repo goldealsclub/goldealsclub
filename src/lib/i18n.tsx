@@ -226,6 +226,9 @@ const translations = {
     installAppSub: "Install the app for quick access",
     installIosHint: "Tap Share then \"Add to Home Screen\"",
     installButton: "Install",
+    updateAvailable: "Update available",
+    updateAvailableSub: "A new version of the app is available.",
+    updateNow: "Update",
   },
   es: {
     heroTitle: "GOLDEALS CLUB",
