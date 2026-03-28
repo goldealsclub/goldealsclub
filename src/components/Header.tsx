@@ -17,6 +17,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { useAdmin } from "@/hooks/use-admin";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useInstallPrompt } from "@/hooks/use-install-prompt";
 
 const languages: { code: Lang; label: string }[] = [
   { code: "fr", label: "FR" },
