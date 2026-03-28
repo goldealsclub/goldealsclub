@@ -31,6 +31,7 @@ const Header = () => {
   const { gender, setGender, filteredDeals } = useGender();
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
+  const { canInstall, showIosHint, isStandalone, install } = useInstallPrompt();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
