@@ -86,16 +86,27 @@ function upgradeImageUrl(url: string): string {
 function inferGender(genderField: string, description: string, title: string): Gender {
   const desc = (description || "").toLowerCase();
   const ttl = (title || "").toLowerCase();
-  const combined = `${desc} ${ttl}`;
+  const combined = ` ${desc} ${ttl} `;
 
-  if (combined.includes("pour femme") || combined.includes("pour fille") || combined.includes("women") || combined.includes("woman")) {
-    return "femme";
-  }
+  // Femme-specific patterns (check BEFORE enfant to avoid "baby tee" → enfant)
+  const femmeKw = ["pour femme","pour fille","women","woman","wmns","w's ","ladies",
+    "baby tee","bra ","brassière","legging","sports bra","sport bra","crop top",
+    "cropped top","mini skirt","mini jupe","robe ","dress ","bikini top",
+    "yoga ","maternity","enceinte"];
+  if (femmeKw.some(k => combined.includes(k))) return "femme";
+
+  // Enfant-specific patterns
+  const enfantKw = ["pour ado","pour enfant","enfants","kids","junior","bébé",
+    "nourrisson","toddler","infant","little kids","big kids","td ","ps ",
+    "gs ","(gs)","(td)","(ps)","youth","jeune enfant","petit enfant",
+    "newborn","nouveau-né","tee & short set","short set "];
+  // Exclude adult items that happen to have these words
+  const enfantExclude = ["baby tee","bra ","crop"];
+  if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
+
+  // Homme-specific patterns
   if (combined.includes("pour homme") || combined.includes("pour garçon") || combined.includes("men's") || combined.includes("for men")) {
     return "homme";
-  }
-  if (combined.includes("pour ado") || combined.includes("pour enfant") || combined.includes("enfants") || combined.includes("kids") || combined.includes("junior") || combined.includes("bébé") || combined.includes("nourrisson")) {
-    return "enfant";
   }
 
   const g = (genderField || "").toLowerCase();
