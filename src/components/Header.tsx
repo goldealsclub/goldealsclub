@@ -166,23 +166,24 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {!isStandalone && canInstall && (
-              <button
-                onClick={install}
-                className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {t.installButton}
-              </button>
-            )}
-            {!isStandalone && !canInstall && isIos && (
-              <Link
-                to="/install"
-                className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {t.installApp}
-              </Link>
+            {!isStandalone && (
+              canInstall ? (
+                <button
+                  onClick={install}
+                  className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t.installApp}
+                </button>
+              ) : (
+                <Link
+                  to="/install"
+                  className="flex items-center gap-1.5 text-[11px] font-display uppercase tracking-[0.15em] text-primary hover:text-primary/80 transition-colors"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t.installApp}
+                </Link>
+              )
             )}
           </nav>
 
@@ -252,28 +253,29 @@ const Header = () => {
                 {link.label}
               </Link>
             ))}
-            {/* Install app button - native or link to tutorial */}
-            {!isStandalone && canInstall && (
-              <button
-                onClick={async () => {
-                  await install();
-                  setMenuOpen(false);
-                }}
-                className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {t.installApp}
-              </button>
-            )}
-            {!isStandalone && !canInstall && isIos && (
-              <Link
-                to="/install"
-                onClick={() => setMenuOpen(false)}
-                className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
-              >
-                <Download className="w-3.5 h-3.5" />
-                {t.installApp}
-              </Link>
+            {/* Install app button - always visible */}
+            {!isStandalone && (
+              canInstall ? (
+                <button
+                  onClick={async () => {
+                    await install();
+                    setMenuOpen(false);
+                  }}
+                  className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t.installApp}
+                </button>
+              ) : (
+                <Link
+                  to="/install"
+                  onClick={() => setMenuOpen(false)}
+                  className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  {t.installApp}
+                </Link>
+              )
             )}
             {/* Mobile language selector */}
             <div className="flex items-center justify-center gap-2 mt-2 pt-2 border-t border-foreground/5">
