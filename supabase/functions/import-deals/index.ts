@@ -222,10 +222,25 @@ function inferBrand(brand: string, title: string): string {
 
 /** Infer gender from description and title */
 function inferGender(genderField: string, description: string, title: string): string {
-  const combined = `${(description || "").toLowerCase()} ${(title || "").toLowerCase()}`;
-  if (combined.includes("pour femme") || combined.includes("pour fille") || combined.includes("women") || combined.includes("woman") || combined.includes(" femme")) return "femme";
-  if (combined.includes("pour homme") || combined.includes("pour garçon") || combined.includes("men's") || combined.includes("for men") || combined.includes(" homme")) return "homme";
-  if (combined.includes("pour enfant") || combined.includes("enfants") || combined.includes("kids") || combined.includes("junior") || combined.includes("bébé") || combined.includes("nourrisson")) return "enfant";
+  const combined = ` ${(description || "").toLowerCase()} ${(title || "").toLowerCase()} `;
+
+  // Femme-specific (check BEFORE enfant to avoid "baby tee" → enfant)
+  const femmeKw = ["pour femme","pour fille","women","woman","wmns","w's ","ladies",
+    "baby tee","bra ","brassière","legging","sports bra","sport bra","crop top",
+    "cropped top","mini skirt","mini jupe","robe ","dress ","bikini top",
+    "yoga ","maternity","enceinte"];
+  if (femmeKw.some(k => combined.includes(k))) return "femme";
+
+  // Enfant-specific
+  const enfantKw = ["pour ado","pour enfant","enfants","kids","junior","bébé",
+    "nourrisson","toddler","infant","little kids","big kids","td ","ps ",
+    "gs ","(gs)","(td)","(ps)","youth","jeune enfant","petit enfant",
+    "newborn","nouveau-né","tee & short set","short set "];
+  const enfantExclude = ["baby tee","bra ","crop"];
+  if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
+
+  // Homme
+  if (combined.includes("pour homme") || combined.includes("pour garçon") || combined.includes("men's") || combined.includes("for men")) return "homme";
 
   const g = (genderField || "").toLowerCase();
   if (g === "homme" || g === "men") return "homme";
