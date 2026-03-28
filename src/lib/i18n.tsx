@@ -329,6 +329,10 @@ const translations = {
     priceAlertRemoved: "Alerta eliminada",
     priceAlertLoginRequired: "Inicio de sesión requerido",
     priceAlertLoginDesc: "Inicia sesión para activar alertas de precio.",
+    installApp: "Instalar app",
+    installAppSub: "Instala la app para un acceso rápido",
+    installIosHint: "Toca Compartir y luego \"Añadir a pantalla de inicio\"",
+    installButton: "Instalar",
   },
 } as const;
 
