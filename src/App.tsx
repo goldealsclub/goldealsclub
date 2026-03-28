@@ -28,6 +28,7 @@ import NewDealNotifier from "./components/NewDealNotifier";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
+import InstallPage from "./pages/InstallPage";
 import InstallBanner from "./components/InstallBanner";
 import UpdateBanner from "./components/UpdateBanner";
 
@@ -64,6 +65,7 @@ const App = () => (
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/install" element={<InstallPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallBanner />
