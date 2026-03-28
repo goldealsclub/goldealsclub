@@ -246,11 +246,25 @@ const Header = () => {
             {/* Install app button - always visible in mobile menu */}
             {!isStandalone && (
               <button
-                onClick={() => { if (canInstall) install(); }}
+                onClick={async () => {
+                  if (canInstall) {
+                    await install();
+                    return;
+                  }
+
+                  if (isIos) {
+                    window.alert(`${t.installIosHint}\n\n${t.installIosHintSub}`);
+                    return;
+                  }
+
+                  if (isMobile) {
+                    window.alert(`${t.installAndroidHint}\n\n${t.installAndroidHintSub}`);
+                  }
+                }}
                 className="flex items-center gap-2 text-xs font-display uppercase tracking-[0.15em] text-primary py-2.5 border-b border-foreground/5"
               >
                 <Download className="w-3.5 h-3.5" />
-                {canInstall ? t.installApp : showIosHint ? t.installIosHint : t.installApp}
+                {t.installApp}
               </button>
             )}
             {/* Mobile language selector */}
