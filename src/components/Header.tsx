@@ -265,7 +265,7 @@ const Header = () => {
                 {t.installApp}
               </button>
             )}
-            {!isStandalone && !canInstall && isMobile && (
+            {!isStandalone && !canInstall && isIos && (
               <Link
                 to="/install"
                 onClick={() => setMenuOpen(false)}
