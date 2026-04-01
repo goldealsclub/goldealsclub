@@ -243,7 +243,7 @@ function inferGender(genderField: string, description: string, title: string): s
     "wide leg","high rise","low rise","flare flap","parachute high","ribbed tank","rib tank",
     "classic ultra mini","classic mini ","tazz","lowmel","funkette","tazzelle","disquette",
     "pipah","cora sand","goldenstar","scuffette","w disquette","w classic"];
-  const femmeExclude = ["robe di kappa"];
+  const femmeExclude = ["robe di kappa","dress shirt","stacked western"];
   if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
 
   // Homme
