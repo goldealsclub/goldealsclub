@@ -238,8 +238,8 @@ function inferGender(genderField: string, description: string, title: string): s
   // Femme-specific
   const femmeKw = ["pour femme","pour fille","women","woman","wmns","w's ","ladies",
     "baby tee","bra ","brassière","legging","sports bra","sport bra","crop top",
-    "cropped top","mini skirt","mini jupe","dress ","bikini top",
-    "yoga ","maternity","enceinte","low waist"];
+    "cropped top","cropped ","crop ","mini skirt","mini jupe","dress ","bikini top",
+    "yoga ","maternity","enceinte","low waist","hooded top","racer top","tank top wmn","wmn"];
   const femmeExclude = ["robe di kappa"];
   if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
 
