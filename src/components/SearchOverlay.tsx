@@ -11,6 +11,7 @@ interface SearchOverlayProps {
 
 const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
   const { t } = useI18n();
+  const { filteredDeals } = useGender();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
