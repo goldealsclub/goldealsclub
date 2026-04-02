@@ -5,10 +5,11 @@ import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
+import DealCardSkeleton from "@/components/DealCardSkeleton";
 
 const TrendsPage = () => {
   const { t } = useI18n();
-  const { filteredDeals: deals } = useGender();
+  const { filteredDeals: deals, loading } = useGender();
   useLoadVotes(deals.slice(0, 50).map(d => d.id));
 
   return (

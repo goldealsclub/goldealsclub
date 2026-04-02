@@ -8,6 +8,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useMemo } from "react";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
+import DealCardSkeleton from "@/components/DealCardSkeleton";
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
