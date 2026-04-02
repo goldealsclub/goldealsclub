@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, X } from "lucide-react";
-import { deals } from "@/lib/data";
+import { useGender } from "@/lib/gender-context";
 import { useI18n } from "@/lib/i18n";
 
 interface SearchOverlayProps {
@@ -11,6 +11,7 @@ interface SearchOverlayProps {
 
 const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
   const { t } = useI18n();
+  const { filteredDeals } = useGender();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -33,7 +34,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
   const results = useMemo(() => {
     if (query.length < 2) return [];
     const q = query.toLowerCase();
-    return deals
+    return filteredDeals
       .filter(
         (d) =>
           d.title.toLowerCase().includes(q) ||
