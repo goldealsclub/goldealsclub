@@ -19,15 +19,23 @@ const TrendsPage = () => {
         <h1 className="font-display text-3xl md:text-4xl tracking-wider mb-2">{t.trends}</h1>
         <p className="font-body text-xs text-foreground/50 mb-8">{t.premiumSub}</p>
 
-        <DealFilters sourceDeals={deals}>
-          {(filtered) => (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-              {filtered.map((deal) => (
-                <DealCard key={deal.id} deal={deal} />
-              ))}
-            </div>
-          )}
-        </DealFilters>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <DealCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <DealFilters sourceDeals={deals}>
+            {(filtered) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+                {filtered.map((deal) => (
+                  <DealCard key={deal.id} deal={deal} />
+                ))}
+              </div>
+            )}
+          </DealFilters>
+        )}
       </div>
       <Footer />
     </div>

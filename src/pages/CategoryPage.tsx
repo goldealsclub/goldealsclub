@@ -79,15 +79,23 @@ const CategoryPage = () => {
           })}
         </div>
 
-        <DealFilters sourceDeals={categoryDeals}>
-          {(filtered) => (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
-              {filtered.map((deal, i) => (
-                <DealCard key={deal.id} deal={deal} featured={i === 0} />
-              ))}
-            </div>
-          )}
-        </DealFilters>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <DealCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <DealFilters sourceDeals={categoryDeals}>
+            {(filtered) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
+                {filtered.map((deal, i) => (
+                  <DealCard key={deal.id} deal={deal} featured={i === 0} />
+                ))}
+              </div>
+            )}
+          </DealFilters>
+        )}
       </div>
       <Footer />
     </div>
