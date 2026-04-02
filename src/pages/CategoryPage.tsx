@@ -8,11 +8,12 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useMemo } from "react";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
+import DealCardSkeleton from "@/components/DealCardSkeleton";
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t } = useI18n();
-  const { filteredDeals } = useGender();
+  const { filteredDeals, loading } = useGender();
 
   const categoryLabels: Record<string, string> = {
     sneakers: t.sneakers, hoodies: t.hoodies,
@@ -45,7 +46,7 @@ const CategoryPage = () => {
       <Header />
       <div className="container mx-auto px-4 py-12">
         <h1 className="font-display text-3xl md:text-4xl tracking-wider mb-2">{categoryName}</h1>
-        <p className="font-body text-xs text-foreground/50 mb-6">{categoryDeals.length} deals</p>
+        <p className="font-body text-xs text-foreground/50 mb-6">{loading ? "" : `${categoryDeals.length} deals`}</p>
 
         {/* Category navigation */}
         <div className="flex flex-wrap gap-2 mb-8">
@@ -78,15 +79,23 @@ const CategoryPage = () => {
           })}
         </div>
 
-        <DealFilters sourceDeals={categoryDeals}>
-          {(filtered) => (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
-              {filtered.map((deal, i) => (
-                <DealCard key={deal.id} deal={deal} featured={i === 0} />
-              ))}
-            </div>
-          )}
-        </DealFilters>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
+            {Array.from({ length: 12 }).map((_, i) => (
+              <DealCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <DealFilters sourceDeals={categoryDeals}>
+            {(filtered) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
+                {filtered.map((deal, i) => (
+                  <DealCard key={deal.id} deal={deal} featured={i === 0} />
+                ))}
+              </div>
+            )}
+          </DealFilters>
+        )}
       </div>
       <Footer />
     </div>
