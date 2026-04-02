@@ -46,7 +46,7 @@ const CategoryPage = () => {
       <Header />
       <div className="container mx-auto px-4 py-12">
         <h1 className="font-display text-3xl md:text-4xl tracking-wider mb-2">{categoryName}</h1>
-        <p className="font-body text-xs text-foreground/50 mb-6">{categoryDeals.length} deals</p>
+        <p className="font-body text-xs text-foreground/50 mb-6">{loading ? "" : `${categoryDeals.length} deals`}</p>
 
         {/* Category navigation */}
         <div className="flex flex-wrap gap-2 mb-8">
