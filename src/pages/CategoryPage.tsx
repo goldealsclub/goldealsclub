@@ -13,7 +13,7 @@ import DealCardSkeleton from "@/components/DealCardSkeleton";
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
   const { t } = useI18n();
-  const { filteredDeals } = useGender();
+  const { filteredDeals, loading } = useGender();
 
   const categoryLabels: Record<string, string> = {
     sneakers: t.sneakers, hoodies: t.hoodies,
