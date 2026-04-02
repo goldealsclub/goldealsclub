@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, X } from "lucide-react";
-import { deals } from "@/lib/data";
+import { useGender } from "@/lib/gender-context";
 import { useI18n } from "@/lib/i18n";
 
 interface SearchOverlayProps {
