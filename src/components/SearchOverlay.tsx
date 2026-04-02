@@ -34,7 +34,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
   const results = useMemo(() => {
     if (query.length < 2) return [];
     const q = query.toLowerCase();
-    return deals
+    return filteredDeals
       .filter(
         (d) =>
           d.title.toLowerCase().includes(q) ||
