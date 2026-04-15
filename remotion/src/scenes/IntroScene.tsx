@@ -1,43 +1,48 @@
-import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Img, staticFile } from "remotion";
 
 const IVOIRE = "#f6f0e9";
 const NOIR = "#111111";
+const TAUPE = "#45403a";
 
 export const IntroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const bgRotate = interpolate(frame, [0, 75], [0, 8]);
+  const bgRotate = interpolate(frame, [0, 90], [0, 8]);
 
-  const logoScale = spring({ frame, fps, config: { damping: 12, stiffness: 150 } });
-  const logoOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+  // Logo entrance — bounce in
+  const logoScale = spring({ frame, fps, config: { damping: 12, stiffness: 120 } });
+  const logoOpacity = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
 
-  const titleY = interpolate(
-    spring({ frame: frame - 10, fps, config: { damping: 18, stiffness: 250 } }),
-    [0, 1], [50, 0]
+  // Slogan entrance
+  const sloganY = interpolate(
+    spring({ frame: frame - 14, fps, config: { damping: 18, stiffness: 220 } }),
+    [0, 1], [40, 0]
   );
-  const titleOpacity = interpolate(frame, [10, 22], [0, 1], { extrapolateRight: "clamp" });
+  const sloganOpacity = interpolate(frame, [14, 26], [0, 1], { extrapolateRight: "clamp" });
 
-  const subY = interpolate(
-    spring({ frame: frame - 22, fps, config: { damping: 18, stiffness: 250 } }),
+  // Line
+  const lineWidth = interpolate(
+    spring({ frame: frame - 26, fps, config: { damping: 200 } }),
+    [0, 1], [0, 280]
+  );
+
+  // Top 5 text
+  const topY = interpolate(
+    spring({ frame: frame - 34, fps, config: { damping: 18, stiffness: 220 } }),
     [0, 1], [30, 0]
   );
-  const subOpacity = interpolate(frame, [22, 34], [0, 1], { extrapolateRight: "clamp" });
-
-  const lineWidth = interpolate(
-    spring({ frame: frame - 30, fps, config: { damping: 200 } }),
-    [0, 1], [0, 160]
-  );
+  const topOpacity = interpolate(frame, [34, 46], [0, 1], { extrapolateRight: "clamp" });
 
   const floatY = Math.sin(frame * 0.05) * 4;
 
   return (
     <AbsoluteFill>
       <AbsoluteFill style={{
-        background: `linear-gradient(${135 + bgRotate}deg, #0a0a0a 0%, #151515 40%, #1a1a16 100%)`,
+        background: `linear-gradient(${135 + bgRotate}deg, #0a0a0a 0%, #141414 35%, #1a1a16 100%)`,
       }} />
       <AbsoluteFill style={{
-        background: "radial-gradient(ellipse at 50% 40%, rgba(212,196,176,0.05) 0%, transparent 70%)",
+        background: "radial-gradient(ellipse at 50% 35%, rgba(246,240,233,0.04) 0%, transparent 60%)",
       }} />
 
       <AbsoluteFill style={{
@@ -46,79 +51,96 @@ export const IntroScene: React.FC = () => {
         alignItems: "center",
         justifyContent: "center",
         transform: `translateY(${floatY}px)`,
+        padding: "0 60px",
       }}>
+        {/* Real logo */}
         <div style={{
-          width: 130,
-          height: 130,
-          borderRadius: 28,
-          backgroundColor: IVOIRE,
+          transform: `scale(${logoScale})`,
+          opacity: logoOpacity,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          transform: `scale(${logoScale})`,
-          opacity: logoOpacity,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
         }}>
-          <span style={{
-            fontFamily: "Georgia, serif",
-            fontSize: 82,
-            fontWeight: 700,
-            color: NOIR,
-            lineHeight: 1,
-          }}>G</span>
+          <Img
+            src={staticFile("logo.png")}
+            style={{
+              height: 120,
+              objectFit: "contain",
+              filter: "brightness(10)",
+            }}
+          />
         </div>
 
+        {/* Slogan */}
         <div style={{
           marginTop: 50,
-          transform: `translateY(${titleY}px)`,
-          opacity: titleOpacity,
-          textAlign: "center",
-        }}>
-          <div style={{
-            fontFamily: "sans-serif",
-            fontSize: 68,
-            fontWeight: 800,
-            color: IVOIRE,
-            letterSpacing: 6,
-          }}>GOLDEALS</div>
-          <div style={{
-            fontFamily: "sans-serif",
-            fontSize: 34,
-            fontWeight: 300,
-            color: "#d4c4b0",
-            letterSpacing: 16,
-            marginTop: 6,
-          }}>CLUB</div>
-        </div>
-
-        <div style={{
-          marginTop: 40,
-          height: 1,
-          width: lineWidth,
-          backgroundColor: "#d4c4b0",
-          opacity: 0.5,
-        }} />
-
-        <div style={{
-          marginTop: 30,
-          transform: `translateY(${subY}px)`,
-          opacity: subOpacity,
+          transform: `translateY(${sloganY}px)`,
+          opacity: sloganOpacity,
           textAlign: "center",
         }}>
           <div style={{
             fontFamily: "sans-serif",
             fontSize: 30,
-            fontWeight: 600,
+            fontWeight: 500,
+            color: "#d4c4b0",
+            lineHeight: 1.5,
+            letterSpacing: 1,
+          }}>
+            Vos marques préférées.
+          </div>
+          <div style={{
+            fontFamily: "sans-serif",
+            fontSize: 30,
+            fontWeight: 500,
+            color: "#d4c4b0",
+            lineHeight: 1.5,
+            letterSpacing: 1,
+          }}>
+            Les sites les plus fiables.
+          </div>
+          <div style={{
+            fontFamily: "sans-serif",
+            fontSize: 32,
+            fontWeight: 700,
             color: IVOIRE,
-            letterSpacing: 4,
+            lineHeight: 1.5,
+            letterSpacing: 1,
+            marginTop: 6,
+          }}>
+            Les meilleurs prix, ici.
+          </div>
+        </div>
+
+        {/* Line */}
+        <div style={{
+          marginTop: 40,
+          height: 1,
+          width: lineWidth,
+          backgroundColor: "#d4c4b0",
+          opacity: 0.4,
+        }} />
+
+        {/* Top 5 */}
+        <div style={{
+          marginTop: 36,
+          transform: `translateY(${topY}px)`,
+          opacity: topOpacity,
+          textAlign: "center",
+        }}>
+          <div style={{
+            fontFamily: "sans-serif",
+            fontSize: 28,
+            fontWeight: 700,
+            color: IVOIRE,
+            letterSpacing: 5,
           }}>★ TOP 5 DEALS ★</div>
           <div style={{
             fontFamily: "sans-serif",
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: 300,
-            color: "rgba(212,196,176,0.6)",
+            color: "rgba(212,196,176,0.5)",
             letterSpacing: 3,
-            marginTop: 12,
+            marginTop: 10,
           }}>DE LA SEMAINE</div>
         </div>
       </AbsoluteFill>
