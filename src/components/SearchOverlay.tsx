@@ -43,12 +43,12 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
           (d.description || "").toLowerCase().includes(q)
       )
       .slice(0, 8);
-  }, [query]);
+  }, [query, filteredDeals]);
 
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] bg-background backdrop-blur-sm animate-fade-in overflow-y-auto">
+    <div className="fixed inset-0 z-[100] bg-background animate-fade-in overflow-y-auto">
       <div className="container mx-auto px-4 pt-6">
         <div className="flex items-center gap-3 border-b border-foreground/15 pb-3">
           <Search className="w-5 h-5 text-foreground/40" strokeWidth={1.5} />
