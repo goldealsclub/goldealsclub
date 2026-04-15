@@ -22,7 +22,7 @@ export const deals: Deal[] = [
     category: "Sneakers",
     currency: "EUR",
     merchant: "Snipes FR",
-    productUrl: "goldealsclub.lovable.app",
+    productUrl: "goldealsclub.com",
   },
   {
     title: "Flight Fleece Graphics Hoodie",
