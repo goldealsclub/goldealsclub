@@ -8,72 +8,65 @@ import { OutroScene } from "./scenes/OutroScene";
 import { deals } from "./data";
 
 export const MainVideo: React.FC = () => {
-  const transitionDuration = 20;
+  const t = 18;
 
   return (
     <AbsoluteFill style={{ backgroundColor: "#111111" }}>
       <TransitionSeries>
-        {/* Intro — 4s */}
-        <TransitionSeries.Sequence durationInFrames={120}>
+        <TransitionSeries.Sequence durationInFrames={60}>
           <IntroScene />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={fade()}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: transitionDuration })}
+          timing={springTiming({ config: { damping: 200 }, durationInFrames: t })}
         />
 
-        {/* Deal 1 */}
         <TransitionSeries.Sequence durationInFrames={130}>
           <DealScene deal={deals[0]} index={0} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={slide({ direction: "from-left" })}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: transitionDuration })}
+          timing={springTiming({ config: { damping: 200 }, durationInFrames: t })}
         />
 
-        {/* Deal 2 */}
         <TransitionSeries.Sequence durationInFrames={130}>
           <DealScene deal={deals[1]} index={1} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={slide({ direction: "from-right" })}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: transitionDuration })}
+          timing={springTiming({ config: { damping: 200 }, durationInFrames: t })}
         />
 
-        {/* Deal 3 */}
         <TransitionSeries.Sequence durationInFrames={130}>
           <DealScene deal={deals[2]} index={2} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={fade()}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: transitionDuration })}
+          timing={springTiming({ config: { damping: 200 }, durationInFrames: t })}
         />
 
-        {/* Deal 4 */}
         <TransitionSeries.Sequence durationInFrames={130}>
           <DealScene deal={deals[3]} index={3} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={slide({ direction: "from-left" })}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: transitionDuration })}
+          timing={springTiming({ config: { damping: 200 }, durationInFrames: t })}
         />
 
-        {/* Deal 5 */}
         <TransitionSeries.Sequence durationInFrames={130}>
           <DealScene deal={deals[4]} index={4} />
         </TransitionSeries.Sequence>
 
         <TransitionSeries.Transition
           presentation={fade()}
-          timing={springTiming({ config: { damping: 200 }, durationInFrames: transitionDuration })}
+          timing={springTiming({ config: { damping: 200 }, durationInFrames: t })}
         />
 
-        {/* Outro — 4s */}
         <TransitionSeries.Sequence durationInFrames={120}>
           <OutroScene />
         </TransitionSeries.Sequence>
