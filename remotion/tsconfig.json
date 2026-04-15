@@ -1,5 +1,15 @@
 {
   "compilerOptions": {
+    "target": "ES2022",
+    "module": "Preserve",
+    "jsx": "react-jsx",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "noEmit": true
+  },
+  "include": ["src"]
+}
     // Environment setup & latest features
     "lib": ["ESNext"],
     "target": "ESNext",
