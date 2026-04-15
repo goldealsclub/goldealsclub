@@ -64,7 +64,7 @@ export const IntroScene: React.FC = () => {
           <Img
             src={staticFile("logo.png")}
             style={{
-              height: 120,
+              height: 280,
               objectFit: "contain",
               filter: "brightness(10)",
             }}
