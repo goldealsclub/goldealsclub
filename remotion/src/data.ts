@@ -22,7 +22,7 @@ export const deals: Deal[] = [
     category: "Sneakers",
     currency: "EUR",
     merchant: "Snipes FR",
-    productUrl: "goldealsclub.lovable.app",
+    productUrl: "goldealsclub.com",
   },
   {
     title: "Flight Fleece Graphics Hoodie",
@@ -34,7 +34,7 @@ export const deals: Deal[] = [
     category: "Hoodies",
     currency: "EUR",
     merchant: "Snipes FR",
-    productUrl: "goldealsclub.lovable.app",
+    productUrl: "goldealsclub.com",
   },
   {
     title: "Sportswear Essential Woven UV Longsleeve",
@@ -46,7 +46,7 @@ export const deals: Deal[] = [
     category: "T-shirts",
     currency: "EUR",
     merchant: "Snipes FR",
-    productUrl: "goldealsclub.lovable.app",
+    productUrl: "goldealsclub.com",
   },
   {
     title: "Tongs adilette",
@@ -58,7 +58,7 @@ export const deals: Deal[] = [
     category: "Sneakers",
     currency: "EUR",
     merchant: "Snipes FR",
-    productUrl: "goldealsclub.lovable.app",
+    productUrl: "goldealsclub.com",
   },
   {
     title: "Dri-Fit Performance Basic Crew (x6)",
@@ -70,7 +70,7 @@ export const deals: Deal[] = [
     category: "T-shirts",
     currency: "EUR",
     merchant: "Snipes FR",
-    productUrl: "goldealsclub.lovable.app",
+    productUrl: "goldealsclub.com",
   },
 ];
 
