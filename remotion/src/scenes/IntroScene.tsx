@@ -111,7 +111,7 @@ export const IntroScene: React.FC = () => {
             fontWeight: 600,
             color: IVOIRE,
             letterSpacing: 4,
-          }}>🔥 TOP 5 DEALS 🔥</div>
+          }}>★ TOP 5 DEALS ★</div>
           <div style={{
             fontFamily: "sans-serif",
             fontSize: 20,
