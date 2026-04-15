@@ -83,7 +83,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
 
   const floatY = Math.sin(frame * 0.04) * 3;
   const brandLogo = brandLogos[deal.brand];
-  const flames = getFlames(deal.discountPercent);
+  const flameCount = getFlameCount(deal.discountPercent);
   const flameLabel = getFlameLabel(deal.discountPercent);
 
   return (
