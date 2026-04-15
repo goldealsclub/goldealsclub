@@ -91,7 +91,7 @@ export const OutroScene: React.FC = () => {
             <span style={{
               fontFamily: "sans-serif", fontSize: 22, fontWeight: 600,
               color: IVOIRE, letterSpacing: 2,
-            }}>}}>goldealsclub.com</span></span>
+            }}>goldealsclub.com</span>
           </div>
         </div>
       </AbsoluteFill>
