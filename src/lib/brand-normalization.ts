@@ -173,7 +173,33 @@ function canonicalizeBrand(value: string): string | null {
 
 export function inferBrand(rawBrand: string, title: string): string {
   const directBrand = canonicalizeBrand(rawBrand);
-  if (directBrand && rawBrand.trim().toLowerCase() !== "snipes") {
+  const lowerRaw = rawBrand.trim().toLowerCase();
+
+  // Brands that need title-based re-check because DB data may be wrong
+  const RECHECK_BRANDS = new Set(["jordan"]);
+
+  if (directBrand && lowerRaw !== "snipes" && !RECHECK_BRANDS.has(lowerRaw)) {
+    return directBrand;
+  }
+
+  // For re-checked brands, try title-based detection first
+  if (directBrand && RECHECK_BRANDS.has(lowerRaw)) {
+    const safeTitle = (title || "").trim();
+    const lowerTitle = ` ${safeTitle.toLowerCase()} `;
+
+    // Check if title clearly belongs to another brand (New Era, Mitchell & Ness, etc.)
+    const OVERRIDE_BRANDS: [string[], string][] = [
+      [["9forty", "9twenty", "9fifty", "59fifty", "mvp base", "base runner", "clean up", "a frame", "5 panel", "new york yankees", "los angeles dodgers", "los angeles lakers", "chicago bulls", "brooklyn nets", "fitted cap", "cuff beanie", "curve brim", "trucker cap", "wide cuff beanie", "essential cuff"], "New Era"],
+      [["mlb ", "nba ", "nfl ", "collegiate script", "washed script", "poly track set", "swingman", "team logo", "varsity satin", "hwc ", "maxed out tee", "player big face", "overlap graphic", "blaze graphic", "linear graphic", "washed graphic", "washed full zip", "black out satin", "black out collection", "classic sport player", "billboard knit", "vintage block", "tailsweeps", "pinned gold", "logo hoodie"], "Mitchell & Ness"],
+    ];
+
+    for (const [keywords, brandName] of OVERRIDE_BRANDS) {
+      if (keywords.some((keyword) => lowerTitle.includes(keyword))) {
+        return brandName;
+      }
+    }
+
+    // Title matches Jordan patterns or nothing else → keep Jordan
     return directBrand;
   }
 
