@@ -7,92 +7,99 @@ interface DealSceneProps {
   index: number;
 }
 
-// Photo surface grey from the site: hsl(220, 12%, 93%)
 const PHOTO_BG = "#eaecf0";
 const IVOIRE = "#f6f0e9";
 const NOIR = "#111111";
 const TAUPE = "#45403a";
-const SABLE = "#d4c4b0";
+
+// Flame emoji helper
+const getFlames = (discount: number): string => {
+  if (discount >= 50) return "🔥🔥🔥";
+  if (discount >= 30) return "🔥🔥";
+  return "🔥";
+};
+
+const getFlameLabel = (discount: number): string => {
+  if (discount >= 50) return "SUPER DEAL";
+  if (discount >= 30) return "BON DEAL";
+  return "DEAL";
+};
 
 export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
   const rankNum = index + 1;
 
-  // === ANIMATIONS ===
-
-  // Image: scale up dramatically
+  // Image entrance
   const imgScale = interpolate(
-    spring({ frame, fps, config: { damping: 14, stiffness: 100 } }),
-    [0, 1], [1.15, 1]
+    spring({ frame, fps, config: { damping: 14, stiffness: 110 } }),
+    [0, 1], [1.12, 1]
   );
   const imgY = interpolate(
-    spring({ frame, fps, config: { damping: 18, stiffness: 180 } }),
-    [0, 1], [100, 0]
+    spring({ frame, fps, config: { damping: 16, stiffness: 160 } }),
+    [0, 1], [80, 0]
   );
-  const imgOpacity = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
+  const imgOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
 
   // Brand logo
-  const logoScale = spring({ frame: frame - 8, fps, config: { damping: 12, stiffness: 180 } });
-  const logoOpacity = interpolate(frame, [8, 20], [0, 1], { extrapolateRight: "clamp" });
+  const logoScale = spring({ frame: frame - 6, fps, config: { damping: 12, stiffness: 180 } });
+  const logoOpacity = interpolate(frame, [6, 16], [0, 1], { extrapolateRight: "clamp" });
 
   // Rank badge
-  const badgeScale = spring({ frame: frame - 5, fps, config: { damping: 10, stiffness: 200 } });
+  const badgeScale = spring({ frame: frame - 3, fps, config: { damping: 10, stiffness: 200 } });
 
   // Title
   const titleY = interpolate(
-    spring({ frame: frame - 18, fps, config: { damping: 20, stiffness: 200 } }),
-    [0, 1], [40, 0]
+    spring({ frame: frame - 14, fps, config: { damping: 20, stiffness: 200 } }),
+    [0, 1], [30, 0]
   );
-  const titleOpacity = interpolate(frame, [18, 30], [0, 1], { extrapolateRight: "clamp" });
+  const titleOpacity = interpolate(frame, [14, 24], [0, 1], { extrapolateRight: "clamp" });
 
-  // PRICE — dramatic entrance
-  const priceScale = spring({ frame: frame - 25, fps, config: { damping: 8, stiffness: 150 } });
-  const priceOpacity = interpolate(frame, [25, 38], [0, 1], { extrapolateRight: "clamp" });
+  // PRICE — dramatic bounce
+  const priceScale = spring({ frame: frame - 20, fps, config: { damping: 7, stiffness: 120 } });
+  const priceOpacity = interpolate(frame, [20, 32], [0, 1], { extrapolateRight: "clamp" });
 
-  // Discount pill
-  const discountScale = spring({ frame: frame - 32, fps, config: { damping: 8, stiffness: 200 } });
+  // Discount badge — dramatic
+  const discountScale = spring({ frame: frame - 26, fps, config: { damping: 6, stiffness: 180 } });
+  const discountOpacity = interpolate(frame, [26, 36], [0, 1], { extrapolateRight: "clamp" });
+
+  // Flames
+  const flameScale = spring({ frame: frame - 30, fps, config: { damping: 8, stiffness: 200 } });
 
   // Link
   const linkY = interpolate(
-    spring({ frame: frame - 40, fps, config: { damping: 200 } }),
+    spring({ frame: frame - 36, fps, config: { damping: 200 } }),
     [0, 1], [20, 0]
   );
-  const linkOpacity = interpolate(frame, [40, 52], [0, 1], { extrapolateRight: "clamp" });
+  const linkOpacity = interpolate(frame, [36, 46], [0, 1], { extrapolateRight: "clamp" });
 
-  // Subtle float
   const floatY = Math.sin(frame * 0.04) * 3;
-
   const brandLogo = brandLogos[deal.brand];
+  const flames = getFlames(deal.discountPercent);
+  const flameLabel = getFlameLabel(deal.discountPercent);
 
   return (
     <AbsoluteFill>
-      {/* Background — site grey */}
       <AbsoluteFill style={{ backgroundColor: PHOTO_BG }} />
 
-      {/* Top bar — dark */}
+      {/* ═══ TOP BAR — GOLDEALS CLUB ═══ */}
       <div style={{
         position: "absolute",
         top: 0,
         left: 0,
         right: 0,
-        height: 120,
+        height: 110,
         backgroundColor: NOIR,
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
-        padding: "0 50px",
+        padding: "0 40px",
       }}>
-        {/* GOLDEALS branding */}
-        <div style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-        }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <div style={{
-            width: 44,
-            height: 44,
-            borderRadius: 10,
+            width: 40,
+            height: 40,
+            borderRadius: 9,
             backgroundColor: IVOIRE,
             display: "flex",
             alignItems: "center",
@@ -100,19 +107,21 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
           }}>
             <span style={{
               fontFamily: "Georgia, serif",
-              fontSize: 28,
+              fontSize: 25,
               fontWeight: 700,
               color: NOIR,
               lineHeight: 1,
             }}>G</span>
           </div>
-          <span style={{
-            fontFamily: "sans-serif",
-            fontSize: 20,
-            fontWeight: 700,
-            color: IVOIRE,
-            letterSpacing: 4,
-          }}>GOLDEALS</span>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <span style={{
+              fontFamily: "sans-serif",
+              fontSize: 18,
+              fontWeight: 800,
+              color: IVOIRE,
+              letterSpacing: 3,
+            }}>GOLDEALS CLUB</span>
+          </div>
         </div>
 
         {/* Rank badge */}
@@ -120,112 +129,87 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
           transform: `scale(${badgeScale})`,
           backgroundColor: IVOIRE,
           color: NOIR,
-          width: 56,
-          height: 56,
-          borderRadius: 28,
+          width: 52,
+          height: 52,
+          borderRadius: 26,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           fontFamily: "sans-serif",
-          fontSize: 26,
+          fontSize: 24,
           fontWeight: 800,
         }}>
           #{rankNum}
         </div>
       </div>
 
-      {/* HUGE Product Image — takes up most of the screen */}
+      {/* ═══ PRODUCT IMAGE — HERO SIZE ═══ */}
       <div style={{
         position: "absolute",
-        top: 140,
-        left: 30,
-        right: 30,
-        height: 850,
-        borderRadius: 24,
+        top: 130,
+        left: 24,
+        right: 24,
+        height: 750,
+        borderRadius: 20,
         backgroundColor: "#ffffff",
         overflow: "hidden",
         transform: `translateY(${imgY + floatY}px) scale(${imgScale})`,
         opacity: imgOpacity,
-        boxShadow: "0 20px 60px rgba(0,0,0,0.08)",
+        boxShadow: "0 12px 40px rgba(0,0,0,0.06)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
+        padding: 20,
       }}>
         <Img
           src={deal.imageUrl}
           style={{
-            width: "90%",
-            height: "90%",
+            maxWidth: "100%",
+            maxHeight: "100%",
             objectFit: "contain",
+            transform: "scale(1.15)",
           }}
         />
-
-        {/* Discount pill overlay — top right */}
-        <div style={{
-          position: "absolute",
-          top: 30,
-          right: 30,
-          transform: `scale(${discountScale})`,
-          backgroundColor: NOIR,
-          color: IVOIRE,
-          padding: "14px 28px",
-          borderRadius: 40,
-          fontFamily: "sans-serif",
-          fontSize: 28,
-          fontWeight: 800,
-          letterSpacing: 1,
-        }}>
-          -{deal.discountPercent}%
-        </div>
       </div>
 
-      {/* Brand logo */}
-      {brandLogo && (
-        <div style={{
-          position: "absolute",
-          top: 1020,
-          left: 50,
-          transform: `scale(${logoScale})`,
-          opacity: logoOpacity,
-          height: 50,
-          display: "flex",
-          alignItems: "center",
-        }}>
-          <Img
-            src={brandLogo}
-            style={{
-              height: 45,
-              objectFit: "contain",
-              // Invert for dark logos on light bg won't be needed since bg is grey
-            }}
-          />
-        </div>
-      )}
-
-      {/* Title + Category */}
+      {/* ═══ BRAND LOGO + TITLE SECTION ═══ */}
       <div style={{
         position: "absolute",
-        top: 1090,
-        left: 50,
-        right: 50,
+        top: 900,
+        left: 44,
+        right: 44,
         transform: `translateY(${titleY}px)`,
         opacity: titleOpacity,
       }}>
+        {/* Brand logo */}
+        {brandLogo && (
+          <div style={{
+            transform: `scale(${logoScale})`,
+            opacity: logoOpacity,
+            height: 44,
+            display: "flex",
+            alignItems: "center",
+            marginBottom: 12,
+          }}>
+            <Img src={brandLogo} style={{ height: 40, objectFit: "contain" }} />
+          </div>
+        )}
+
         <div style={{
           fontFamily: "sans-serif",
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: 500,
           color: TAUPE,
-          letterSpacing: 4,
+          letterSpacing: 3,
           textTransform: "uppercase",
-          marginBottom: 10,
-          opacity: 0.7,
+          opacity: 0.6,
+          marginBottom: 8,
         }}>
           {deal.category} · {deal.merchant}
         </div>
         <div style={{
           fontFamily: "sans-serif",
-          fontSize: 36,
+          fontSize: 32,
           fontWeight: 700,
           color: NOIR,
           lineHeight: 1.2,
@@ -234,77 +218,116 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         </div>
       </div>
 
-      {/* === HUGE PRICE SECTION === */}
+      {/* ═══ MASSIVE PRICE SECTION ═══ */}
       <div style={{
         position: "absolute",
-        bottom: 280,
-        left: 50,
-        right: 50,
+        bottom: 340,
+        left: 44,
+        right: 44,
         transform: `scale(${priceScale})`,
         opacity: priceOpacity,
       }}>
-        {/* Sale price — MASSIVE */}
-        <div style={{
-          display: "flex",
-          alignItems: "baseline",
-          gap: 20,
-        }}>
+        <div style={{ display: "flex", alignItems: "baseline", gap: 16 }}>
           <span style={{
             fontFamily: "sans-serif",
-            fontSize: 120,
+            fontSize: 140,
             fontWeight: 900,
             color: NOIR,
             lineHeight: 1,
-            letterSpacing: -3,
+            letterSpacing: -4,
           }}>
             {deal.salePrice}€
           </span>
         </div>
-        {/* Original price — struck */}
         <div style={{
           fontFamily: "sans-serif",
-          fontSize: 40,
+          fontSize: 44,
           fontWeight: 400,
           color: TAUPE,
           textDecoration: "line-through",
-          opacity: 0.5,
-          marginTop: 8,
+          opacity: 0.45,
+          marginTop: 4,
         }}>
           {deal.originalPrice}€
         </div>
       </div>
 
-      {/* Product link */}
+      {/* ═══ DISCOUNT + FLAMES ROW ═══ */}
       <div style={{
         position: "absolute",
-        bottom: 120,
-        left: 50,
-        right: 50,
+        bottom: 210,
+        left: 44,
+        right: 44,
+        display: "flex",
+        alignItems: "center",
+        gap: 16,
+      }}>
+        {/* Big discount badge */}
+        <div style={{
+          transform: `scale(${discountScale})`,
+          opacity: discountOpacity,
+          backgroundColor: NOIR,
+          color: IVOIRE,
+          padding: "18px 36px",
+          borderRadius: 40,
+          fontFamily: "sans-serif",
+          fontSize: 38,
+          fontWeight: 900,
+          letterSpacing: 2,
+        }}>
+          -{deal.discountPercent}%
+        </div>
+
+        {/* Flames + label */}
+        <div style={{
+          transform: `scale(${flameScale})`,
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "flex-start",
+          gap: 2,
+        }}>
+          <span style={{ fontSize: 36 }}>{flames}</span>
+          <span style={{
+            fontFamily: "sans-serif",
+            fontSize: 14,
+            fontWeight: 700,
+            color: TAUPE,
+            letterSpacing: 2,
+            opacity: 0.7,
+          }}>{flameLabel}</span>
+        </div>
+      </div>
+
+      {/* ═══ LINK BUTTON ═══ */}
+      <div style={{
+        position: "absolute",
+        bottom: 100,
+        left: 44,
+        right: 44,
         transform: `translateY(${linkY}px)`,
         opacity: linkOpacity,
       }}>
         <div style={{
           backgroundColor: NOIR,
-          borderRadius: 16,
-          padding: "22px 40px",
+          borderRadius: 14,
+          padding: "20px 36px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          gap: 12,
         }}>
           <span style={{
             fontFamily: "sans-serif",
-            fontSize: 22,
+            fontSize: 20,
             fontWeight: 600,
             color: IVOIRE,
-            letterSpacing: 2,
+            letterSpacing: 1.5,
           }}>
             {deal.productUrl}
           </span>
         </div>
       </div>
 
-      {/* Bottom swipe hint */}
+      {/* Bottom hint */}
       <div style={{
         position: "absolute",
         bottom: 50,
@@ -315,13 +338,13 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
       }}>
         <span style={{
           fontFamily: "sans-serif",
-          fontSize: 14,
+          fontSize: 13,
           fontWeight: 400,
           color: TAUPE,
-          opacity: 0.4,
-          letterSpacing: 3,
+          opacity: 0.35,
+          letterSpacing: 2,
         }}>
-          {rankNum < 5 ? "▼  SWIPE POUR LE SUIVANT" : "▼  DERNIER DEAL"}
+          {rankNum < 5 ? "▼ DEAL SUIVANT" : "▼ DERNIER DEAL"}
         </span>
       </div>
     </AbsoluteFill>
