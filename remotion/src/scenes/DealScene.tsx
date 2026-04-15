@@ -137,7 +137,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
       {/* ═══ INFO SECTION — Below image ═══ */}
       <div style={{
         position: "absolute",
-        top: 1080,
+        top: "52%",
         left: 40, right: 40,
         transform: `translateY(${infoY}px)`,
         opacity: infoOpacity,
