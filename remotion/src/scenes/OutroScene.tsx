@@ -1,39 +1,39 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
 
+const PHOTO_BG = "#eaecf0";
+const IVOIRE = "#f6f0e9";
+const NOIR = "#111111";
+const TAUPE = "#45403a";
+const SABLE = "#d4c4b0";
+
 export const OutroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const bgRotate = interpolate(frame, [0, 120], [0, -10]);
-
-  // Logo
   const logoScale = spring({ frame, fps, config: { damping: 15, stiffness: 100 } });
   const logoOpacity = interpolate(frame, [0, 15], [0, 1], { extrapolateRight: "clamp" });
 
-  // CTA text
+  const titleY = interpolate(
+    spring({ frame: frame - 15, fps, config: { damping: 20, stiffness: 200 } }),
+    [0, 1], [50, 0]
+  );
+  const titleOpacity = interpolate(frame, [15, 28], [0, 1], { extrapolateRight: "clamp" });
+
   const ctaY = interpolate(
-    spring({ frame: frame - 20, fps, config: { damping: 20, stiffness: 200 } }),
+    spring({ frame: frame - 30, fps, config: { damping: 20, stiffness: 200 } }),
     [0, 1], [40, 0]
   );
-  const ctaOpacity = interpolate(frame, [20, 35], [0, 1], { extrapolateRight: "clamp" });
+  const ctaOpacity = interpolate(frame, [30, 43], [0, 1], { extrapolateRight: "clamp" });
 
-  // Handle
-  const handleY = interpolate(
-    spring({ frame: frame - 35, fps, config: { damping: 20, stiffness: 200 } }),
-    [0, 1], [30, 0]
-  );
-  const handleOpacity = interpolate(frame, [35, 48], [0, 1], { extrapolateRight: "clamp" });
+  const linkScale = spring({ frame: frame - 42, fps, config: { damping: 12, stiffness: 180 } });
 
-  // Pulsing dot
   const pulse = Math.sin(frame * 0.1) * 0.3 + 1;
-
   const floatY = Math.sin(frame * 0.03) * 4;
 
   return (
     <AbsoluteFill>
-      <AbsoluteFill style={{
-        background: `linear-gradient(${135 + bgRotate}deg, #111111 0%, #1a1a1a 40%, #222218 100%)`,
-      }} />
+      {/* Grey bg like the site */}
+      <AbsoluteFill style={{ backgroundColor: PHOTO_BG }} />
 
       <AbsoluteFill style={{
         display: "flex",
@@ -42,76 +42,100 @@ export const OutroScene: React.FC = () => {
         justifyContent: "center",
         transform: `translateY(${floatY}px)`,
       }}>
-        {/* G Logo */}
+        {/* G Logo — large */}
         <div style={{
-          width: 120,
-          height: 120,
-          borderRadius: 24,
-          backgroundColor: "#f6f0e9",
+          width: 160,
+          height: 160,
+          borderRadius: 32,
+          backgroundColor: NOIR,
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           transform: `scale(${logoScale})`,
           opacity: logoOpacity,
-          boxShadow: "0 20px 60px rgba(0,0,0,0.5)",
+          boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
         }}>
           <span style={{
             fontFamily: "Georgia, serif",
-            fontSize: 76,
+            fontSize: 100,
             fontWeight: 700,
-            color: "#111111",
+            color: IVOIRE,
             lineHeight: 1,
           }}>G</span>
         </div>
 
-        {/* CTA */}
+        {/* Title */}
         <div style={{
           marginTop: 50,
+          transform: `translateY(${titleY}px)`,
+          opacity: titleOpacity,
+          textAlign: "center",
+        }}>
+          <div style={{
+            fontFamily: "sans-serif",
+            fontSize: 64,
+            fontWeight: 800,
+            color: NOIR,
+            letterSpacing: 6,
+          }}>GOLDEALS</div>
+          <div style={{
+            fontFamily: "sans-serif",
+            fontSize: 32,
+            fontWeight: 300,
+            color: TAUPE,
+            letterSpacing: 14,
+            marginTop: 8,
+          }}>CLUB</div>
+        </div>
+
+        {/* Decorative line */}
+        <div style={{
+          marginTop: 40,
+          height: 2,
+          width: 120,
+          backgroundColor: NOIR,
+          opacity: 0.15,
+        }} />
+
+        {/* CTA */}
+        <div style={{
+          marginTop: 40,
           transform: `translateY(${ctaY}px)`,
           opacity: ctaOpacity,
           textAlign: "center",
         }}>
           <div style={{
             fontFamily: "sans-serif",
-            fontSize: 44,
-            fontWeight: 700,
-            color: "#f6f0e9",
-            letterSpacing: 3,
+            fontSize: 36,
+            fontWeight: 600,
+            color: NOIR,
           }}>
-            NE RATE AUCUN DEAL
+            Ne rate aucun deal
+          </div>
+          <div style={{
+            fontFamily: "sans-serif",
+            fontSize: 22,
+            fontWeight: 400,
+            color: TAUPE,
+            marginTop: 12,
+            opacity: 0.7,
+          }}>
+            Les meilleures offres streetwear
           </div>
         </div>
 
-        {/* Decorative line */}
+        {/* Link button */}
         <div style={{
-          marginTop: 30,
-          height: 1,
-          width: 120,
-          backgroundColor: "#d4c4b0",
-          opacity: 0.4,
-        }} />
-
-        {/* Handle / URL */}
-        <div style={{
-          marginTop: 30,
-          transform: `translateY(${handleY}px)`,
-          opacity: handleOpacity,
-          textAlign: "center",
+          marginTop: 50,
+          transform: `scale(${linkScale})`,
+          backgroundColor: NOIR,
+          borderRadius: 16,
+          padding: "24px 50px",
           display: "flex",
-          flexDirection: "column",
           alignItems: "center",
-          gap: 16,
+          justifyContent: "center",
+          gap: 12,
         }}>
-          <div style={{
-            fontFamily: "sans-serif",
-            fontSize: 26,
-            fontWeight: 400,
-            color: "#d4c4b0",
-            letterSpacing: 4,
-          }}>
-            goldealsclub.lovable.app
-          </div>
-          {/* Live indicator */}
           <div style={{
             display: "flex",
             alignItems: "center",
@@ -126,10 +150,13 @@ export const OutroScene: React.FC = () => {
             }} />
             <span style={{
               fontFamily: "sans-serif",
-              fontSize: 16,
-              color: "rgba(212,196,176,0.5)",
-              letterSpacing: 3,
-            }}>DEALS EN LIVE</span>
+              fontSize: 22,
+              fontWeight: 600,
+              color: IVOIRE,
+              letterSpacing: 2,
+            }}>
+              goldealsclub.lovable.app
+            </span>
           </div>
         </div>
       </AbsoluteFill>
