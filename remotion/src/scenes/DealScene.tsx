@@ -292,9 +292,13 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-start",
-          gap: 2,
+          gap: 4,
         }}>
-          <span style={{ fontSize: 36 }}>{flames}</span>
+          <div style={{ display: "flex", gap: 2 }}>
+            {Array.from({ length: flameCount }).map((_, i) => (
+              <FlameSvg key={i} size={34} />
+            ))}
+          </div>
           <span style={{
             fontFamily: "sans-serif",
             fontSize: 14,
