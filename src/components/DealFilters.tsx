@@ -35,6 +35,7 @@ function getUniqueValues(items: Deal[], key: keyof Deal): string[] {
 interface DealFiltersProps {
   sourceDeals: Deal[];
   children: (filtered: Deal[]) => React.ReactNode;
+  defaultSort?: SortKey;
 }
 
 const FilterChip = ({ label, count, active, onClick }: { label: string; count?: number; active: boolean; onClick: () => void }) => (
@@ -69,10 +70,10 @@ const FilterSection = ({ title, children, defaultOpen = false }: { title: string
   );
 };
 
-const DealFilters = ({ sourceDeals, children }: DealFiltersProps) => {
+const DealFilters = ({ sourceDeals, children, defaultSort = "relevance" }: DealFiltersProps) => {
   const { t } = useI18n();
   const [filters, setFilters] = useState<Filters>(defaultFilters);
-  const [sort, setSort] = useState<SortKey>("relevance");
+  const [sort, setSort] = useState<SortKey>(defaultSort);
   const [showFilters, setShowFilters] = useState(false);
   const [page, setPage] = useState(1);
 

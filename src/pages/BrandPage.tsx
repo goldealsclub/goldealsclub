@@ -54,7 +54,7 @@ const BrandPage = () => {
         </div>
 
         {/* All deals — NO LIMIT */}
-        <DealFilters sourceDeals={brandDeals}>
+        <DealFilters sourceDeals={brandDeals} defaultSort="discount">
           {(filtered) => (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
               {filtered.map((deal) => (
