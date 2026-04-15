@@ -12,11 +12,11 @@ const IVOIRE = "#f6f0e9";
 const NOIR = "#111111";
 const TAUPE = "#45403a";
 
-// Flame emoji helper
-const getFlames = (discount: number): string => {
-  if (discount >= 50) return "🔥🔥🔥";
-  if (discount >= 30) return "🔥🔥";
-  return "🔥";
+// Flame count based on discount
+const getFlameCount = (discount: number): number => {
+  if (discount >= 50) return 3;
+  if (discount >= 30) return 2;
+  return 1;
 };
 
 const getFlameLabel = (discount: number): string => {
@@ -24,6 +24,14 @@ const getFlameLabel = (discount: number): string => {
   if (discount >= 30) return "BON DEAL";
   return "DEAL";
 };
+
+// SVG flame component (no emoji — Chromium renderer doesn't support color emoji)
+const FlameSvg: React.FC<{ size?: number; color?: string }> = ({ size = 32, color = "#FF6B35" }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill={color} xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 23C16.5 23 20 19.5 20 15C20 11 17 8.5 15.5 7.5C15.5 9 14.5 11 13 12C13 10 12.5 7.5 10 5C9.5 7.5 8 9 6.5 11C5.5 12.5 4 14 4 16C4 19.5 7.5 23 12 23Z"/>
+  </svg>
+);
+
 
 export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
   const frame = useCurrentFrame();
