@@ -176,7 +176,7 @@ export function inferBrand(rawBrand: string, title: string): string {
   const lowerRaw = rawBrand.trim().toLowerCase();
 
   // Brands that need title-based re-check because DB data may be wrong
-  const RECHECK_BRANDS = new Set(["jordan"]);
+  const RECHECK_BRANDS = new Set(["jordan", "nike"]);
 
   if (directBrand && lowerRaw !== "snipes" && !RECHECK_BRANDS.has(lowerRaw)) {
     return directBrand;
@@ -187,10 +187,11 @@ export function inferBrand(rawBrand: string, title: string): string {
     const safeTitle = (title || "").trim();
     const lowerTitle = ` ${safeTitle.toLowerCase()} `;
 
-    // Check if title clearly belongs to another brand (New Era, Mitchell & Ness, etc.)
+    // Check if title clearly belongs to another brand
     const OVERRIDE_BRANDS: [string[], string][] = [
-      [["9forty", "9twenty", "9fifty", "59fifty", "mvp base", "base runner", "clean up", "a frame", "5 panel", "new york yankees", "los angeles dodgers", "los angeles lakers", "chicago bulls", "brooklyn nets", "fitted cap", "cuff beanie", "curve brim", "trucker cap", "wide cuff beanie", "essential cuff"], "New Era"],
-      [["mlb ", "nba ", "nfl ", "collegiate script", "washed script", "poly track set", "swingman", "team logo", "varsity satin", "hwc ", "maxed out tee", "player big face", "overlap graphic", "blaze graphic", "linear graphic", "washed graphic", "washed full zip", "black out satin", "black out collection", "classic sport player", "billboard knit", "vintage block", "tailsweeps", "pinned gold", "logo hoodie"], "Mitchell & Ness"],
+      [["air jordan", "jordan 1", "jordan 3", "jordan 4", "jordan 5", "jordan 7", "jordan 11", "jordan mvp", "jordan eighty", "jordan trunner", "jordan remix", "jordan sky", "jordan essentials", "jordan brooklyn", "jordan post", "jordan los", "j brkln", "j flight", "jdb ", "jdg ", "j brooklyn", "mj brooklyn", "jdg brooklyn", "wj brooklyn", "jdb brooklyn", "spizike low", "flight fleece", "flight mvp", "flight essentials", "flight washed", "flight barrel", "flight graphics", "flight chicago", "brooklyn fleece", "brooklyn motorsport", "brooklyn flannel", "brooklyn essential", "brooklyn t-shirt", "jordan rm"], "Jordan"],
+      [["9forty", "9twenty", "9fifty", "59fifty", "mvp base", "base runner", "clean up", "a frame", "5 panel", "fitted cap", "cuff beanie", "curve brim", "trucker cap", "wide cuff beanie", "essential cuff", "beanie league essential", "beanie ws patch"], "New Era"],
+      [["mlb ", "nba ", "nfl ", "collegiate script", "washed script", "poly track set", "swingman", "team logo", "varsity satin", "hwc ", "maxed out tee", "player big face", "overlap graphic", "blaze graphic", "linear graphic", "washed graphic", "washed full zip", "black out satin", "black out collection", "classic sport player", "billboard knit", "vintage block", "tailsweeps", "pinned gold", "logo hoodie", "new york yankees", "los angeles dodgers", "los angeles lakers", "chicago bulls", "brooklyn nets"], "Mitchell & Ness"],
     ];
 
     for (const [keywords, brandName] of OVERRIDE_BRANDS) {
@@ -199,7 +200,7 @@ export function inferBrand(rawBrand: string, title: string): string {
       }
     }
 
-    // Title matches Jordan patterns or nothing else → keep Jordan
+    // No override matched → keep original brand
     return directBrand;
   }
 
