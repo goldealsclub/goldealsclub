@@ -1,4 +1,7 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Img, staticFile } from "remotion";
+import { loadFont } from "@remotion/google-fonts/Playfair";
+
+const { fontFamily: playfair } = loadFont("normal", { weights: ["700"], subsets: ["latin"] });
 
 const IVOIRE = "#f6f0e9";
 
@@ -18,15 +21,15 @@ export const IntroScene: React.FC = () => {
   const sloganOpacity = interpolate(frame, [14, 26], [0, 1], { extrapolateRight: "clamp" });
 
   const lineWidth = interpolate(
-    spring({ frame: frame - 26, fps, config: { damping: 200 } }),
+    spring({ frame: frame - 30, fps, config: { damping: 200 } }),
     [0, 1], [0, 280]
   );
 
   const topY = interpolate(
-    spring({ frame: frame - 34, fps, config: { damping: 18, stiffness: 220 } }),
+    spring({ frame: frame - 38, fps, config: { damping: 18, stiffness: 220 } }),
     [0, 1], [30, 0]
   );
-  const topOpacity = interpolate(frame, [34, 46], [0, 1], { extrapolateRight: "clamp" });
+  const topOpacity = interpolate(frame, [38, 50], [0, 1], { extrapolateRight: "clamp" });
 
   const floatY = Math.sin(frame * 0.05) * 4;
 
@@ -36,7 +39,7 @@ export const IntroScene: React.FC = () => {
         background: `linear-gradient(${135 + bgRotate}deg, #0a0a0a 0%, #141414 35%, #1a1a16 100%)`,
       }} />
       <AbsoluteFill style={{
-        background: "radial-gradient(ellipse at 50% 35%, rgba(246,240,233,0.04) 0%, transparent 60%)",
+        background: "radial-gradient(ellipse at 50% 30%, rgba(246,240,233,0.05) 0%, transparent 60%)",
       }} />
 
       <AbsoluteFill style={{
@@ -45,9 +48,9 @@ export const IntroScene: React.FC = () => {
         alignItems: "center",
         justifyContent: "center",
         transform: `translateY(${floatY}px)`,
-        padding: "0 40px",
+        padding: "0 30px",
       }}>
-        {/* Logo — full width, white on dark */}
+        {/* Logo — massive, white on dark */}
         <div style={{
           transform: `scale(${logoScale})`,
           opacity: logoOpacity,
@@ -59,44 +62,52 @@ export const IntroScene: React.FC = () => {
           <Img
             src={staticFile("logo.png")}
             style={{
-              width: "90%",
-              maxHeight: 500,
+              width: "100%",
               objectFit: "contain",
-              filter: "brightness(10)",
+              filter: "invert(1) brightness(2)",
             }}
           />
         </div>
 
-        {/* Slogan */}
+        {/* Slogan — Playfair Display italic feel */}
         <div style={{
-          marginTop: 50,
+          marginTop: 60,
           transform: `translateY(${sloganY}px)`,
           opacity: sloganOpacity,
           textAlign: "center",
         }}>
           <div style={{
-            fontFamily: "sans-serif", fontSize: 30, fontWeight: 500,
-            color: "#d4c4b0", lineHeight: 1.5, letterSpacing: 1,
-          }}>Vos marques préférées.</div>
+            fontFamily: playfair, fontSize: 38, fontWeight: 700,
+            color: "#d4c4b0", lineHeight: 1.6, letterSpacing: 0.5,
+            fontStyle: "italic",
+          }}>
+            Vos marques préférées.
+          </div>
           <div style={{
-            fontFamily: "sans-serif", fontSize: 30, fontWeight: 500,
-            color: "#d4c4b0", lineHeight: 1.5, letterSpacing: 1,
-          }}>Les sites les plus fiables.</div>
+            fontFamily: playfair, fontSize: 38, fontWeight: 700,
+            color: "#d4c4b0", lineHeight: 1.6, letterSpacing: 0.5,
+            fontStyle: "italic",
+          }}>
+            Les sites les plus fiables.
+          </div>
           <div style={{
-            fontFamily: "sans-serif", fontSize: 32, fontWeight: 700,
-            color: IVOIRE, lineHeight: 1.5, letterSpacing: 1, marginTop: 6,
-          }}>Les meilleurs prix, ici.</div>
+            fontFamily: playfair, fontSize: 44, fontWeight: 700,
+            color: IVOIRE, lineHeight: 1.6, letterSpacing: 1,
+            marginTop: 10,
+          }}>
+            Les meilleurs prix, ici.
+          </div>
         </div>
 
         {/* Line */}
         <div style={{
-          marginTop: 40, height: 1, width: lineWidth,
+          marginTop: 44, height: 1, width: lineWidth,
           backgroundColor: "#d4c4b0", opacity: 0.4,
         }} />
 
         {/* Top 5 */}
         <div style={{
-          marginTop: 36,
+          marginTop: 40,
           transform: `translateY(${topY}px)`,
           opacity: topOpacity,
           textAlign: "center",

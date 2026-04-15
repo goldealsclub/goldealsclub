@@ -109,7 +109,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         }}>#{rankNum}</div>
       </div>
 
-      {/* ═══ FULL-BLEED PRODUCT IMAGE — top half, no whitespace ═══ */}
+      {/* ═══ FULL-BLEED PRODUCT IMAGE — top half ═══ */}
       <div style={{
         position: "absolute",
         top: 100,
@@ -120,17 +120,17 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         overflow: "hidden",
         transform: `translateY(${imgY + floatY}px)`,
         opacity: imgOpacity,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
       }}>
         <Img
           src={deal.imageUrl}
           style={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: `translate(-50%, -50%) scale(${imgScale * 1.6})`,
-            minWidth: "100%",
-            minHeight: "100%",
-            objectFit: "cover",
+            width: "100%",
+            height: "100%",
+            objectFit: "contain",
+            padding: 20,
           }}
         />
       </div>
