@@ -35,6 +35,7 @@ function getUniqueValues(items: Deal[], key: keyof Deal): string[] {
 interface DealFiltersProps {
   sourceDeals: Deal[];
   children: (filtered: Deal[]) => React.ReactNode;
+  defaultSort?: SortKey;
 }
 
 const FilterChip = ({ label, count, active, onClick }: { label: string; count?: number; active: boolean; onClick: () => void }) => (
