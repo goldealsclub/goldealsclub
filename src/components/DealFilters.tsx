@@ -167,10 +167,11 @@ const DealFilters = ({ sourceDeals, children, defaultSort = "relevance" }: DealF
       else if (d.deal_level === "bon-deal") score += 10;
       // Brand hype bonus (0-15 points)
       score += HYPE_BRANDS[d.brand.toLowerCase()] || 0;
-      // Source boost (Snipes partner)
+      // Partner boost (Snipes & Sneakin) — strong push to top of relevance
       const src = d.source?.toLowerCase() || "";
       const merchant = d.merchant?.toLowerCase() || "";
-      if (src === "snipes" || merchant.includes("snipes")) score += 8;
+      if (src === "snipes" || merchant.includes("snipes")) score += 18;
+      if (src.includes("sneakin") || merchant.includes("sneakin")) score += 18;
       // Recency bonus (last 7 days = up to 10 points)
       const ageMs = Date.now() - new Date(d.detected_at || d.promo_start_date).getTime();
       const ageDays = ageMs / (1000 * 60 * 60 * 24);
