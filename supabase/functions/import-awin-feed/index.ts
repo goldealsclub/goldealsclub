@@ -1,72 +1,87 @@
-// Awin datafeed importer
-// - Downloads the gzipped CSV feed from Awin
-// - Parses it
-// - Normalizes brand/category/gender via shared logic
-// - Upserts into the `deals` table WITHOUT deleting deals from other sources
-//   (only awin-prefixed IDs may be cleaned up)
-//
-// Trigger: manual (admin button) or daily cron via pg_cron + pg_net.
+// Awin datafeed importer (STREAMING version)
+// The Awin gzipped feed is ~90 MB compressed (~500 MB decompressed) — far too
+// large to load fully into edge-function memory (~150 MB limit).
+// Strategy:
+//   1. Stream the gzipped HTTP response through DecompressionStream("gzip")
+//   2. Pipe through TextDecoderStream
+//   3. Read line-by-line, parsing CSV as we go
+//   4. Only keep deals matching our filters in memory (small subset)
+//   5. Upsert in batches
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Native gzip decompression using Web Streams API (no external dep)
-async function gunzip(buf: Uint8Array): Promise<Uint8Array> {
-  const stream = new Response(buf).body!.pipeThrough(new DecompressionStream("gzip"));
-  const out = new Uint8Array(await new Response(stream).arrayBuffer());
-  return out;
-}
-
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
 // ──────────────────────────────────────────────────────────────────────────────
-// CSV parser (handles quoted fields with embedded commas / newlines)
+// Streaming line iterator (handles CSV with quoted multi-line fields)
 // ──────────────────────────────────────────────────────────────────────────────
-function parseCSV(text: string): Record<string, string>[] {
-  const rows: string[][] = [];
-  let cur: string[] = [];
-  let field = "";
+async function* iterateCsvLines(stream: ReadableStream<string>): AsyncGenerator<string> {
+  const reader = stream.getReader();
+  let buffer = "";
   let inQuotes = false;
 
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i];
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += value;
+
+    // Walk through buffer to find LINE boundaries that are NOT inside quotes
+    let lineStart = 0;
+    for (let i = 0; i < buffer.length; i++) {
+      const c = buffer[i];
+      if (c === '"') {
+        // Toggle, accounting for escaped quotes ""
+        if (inQuotes && buffer[i + 1] === '"') { i++; continue; }
+        inQuotes = !inQuotes;
+      } else if (c === "\n" && !inQuotes) {
+        let line = buffer.slice(lineStart, i);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        yield line;
+        lineStart = i + 1;
+      }
+    }
+    // Keep unfinished tail in buffer
+    buffer = buffer.slice(lineStart);
+  }
+  if (buffer.length > 0) {
+    let line = buffer;
+    if (line.endsWith("\r")) line = line.slice(0, -1);
+    if (line.length > 0) yield line;
+  }
+}
+
+// Parse a single CSV row into fields (handles quoted fields with commas)
+function parseRow(line: string): string[] {
+  const fields: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
     if (inQuotes) {
       if (c === '"') {
-        if (text[i + 1] === '"') { field += '"'; i++; }
+        if (line[i + 1] === '"') { field += '"'; i++; }
         else inQuotes = false;
       } else field += c;
     } else {
       if (c === '"') inQuotes = true;
-      else if (c === ",") { cur.push(field); field = ""; }
-      else if (c === "\n") { cur.push(field); rows.push(cur); cur = []; field = ""; }
-      else if (c === "\r") { /* skip */ }
+      else if (c === ",") { fields.push(field); field = ""; }
       else field += c;
     }
   }
-  if (field.length > 0 || cur.length > 0) { cur.push(field); rows.push(cur); }
-
-  if (rows.length === 0) return [];
-  const headers = rows[0];
-  return rows.slice(1)
-    .filter(r => r.length === headers.length)
-    .map(r => {
-      const obj: Record<string, string> = {};
-      headers.forEach((h, idx) => { obj[h] = r[idx] ?? ""; });
-      return obj;
-    });
+  fields.push(field);
+  return fields;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Reused normalization helpers (subset — Awin feed brands are usually clean)
+// Normalization helpers
 // ──────────────────────────────────────────────────────────────────────────────
 function inferCategory(category: string, title: string): string {
   const t = ` ${(title || "").toLowerCase()} `;
   const cat = (category || "").toLowerCase();
 
-  // Map Awin merchant_category strings
   if (/(jacket|veste|manteau|coat|blouson|parka|doudoune|bomber|puffer|gilet|anorak)/i.test(cat)) return "vestes";
   if (/(hoodie|sweat|capuche|sweatshirt|fleece)/i.test(cat)) return "hoodies";
   if (/(pant|trouser|jean|legging|short|jogger|jogging|cargo|bermuda)/i.test(cat)) return "pantalons";
@@ -74,7 +89,6 @@ function inferCategory(category: string, title: string): string {
   if (/(sneaker|shoe|chaussure|basket|trainer|boot|sandal|tong)/i.test(cat)) return "sneakers";
   if (/(cap|hat|bag|sock|belt|wallet|sunglas|beanie|scarf|glove|accessor|jewel|watch|montre)/i.test(cat)) return "accessoires";
 
-  // Fallback by title keywords
   const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","bomber","puffer","gilet","anorak","softshell","shacket"];
   if (jacketKw.some(k => t.includes(k))) return "vestes";
   const hoodieKw = ["hoodie","sweat ","capuche","pullover","crewneck","sweater","fleece","half-zip","full zip"];
@@ -92,7 +106,7 @@ function inferCategory(category: string, title: string): string {
   return "autres";
 }
 
-function inferGender(genderField: string, title: string, description: string, productCategory: string): string {
+function inferGender(title: string, description: string, productCategory: string): string {
   const combined = ` ${(description || "").toLowerCase()} ${(title || "").toLowerCase()} ${(productCategory || "").toLowerCase()} `;
 
   const enfantKw = [" enfant","enfants","kids","junior","bébé","toddler","infant","youth","kinder"," boy "," girl "];
@@ -106,10 +120,6 @@ function inferGender(genderField: string, title: string, description: string, pr
 
   if (combined.includes("pour homme") || combined.includes("hommes") || combined.includes("men's") || combined.includes("for men") || combined.includes(" herren")) return "homme";
 
-  const g = (genderField || "").toLowerCase();
-  if (g === "homme" || g === "men" || g === "male") return "homme";
-  if (g === "femme" || g === "women" || g === "female") return "femme";
-  if (g === "enfant" || g === "kids" || g === "child") return "enfant";
   return "unisexe";
 }
 
@@ -121,7 +131,6 @@ function cleanBrand(brand: string, merchant: string): string {
   if (!brand || brand.trim() === "") return merchant;
   const b = brand.trim();
   const lower = b.toLowerCase();
-  // Map common variants
   if (lower === "nike sportswear") return "Nike";
   if (lower === "adidas originals" || lower === "adidas performance") return "adidas";
   if (lower === "jordan brand") return "Jordan";
@@ -152,7 +161,6 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
-    // Build the Awin URL with the secret API key
     const FIDS = "48225,87190,87833,90621";
     const COLUMNS = [
       "aw_deep_link","product_name","aw_product_id","merchant_product_id",
@@ -164,25 +172,52 @@ Deno.serve(async (req) => {
 
     const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${FIDS}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
 
-    console.log("📡 Downloading Awin feed...");
+    console.log("📡 Streaming Awin feed...");
     const feedRes = await fetch(feedUrl);
-    if (!feedRes.ok) throw new Error(`Awin feed download failed: ${feedRes.status} ${await feedRes.text()}`);
+    if (!feedRes.ok || !feedRes.body) {
+      throw new Error(`Awin feed download failed: ${feedRes.status}`);
+    }
 
-    const gzBuf = new Uint8Array(await feedRes.arrayBuffer());
-    console.log(`📦 Downloaded ${(gzBuf.length / 1024 / 1024).toFixed(2)} MB gzipped`);
+    // Pipeline: gzipped bytes → decompressed bytes → text lines
+    const textStream = feedRes.body
+      .pipeThrough(new DecompressionStream("gzip"))
+      .pipeThrough(new TextDecoderStream("utf-8"));
 
-    const csvBuf = await gunzip(gzBuf);
-    const csvText = new TextDecoder("utf-8").decode(csvBuf);
-    console.log(`📄 Decompressed CSV: ${(csvText.length / 1024 / 1024).toFixed(2)} MB`);
+    let headers: string[] | null = null;
+    let rowCount = 0;
+    let kept = 0;
+    let skippedNoImage = 0, skippedNoPrice = 0, skippedOutOfStock = 0, skippedNoTitle = 0;
+    const importedIds = new Set<string>();
+    let buffer: Record<string, any>[] = [];
+    const BATCH_SIZE = 250;
 
-    const rows = parseCSV(csvText);
-    console.log(`🧮 Parsed ${rows.length} rows`);
+    async function flushBuffer() {
+      if (buffer.length === 0) return;
+      const { error } = await supabase.from("deals").upsert(buffer, { onConflict: "id" });
+      if (error) {
+        console.error("Upsert error:", error.message);
+        throw error;
+      }
+      kept += buffer.length;
+      buffer = [];
+    }
 
-    // Normalize and filter
-    const deals: Record<string, any>[] = [];
-    let skippedNoImage = 0, skippedNoPrice = 0, skippedOutOfStock = 0;
+    for await (const line of iterateCsvLines(textStream)) {
+      if (!line) continue;
 
-    for (const r of rows) {
+      if (!headers) {
+        headers = parseRow(line);
+        console.log(`📋 Headers (${headers.length}): ${headers.slice(0, 5).join(", ")}...`);
+        continue;
+      }
+
+      rowCount++;
+      const fields = parseRow(line);
+      if (fields.length !== headers.length) continue;
+
+      const r: Record<string, string> = {};
+      for (let i = 0; i < headers.length; i++) r[headers[i]] = fields[i];
+
       // Stock filter
       const inStock = (r.in_stock || "").trim();
       const stockStatus = (r.stock_status || "").toLowerCase();
@@ -191,49 +226,47 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Image filter — prefer aw_image_url (HD), then large_image, then merchant_image_url
+      // Image
       const imageUrl = r.aw_image_url || r.large_image || r.merchant_image_url || "";
       if (!imageUrl || !imageUrl.startsWith("http")) { skippedNoImage++; continue; }
 
-      // Price filter
+      // Price
       const salePrice = toNum(r.search_price);
       const originalPrice = toNum(r.rrp_price);
       if (!salePrice || salePrice <= 0) { skippedNoPrice++; continue; }
 
-      // Compute discount
       let discount = toNum(r.savings_percent);
       if ((!discount || discount <= 0) && originalPrice && originalPrice > salePrice) {
         discount = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
       }
       discount = discount ?? 0;
 
-      // Build canonical id (avoid collisions with other sources)
       const merchantId = r.merchant_id || "0";
       const productId = r.aw_product_id || r.merchant_product_id || "";
       if (!productId) continue;
       const id = `awin-${merchantId}-${productId}`;
+      if (importedIds.has(id)) continue;
+      importedIds.add(id);
+
+      const title = (r.product_name || "").trim();
+      if (!title) { skippedNoTitle++; continue; }
 
       const merchant = (r.merchant_name || "").trim() || "Awin";
       const brand = cleanBrand(r.brand_name || "", merchant);
-      const title = (r.product_name || "").trim();
-      if (!title) continue;
-
       const category = inferCategory(r.merchant_category || r.category_name || "", title);
-      const gender = inferGender("", title, r.description || "", r.merchant_category || "");
-      const genderLabel = genderToLabel(gender);
+      const gender = inferGender(title, r.description || "", r.merchant_category || "");
 
-      // Deal level
       let dealLevel = "promo-normale", flameCount = 1;
       if (discount >= 50) { dealLevel = "hot-deal"; flameCount = 3; }
       else if (discount >= 30) { dealLevel = "bon-deal"; flameCount = 2; }
 
-      deals.push({
+      buffer.push({
         id,
         title: title.slice(0, 500),
         brand,
         category,
         gender,
-        gender_label: genderLabel,
+        gender_label: genderToLabel(gender),
         sale_price: salePrice,
         original_price: originalPrice,
         discount_percent: discount,
@@ -251,34 +284,24 @@ Deno.serve(async (req) => {
         flame_count: flameCount,
         detected_at: new Date().toISOString(),
       });
-    }
 
-    console.log(`✅ Normalized ${deals.length} deals (skipped: ${skippedNoImage} no-image, ${skippedNoPrice} no-price, ${skippedOutOfStock} out-of-stock)`);
+      if (buffer.length >= BATCH_SIZE) await flushBuffer();
 
-    // Upsert in batches of 500
-    let upserted = 0;
-    const batchSize = 500;
-    for (let i = 0; i < deals.length; i += batchSize) {
-      const batch = deals.slice(i, i + batchSize);
-      const { error } = await supabase.from("deals").upsert(batch, { onConflict: "id" });
-      if (error) {
-        console.error(`Batch ${i / batchSize} error:`, error.message);
-        throw error;
+      if (rowCount % 5000 === 0) {
+        console.log(`⏳ ${rowCount} rows scanned, ${kept + buffer.length} kept`);
       }
-      upserted += batch.length;
     }
 
-    // Cleanup: delete awin-prefixed deals NOT in this import (stock removed)
-    // (other sources are untouched)
-    const importedIds = new Set(deals.map(d => d.id));
+    await flushBuffer();
+    console.log(`✅ Total: ${rowCount} rows scanned, ${kept} imported`);
+
+    // Cleanup: remove awin-prefixed deals not in this batch (out-of-stock / removed)
     let deleted = 0;
     let from = 0;
     const pageSize = 1000;
     while (true) {
       const { data: page } = await supabase
-        .from("deals")
-        .select("id")
-        .like("id", "awin-%")
+        .from("deals").select("id").like("id", "awin-%")
         .range(from, from + pageSize - 1);
       if (!page || page.length === 0) break;
       const toDelete = page.filter(d => !importedIds.has(d.id)).map(d => d.id);
@@ -295,10 +318,10 @@ Deno.serve(async (req) => {
 
     const result = {
       success: true,
-      total_rows: rows.length,
-      imported: upserted,
+      total_rows: rowCount,
+      imported: kept,
       deleted_stale: deleted,
-      skipped: { no_image: skippedNoImage, no_price: skippedNoPrice, out_of_stock: skippedOutOfStock },
+      skipped: { no_image: skippedNoImage, no_price: skippedNoPrice, out_of_stock: skippedOutOfStock, no_title: skippedNoTitle },
     };
     console.log("🎉 Done:", JSON.stringify(result));
 
