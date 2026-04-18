@@ -315,25 +315,35 @@ Deno.serve(async (req) => {
     await flushBuffer();
     console.log(`✅ Total: ${rowCount} rows scanned, ${kept} imported`);
 
-    // Cleanup: remove awin-prefixed deals not in this batch (out-of-stock / removed)
+    // Cleanup: remove deals from THIS merchant only that are NOT in this import
+    // (out-of-stock / removed). We detect the merchant prefix from importedIds.
     let deleted = 0;
-    let from = 0;
-    const pageSize = 1000;
-    while (true) {
-      const { data: page } = await supabase
-        .from("deals").select("id").like("id", "awin-%")
-        .range(from, from + pageSize - 1);
-      if (!page || page.length === 0) break;
-      const toDelete = page.filter(d => !importedIds.has(d.id)).map(d => d.id);
-      if (toDelete.length > 0) {
-        for (let j = 0; j < toDelete.length; j += 500) {
-          const slice = toDelete.slice(j, j + 500);
-          await supabase.from("deals").delete().in("id", slice);
+    const merchantPrefixes = new Set<string>();
+    for (const id of importedIds) {
+      // id format: awin-{merchantId}-{productId} → keep "awin-{merchantId}-"
+      const parts = id.split("-");
+      if (parts.length >= 3) merchantPrefixes.add(`${parts[0]}-${parts[1]}-`);
+    }
+
+    for (const prefix of merchantPrefixes) {
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: page } = await supabase
+          .from("deals").select("id").like("id", `${prefix}%`)
+          .range(from, from + pageSize - 1);
+        if (!page || page.length === 0) break;
+        const toDelete = page.filter(d => !importedIds.has(d.id)).map(d => d.id);
+        if (toDelete.length > 0) {
+          for (let j = 0; j < toDelete.length; j += 500) {
+            const slice = toDelete.slice(j, j + 500);
+            await supabase.from("deals").delete().in("id", slice);
+          }
+          deleted += toDelete.length;
         }
-        deleted += toDelete.length;
+        if (page.length < pageSize) break;
+        from += pageSize;
       }
-      if (page.length < pageSize) break;
-      from += pageSize;
     }
 
     const result = {
