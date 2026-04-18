@@ -31,6 +31,21 @@ function sortByDate(a: Deal, b: Deal): number {
   return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
 }
 
+/** Returns true if deal is from a partner merchant we want to highlight (Snipes, Sneakin) */
+function isPartnerDeal(d: Deal): boolean {
+  const src = d.source?.toLowerCase() || "";
+  const merchant = d.merchant?.toLowerCase() || "";
+  return src === "snipes" || merchant.includes("snipes") || src.includes("sneakin") || merchant.includes("sneakin");
+}
+
+/** Sort partners first, then by date — keeps Snipes/Sneakin at the top of every preview section */
+function sortPartnersFirst(a: Deal, b: Deal): number {
+  const pa = isPartnerDeal(a) ? 1 : 0;
+  const pb = isPartnerDeal(b) ? 1 : 0;
+  if (pa !== pb) return pb - pa;
+  return sortByDate(a, b);
+}
+
 /** Max items for homepage aperçu sections */
 const PREVIEW_LIMIT = 4;
 
@@ -38,11 +53,16 @@ const Index = () => {
   const { t } = useI18n();
   const { filteredDeals: deals } = useGender();
 
-  const hotDeals = deals.filter(d => d.deal_level === "hot-deal").sort(sortByDate);
-  const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortByDate);
-  const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortByDate);
-  const popularDeals = [...deals].sort((a, b) => b.popularity - a.popularity);
-  const newDeals = [...deals].sort(sortByDate);
+  const hotDeals = deals.filter(d => d.deal_level === "hot-deal").sort(sortPartnersFirst);
+  const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortPartnersFirst);
+  const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortPartnersFirst);
+  const popularDeals = [...deals].sort((a, b) => {
+    const pa = isPartnerDeal(a) ? 1 : 0;
+    const pb = isPartnerDeal(b) ? 1 : 0;
+    if (pa !== pb) return pb - pa;
+    return b.popularity - a.popularity;
+  });
+  const newDeals = [...deals].sort(sortPartnersFirst);
 
   // Batch-load votes for all visible deals
   const nikeDeals = useMemo(() => deals.filter(d => d.brand.toLowerCase() === "nike" || d.source?.toLowerCase() === "nike").sort(sortByDate), [deals]);
