@@ -5,3 +5,6 @@ verify_jwt = false
 
 [functions.import-awin-orchestrator]
 verify_jwt = false
+
+[functions.deals-json]
+verify_jwt = false

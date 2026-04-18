@@ -231,8 +231,26 @@ export async function loadDeals(): Promise<Deal[]> {
   }
   _loading = true;
   try {
-    const resp = await fetch("/deals.json");
-    const raw = await resp.json();
+    // Try the live edge function first (always fresh after Awin imports)
+    let raw: any[] | null = null;
+    try {
+      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+      if (projectId) {
+        const liveUrl = `https://${projectId}.supabase.co/functions/v1/deals-json`;
+        const liveResp = await fetch(liveUrl);
+        if (liveResp.ok) {
+          const data = await liveResp.json();
+          if (Array.isArray(data) && data.length > 0) raw = data;
+        }
+      }
+    } catch (e) {
+      console.warn("Live deals fetch failed, falling back to static JSON:", e);
+    }
+    // Fallback: bundled static snapshot
+    if (!raw) {
+      const resp = await fetch("/deals.json");
+      raw = await resp.json();
+    }
     const normalized = normalizeDeals(raw);
     deals.length = 0;
     deals.push(...normalized);
