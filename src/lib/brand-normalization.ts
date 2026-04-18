@@ -200,6 +200,21 @@ function canonicalizeBrand(value: string): string | null {
 export function inferBrand(rawBrand: string, title: string): string {
   const directBrand = canonicalizeBrand(rawBrand);
   const lowerRaw = rawBrand.trim().toLowerCase();
+  const lowerTitleEarly = (title || "").trim().toLowerCase();
+
+  // Hard override: if the title clearly starts with a known sports/team brand,
+  // trust the title over a possibly wrong DB brand (e.g. "Givova" mis-tagged as Nike).
+  const SPORTS_TEAM_BRANDS = [
+    "Givova", "Macron", "Hummel", "Joma", "Errea", "Kelme",
+    "Lotto", "Mizuno", "Diadora", "Le Coq Sportif", "Jako", "Uhlsport",
+    "Patrick", "Umbro", "Kappa",
+  ];
+  for (const brand of SPORTS_TEAM_BRANDS) {
+    const b = brand.toLowerCase();
+    if (lowerTitleEarly.startsWith(b + " ") || lowerTitleEarly === b) {
+      return brand;
+    }
+  }
 
   // Brands that need title-based re-check because DB data may be wrong
   const RECHECK_BRANDS = new Set(["jordan", "nike"]);
