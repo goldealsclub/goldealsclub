@@ -80,28 +80,54 @@ function parseRow(line: string): string[] {
 // ──────────────────────────────────────────────────────────────────────────────
 function inferCategory(category: string, title: string): string {
   const t = ` ${(title || "").toLowerCase()} `;
-  const cat = (category || "").toLowerCase();
+  const cat = ` ${(category || "").toLowerCase()} `;
+  const all = t + cat;
 
-  if (/(jacket|veste|manteau|coat|blouson|parka|doudoune|bomber|puffer|gilet|anorak)/i.test(cat)) return "vestes";
-  if (/(hoodie|sweat|capuche|sweatshirt|fleece)/i.test(cat)) return "hoodies";
-  if (/(pant|trouser|jean|legging|short|jogger|jogging|cargo|bermuda)/i.test(cat)) return "pantalons";
-  if (/(t-shirt|tee|tshirt|polo|tank|jersey|maillot|chemise|shirt)/i.test(cat)) return "t-shirts";
-  if (/(sneaker|shoe|chaussure|basket|trainer|boot|sandal|tong)/i.test(cat)) return "sneakers";
-  if (/(cap|hat|bag|sock|belt|wallet|sunglas|beanie|scarf|glove|accessor|jewel|watch|montre)/i.test(cat)) return "accessoires";
+  // ── HIGH PRIORITY: specific items that should NEVER be t-shirt/hoodie ────
+  // Swimwear, underwear, lingerie → accessoires
+  if (/(slip de bain|maillot de bain|bikini|swimsuit|swim short|boardshort|swimwear|swim brief|costume da bagno|badeanzug)/i.test(all)) return "accessoires";
+  if (/(brassi[èe]re|sports bra|sport bra|culotte|boxer|underwear|sous-v[êe]tement|lingerie|caleçon|string|tanga)/i.test(all)) return "accessoires";
+  // Socks, gloves, masks, headbands
+  if (/(chaussette|socquette|sock |socks |bas |collant|tights|gants|glove|mitten|masque|mask |bandeau|headband|wristband|poignet)/i.test(all)) return "accessoires";
+  // Bags, caps, belts, jewelry, watches, sunglasses
+  if (/(casquette|cap |bonnet|beanie|chapeau|hat |bucket hat|9forty|59fifty|new era cap)/i.test(all)) return "accessoires";
+  if (/(sac |bag |backpack|sac à dos|gym bag|sport bag|tote|pochette|wallet|portefeuille|porte-monnaie)/i.test(all)) return "accessoires";
+  if (/(ceinture|belt |bracelet|collier|bague|jewel|watch |montre|sunglas|lunettes|écharpe|scarf|foulard)/i.test(all)) return "accessoires";
+  // Sport equipment
+  if (/(yoga (block|mat|brick)|bloc de yoga|tapis de yoga|haltère|dumbbell|kettlebell|élastique|resistance band|protège-tibia|shin guard|gourde|bottle|water bottle|towel|serviette)/i.test(all)) return "accessoires";
+  // Costumes / disguises / home (not apparel)
+  if (/(costume |disguise|déguisement|rideau|curtain|cushion|coussin|drap|bedding|housse|décoration)/i.test(all)) return "autres";
 
-  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","bomber","puffer","gilet","anorak","softshell","shacket"];
+  // Short = pantalons (handball short, swim short already filtered above)
+  if (/( short |shorts | bermuda)/i.test(all)) return "pantalons";
+
+  // ── Category-field hints ───────────────────────────────────────────────
+  if (/(jacket|veste|manteau|coat|blouson|parka|doudoune|bomber|puffer|gilet|anorak|windbreaker|softshell|shacket)/i.test(cat)) return "vestes";
+  if (/(hoodie|sweat|capuche|sweatshirt|fleece|pullover|crewneck|sweater)/i.test(cat)) return "hoodies";
+  if (/(pant|trouser|jean|legging|jogger|jogging|cargo|tracksuit|trackpant|sweatpant|pantalon)/i.test(cat)) return "pantalons";
+  if (/(t-shirt|tshirt|polo|tank|jersey|maillot|chemise|shirt|top |tee )/i.test(cat)) return "t-shirts";
+  if (/(sneaker|shoe|chaussure|basket|trainer|boot|sandal|tong|claquette|slide)/i.test(cat)) return "sneakers";
+  if (/(robe |dress |jupe |skirt )/i.test(cat)) return "autres";
+
+  // ── Title-based heuristics ─────────────────────────────────────────────
+  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","bomber","puffer","gilet","anorak","softshell","shacket","coupe-vent","coupe vent"];
   if (jacketKw.some(k => t.includes(k))) return "vestes";
-  const hoodieKw = ["hoodie","sweat ","capuche","pullover","crewneck","sweater","fleece","half-zip","full zip"];
+
+  const hoodieKw = ["hoodie","sweat ","capuche","pullover","crewneck","sweater","fleece","half-zip","full zip","sweatshirt"];
   const hoodieExclude = ["short","pant","jogger","legging","jeans","sweatpant","skirt","robe","sock"];
   if (hoodieKw.some(k => t.includes(k)) && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
-  const pantsKw = ["pantalon","jogger","pant ","pants","legging","shorts","bermuda","cargo","jogging","jeans","jean ","sweatpant","trackpant","tracksuit"];
+
+  const pantsKw = ["pantalon","jogger","pant ","pants","legging","jogging","jeans","jean ","sweatpant","trackpant","tracksuit","cargo"];
   if (pantsKw.some(k => t.includes(k))) return "pantalons";
-  const tshirtKw = ["t-shirt","tee ","tee-","jersey","polo ","maillot","tank top","crew "," shirt "];
+
+  const tshirtKw = ["t-shirt","tee ","tee-","jersey","polo ","maillot","tank top","crew "," shirt ","débardeur","camisole"];
   if (tshirtKw.some(k => t.includes(k))) return "t-shirts";
-  const accessKw = ["casquette","cap ","sac ","bag ","backpack","chaussette","sock","beanie","ceinture","belt","scarf","wallet","sunglas","9forty","59fifty","new era","bucket","trucker"];
-  if (accessKw.some(k => t.includes(k))) return "accessoires";
-  const sneakerKw = ["sneaker","basket","chaussure","shoe","air max","air force","dunk","jordan","yeezy","new balance","574","990","gel-","old skool","chuck taylor","stan smith","superstar","gazelle","samba","ultraboost","slide","sandale","claquette"];
+
+  const sneakerKw = ["sneaker","basket","chaussure","shoe","air max","air force","dunk","jordan","yeezy","new balance","574","990","gel-","old skool","chuck taylor","stan smith","superstar","gazelle","samba","ultraboost","sandale","escarpin","talon","wedge heel","running","trainer"];
   if (sneakerKw.some(k => t.includes(k))) return "sneakers";
+
+  // Robes / jupes → autres (pas de catégorie dédiée)
+  if (/( robe | dress | jupe | skirt )/i.test(t)) return "autres";
 
   return "autres";
 }
