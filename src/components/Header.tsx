@@ -116,12 +116,12 @@ const Header = () => {
               </span>
               {(() => {
                 const partners: { key: string; render: (active: boolean) => React.ReactNode }[] = [
-                  { key: "snipes", render: (a) => <img src={partnerSnipes} alt="Snipes" className={`h-10 md:h-12 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "kappa", render: (a) => <img src={partnerKappa} alt="Kappa" className={`h-9 md:h-11 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "sneakin", render: (a) => <img src={partnerSneakin} alt="Sneakin" className={`h-7 md:h-9 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "sport-outlet", render: (a) => <img src={partnerSportOutlet} alt="Sport Outlet" className={`h-6 md:h-8 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "sport is good", render: (a) => <img src={partnerSportIsGood} alt="Sport Is Good" className={`h-6 md:h-8 w-auto object-contain shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "training fit", render: (a) => <span className={`font-display text-[13px] md:text-[15px] tracking-[0.18em] whitespace-nowrap shrink-0 transition-colors ${a ? "text-foreground" : "text-foreground/50 hover:text-foreground"}`}>TRAINING FIT</span> },
+                  { key: "snipes", render: (a) => <img src={partnerSnipes} alt="Snipes" className={`h-8 md:h-12 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "kappa", render: (a) => <img src={partnerKappa} alt="Kappa" className={`h-7 md:h-11 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sneakin", render: (a) => <img src={partnerSneakin} alt="Sneakin" className={`h-6 md:h-9 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sport-outlet", render: (a) => <img src={partnerSportOutlet} alt="Sport Outlet" className={`h-5 md:h-8 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sport is good", render: (a) => <img src={partnerSportIsGood} alt="Sport Is Good" className={`h-5 md:h-8 w-auto object-contain shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "training fit", render: (a) => <span className={`font-display text-[11px] md:text-[15px] tracking-[0.16em] md:tracking-[0.18em] whitespace-nowrap shrink-0 transition-colors ${a ? "text-foreground" : "text-foreground/50 hover:text-foreground"}`}>TRAINING FIT</span> },
                 ];
                 return partners.map((p, i) => {
                   const active = merchant === p.key;
