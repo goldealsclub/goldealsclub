@@ -196,13 +196,13 @@ Deno.serve(async (req) => {
         if (body?.fid) fidParam = String(body.fid);
       } catch { /* no body */ }
     }
-    const ALL_FIDS = ["48225", "87190", "87833", "90621"];
+    const ALL_FIDS = ["48225", "87190", "87833", "90621", "111256", "112989"];
     if (!fidParam || !ALL_FIDS.includes(fidParam)) {
       return new Response(
         JSON.stringify({
           error: "Missing or invalid `fid` parameter",
           valid_fids: ALL_FIDS,
-          hint: "Call with ?fid=48225 (or 87190, 87833, 90621). Use `import-awin-orchestrator` to import all 4 in sequence.",
+          hint: "Call with ?fid=<one of valid_fids>. Use `import-awin-orchestrator` to import all in sequence.",
         }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
