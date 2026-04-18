@@ -108,10 +108,11 @@ const Header = () => {
         )}
         {/* Partner bar — clickable merchant filters */}
         <div className="border-b border-foreground/6 bg-background">
-          <div className="container mx-auto px-4 h-14 flex items-center">
-            <div className="flex items-center gap-4 md:gap-6 overflow-x-auto brand-scroll w-full justify-start md:justify-center">
-              <span className="text-[10px] font-display uppercase tracking-[0.2em] text-foreground/40 whitespace-nowrap shrink-0">
-                En partenariat avec
+          <div className="container mx-auto px-4 h-12 md:h-14 flex items-center">
+            <div className="flex items-center gap-3 md:gap-6 overflow-x-auto brand-scroll w-full justify-start md:justify-center">
+              <span className="text-[9px] md:text-[10px] font-display uppercase tracking-[0.18em] md:tracking-[0.2em] text-foreground/40 whitespace-nowrap shrink-0">
+                <span className="md:hidden">Partenaires</span>
+                <span className="hidden md:inline">En partenariat avec</span>
               </span>
               {(() => {
                 const partners: { key: string; render: (active: boolean) => React.ReactNode }[] = [
