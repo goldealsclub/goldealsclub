@@ -63,8 +63,8 @@ function isValidImage(url: string): boolean {
 /** Upgrade Nike/Adidas thumbnail URLs to high-res, fix JD Sports framing,
  *  and repair Sport Outlet's productserve.com proxy (returns 403 → fallback to sportspar direct). */
 function upgradeImageUrl(url: string): string {
-  // Sport Outlet FR: Awin's images2.productserve.com hotlink returns 403.
-  // Extract the upstream sportspar.de URL and rewrite to a working size (_600x600).
+  // Awin's images2.productserve.com proxy returns 403 on hotlink for many merchants.
+  // Always extract the upstream URL and prefer the direct CDN (sportspar, blazimg, shopify, etc.).
   if (url.includes("productserve.com")) {
     try {
       const u = new URL(url);
@@ -72,11 +72,13 @@ function upgradeImageUrl(url: string): string {
         .replace(/^ssl:/, "https://")
         .replace(/^http:/, "https:");
       if (upstream && !upstream.startsWith("http")) upstream = "https://" + upstream.replace(/^\/+/, "");
+      // sportspar: rewrite any size suffix (_1200x, _200x200, …) to a guaranteed _600x600 variant.
       const m = upstream.match(/sportspar\.de\/media\/image\/([0-9a-f]{2})\/([0-9a-f]{2})\/([0-9a-f]{2})\/([^?"'\s]+?)(?:_\d+x\d*)?\.(jpg|jpeg|png|webp)/i);
       if (m) {
         const [, a, b, c, name, ext] = m;
         return `https://www.sportspar.de/media/image/${a}/${b}/${c}/${name}_600x600.${ext}`;
       }
+      // blazimg / shopify / other CDNs: returning the direct upstream is faster and avoids the 403 proxy.
       return upstream || url;
     } catch {
       return url;
