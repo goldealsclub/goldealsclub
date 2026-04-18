@@ -8,6 +8,7 @@ import { useCompare } from "./CompareDrawer";
 import FlameIndicator from "./FlameIndicator";
 import ShareMenu from "./ShareMenu";
 import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
+import { upgradeImageUrl } from "@/lib/image-url";
 import { motion } from "framer-motion";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { useDealVotes } from "@/hooks/use-deal-votes";
@@ -45,10 +46,8 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const isSnipesImage = deal.image_url?.includes("asset.snipes.com");
   const isNikeImage = deal.image_url?.includes("static.nike.com") || deal.brand?.toLowerCase() === "nike";
 
-  // Upgrade Snipes CDN images to higher-res square crop (default feed is w_527,h_274 — too small/cropped)
-  const enhancedImageUrl = isSnipesImage && deal.image_url
-    ? deal.image_url.replace(/w_\d+,h_\d+,c_pad/, "w_900,h_900,c_pad").replace(/q_\d+/, "q_90")
-    : deal.image_url;
+  // Repair broken CDN URLs (e.g. Sport Outlet's productserve.com → 403) and upgrade to HD
+  const enhancedImageUrl = upgradeImageUrl(deal.image_url);
 
   // Detect broken Snipes images that show brand logo instead of product
   const [imageBroken, setImageBroken] = useState(false);
