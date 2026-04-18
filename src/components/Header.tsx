@@ -10,6 +10,9 @@ import { getLastUpdatedDate } from "@/lib/data";
 import logo from "@/assets/logo.png";
 import partnerSnipes from "@/assets/partner-snipes.png";
 import partnerKappa from "@/assets/partner-kappa.png";
+import partnerSneakin from "@/assets/partner-sneakin.svg";
+import partnerSportOutlet from "@/assets/partner-sportoutlet.svg";
+import partnerSportIsGood from "@/assets/partner-sportisgood.svg";
 import BrandBanner from "@/components/BrandBanner";
 import SearchOverlay from "@/components/SearchOverlay";
 import AlertPreferences from "@/components/AlertPreferences";
@@ -114,11 +117,11 @@ const Header = () => {
               <span className="text-foreground/15 text-xs shrink-0">×</span>
               <img src={partnerKappa} alt="Kappa" className="h-9 md:h-11 w-auto object-contain logo-invert shrink-0" />
               <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">SNEAKIN</span>
+              <img src={partnerSneakin} alt="Sneakin" className="h-7 md:h-9 w-auto object-contain logo-invert shrink-0" />
               <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">SPORT OUTLET</span>
+              <img src={partnerSportOutlet} alt="Sport Outlet" className="h-8 md:h-10 w-auto object-contain shrink-0" />
               <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">SPORT IS GOOD</span>
+              <img src={partnerSportIsGood} alt="Sport Is Good" className="h-6 md:h-8 w-auto object-contain shrink-0" />
               <span className="text-foreground/15 text-xs shrink-0">×</span>
               <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">TRAINING FIT</span>
             </div>
