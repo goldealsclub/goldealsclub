@@ -1,0 +1,338 @@
+// Awin datafeed importer (STREAMING version)
+// The Awin gzipped feed is ~90 MB compressed (~500 MB decompressed) — far too
+// large to load fully into edge-function memory (~150 MB limit).
+// Strategy:
+//   1. Stream the gzipped HTTP response through DecompressionStream("gzip")
+//   2. Pipe through TextDecoderStream
+//   3. Read line-by-line, parsing CSV as we go
+//   4. Only keep deals matching our filters in memory (small subset)
+//   5. Upsert in batches
+
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Streaming line iterator (handles CSV with quoted multi-line fields)
+// ──────────────────────────────────────────────────────────────────────────────
+async function* iterateCsvLines(stream: ReadableStream<string>): AsyncGenerator<string> {
+  const reader = stream.getReader();
+  let buffer = "";
+  let inQuotes = false;
+
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buffer += value;
+
+    // Walk through buffer to find LINE boundaries that are NOT inside quotes
+    let lineStart = 0;
+    for (let i = 0; i < buffer.length; i++) {
+      const c = buffer[i];
+      if (c === '"') {
+        // Toggle, accounting for escaped quotes ""
+        if (inQuotes && buffer[i + 1] === '"') { i++; continue; }
+        inQuotes = !inQuotes;
+      } else if (c === "\n" && !inQuotes) {
+        let line = buffer.slice(lineStart, i);
+        if (line.endsWith("\r")) line = line.slice(0, -1);
+        yield line;
+        lineStart = i + 1;
+      }
+    }
+    // Keep unfinished tail in buffer
+    buffer = buffer.slice(lineStart);
+  }
+  if (buffer.length > 0) {
+    let line = buffer;
+    if (line.endsWith("\r")) line = line.slice(0, -1);
+    if (line.length > 0) yield line;
+  }
+}
+
+// Parse a single CSV row into fields (handles quoted fields with commas)
+function parseRow(line: string): string[] {
+  const fields: string[] = [];
+  let field = "";
+  let inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQuotes) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { field += '"'; i++; }
+        else inQuotes = false;
+      } else field += c;
+    } else {
+      if (c === '"') inQuotes = true;
+      else if (c === ",") { fields.push(field); field = ""; }
+      else field += c;
+    }
+  }
+  fields.push(field);
+  return fields;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Normalization helpers
+// ──────────────────────────────────────────────────────────────────────────────
+function inferCategory(category: string, title: string): string {
+  const t = ` ${(title || "").toLowerCase()} `;
+  const cat = (category || "").toLowerCase();
+
+  if (/(jacket|veste|manteau|coat|blouson|parka|doudoune|bomber|puffer|gilet|anorak)/i.test(cat)) return "vestes";
+  if (/(hoodie|sweat|capuche|sweatshirt|fleece)/i.test(cat)) return "hoodies";
+  if (/(pant|trouser|jean|legging|short|jogger|jogging|cargo|bermuda)/i.test(cat)) return "pantalons";
+  if (/(t-shirt|tee|tshirt|polo|tank|jersey|maillot|chemise|shirt)/i.test(cat)) return "t-shirts";
+  if (/(sneaker|shoe|chaussure|basket|trainer|boot|sandal|tong)/i.test(cat)) return "sneakers";
+  if (/(cap|hat|bag|sock|belt|wallet|sunglas|beanie|scarf|glove|accessor|jewel|watch|montre)/i.test(cat)) return "accessoires";
+
+  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","bomber","puffer","gilet","anorak","softshell","shacket"];
+  if (jacketKw.some(k => t.includes(k))) return "vestes";
+  const hoodieKw = ["hoodie","sweat ","capuche","pullover","crewneck","sweater","fleece","half-zip","full zip"];
+  const hoodieExclude = ["short","pant","jogger","legging","jeans","sweatpant","skirt","robe","sock"];
+  if (hoodieKw.some(k => t.includes(k)) && !hoodieExclude.some(k => t.includes(k))) return "hoodies";
+  const pantsKw = ["pantalon","jogger","pant ","pants","legging","shorts","bermuda","cargo","jogging","jeans","jean ","sweatpant","trackpant","tracksuit"];
+  if (pantsKw.some(k => t.includes(k))) return "pantalons";
+  const tshirtKw = ["t-shirt","tee ","tee-","jersey","polo ","maillot","tank top","crew "," shirt "];
+  if (tshirtKw.some(k => t.includes(k))) return "t-shirts";
+  const accessKw = ["casquette","cap ","sac ","bag ","backpack","chaussette","sock","beanie","ceinture","belt","scarf","wallet","sunglas","9forty","59fifty","new era","bucket","trucker"];
+  if (accessKw.some(k => t.includes(k))) return "accessoires";
+  const sneakerKw = ["sneaker","basket","chaussure","shoe","air max","air force","dunk","jordan","yeezy","new balance","574","990","gel-","old skool","chuck taylor","stan smith","superstar","gazelle","samba","ultraboost","slide","sandale","claquette"];
+  if (sneakerKw.some(k => t.includes(k))) return "sneakers";
+
+  return "autres";
+}
+
+function inferGender(title: string, description: string, productCategory: string): string {
+  const combined = ` ${(description || "").toLowerCase()} ${(title || "").toLowerCase()} ${(productCategory || "").toLowerCase()} `;
+
+  const enfantKw = [" enfant","enfants","kids","junior","bébé","toddler","infant","youth","kinder"," boy "," girl "];
+  const enfantExclude = ["baby tee","junior mesure"];
+  if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
+
+  const femmeKw = ["pour femme","femmes","women","woman","wmns","w's ","ladies","damen",
+    "baby tee","bra ","brassière","legging","sports bra","crop top","cropped","mini skirt","mini jupe","robe ","dress ","bikini","yoga","wide leg","high rise","ribbed tank"];
+  const femmeExclude = ["dress shirt"];
+  if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
+
+  if (combined.includes("pour homme") || combined.includes("hommes") || combined.includes("men's") || combined.includes("for men") || combined.includes(" herren")) return "homme";
+
+  return "unisexe";
+}
+
+function genderToLabel(g: string): string {
+  return g === "homme" ? "Homme" : g === "femme" ? "Femme" : g === "enfant" ? "Enfant" : "Unisexe";
+}
+
+function cleanBrand(brand: string, merchant: string): string {
+  if (!brand || brand.trim() === "") return merchant;
+  const b = brand.trim();
+  const lower = b.toLowerCase();
+  if (lower === "nike sportswear") return "Nike";
+  if (lower === "adidas originals" || lower === "adidas performance") return "adidas";
+  if (lower === "jordan brand") return "Jordan";
+  if (lower === "puma") return "PUMA";
+  if (lower === "asics") return "ASICS";
+  if (lower === "ugg") return "UGG";
+  return b;
+}
+
+function toNum(v: string): number | null {
+  if (!v || v.trim() === "") return null;
+  const cleaned = v.replace(/[^\d.,-]/g, "").replace(",", ".");
+  const n = parseFloat(cleaned);
+  return isNaN(n) ? null : n;
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Main handler
+// ──────────────────────────────────────────────────────────────────────────────
+Deno.serve(async (req) => {
+  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  try {
+    const AWIN_API_KEY = Deno.env.get("AWIN_API_KEY");
+    if (!AWIN_API_KEY) throw new Error("AWIN_API_KEY is not configured");
+
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
+
+    const FIDS = "48225,87190,87833,90621";
+    const COLUMNS = [
+      "aw_deep_link","product_name","aw_product_id","merchant_product_id",
+      "merchant_image_url","description","merchant_category","search_price",
+      "merchant_name","merchant_id","category_name","aw_image_url","currency",
+      "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
+      "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
+    ].join(",");
+
+    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${FIDS}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
+
+    console.log("📡 Streaming Awin feed...");
+    const feedRes = await fetch(feedUrl);
+    if (!feedRes.ok || !feedRes.body) {
+      throw new Error(`Awin feed download failed: ${feedRes.status}`);
+    }
+
+    // Pipeline: gzipped bytes → decompressed bytes → text lines
+    const textStream = feedRes.body
+      .pipeThrough(new DecompressionStream("gzip"))
+      .pipeThrough(new TextDecoderStream("utf-8"));
+
+    let headers: string[] | null = null;
+    let rowCount = 0;
+    let kept = 0;
+    let skippedNoImage = 0, skippedNoPrice = 0, skippedOutOfStock = 0, skippedNoTitle = 0;
+    const importedIds = new Set<string>();
+    let buffer: Record<string, any>[] = [];
+    const BATCH_SIZE = 250;
+
+    async function flushBuffer() {
+      if (buffer.length === 0) return;
+      const { error } = await supabase.from("deals").upsert(buffer, { onConflict: "id" });
+      if (error) {
+        console.error("Upsert error:", error.message);
+        throw error;
+      }
+      kept += buffer.length;
+      buffer = [];
+    }
+
+    for await (const line of iterateCsvLines(textStream)) {
+      if (!line) continue;
+
+      if (!headers) {
+        headers = parseRow(line);
+        console.log(`📋 Headers (${headers.length}): ${headers.slice(0, 5).join(", ")}...`);
+        continue;
+      }
+
+      rowCount++;
+      const fields = parseRow(line);
+      if (fields.length !== headers.length) continue;
+
+      const r: Record<string, string> = {};
+      for (let i = 0; i < headers.length; i++) r[headers[i]] = fields[i];
+
+      // Stock filter
+      const inStock = (r.in_stock || "").trim();
+      const stockStatus = (r.stock_status || "").toLowerCase();
+      if (inStock === "0" || stockStatus === "out of stock" || stockStatus === "outofstock") {
+        skippedOutOfStock++;
+        continue;
+      }
+
+      // Image
+      const imageUrl = r.aw_image_url || r.large_image || r.merchant_image_url || "";
+      if (!imageUrl || !imageUrl.startsWith("http")) { skippedNoImage++; continue; }
+
+      // Price
+      const salePrice = toNum(r.search_price);
+      const originalPrice = toNum(r.rrp_price);
+      if (!salePrice || salePrice <= 0) { skippedNoPrice++; continue; }
+
+      let discount = toNum(r.savings_percent);
+      if ((!discount || discount <= 0) && originalPrice && originalPrice > salePrice) {
+        discount = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
+      }
+      discount = discount ?? 0;
+
+      const merchantId = r.merchant_id || "0";
+      const productId = r.aw_product_id || r.merchant_product_id || "";
+      if (!productId) continue;
+      const id = `awin-${merchantId}-${productId}`;
+      if (importedIds.has(id)) continue;
+      importedIds.add(id);
+
+      const title = (r.product_name || "").trim();
+      if (!title) { skippedNoTitle++; continue; }
+
+      const merchant = (r.merchant_name || "").trim() || "Awin";
+      const brand = cleanBrand(r.brand_name || "", merchant);
+      const category = inferCategory(r.merchant_category || r.category_name || "", title);
+      const gender = inferGender(title, r.description || "", r.merchant_category || "");
+
+      let dealLevel = "promo-normale", flameCount = 1;
+      if (discount >= 50) { dealLevel = "hot-deal"; flameCount = 3; }
+      else if (discount >= 30) { dealLevel = "bon-deal"; flameCount = 2; }
+
+      buffer.push({
+        id,
+        title: title.slice(0, 500),
+        brand,
+        category,
+        gender,
+        gender_label: genderToLabel(gender),
+        sale_price: salePrice,
+        original_price: originalPrice,
+        discount_percent: discount,
+        image_url: imageUrl,
+        product_url: r.merchant_deep_link || r.aw_deep_link || "",
+        affiliate_url: r.aw_deep_link || "",
+        merchant,
+        source: "awin",
+        currency: r.currency || "EUR",
+        description: (r.description || "").slice(0, 2000),
+        promo_start_date: r.valid_from || null,
+        promo_end_date: r.valid_to || null,
+        is_super_deal: discount >= 50,
+        deal_level: dealLevel,
+        flame_count: flameCount,
+        detected_at: new Date().toISOString(),
+      });
+
+      if (buffer.length >= BATCH_SIZE) await flushBuffer();
+
+      if (rowCount % 5000 === 0) {
+        console.log(`⏳ ${rowCount} rows scanned, ${kept + buffer.length} kept`);
+      }
+    }
+
+    await flushBuffer();
+    console.log(`✅ Total: ${rowCount} rows scanned, ${kept} imported`);
+
+    // Cleanup: remove awin-prefixed deals not in this batch (out-of-stock / removed)
+    let deleted = 0;
+    let from = 0;
+    const pageSize = 1000;
+    while (true) {
+      const { data: page } = await supabase
+        .from("deals").select("id").like("id", "awin-%")
+        .range(from, from + pageSize - 1);
+      if (!page || page.length === 0) break;
+      const toDelete = page.filter(d => !importedIds.has(d.id)).map(d => d.id);
+      if (toDelete.length > 0) {
+        for (let j = 0; j < toDelete.length; j += 500) {
+          const slice = toDelete.slice(j, j + 500);
+          await supabase.from("deals").delete().in("id", slice);
+        }
+        deleted += toDelete.length;
+      }
+      if (page.length < pageSize) break;
+      from += pageSize;
+    }
+
+    const result = {
+      success: true,
+      total_rows: rowCount,
+      imported: kept,
+      deleted_stale: deleted,
+      skipped: { no_image: skippedNoImage, no_price: skippedNoPrice, out_of_stock: skippedOutOfStock, no_title: skippedNoTitle },
+    };
+    console.log("🎉 Done:", JSON.stringify(result));
+
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  } catch (err) {
+    console.error("❌ Error:", err);
+    return new Response(JSON.stringify({ error: (err as Error).message }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
+  }
+});
