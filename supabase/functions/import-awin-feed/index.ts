@@ -171,7 +171,7 @@ Deno.serve(async (req) => {
     const gzBuf = new Uint8Array(await feedRes.arrayBuffer());
     console.log(`📦 Downloaded ${(gzBuf.length / 1024 / 1024).toFixed(2)} MB gzipped`);
 
-    const csvBuf = gunzipSync(gzBuf);
+    const csvBuf = await gunzip(gzBuf);
     const csvText = new TextDecoder("utf-8").decode(csvBuf);
     console.log(`📄 Decompressed CSV: ${(csvText.length / 1024 / 1024).toFixed(2)} MB`);
 
