@@ -176,9 +176,9 @@ const Header = () => {
       {/* Main nav */}
       <div className="container mx-auto px-4">
         <div className={`flex items-center justify-between transition-all duration-300 ${
-          scrolled ? "h-14 md:h-16" : "h-16 md:h-24"
+          scrolled ? "h-12 md:h-16" : "h-14 md:h-24"
         }`}>
-          <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
+          <button className="md:hidden p-2 -ml-2" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-5 h-5" strokeWidth={1.5} /> : <Menu className="w-5 h-5" strokeWidth={1.5} />}
           </button>
 
@@ -187,7 +187,7 @@ const Header = () => {
               src={logo}
               alt="GOLDEALS CLUB"
               className={`transition-all duration-300 w-auto logo-invert ${
-                scrolled ? "h-16 md:h-28" : "h-20 md:h-44"
+                scrolled ? "h-12 md:h-28" : "h-16 md:h-44"
               }`}
             />
           </Link>
