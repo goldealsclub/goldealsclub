@@ -14,10 +14,11 @@ import {
   Loader2, TrendingUp, MousePointerClick, ShoppingBag, Heart, Users,
   Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download,
   Eye, UserCheck, UserX, Activity, Star, Clock, Calendar,
-  ExternalLink, Link2, RefreshCw,
+  ExternalLink, Link2, RefreshCw, Download as DownloadIcon,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 
 const COLORS = [
   "hsl(30,40%,45%)", "hsl(30,30%,55%)", "hsl(30,20%,65%)", "hsl(30,15%,72%)",
@@ -102,6 +103,7 @@ const AdminDashboard = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [importingAwin, setImportingAwin] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
 
   const loadClicksData = () => {
@@ -167,6 +169,30 @@ const AdminDashboard = () => {
     loadClicksData();
     loadUsersData();
     setTimeout(() => setRefreshing(false), 1500);
+  };
+
+  const handleImportAwin = async () => {
+    if (importingAwin) return;
+    setImportingAwin(true);
+    toast.info("Import Awin lancé", {
+      description: "Téléchargement des 4 flux marchands en cours (~3 minutes en arrière-plan).",
+    });
+    try {
+      const { error } = await supabase.functions.invoke("import-awin-orchestrator", {
+        body: { mode: "parallel" },
+      });
+      if (error) throw error;
+      toast.success("Import Awin déclenché", {
+        description: "Les 4 marchands sont en cours de traitement. Rafraîchis dans quelques minutes pour voir les nouveaux deals.",
+      });
+    } catch (err) {
+      console.error("Awin import error:", err);
+      toast.error("Échec du déclenchement", {
+        description: err instanceof Error ? err.message : "Erreur inconnue",
+      });
+    } finally {
+      setTimeout(() => setImportingAwin(false), 3000);
+    }
   };
 
   useEffect(() => {
@@ -237,15 +263,27 @@ const AdminDashboard = () => {
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
         <div className="flex items-center justify-between gap-3 mb-2">
           <h1 className="font-display text-xl sm:text-3xl tracking-wider">ADMINISTRATION</h1>
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-foreground/10 text-[10px] sm:text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
-          >
-            <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${refreshing ? "animate-spin" : ""}`} />
-            <span className="hidden sm:inline">Rafraîchir</span>
-            <span className="sm:hidden">↻</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleImportAwin}
+              disabled={importingAwin}
+              title="Recharge les 4 flux marchands Awin (cron auto chaque jour à 3h)"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-foreground/10 text-[10px] sm:text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
+            >
+              <DownloadIcon className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${importingAwin ? "animate-pulse" : ""}`} />
+              <span className="hidden sm:inline">Import Awin</span>
+              <span className="sm:hidden">Awin</span>
+            </button>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-foreground/10 text-[10px] sm:text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              <span className="hidden sm:inline">Rafraîchir</span>
+              <span className="sm:hidden">↻</span>
+            </button>
+          </div>
         </div>
         <p className="font-body text-[10px] sm:text-xs text-foreground/50 mb-6 sm:mb-8">Dashboard administrateur — données en temps réel</p>
 
