@@ -348,6 +348,7 @@ Deno.serve(async (req) => {
 
     const result = {
       success: true,
+      fid: fidParam,
       total_rows: rowCount,
       imported: kept,
       deleted_stale: deleted,
