@@ -2,3 +2,6 @@ project_id = "yyqgxhuzobmqygksbaze"
 
 [functions.import-awin-feed]
 verify_jwt = false
+
+[functions.import-awin-orchestrator]
+verify_jwt = false
