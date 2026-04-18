@@ -13,7 +13,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-const ALL_FIDS = ["48225", "87190", "87833", "90621"];
+const ALL_FIDS = ["48225", "87190", "87833", "90621", "111256", "112989"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
