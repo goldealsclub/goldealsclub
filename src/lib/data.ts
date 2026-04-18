@@ -201,9 +201,16 @@ function normalizeDeals(raw: any[]): Deal[] {
     .filter((d) => {
       // Exclude deals with no image
       if (!isValidImage(d.image_url || "")) return false;
-      // Exclude deals without a real discount (no struck-through price)
       const orig = Number(d.original_price);
       const sale = Number(d.sale_price);
+      const merchant = (d.merchant || "").toLowerCase();
+      // Snipes ne fournit pas de RRP via Awin → on les garde même sans prix barré,
+      // tant qu'ils ont un prix de vente valide.
+      if (merchant.includes("snipes")) {
+        if (!sale || sale <= 0) return false;
+        return true;
+      }
+      // Tous les autres marchands : exiger une vraie remise (prix barré)
       if (!orig || !sale || orig <= sale) return false;
       return true;
     })
