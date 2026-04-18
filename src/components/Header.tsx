@@ -105,15 +105,23 @@ const Header = () => {
         )}
         {/* Partner bar */}
         <div className="border-b border-foreground/6 bg-background">
-          <div className="container mx-auto px-4 flex items-center justify-center gap-5 h-14">
-            <span className="text-[10px] font-body text-foreground/40 tracking-wide">En partenariat avec</span>
-            <span className="shrink-0">
-              <img src={partnerSnipes} alt="Snipes" className="h-12 md:h-14 w-auto object-contain logo-invert" />
-            </span>
-            <span className="text-foreground/20 text-sm">×</span>
-            <span className="shrink-0">
-              <img src={partnerKappa} alt="Kappa" className="h-11 md:h-12 w-auto object-contain logo-invert" />
-            </span>
+          <div className="container mx-auto px-4 h-14 flex items-center">
+            <div className="flex items-center gap-4 md:gap-6 overflow-x-auto brand-scroll w-full justify-start md:justify-center">
+              <span className="text-[10px] font-body text-foreground/40 tracking-wide whitespace-nowrap shrink-0">
+                En partenariat avec
+              </span>
+              <img src={partnerSnipes} alt="Snipes" className="h-10 md:h-12 w-auto object-contain logo-invert shrink-0" />
+              <span className="text-foreground/15 text-xs shrink-0">×</span>
+              <img src={partnerKappa} alt="Kappa" className="h-9 md:h-11 w-auto object-contain logo-invert shrink-0" />
+              <span className="text-foreground/15 text-xs shrink-0">×</span>
+              <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">SNEAKIN</span>
+              <span className="text-foreground/15 text-xs shrink-0">×</span>
+              <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">SPORT OUTLET</span>
+              <span className="text-foreground/15 text-xs shrink-0">×</span>
+              <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">SPORT IS GOOD</span>
+              <span className="text-foreground/15 text-xs shrink-0">×</span>
+              <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">TRAINING FIT</span>
+            </div>
           </div>
         </div>
       </div>
