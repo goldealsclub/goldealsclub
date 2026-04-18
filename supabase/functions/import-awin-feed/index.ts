@@ -8,7 +8,13 @@
 // Trigger: manual (admin button) or daily cron via pg_cron + pg_net.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { gunzipSync } from "https://deno.land/x/compress@v0.4.5/mod.ts";
+
+// Native gzip decompression using Web Streams API (no external dep)
+async function gunzip(buf: Uint8Array): Promise<Uint8Array> {
+  const stream = new Response(buf).body!.pipeThrough(new DecompressionStream("gzip"));
+  const out = new Uint8Array(await new Response(stream).arrayBuffer());
+  return out;
+}
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
