@@ -14,10 +14,13 @@ const BrandPage = () => {
   const { filteredDeals } = useGender();
 
   const brandName = decodeURIComponent(brand || "");
-  const brandDeals = useMemo(
-    () => filteredDeals.filter((d) => d.brand.toLowerCase() === brandName.toLowerCase()),
-    [brandName, filteredDeals]
-  );
+  const brandDeals = useMemo(() => {
+    const needle = brandName.toLowerCase();
+    const byBrand = filteredDeals.filter((d) => d.brand.toLowerCase() === needle);
+    if (byBrand.length > 0) return byBrand;
+    // Fallback: match by merchant (e.g. "Sneakin" → "Sneakin FR")
+    return filteredDeals.filter((d) => (d.merchant || "").toLowerCase().includes(needle));
+  }, [brandName, filteredDeals]);
 
   useLoadVotes(useMemo(() => brandDeals.slice(0, 50).map(d => d.id), [brandDeals]));
 
