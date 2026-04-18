@@ -307,9 +307,10 @@ Deno.serve(async (req) => {
         continue;
       }
 
-      // Image
-      const imageUrl = r.aw_image_url || r.large_image || r.merchant_image_url || "";
-      if (!imageUrl || !imageUrl.startsWith("http")) { skippedNoImage++; continue; }
+      // Image — prefer the largest available, then upscale URL params to HD
+      const rawImage = r.large_image || r.aw_image_url || r.merchant_image_url || "";
+      if (!rawImage || !rawImage.startsWith("http")) { skippedNoImage++; continue; }
+      const imageUrl = upscaleImageUrl(rawImage);
 
       // Price
       const salePrice = toNum(r.search_price);
