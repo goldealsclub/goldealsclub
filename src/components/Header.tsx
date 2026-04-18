@@ -31,7 +31,7 @@ const languages: { code: Lang; label: string }[] = [
 const Header = () => {
   const { t, lang, setLang } = useI18n();
   const { favorites } = useFavorites();
-  const { gender, setGender, filteredDeals } = useGender();
+  const { gender, setGender, merchant, setMerchant, filteredDeals } = useGender();
   const { user, signOut } = useAuth();
   const { isAdmin } = useAdmin();
   const { canInstall, isIos, isMobile, isStandalone, install } = useInstallPrompt();
@@ -106,24 +106,48 @@ const Header = () => {
             </div>
           </div>
         )}
-        {/* Partner bar */}
+        {/* Partner bar — clickable merchant filters */}
         <div className="border-b border-foreground/6 bg-background">
           <div className="container mx-auto px-4 h-14 flex items-center">
             <div className="flex items-center gap-4 md:gap-6 overflow-x-auto brand-scroll w-full justify-start md:justify-center">
               <span className="text-[10px] font-body text-foreground/40 tracking-wide whitespace-nowrap shrink-0">
-                En partenariat avec
+                Filtrer par
               </span>
-              <img src={partnerSnipes} alt="Snipes" className="h-10 md:h-12 w-auto object-contain logo-invert shrink-0" />
-              <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <img src={partnerKappa} alt="Kappa" className="h-9 md:h-11 w-auto object-contain logo-invert shrink-0" />
-              <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <img src={partnerSneakin} alt="Sneakin" className="h-7 md:h-9 w-auto object-contain logo-invert shrink-0" />
-              <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <img src={partnerSportOutlet} alt="Sport Outlet" className="h-6 md:h-8 w-auto object-contain logo-invert shrink-0" />
-              <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <img src={partnerSportIsGood} alt="Sport Is Good" className="h-6 md:h-8 w-auto object-contain shrink-0" />
-              <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <span className="font-display text-[13px] md:text-[15px] tracking-[0.18em] text-foreground/85 whitespace-nowrap shrink-0">TRAINING FIT</span>
+              {(() => {
+                const partners: { key: string; render: (active: boolean) => React.ReactNode }[] = [
+                  { key: "snipes", render: (a) => <img src={partnerSnipes} alt="Snipes" className={`h-10 md:h-12 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "kappa", render: (a) => <img src={partnerKappa} alt="Kappa" className={`h-9 md:h-11 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sneakin", render: (a) => <img src={partnerSneakin} alt="Sneakin" className={`h-7 md:h-9 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sport-outlet", render: (a) => <img src={partnerSportOutlet} alt="Sport Outlet" className={`h-6 md:h-8 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sport is good", render: (a) => <img src={partnerSportIsGood} alt="Sport Is Good" className={`h-6 md:h-8 w-auto object-contain shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "training fit", render: (a) => <span className={`font-display text-[13px] md:text-[15px] tracking-[0.18em] whitespace-nowrap shrink-0 transition-colors ${a ? "text-foreground" : "text-foreground/50 hover:text-foreground"}`}>TRAINING FIT</span> },
+                ];
+                return partners.map((p, i) => {
+                  const active = merchant === p.key;
+                  return (
+                    <React.Fragment key={p.key}>
+                      {i > 0 && <span className="text-foreground/15 text-xs shrink-0">×</span>}
+                      <button
+                        type="button"
+                        onClick={() => setMerchant(active ? null : p.key)}
+                        aria-pressed={active}
+                        title={active ? "Retirer le filtre" : `Filtrer par ${p.key}`}
+                        className={`shrink-0 flex items-center transition-all ${active ? "scale-105" : ""}`}
+                      >
+                        {p.render(active)}
+                      </button>
+                    </React.Fragment>
+                  );
+                });
+              })()}
+              {merchant && (
+                <button
+                  onClick={() => setMerchant(null)}
+                  className="text-[10px] font-body uppercase tracking-wider text-foreground/50 hover:text-foreground underline underline-offset-2 whitespace-nowrap shrink-0 ml-2"
+                >
+                  Effacer
+                </button>
+              )}
             </div>
           </div>
         </div>
