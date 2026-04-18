@@ -31,18 +31,30 @@ function sortByDate(a: Deal, b: Deal): number {
   return new Date(b.detected_at).getTime() - new Date(a.detected_at).getTime();
 }
 
-/** Returns true if deal is from a partner merchant we want to highlight (Snipes, Sneakin) */
+/** Returns true if deal is from Snipes (priority partner) */
 function isPartnerDeal(d: Deal): boolean {
   const src = d.source?.toLowerCase() || "";
   const merchant = d.merchant?.toLowerCase() || "";
-  return src === "snipes" || merchant.includes("snipes") || src.includes("sneakin") || merchant.includes("sneakin");
+  return src === "snipes" || merchant.includes("snipes");
 }
 
-/** Sort partners first, then by date — keeps Snipes/Sneakin at the top of every preview section */
+/** Returns true if deal is a top sneaker (sneakers category + 30%+ discount) */
+function isTopSneaker(d: Deal): boolean {
+  return d.category === "sneakers" && (d.discount_percent ?? 0) >= 30;
+}
+
+/** Priority bucket: Snipes first, then top sneakers, then everything else */
+function priorityBucket(d: Deal): number {
+  if (isPartnerDeal(d)) return 2;
+  if (isTopSneaker(d)) return 1;
+  return 0;
+}
+
+/** Sort: Snipes → top sneakers → rest, by date inside each bucket */
 function sortPartnersFirst(a: Deal, b: Deal): number {
-  const pa = isPartnerDeal(a) ? 1 : 0;
-  const pb = isPartnerDeal(b) ? 1 : 0;
-  if (pa !== pb) return pb - pa;
+  const ba = priorityBucket(a);
+  const bb = priorityBucket(b);
+  if (ba !== bb) return bb - ba;
   return sortByDate(a, b);
 }
 
@@ -57,9 +69,9 @@ const Index = () => {
   const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortPartnersFirst);
   const promoNormales = deals.filter(d => d.deal_level === "promo-normale").sort(sortPartnersFirst);
   const popularDeals = [...deals].sort((a, b) => {
-    const pa = isPartnerDeal(a) ? 1 : 0;
-    const pb = isPartnerDeal(b) ? 1 : 0;
-    if (pa !== pb) return pb - pa;
+    const ba = priorityBucket(a);
+    const bb = priorityBucket(b);
+    if (ba !== bb) return bb - ba;
     return b.popularity - a.popularity;
   });
   const newDeals = [...deals].sort(sortPartnersFirst);
