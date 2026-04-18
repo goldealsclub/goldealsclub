@@ -108,19 +108,20 @@ const Header = () => {
         )}
         {/* Partner bar — clickable merchant filters */}
         <div className="border-b border-foreground/6 bg-background">
-          <div className="container mx-auto px-4 h-14 flex items-center">
-            <div className="flex items-center gap-4 md:gap-6 overflow-x-auto brand-scroll w-full justify-start md:justify-center">
-              <span className="text-[10px] font-display uppercase tracking-[0.2em] text-foreground/40 whitespace-nowrap shrink-0">
-                En partenariat avec
+          <div className="container mx-auto px-4 h-12 md:h-14 flex items-center">
+            <div className="flex items-center gap-3 md:gap-6 overflow-x-auto brand-scroll w-full justify-start md:justify-center">
+              <span className="text-[9px] md:text-[10px] font-display uppercase tracking-[0.18em] md:tracking-[0.2em] text-foreground/40 whitespace-nowrap shrink-0">
+                <span className="md:hidden">Partenaires</span>
+                <span className="hidden md:inline">En partenariat avec</span>
               </span>
               {(() => {
                 const partners: { key: string; render: (active: boolean) => React.ReactNode }[] = [
-                  { key: "snipes", render: (a) => <img src={partnerSnipes} alt="Snipes" className={`h-10 md:h-12 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "kappa", render: (a) => <img src={partnerKappa} alt="Kappa" className={`h-9 md:h-11 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "sneakin", render: (a) => <img src={partnerSneakin} alt="Sneakin" className={`h-7 md:h-9 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "sport-outlet", render: (a) => <img src={partnerSportOutlet} alt="Sport Outlet" className={`h-6 md:h-8 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "sport is good", render: (a) => <img src={partnerSportIsGood} alt="Sport Is Good" className={`h-6 md:h-8 w-auto object-contain shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
-                  { key: "training fit", render: (a) => <span className={`font-display text-[13px] md:text-[15px] tracking-[0.18em] whitespace-nowrap shrink-0 transition-colors ${a ? "text-foreground" : "text-foreground/50 hover:text-foreground"}`}>TRAINING FIT</span> },
+                  { key: "snipes", render: (a) => <img src={partnerSnipes} alt="Snipes" className={`h-8 md:h-12 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "kappa", render: (a) => <img src={partnerKappa} alt="Kappa" className={`h-7 md:h-11 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sneakin", render: (a) => <img src={partnerSneakin} alt="Sneakin" className={`h-6 md:h-9 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sport-outlet", render: (a) => <img src={partnerSportOutlet} alt="Sport Outlet" className={`h-5 md:h-8 w-auto object-contain logo-invert shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "sport is good", render: (a) => <img src={partnerSportIsGood} alt="Sport Is Good" className={`h-5 md:h-8 w-auto object-contain shrink-0 transition-opacity ${a ? "opacity-100" : "opacity-50 hover:opacity-100"}`} /> },
+                  { key: "training fit", render: (a) => <span className={`font-display text-[11px] md:text-[15px] tracking-[0.16em] md:tracking-[0.18em] whitespace-nowrap shrink-0 transition-colors ${a ? "text-foreground" : "text-foreground/50 hover:text-foreground"}`}>TRAINING FIT</span> },
                 ];
                 return partners.map((p, i) => {
                   const active = merchant === p.key;
@@ -175,9 +176,9 @@ const Header = () => {
       {/* Main nav */}
       <div className="container mx-auto px-4">
         <div className={`flex items-center justify-between transition-all duration-300 ${
-          scrolled ? "h-14 md:h-16" : "h-16 md:h-24"
+          scrolled ? "h-12 md:h-16" : "h-14 md:h-24"
         }`}>
-          <button className="md:hidden p-2" onClick={() => setMenuOpen(!menuOpen)}>
+          <button className="md:hidden p-2 -ml-2" onClick={() => setMenuOpen(!menuOpen)}>
             {menuOpen ? <X className="w-5 h-5" strokeWidth={1.5} /> : <Menu className="w-5 h-5" strokeWidth={1.5} />}
           </button>
 
@@ -186,7 +187,7 @@ const Header = () => {
               src={logo}
               alt="GOLDEALS CLUB"
               className={`transition-all duration-300 w-auto logo-invert ${
-                scrolled ? "h-16 md:h-28" : "h-20 md:h-44"
+                scrolled ? "h-12 md:h-28" : "h-16 md:h-44"
               }`}
             />
           </Link>
