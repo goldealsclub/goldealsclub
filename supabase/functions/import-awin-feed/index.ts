@@ -166,6 +166,41 @@ function cleanBrand(brand: string, merchant: string): string {
   return b;
 }
 
+// Force HD versions of merchant/CDN image URLs.
+// Awin/merchant feeds often expose low-res images by default — most CDNs accept
+// width/quality params. We rewrite known patterns to request a 1200px version.
+function upscaleImageUrl(url: string): string {
+  if (!url) return url;
+  try {
+    let out = url.trim();
+
+    // Awin productserve thumbnails: /pservice/v3/...?w=200 → w=1200
+    out = out.replace(/([?&])(w|width|h|height)=\d+/gi, "$1$2=1200");
+
+    // Scene7 / Demandware (adidas, nike partners, etc.): &wid=300&hei=300 → 1200
+    out = out.replace(/([?&])(wid|hei|sw|sh)=\d+/gi, "$1$2=1200");
+
+    // Shopify CDN: _200x.jpg / _small.jpg / _medium.jpg / _grande.jpg → _1200x
+    out = out.replace(/_(pico|icon|thumb|small|compact|medium|large|grande|original)(?=\.(jpe?g|png|webp))/gi, "_1200x");
+    out = out.replace(/_\d{2,4}x(\d{2,4})?(?=\.(jpe?g|png|webp))/gi, "_1200x");
+
+    // Generic /thumb/ or /small/ path segments → /large/
+    out = out.replace(/\/(thumb|thumbnail|small|medium|tiny|mini)\//gi, "/large/");
+
+    // Snipes / Sneakin patterns: -100.jpg / -300.jpg → -1200.jpg (size suffix)
+    out = out.replace(/-(\d{2,3})(?=\.(jpe?g|png|webp)(\?|$))/gi, "-1200");
+
+    // imgix / Cloudinary: insert w_1200 if not present
+    if (/cloudinary\.com\/.+\/upload\//i.test(out) && !/\/w_\d+/i.test(out)) {
+      out = out.replace(/\/upload\//i, "/upload/w_1200,q_auto,f_auto/");
+    }
+
+    return out;
+  } catch {
+    return url;
+  }
+}
+
 function toNum(v: string): number | null {
   if (!v || v.trim() === "") return null;
   const cleaned = v.replace(/[^\d.,-]/g, "").replace(",", ".");
