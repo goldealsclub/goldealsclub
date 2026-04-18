@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_deals_detected_at_desc ON public.deals (detected_at DESC NULLS LAST, id);
