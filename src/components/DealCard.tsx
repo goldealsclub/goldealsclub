@@ -45,11 +45,16 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const isSnipesImage = deal.image_url?.includes("asset.snipes.com");
   const isNikeImage = deal.image_url?.includes("static.nike.com") || deal.brand?.toLowerCase() === "nike";
 
+  // Upgrade Snipes CDN images to higher-res square crop (default feed is w_527,h_274 — too small/cropped)
+  const enhancedImageUrl = isSnipesImage && deal.image_url
+    ? deal.image_url.replace(/w_\d+,h_\d+,c_pad/, "w_900,h_900,c_pad").replace(/q_\d+/, "q_90")
+    : deal.image_url;
+
   // Detect broken Snipes images that show brand logo instead of product
   const [imageBroken, setImageBroken] = useState(false);
 
   const imageFitClass = isSnipesImage
-    ? "object-cover object-center scale-[1.2] group-hover:scale-[1.26]"
+    ? "object-cover object-center scale-[1.05] group-hover:scale-[1.1]"
     : isNikeImage
       ? "object-cover object-center scale-[1.12] group-hover:scale-[1.18]"
       : "object-cover object-center group-hover:scale-[1.03]";
@@ -65,7 +70,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           </div>
         )}
         <img
-          src={deal.image_url}
+          src={enhancedImageUrl}
           alt={deal.title}
           className={`w-full h-full transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
           loading="lazy"
