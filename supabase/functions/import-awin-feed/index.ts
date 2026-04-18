@@ -161,7 +161,27 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
-    const FIDS = "48225,87190,87833,90621";
+    // Accept FID via query param (?fid=48225) or body { fid }
+    const url = new URL(req.url);
+    let fidParam = url.searchParams.get("fid");
+    if (!fidParam && req.method === "POST") {
+      try {
+        const body = await req.json();
+        if (body?.fid) fidParam = String(body.fid);
+      } catch { /* no body */ }
+    }
+    const ALL_FIDS = ["48225", "87190", "87833", "90621"];
+    if (!fidParam || !ALL_FIDS.includes(fidParam)) {
+      return new Response(
+        JSON.stringify({
+          error: "Missing or invalid `fid` parameter",
+          valid_fids: ALL_FIDS,
+          hint: "Call with ?fid=48225 (or 87190, 87833, 90621). Use `import-awin-orchestrator` to import all 4 in sequence.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const COLUMNS = [
       "aw_deep_link","product_name","aw_product_id","merchant_product_id",
       "merchant_image_url","description","merchant_category","search_price",
@@ -170,9 +190,9 @@ Deno.serve(async (req) => {
       "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
     ].join(",");
 
-    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${FIDS}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
+    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
 
-    console.log("📡 Streaming Awin feed...");
+    console.log(`📡 Streaming Awin feed for FID ${fidParam}...`);
     const feedRes = await fetch(feedUrl);
     if (!feedRes.ok || !feedRes.body) {
       throw new Error(`Awin feed download failed: ${feedRes.status}`);
@@ -295,29 +315,40 @@ Deno.serve(async (req) => {
     await flushBuffer();
     console.log(`✅ Total: ${rowCount} rows scanned, ${kept} imported`);
 
-    // Cleanup: remove awin-prefixed deals not in this batch (out-of-stock / removed)
+    // Cleanup: remove deals from THIS merchant only that are NOT in this import
+    // (out-of-stock / removed). We detect the merchant prefix from importedIds.
     let deleted = 0;
-    let from = 0;
-    const pageSize = 1000;
-    while (true) {
-      const { data: page } = await supabase
-        .from("deals").select("id").like("id", "awin-%")
-        .range(from, from + pageSize - 1);
-      if (!page || page.length === 0) break;
-      const toDelete = page.filter(d => !importedIds.has(d.id)).map(d => d.id);
-      if (toDelete.length > 0) {
-        for (let j = 0; j < toDelete.length; j += 500) {
-          const slice = toDelete.slice(j, j + 500);
-          await supabase.from("deals").delete().in("id", slice);
+    const merchantPrefixes = new Set<string>();
+    for (const id of importedIds) {
+      // id format: awin-{merchantId}-{productId} → keep "awin-{merchantId}-"
+      const parts = id.split("-");
+      if (parts.length >= 3) merchantPrefixes.add(`${parts[0]}-${parts[1]}-`);
+    }
+
+    for (const prefix of merchantPrefixes) {
+      let from = 0;
+      const pageSize = 1000;
+      while (true) {
+        const { data: page } = await supabase
+          .from("deals").select("id").like("id", `${prefix}%`)
+          .range(from, from + pageSize - 1);
+        if (!page || page.length === 0) break;
+        const toDelete = page.filter(d => !importedIds.has(d.id)).map(d => d.id);
+        if (toDelete.length > 0) {
+          for (let j = 0; j < toDelete.length; j += 500) {
+            const slice = toDelete.slice(j, j + 500);
+            await supabase.from("deals").delete().in("id", slice);
+          }
+          deleted += toDelete.length;
         }
-        deleted += toDelete.length;
+        if (page.length < pageSize) break;
+        from += pageSize;
       }
-      if (page.length < pageSize) break;
-      from += pageSize;
     }
 
     const result = {
       success: true,
+      fid: fidParam,
       total_rows: rowCount,
       imported: kept,
       deleted_stale: deleted,
