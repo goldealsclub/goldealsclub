@@ -60,8 +60,28 @@ function isValidImage(url: string): boolean {
   return !!url && url.trim() !== "";
 }
 
-/** Upgrade Nike/Adidas thumbnail URLs to high-res & fix JD Sports framing */
+/** Upgrade Nike/Adidas thumbnail URLs to high-res, fix JD Sports framing,
+ *  and repair Sport Outlet's productserve.com proxy (returns 403 → fallback to sportspar direct). */
 function upgradeImageUrl(url: string): string {
+  // Sport Outlet FR: Awin's images2.productserve.com hotlink returns 403.
+  // Extract the upstream sportspar.de URL and rewrite to a working size (_600x600).
+  if (url.includes("productserve.com")) {
+    try {
+      const u = new URL(url);
+      let upstream = decodeURIComponent(u.searchParams.get("url") || "")
+        .replace(/^ssl:/, "https://")
+        .replace(/^http:/, "https:");
+      if (upstream && !upstream.startsWith("http")) upstream = "https://" + upstream.replace(/^\/+/, "");
+      const m = upstream.match(/sportspar\.de\/media\/image\/([0-9a-f]{2})\/([0-9a-f]{2})\/([0-9a-f]{2})\/([^?"'\s]+?)(?:_\d+x\d*)?\.(jpg|jpeg|png|webp)/i);
+      if (m) {
+        const [, a, b, c, name, ext] = m;
+        return `https://www.sportspar.de/media/image/${a}/${b}/${c}/${name}_600x600.${ext}`;
+      }
+      return upstream || url;
+    } catch {
+      return url;
+    }
+  }
   if (url.includes("static.nike.com") && url.includes("t_PDP_144")) {
     return url.replace("t_PDP_144_v1", "t_PDP_864_v1");
   }
