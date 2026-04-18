@@ -144,6 +144,18 @@ const SINGLE_WORD_BRANDS = new Set([
   "Eastpak",
   "Umbro",
   "Snipes",
+  "Givova",
+  "Macron",
+  "Hummel",
+  "Joma",
+  "Errea",
+  "Kelme",
+  "Lotto",
+  "Mizuno",
+  "Diadora",
+  "Jako",
+  "Uhlsport",
+  "Patrick",
 ]);
 
 const KEYWORD_BRANDS: [string[], string][] = [
