@@ -61,6 +61,20 @@ const CANONICAL_BRANDS: Record<string, string> = {
   "the north face": "The North Face",
   "2y studios": "2Y Studios",
   "47 brand": "47 Brand",
+  givova: "Givova",
+  macron: "Macron",
+  hummel: "Hummel",
+  joma: "Joma",
+  errea: "Errea",
+  "erreà": "Errea",
+  kelme: "Kelme",
+  lotto: "Lotto",
+  mizuno: "Mizuno",
+  diadora: "Diadora",
+  "le coq sportif": "Le Coq Sportif",
+  jako: "Jako",
+  uhlsport: "Uhlsport",
+  patrick: "Patrick",
 };
 
 const MULTI_WORD_BRANDS = [
