@@ -41,22 +41,24 @@ serve(async (req) => {
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Get params: batch_size, offset, only_ambiguous (default true)
-    const { batch_size = 20, offset = 0, only_ambiguous = true } = await req.json();
+    // Get params: batch_size, offset, target ('autres' | 'unisexe' | 'all')
+    const { batch_size = 20, offset = 0, target = "autres" } = await req.json();
 
-    // Fetch deals to classify - target ambiguous ones (autres/unisexe) by default
+    // Fetch deals to classify - target one ambiguous group at a time
     let query = supabase
       .from("deals")
       .select("id, title, image_url, gender, category, brand, description")
       .not("image_url", "is", null)
       .neq("image_url", "");
 
-    if (only_ambiguous) {
-      query = query.or("category.eq.autres,gender.eq.unisexe");
+    if (target === "autres") {
+      query = query.eq("category", "autres");
+    } else if (target === "unisexe") {
+      query = query.eq("gender", "unisexe");
     }
 
     const { data: deals, error: fetchErr } = await query
-      .order("detected_at", { ascending: false })
+      .order("id", { ascending: true })
       .range(offset, offset + batch_size - 1);
 
     if (fetchErr) throw fetchErr;
