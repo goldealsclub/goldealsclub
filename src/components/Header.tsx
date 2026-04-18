@@ -11,7 +11,7 @@ import logo from "@/assets/logo.png";
 import partnerSnipes from "@/assets/partner-snipes.png";
 import partnerKappa from "@/assets/partner-kappa.png";
 import partnerSneakin from "@/assets/partner-sneakin.svg";
-import partnerSportOutlet from "@/assets/partner-sportoutlet.svg";
+import partnerSportOutlet from "@/assets/partner-sportoutlet.png";
 import partnerSportIsGood from "@/assets/partner-sportisgood.svg";
 import BrandBanner from "@/components/BrandBanner";
 import SearchOverlay from "@/components/SearchOverlay";
@@ -119,7 +119,7 @@ const Header = () => {
               <span className="text-foreground/15 text-xs shrink-0">×</span>
               <img src={partnerSneakin} alt="Sneakin" className="h-7 md:h-9 w-auto object-contain logo-invert shrink-0" />
               <span className="text-foreground/15 text-xs shrink-0">×</span>
-              <img src={partnerSportOutlet} alt="Sport Outlet" className="h-8 md:h-10 w-auto object-contain shrink-0" />
+              <img src={partnerSportOutlet} alt="Sport Outlet" className="h-6 md:h-8 w-auto object-contain logo-invert shrink-0" />
               <span className="text-foreground/15 text-xs shrink-0">×</span>
               <img src={partnerSportIsGood} alt="Sport Is Good" className="h-6 md:h-8 w-auto object-contain shrink-0" />
               <span className="text-foreground/15 text-xs shrink-0">×</span>
