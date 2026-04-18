@@ -161,7 +161,27 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SERVICE_KEY);
 
-    const FIDS = "48225,87190,87833,90621";
+    // Accept FID via query param (?fid=48225) or body { fid }
+    const url = new URL(req.url);
+    let fidParam = url.searchParams.get("fid");
+    if (!fidParam && req.method === "POST") {
+      try {
+        const body = await req.json();
+        if (body?.fid) fidParam = String(body.fid);
+      } catch { /* no body */ }
+    }
+    const ALL_FIDS = ["48225", "87190", "87833", "90621"];
+    if (!fidParam || !ALL_FIDS.includes(fidParam)) {
+      return new Response(
+        JSON.stringify({
+          error: "Missing or invalid `fid` parameter",
+          valid_fids: ALL_FIDS,
+          hint: "Call with ?fid=48225 (or 87190, 87833, 90621). Use `import-awin-orchestrator` to import all 4 in sequence.",
+        }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const COLUMNS = [
       "aw_deep_link","product_name","aw_product_id","merchant_product_id",
       "merchant_image_url","description","merchant_category","search_price",
@@ -170,9 +190,9 @@ Deno.serve(async (req) => {
       "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
     ].join(",");
 
-    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${FIDS}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
+    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
 
-    console.log("📡 Streaming Awin feed...");
+    console.log(`📡 Streaming Awin feed for FID ${fidParam}...`);
     const feedRes = await fetch(feedUrl);
     if (!feedRes.ok || !feedRes.body) {
       throw new Error(`Awin feed download failed: ${feedRes.status}`);
