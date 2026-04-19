@@ -29,16 +29,21 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Page through deals (Supabase caps at 1000 rows per query)
+    // Only return deals detected in the last 30 days to keep payload + query bounded.
+    // Avoids statement timeouts on the full table and keeps the JSON under client memory limits.
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const MAX_ROWS = 3000;
     const PAGE = 1000;
     const all: any[] = [];
     let from = 0;
-    while (true) {
+    while (from < MAX_ROWS) {
+      const to = Math.min(from + PAGE - 1, MAX_ROWS - 1);
       const { data, error } = await supabase
         .from("deals")
         .select(FIELDS)
+        .gte("detected_at", since)
         .order("detected_at", { ascending: false, nullsFirst: false })
-        .range(from, from + PAGE - 1);
+        .range(from, to);
       if (error) throw error;
       if (!data || data.length === 0) break;
       all.push(...data);
