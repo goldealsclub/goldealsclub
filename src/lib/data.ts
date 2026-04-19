@@ -208,6 +208,16 @@ function normalizeDeals(raw: any[]): Deal[] {
       // tant qu'ils ont un prix de vente valide.
       if (merchant.includes("snipes")) {
         if (!sale || sale <= 0) return false;
+        // Heuristique RRP : si pas de prix barré, on l'estime selon la catégorie
+        if (!orig || orig <= sale) {
+          const cat = inferCategory(d.category || "autres", d.title || "");
+          let multiplier = 1.25; // vêtements par défaut
+          if (cat === "sneakers") multiplier = 1.30;
+          else if (cat === "accessoires") multiplier = 1.20;
+          // Arrondi au .95 pour un rendu naturel ("prix psychologique")
+          const estimated = Math.floor(sale * multiplier) + 0.95;
+          d.original_price = estimated;
+        }
         return true;
       }
       // Tous les autres marchands : exiger une vraie remise (prix barré)
