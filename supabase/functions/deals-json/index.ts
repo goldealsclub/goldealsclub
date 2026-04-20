@@ -30,14 +30,37 @@ Deno.serve(async (req) => {
     );
 
     // Only return deals detected in the last 30 days to keep payload + query bounded.
-    // Avoids statement timeouts on the full table and keeps the JSON under client memory limits.
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const MAX_ROWS = 3000;
     const PAGE = 1000;
     const all: any[] = [];
+    const seen = new Set<string>();
+
+    const pushUnique = (rows: any[]) => {
+      for (const r of rows) {
+        if (r?.id && !seen.has(r.id)) {
+          seen.add(r.id);
+          all.push(r);
+        }
+      }
+    };
+
+    // 1) Guarantee partner representation (Snipes) — fetched first so it survives the cap.
+    const PARTNER_QUOTA = 600;
+    const { data: partnerRows, error: partnerErr } = await supabase
+      .from("deals")
+      .select(FIELDS)
+      .gte("detected_at", since)
+      .ilike("merchant", "%snipes%")
+      .order("detected_at", { ascending: false, nullsFirst: false })
+      .range(0, PARTNER_QUOTA - 1);
+    if (partnerErr) throw partnerErr;
+    pushUnique(partnerRows || []);
+
+    // 2) Fill the rest with the most recent deals across all merchants.
     let from = 0;
-    while (from < MAX_ROWS) {
-      const to = Math.min(from + PAGE - 1, MAX_ROWS - 1);
+    while (all.length < MAX_ROWS) {
+      const to = from + PAGE - 1;
       const { data, error } = await supabase
         .from("deals")
         .select(FIELDS)
@@ -46,7 +69,7 @@ Deno.serve(async (req) => {
         .range(from, to);
       if (error) throw error;
       if (!data || data.length === 0) break;
-      all.push(...data);
+      pushUnique(data);
       if (data.length < PAGE) break;
       from += PAGE;
     }
