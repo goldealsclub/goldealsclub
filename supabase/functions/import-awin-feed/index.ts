@@ -231,7 +231,7 @@ Deno.serve(async (req) => {
         if (body?.fid) fidParam = String(body.fid);
       } catch { /* no body */ }
     }
-    const ALL_FIDS = ["48225", "87190", "87833", "90621", "111256", "112989"];
+    const ALL_FIDS = ["48225", "87190", "87833", "90621", "111256", "112989", "122628"];
     if (!fidParam || !ALL_FIDS.includes(fidParam)) {
       return new Response(
         JSON.stringify({
