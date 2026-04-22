@@ -204,19 +204,14 @@ function normalizeDeals(raw: any[]): Deal[] {
       const orig = Number(d.original_price);
       const sale = Number(d.sale_price);
       const merchant = (d.merchant || "").toLowerCase();
-      // Snipes ne fournit pas de RRP via Awin → on les garde même sans prix barré,
-      // tant qu'ils ont un prix de vente valide.
+      // Snipes ne fournit pas de RRP via Awin. On garde le produit s'il a un
+      // prix de vente valide, mais on n'invente JAMAIS de prix barré : afficher
+      // un faux RRP serait trompeur (ex. AF1 '07 à 129,99€ = tarif Nike plein).
       if (merchant.includes("snipes")) {
         if (!sale || sale <= 0) return false;
-        // Heuristique RRP : si pas de prix barré, on l'estime selon la catégorie
         if (!orig || orig <= sale) {
-          const cat = inferCategory(d.category || "autres", d.title || "");
-          let multiplier = 1.25; // vêtements par défaut
-          if (cat === "sneakers") multiplier = 1.30;
-          else if (cat === "accessoires") multiplier = 1.20;
-          // Arrondi au .95 pour un rendu naturel ("prix psychologique")
-          const estimated = Math.floor(sale * multiplier) + 0.95;
-          d.original_price = estimated;
+          d.original_price = null;
+          d.discount_percent = null;
         }
         return true;
       }
