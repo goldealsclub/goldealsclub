@@ -11,6 +11,8 @@ import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
 import { motion } from "framer-motion";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { useDealVotes } from "@/hooks/use-deal-votes";
+import { getPromoCodesForMerchant } from "@/lib/promo-codes";
+import PromoCodeBadge from "./PromoCodeBadge";
 
 interface DealCardProps {
   deal: Deal;
@@ -39,6 +41,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const saved = isFav(deal.id);
   const comparing = isComparing(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
+  const promoCodes = getPromoCodesForMerchant(deal.merchant);
   const startDate = formatDate(deal.promo_start_date);
   const endDate = formatDate(deal.promo_end_date);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -156,6 +159,14 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             <span className="font-body text-sm text-foreground/40 line-through">{formatCurrency(deal.original_price, deal.currency)}</span>
           )}
         </div>
+
+        {promoCodes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {promoCodes.map((code) => (
+              <PromoCodeBadge key={code.code} code={code} variant="compact" />
+            ))}
+          </div>
+        )}
 
         {/* Actions */}
         <div className="flex items-center justify-between pt-3 border-t border-foreground/8">
