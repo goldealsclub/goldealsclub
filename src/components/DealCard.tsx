@@ -11,6 +11,8 @@ import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
 import { motion } from "framer-motion";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { useDealVotes } from "@/hooks/use-deal-votes";
+import { getPromoCodesForMerchant } from "@/lib/promo-codes";
+import PromoCodeBadge from "./PromoCodeBadge";
 
 interface DealCardProps {
   deal: Deal;
@@ -39,6 +41,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const saved = isFav(deal.id);
   const comparing = isComparing(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
+  const promoCodes = getPromoCodesForMerchant(deal.merchant);
   const startDate = formatDate(deal.promo_start_date);
   const endDate = formatDate(deal.promo_end_date);
   const [imageLoaded, setImageLoaded] = useState(false);

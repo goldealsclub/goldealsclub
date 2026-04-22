@@ -29,6 +29,7 @@ import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
+import PromoCodesPage from "./pages/PromoCodesPage";
 import InstallBanner from "./components/InstallBanner";
 import UpdateBanner from "./components/UpdateBanner";
 
@@ -66,6 +67,7 @@ const App = () => (
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/install" element={<InstallPage />} />
+                <Route path="/codes-promo" element={<PromoCodesPage />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallBanner />
