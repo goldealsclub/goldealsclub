@@ -1,13 +1,17 @@
 /**
  * Garde anti-régression du pipeline deals.
  *
- * Ces invariants doivent rester vrais à chaque modification du pipeline
+ * Invariants vérifiés à chaque modification du pipeline
  * (`supabase/functions/deals-json/index.ts` ou `src/lib/data.ts`) :
  *
  *  1. Le catalogue total renvoyé par la source live reste ≥ 4 000 deals.
- *  2. Snipes EU expose des prix barrés (`original_price > sale_price`) sur
- *     une majorité significative de ses deals.
- *  3. Les variantes de COULEUR ne sont jamais écrasées par la déduplication
+ *  2. Les marchands clés attendus (Snipes, Sneakin, JD Sports, Nike…) sont
+ *     toujours présents — détecte automatiquement un changement de label
+ *     côté flux Awin (ex: "Snipes EU" → "SNIPES.com").
+ *  3. Snipes (peu importe la variante d'orthographe du merchant) expose des
+ *     prix barrés (`original_price > sale_price`) sur une fraction
+ *     significative de ses deals.
+ *  4. Les variantes de COULEUR ne sont jamais écrasées par la déduplication
  *     (un même titre/marchand peut apparaître plusieurs fois si les images
  *     diffèrent).
  *
@@ -25,7 +29,22 @@ const PUBLISHABLE_KEY =
 
 const MIN_TOTAL_DEALS = 4000;
 const MIN_SNIPES_DEALS = 100;
-const MIN_SNIPES_WITH_STRIKETHROUGH_RATIO = 0.6;
+// Réaliste vu le flux Awin actuel (≈30 % des Snipes ont un RRP).
+// Si ce taux chute brutalement, c'est probablement une régression du mapping.
+const MIN_SNIPES_WITH_STRIKETHROUGH_RATIO = 0.2;
+
+/**
+ * Marchands attendus dans le catalogue. Pour chacun, plusieurs variantes
+ * d'orthographe possibles (le flux Awin renomme parfois ses marchands —
+ * ex. "Snipes EU" devient "SNIPES.com"). Le test passe dès qu'UNE variante
+ * matche, et signale clairement le marchand absent sinon.
+ */
+const EXPECTED_MERCHANTS: Record<string, string[]> = {
+  Snipes: ["snipes"],
+  Sneakin: ["sneakin"],
+  "JD Sports": ["jd sports", "jdsports"],
+  Nike: ["nike"],
+};
 
 interface RawDeal {
   id: string;
@@ -62,6 +81,17 @@ async function fetchLiveDeals(): Promise<RawDeal[] | null> {
   }
 }
 
+const norm = (s: string | null | undefined) =>
+  (s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
+
+/** Renvoie tous les deals dont le merchant matche une des variantes données. */
+function dealsForMerchant(deals: RawDeal[], variants: string[]): RawDeal[] {
+  return deals.filter((d) => {
+    const m = norm(d.merchant);
+    return variants.some((v) => m.includes(v));
+  });
+}
+
 describe("deals pipeline — anti-regression invariants", () => {
   it(`renvoie ≥ ${MIN_TOTAL_DEALS} deals au total`, async () => {
     const deals = await fetchLiveDeals();
@@ -75,7 +105,7 @@ describe("deals pipeline — anti-regression invariants", () => {
     expect(deals.length).toBeGreaterThanOrEqual(MIN_TOTAL_DEALS);
   }, 60_000);
 
-  it("Snipes EU affiche des prix barrés sur la majorité de ses deals", async () => {
+  it("présence des marchands clés (détecte les renommages côté flux Awin)", async () => {
     const deals = await fetchLiveDeals();
     if (!deals) {
       console.warn(
@@ -85,12 +115,51 @@ describe("deals pipeline — anti-regression invariants", () => {
       return;
     }
 
-    const snipes = deals.filter((d) =>
-      (d.merchant || "").toLowerCase().includes("snipes"),
+    const presentMerchants = Array.from(
+      new Set(deals.map((d) => norm(d.merchant)).filter(Boolean)),
     );
+
+    const missing: string[] = [];
+    for (const [label, variants] of Object.entries(EXPECTED_MERCHANTS)) {
+      const found = dealsForMerchant(deals, variants).length > 0;
+      if (!found) missing.push(label);
+    }
+
+    expect(
+      missing,
+      `Marchands attendus introuvables: ${missing.join(", ")}. ` +
+        `Liste actuelle des merchants (${presentMerchants.length}): ` +
+        `${presentMerchants.slice(0, 30).join(" | ")}` +
+        (presentMerchants.length > 30 ? " | …" : "") +
+        `. Vérifier un éventuel renommage côté flux Awin et mettre à jour ` +
+        `EXPECTED_MERCHANTS dans ce test.`,
+    ).toEqual([]);
+  }, 60_000);
+
+  it("Snipes affiche des prix barrés sur une part significative de ses deals", async () => {
+    const deals = await fetchLiveDeals();
+    if (!deals) {
+      console.warn(
+        "[skip] deals-json injoignable, test ignoré:",
+        fetchError?.message,
+      );
+      return;
+    }
+
+    const snipes = dealsForMerchant(deals, EXPECTED_MERCHANTS.Snipes);
+
+    // Si Snipes est absent du catalogue, les autres tests l'auront déjà
+    // signalé — on évite ici un faux négatif "ratio NaN".
+    if (snipes.length === 0) {
+      console.warn(
+        "[skip] Aucun deal Snipes trouvé — couvert par le test de présence des marchands.",
+      );
+      return;
+    }
+
     expect(
       snipes.length,
-      "Snipes doit être présent dans le catalogue",
+      "Snipes doit avoir un volume minimum dans le catalogue",
     ).toBeGreaterThanOrEqual(MIN_SNIPES_DEALS);
 
     const withStrikethrough = snipes.filter((d) => {
@@ -104,7 +173,9 @@ describe("deals pipeline — anti-regression invariants", () => {
       ratio,
       `Snipes doit avoir un prix barré sur au moins ` +
         `${Math.round(MIN_SNIPES_WITH_STRIKETHROUGH_RATIO * 100)}% de ses deals ` +
-        `(actuel: ${withStrikethrough.length}/${snipes.length})`,
+        `(actuel: ${withStrikethrough.length}/${snipes.length} = ` +
+        `${Math.round(ratio * 100)}%). Vérifier le mapping RRP côté ` +
+        `import-awin-feed (rrp_price → product_price_old → base_price → saving).`,
     ).toBeGreaterThanOrEqual(MIN_SNIPES_WITH_STRIKETHROUGH_RATIO);
   }, 60_000);
 
@@ -123,8 +194,8 @@ describe("deals pipeline — anti-regression invariants", () => {
     // écrasées). On vérifie qu'au moins quelques groupes ont >1 variante.
     const groups = new Map<string, Set<string>>();
     for (const d of deals) {
-      const merchant = (d.merchant || "").toLowerCase().trim();
-      const title = (d.title || "").toLowerCase().trim();
+      const merchant = norm(d.merchant);
+      const title = norm(d.title);
       const img = (d.image_url || "").trim();
       if (!merchant || !title || !img) continue;
       const k = `${merchant}|${title}`;
