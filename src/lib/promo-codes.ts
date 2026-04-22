@@ -5,6 +5,8 @@ export interface PromoCode {
   code: string;
   description: string; // e.g. "-5% sur tout le site"
   discountLabel: string; // short label shown in badge, e.g. "-5%"
+  /** Percentage discount applied to sale_price (e.g. 5 for -5%). Used to compute estimated final price. */
+  discountPercent?: number;
   conditions?: string;
   expiresAt?: string; // ISO date
   url?: string; // optional landing URL
@@ -27,6 +29,7 @@ export const PROMO_CODES: MerchantPromo[] = [
         code: "SIG5",
         description: "-5% sur l'ensemble du site",
         discountLabel: "-5%",
+        discountPercent: 5,
         conditions: "Cumulable avec les promotions en cours.",
       },
     ],
