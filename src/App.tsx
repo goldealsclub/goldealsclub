@@ -30,6 +30,7 @@ import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import InstallPage from "./pages/InstallPage";
 import PromoCodesPage from "./pages/PromoCodesPage";
+import WorldCup2026Page from "./pages/WorldCup2026Page";
 import InstallBanner from "./components/InstallBanner";
 import UpdateBanner from "./components/UpdateBanner";
 
@@ -68,6 +69,7 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/codes-promo" element={<PromoCodesPage />} />
+                <Route path="/coupe-du-monde-2026" element={<WorldCup2026Page />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
               <InstallBanner />
