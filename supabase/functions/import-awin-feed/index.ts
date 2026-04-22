@@ -249,6 +249,8 @@ Deno.serve(async (req) => {
       "merchant_name","merchant_id","category_name","aw_image_url","currency",
       "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
       "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
+      // Some merchants (e.g. Snipes EU) ship the RRP only via product_price_old / base_price / saving
+      "product_price_old","base_price","saving",
     ].join(",");
 
     const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
