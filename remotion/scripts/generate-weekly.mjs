@@ -57,7 +57,7 @@ const query = new URLSearchParams({
   category: "eq.sneakers",
 });
 
-const res = await fetch(`${SUPABASE_URL}/rest/v1/deals?${query}`, {
+const res = await fetch(`${SUPABASE_URL}/functions/v1/deals-json`, {
   headers: {
     apikey: SUPABASE_KEY,
     Authorization: `Bearer ${SUPABASE_KEY}`,
@@ -65,22 +65,27 @@ const res = await fetch(`${SUPABASE_URL}/rest/v1/deals?${query}`, {
 });
 
 if (!res.ok) {
-  console.error("DB fetch failed:", res.status, await res.text());
+  console.error("Edge function fetch failed:", res.status, await res.text());
   process.exit(1);
 }
 
-const allDeals = await res.json();
+const payload = await res.json();
+const allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
 const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok"]);
+
 const rawDeals = allDeals
-  .filter((d) =>
-    d.image_url &&
-    d.sale_price &&
-    (d.discount_percent ?? 0) >= 40 &&
-    allowedBrands.has(d.brand)
-  )
+  .filter((d) => {
+    const cat = (d.category || "").toLowerCase();
+    return cat === "sneakers" &&
+      d.image_url &&
+      d.sale_price &&
+      (d.discount_percent ?? 0) >= 40 &&
+      allowedBrands.has(d.brand);
+  })
+  .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0))
   .slice(0, 5);
 
-console.log(`✅ Got ${rawDeals.length} deals (from ${allDeals.length} sneakers)`);
+console.log(`✅ Got ${rawDeals.length} sneakers deals (from ${allDeals.length} total)`);
 
 if (rawDeals.length < 3) {
   console.error("Not enough deals found (need at least 3)");
