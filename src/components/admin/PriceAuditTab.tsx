@@ -117,6 +117,14 @@ const PriceAuditTab = () => {
     URL.revokeObjectURL(url);
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-foreground/30" />
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-8">
       {/* Description */}
