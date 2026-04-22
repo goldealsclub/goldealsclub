@@ -19,6 +19,7 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import { TRACKED_CTAS, auditCta, getCtaAwinUrl } from "@/lib/tracked-ctas";
 
 const COLORS = [
   "hsl(30,40%,45%)", "hsl(30,30%,55%)", "hsl(30,20%,65%)", "hsl(30,15%,72%)",
@@ -831,6 +832,81 @@ const AwinTab = () => {
           )}
         </div>
       )}
+
+      {/* Manual CTA registry — UTM/clickref consistency audit */}
+      <div className="mb-8 sm:mb-12">
+        <div className="flex items-baseline justify-between mb-3 sm:mb-4">
+          <h3 className="font-display text-xs sm:text-sm uppercase tracking-widest">
+            Registre des CTA trackés
+          </h3>
+          <span className="text-[9px] sm:text-[10px] font-body text-foreground/40">
+            {TRACKED_CTAS.length} CTA · audit UTM & clickref
+          </span>
+        </div>
+        <div className="border border-foreground/8 overflow-x-auto">
+          <table className="w-full text-[10px] sm:text-xs font-body">
+            <thead>
+              <tr className="border-b border-foreground/8 bg-muted/30">
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">CTA</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden md:table-cell">Emplacement</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Campaign</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Source</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px] hidden sm:table-cell">Medium</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Content</th>
+                <th className="text-left p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Clickref</th>
+                <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Statut</th>
+                <th className="text-center p-2 sm:p-3 font-display uppercase tracking-wider text-[9px] sm:text-[10px]">Lien</th>
+              </tr>
+            </thead>
+            <tbody>
+              {TRACKED_CTAS.map((cta) => {
+                const issues = auditCta(cta);
+                const ok = issues.length === 0;
+                return (
+                  <tr key={cta.id} className="border-b border-foreground/5 hover:bg-accent/20 transition-colors align-top">
+                    <td className="p-2 sm:p-3 max-w-[180px]">
+                      <div className="font-display text-[10px] sm:text-xs">{cta.label}</div>
+                      <div className="font-mono text-[9px] text-foreground/40">{cta.id}</div>
+                    </td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] text-foreground/50 hidden md:table-cell">{cta.location}</td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] text-primary">{cta.utm.campaign}</td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] text-foreground/60 hidden sm:table-cell">{cta.utm.source}</td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] text-foreground/60 hidden sm:table-cell">{cta.utm.medium}</td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] text-foreground/60">{cta.utm.content}</td>
+                    <td className="p-2 sm:p-3 font-mono text-[9px] sm:text-[10px] text-primary">{cta.clickref}</td>
+                    <td className="p-2 sm:p-3 text-center">
+                      {ok ? (
+                        <span title="Cohérent" className="inline-flex items-center gap-1 text-[9px] font-display uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+                          <CheckCircle className="w-3 h-3" /> OK
+                        </span>
+                      ) : (
+                        <span title={issues.join(" · ")} className="inline-flex items-center gap-1 text-[9px] font-display uppercase tracking-wider text-amber-600 dark:text-amber-400">
+                          <XCircle className="w-3 h-3" /> {issues.length}
+                        </span>
+                      )}
+                    </td>
+                    <td className="p-2 sm:p-3 text-center">
+                      <a
+                        href={getCtaAwinUrl(cta)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center text-foreground/40 hover:text-foreground transition-colors"
+                        title="Tester le lien Awin"
+                      >
+                        <ExternalLink className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      </a>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="text-[9px] sm:text-[10px] font-body text-foreground/30 mt-2 sm:mt-3">
+          Survolez le statut pour voir les détails. Source unique de vérité :{" "}
+          <span className="font-mono">src/lib/tracked-ctas.ts</span>
+        </p>
+      </div>
 
       {/* Recent Awin clicks table */}
       <div className="mb-8 sm:mb-12">
