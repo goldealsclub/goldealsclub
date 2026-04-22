@@ -195,7 +195,10 @@ function inferCategory(category: string, title: string): Category {
 
 
 
-/** Normalize raw JSON deals, filtering out broken entries */
+/** Normalize raw JSON deals, filtering out broken entries.
+ *  Dedupe strategy: collapse SKU/size variants but PRESERVE color variants.
+ *  → primary key = merchant + image_url (different colors = different images)
+ *  → fallback   = merchant + brand + normalized title (when image is missing) */
 function normalizeDeals(raw: any[]): Deal[] {
   const uniqueDeals = new Map<string, any>();
 
@@ -204,7 +207,7 @@ function normalizeDeals(raw: any[]): Deal[] {
 
     const orig = Number(d.original_price);
     const sale = Number(d.sale_price);
-    const merchant = (d.merchant || "").toLowerCase();
+    const merchant = (d.merchant || "").toLowerCase().trim();
 
     if (!sale || sale <= 0) continue;
 
@@ -217,17 +220,17 @@ function normalizeDeals(raw: any[]): Deal[] {
       if (!orig || orig <= sale) continue;
     }
 
-    const dedupeKey = [
-      merchant.trim(),
-      (d.brand || "").toString().trim().toLowerCase(),
-      (d.title || "")
-        .toString()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim(),
-    ].join("|");
+    const img = (d.image_url || "").trim();
+    const titleNorm = (d.title || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    const dedupeKey = img
+      ? `${merchant}|img:${img}`
+      : `${merchant}|t:${(d.brand || "").toString().trim().toLowerCase()}|${titleNorm}`;
 
     if (!uniqueDeals.has(dedupeKey)) {
       uniqueDeals.set(dedupeKey, d);
@@ -235,6 +238,40 @@ function normalizeDeals(raw: any[]): Deal[] {
   }
 
   return Array.from(uniqueDeals.values()).map((d, i) => {
+    const brand = inferBrand(d.brand || "", d.title || "");
+    const gender = inferGender(d.gender || "", d.description || "", d.title || "");
+    const category = inferCategory(d.category || "autres", d.title || "");
+    let discountPercent = d.discount_percent ?? null;
+    if (d.original_price && d.sale_price && d.original_price > d.sale_price) {
+      discountPercent = Math.round(((d.original_price - d.sale_price) / d.original_price) * 100);
+    }
+
+    let dealLevel = d.deal_level || "promo-normale";
+    let flameCount = d.flame_count ?? 1;
+    if (discountPercent !== null) {
+      if (discountPercent >= 50) { dealLevel = "hot-deal"; flameCount = 3; }
+      else if (discountPercent >= 30) { dealLevel = "bon-deal"; flameCount = 2; }
+      else { dealLevel = "promo-normale"; flameCount = 1; }
+    }
+
+    return {
+      ...d,
+      id: d.id || `deal-${i}-${(d.title || "").slice(0, 30).replace(/\s+/g, "-").toLowerCase()}`,
+      image_url: upgradeImageUrl(d.image_url || ""),
+      brand,
+      category,
+      gender,
+      gender_label: genderToLabel(gender),
+      source: d.source || "",
+      currency: d.currency || "EUR",
+      promo_start_date: d.promo_start_date || d.detected_at || "",
+      promo_end_date: d.promo_end_date || null,
+      discount_percent: discountPercent,
+      deal_level: dealLevel as DealLevel,
+      flame_count: flameCount,
+    };
+  });
+}
     const brand = inferBrand(d.brand || "", d.title || "");
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
     const category = inferCategory(d.category || "autres", d.title || "");
