@@ -14,12 +14,13 @@ import {
   Loader2, TrendingUp, MousePointerClick, ShoppingBag, Heart, Users,
   Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download,
   Eye, UserCheck, UserX, Activity, Star, Clock, Calendar,
-  ExternalLink, Link2, RefreshCw, Download as DownloadIcon,
+  ExternalLink, Link2, RefreshCw, Download as DownloadIcon, AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
 import { TRACKED_CTAS, auditCta, getCtaAwinUrl } from "@/lib/tracked-ctas";
+import PriceAuditTab from "@/components/admin/PriceAuditTab";
 
 const COLORS = [
   "hsl(30,40%,45%)", "hsl(30,30%,55%)", "hsl(30,20%,65%)", "hsl(30,15%,72%)",
@@ -88,7 +89,7 @@ interface ChartData {
   provider_breakdown: { name: string; value: number }[];
 }
 
-type Tab = "overview" | "analytics" | "awin" | "users";
+type Tab = "overview" | "analytics" | "awin" | "audit" | "users";
 
 const AdminDashboard = () => {
   const { user, session, loading: authLoading } = useAuth();
@@ -255,6 +256,7 @@ const AdminDashboard = () => {
     { key: "overview", label: "Vue d'ensemble", icon: <Eye className="w-4 h-4" /> },
     { key: "analytics", label: "Analytics", icon: <TrendingUp className="w-4 h-4" /> },
     { key: "awin", label: "Awin Tracking", icon: <Link2 className="w-4 h-4" /> },
+    { key: "audit", label: "Audit prix", icon: <AlertTriangle className="w-4 h-4" /> },
     { key: "users", label: "Utilisateurs", icon: <Users className="w-4 h-4" /> },
   ];
 
@@ -301,7 +303,7 @@ const AdminDashboard = () => {
             >
               {t.icon}
               <span className="hidden xs:inline">{t.label}</span>
-              <span className="xs:hidden">{t.key === "overview" ? "Vue" : t.key === "analytics" ? "Stats" : t.key === "awin" ? "Awin" : "Users"}</span>
+              <span className="xs:hidden">{t.key === "overview" ? "Vue" : t.key === "analytics" ? "Stats" : t.key === "awin" ? "Awin" : t.key === "audit" ? "Audit" : "Users"}</span>
             </button>
           ))}
         </div>
@@ -337,6 +339,10 @@ const AdminDashboard = () => {
 
         {tab === "awin" && (
           <AwinTab />
+        )}
+
+        {tab === "audit" && (
+          <PriceAuditTab />
         )}
 
         {tab === "users" && (
