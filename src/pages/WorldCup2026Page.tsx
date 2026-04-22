@@ -5,12 +5,22 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import SEOHead from "@/components/SEOHead";
 import { trackOutboundClick } from "@/lib/track-click";
+import { buildAwinDeeplink } from "@/lib/awin-deeplink";
 import { toast } from "@/hooks/use-toast";
 
-const ADIDAS_URL =
-  "https://sportisgood.fr/football/equipes/equipes-nationales?brand=adidas&utm_source=goldealsclub&utm_medium=affiliate&utm_campaign=worldcup2026";
-const PUMA_URL =
-  "https://sportisgood.fr/football/equipes/equipes-nationales?brand=Puma&utm_source=goldealsclub&utm_medium=affiliate&utm_campaign=worldcup2026";
+const CAMPAIGN = "worldcup2026";
+
+const ADIDAS_TARGET =
+  "https://sportisgood.fr/football/equipes/equipes-nationales?brand=adidas&utm_source=goldealsclub&utm_medium=affiliate&utm_campaign=" +
+  CAMPAIGN +
+  "&utm_content=page-adidas";
+const PUMA_TARGET =
+  "https://sportisgood.fr/football/equipes/equipes-nationales?brand=Puma&utm_source=goldealsclub&utm_medium=affiliate&utm_campaign=" +
+  CAMPAIGN +
+  "&utm_content=page-puma";
+
+const ADIDAS_URL = buildAwinDeeplink(ADIDAS_TARGET, `${CAMPAIGN}-adidas-page`);
+const PUMA_URL = buildAwinDeeplink(PUMA_TARGET, `${CAMPAIGN}-puma-page`);
 
 const PROMO_CODE = "SIG5";
 
