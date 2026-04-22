@@ -9,6 +9,8 @@ import { GenderProvider } from "@/lib/gender-context";
 import { AuthProvider } from "@/lib/auth-context";
 import { CompareProvider } from "./components/CompareDrawer";
 import { VotesProvider } from "@/hooks/use-deal-votes";
+import { ConsentProvider } from "@/lib/cookie-consent";
+import CookieBanner from "./components/CookieBanner";
 import OnboardingModal from "./components/OnboardingModal";
 import Index from "./pages/Index";
 import CategoryPage from "./pages/CategoryPage";
@@ -44,6 +46,7 @@ const App = () => (
           <GenderProvider>
           <CompareProvider>
           <VotesProvider>
+          <ConsentProvider>
           <TooltipProvider>
             <Toaster />
             <Sonner />
@@ -74,8 +77,10 @@ const App = () => (
               </Routes>
               <InstallBanner />
               <UpdateBanner />
+              <CookieBanner />
             </BrowserRouter>
           </TooltipProvider>
+          </ConsentProvider>
           </VotesProvider>
           </CompareProvider>
           </GenderProvider>
