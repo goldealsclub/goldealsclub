@@ -272,40 +272,6 @@ function normalizeDeals(raw: any[]): Deal[] {
     };
   });
 }
-    const brand = inferBrand(d.brand || "", d.title || "");
-    const gender = inferGender(d.gender || "", d.description || "", d.title || "");
-    const category = inferCategory(d.category || "autres", d.title || "");
-    let discountPercent = d.discount_percent ?? null;
-    if (d.original_price && d.sale_price && d.original_price > d.sale_price) {
-      discountPercent = Math.round(((d.original_price - d.sale_price) / d.original_price) * 100);
-    }
-
-    let dealLevel = d.deal_level || "promo-normale";
-    let flameCount = d.flame_count ?? 1;
-    if (discountPercent !== null) {
-      if (discountPercent >= 50) { dealLevel = "hot-deal"; flameCount = 3; }
-      else if (discountPercent >= 30) { dealLevel = "bon-deal"; flameCount = 2; }
-      else { dealLevel = "promo-normale"; flameCount = 1; }
-    }
-
-    return {
-      ...d,
-      id: d.id || `deal-${i}-${(d.title || "").slice(0, 30).replace(/\s+/g, "-").toLowerCase()}`,
-      image_url: upgradeImageUrl(d.image_url || ""),
-      brand,
-      category,
-      gender,
-      gender_label: genderToLabel(gender),
-      source: d.source || "",
-      currency: d.currency || "EUR",
-      promo_start_date: d.promo_start_date || d.detected_at || "",
-      promo_end_date: d.promo_end_date || null,
-      discount_percent: discountPercent,
-      deal_level: dealLevel as DealLevel,
-      flame_count: flameCount,
-    };
-  });
-}
 export const deals: Deal[] = [];
 let _loading = false;
 let _loaded = false;
