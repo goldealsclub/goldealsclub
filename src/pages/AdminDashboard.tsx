@@ -19,6 +19,7 @@ import {
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
+import { TRACKED_CTAS, auditCta, getCtaAwinUrl } from "@/lib/tracked-ctas";
 
 const COLORS = [
   "hsl(30,40%,45%)", "hsl(30,30%,55%)", "hsl(30,20%,65%)", "hsl(30,15%,72%)",
