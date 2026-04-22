@@ -341,6 +341,10 @@ const AdminDashboard = () => {
           <AwinTab />
         )}
 
+        {tab === "audit" && (
+          <PriceAuditTab />
+        )}
+
         {tab === "users" && (
           <UsersTab users={adminUsers} stats={siteStats} loading={usersLoading} error={usersError} />
         )}
