@@ -193,8 +193,6 @@ function inferCategory(category: string, title: string): Category {
   return category as Category;
 }
 
-
-
 /** Normalize raw JSON deals, filtering out broken entries.
  *  Dedupe strategy: collapse SKU/size variants but PRESERVE color variants.
  *  → primary key = merchant + image_url (different colors = different images)
@@ -205,20 +203,19 @@ function normalizeDeals(raw: any[]): Deal[] {
   for (const d of raw) {
     if (!isValidImage(d.image_url || "")) continue;
 
-    const orig = Number(d.original_price);
-    const sale = Number(d.sale_price);
+    const originalPrice = Number(d.original_price);
+    const salePrice = Number(d.sale_price);
     const merchant = (d.merchant || "").toLowerCase().trim();
 
-    if (!sale || sale <= 0) continue;
+    if (!Number.isFinite(salePrice) || salePrice <= 0) continue;
 
-    if (merchant.includes("snipes")) {
-      if (!orig || orig <= sale) {
-        d.original_price = null;
-        d.discount_percent = null;
-      }
-    } else {
-      if (!orig || orig <= sale) continue;
-    }
+    const hasValidOriginalPrice = Number.isFinite(originalPrice) && originalPrice > salePrice;
+
+    d.sale_price = salePrice;
+    d.original_price = hasValidOriginalPrice ? originalPrice : null;
+    d.discount_percent = hasValidOriginalPrice
+      ? Math.round(((originalPrice - salePrice) / originalPrice) * 100)
+      : null;
 
     const img = (d.image_url || "").trim();
     const titleNorm = (d.title || "")
@@ -287,26 +284,39 @@ export async function loadDeals(): Promise<Deal[]> {
   }
   _loading = true;
   try {
-    // Try the live edge function first (always fresh after Awin imports)
     let raw: any[] | null = null;
+
     try {
-      const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-      if (projectId) {
-        const liveUrl = `https://${projectId}.supabase.co/functions/v1/deals-json`;
-        const liveResp = await fetch(liveUrl);
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+      if (supabaseUrl && publishableKey) {
+        const liveResp = await fetch(`${supabaseUrl}/functions/v1/deals-json`, {
+          headers: {
+            apikey: publishableKey,
+            Authorization: `Bearer ${publishableKey}`,
+          },
+          cache: "no-store",
+        });
+
         if (liveResp.ok) {
           const data = await liveResp.json();
-          if (Array.isArray(data) && data.length > 0) raw = data;
+          if (Array.isArray(data) && data.length > 0) {
+            raw = data;
+          }
+        } else {
+          console.warn("Live deals fetch returned", liveResp.status);
         }
       }
     } catch (e) {
       console.warn("Live deals fetch failed, falling back to static JSON:", e);
     }
-    // Fallback: bundled static snapshot
+
     if (!raw) {
-      const resp = await fetch("/deals.json");
+      const resp = await fetch("/deals.json", { cache: "no-store" });
       raw = await resp.json();
     }
+
     const normalized = normalizeDeals(raw);
     deals.length = 0;
     deals.push(...normalized);
