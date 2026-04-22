@@ -151,15 +151,27 @@ const DealPage = () => {
 
             <h1 className="font-display text-2xl md:text-3xl tracking-wider mb-6">{deal.title}</h1>
 
-            <div className="flex items-baseline gap-3 mb-6">
-              <span className="font-display text-3xl">{formatCurrency(deal.sale_price, deal.currency)}</span>
-              {deal.original_price && (
+            <div className="flex items-baseline gap-3 mb-2 flex-wrap">
+              <span className={`font-display text-3xl ${promoPrice ? "text-foreground/40 line-through" : ""}`}>
+                {formatCurrency(deal.sale_price, deal.currency)}
+              </span>
+              {promoPrice && bestPromo && (
+                <span className="font-display text-3xl text-foreground">
+                  {formatCurrency(promoPrice, deal.currency)}
+                </span>
+              )}
+              {deal.original_price && !promoPrice && (
                 <span className="font-body text-lg text-foreground/40 line-through">{formatCurrency(deal.original_price, deal.currency)}</span>
               )}
               {deal.discount_percent && (
                 <span className="text-xs font-body text-foreground/50">(-{deal.discount_percent}% {t.off})</span>
               )}
             </div>
+            {promoPrice && bestPromo && (
+              <p className="text-[11px] font-body text-foreground/50 mb-6">
+                Prix estimé après application du code <span className="font-display tracking-wider text-foreground">{bestPromo.code}</span> ({bestPromo.discountLabel})
+              </p>
+            )}
 
             {endDate && (
               <div className="flex items-center gap-2 mb-4 text-foreground/50">
