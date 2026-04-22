@@ -26,6 +26,7 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
+import { imageSize } from "image-size";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -125,22 +126,30 @@ function extractDirectImageUrl(productserveUrl) {
   } catch { return null; }
 }
 
+const MIN_IMG_SIZE = 600; // px (smallest dimension); rejects merchant thumbnails
+
 async function fetchImage(url) {
   const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://www.google.com/" } });
   if (!r.ok) throw new Error(`HTTP ${r.status}`);
   const buf = Buffer.from(await r.arrayBuffer());
   const ct = r.headers.get("content-type") || "image/jpeg";
   if (!ct.startsWith("image/")) throw new Error(`bad type ${ct}`);
-  return `data:${ct};base64,${buf.toString("base64")}`;
+  let dims;
+  try { dims = imageSize(buf); } catch { throw new Error("undecodable"); }
+  const minDim = Math.min(dims.width || 0, dims.height || 0);
+  if (minDim < MIN_IMG_SIZE) throw new Error(`too small ${dims.width}x${dims.height}`);
+  return { dataUri: `data:${ct};base64,${buf.toString("base64")}`, dims };
 }
 
 async function imageToDataUri(url) {
-  // Try original first, then direct merchant URL fallback
   const candidates = [url];
   const direct = extractDirectImageUrl(url);
   if (direct) candidates.push(direct);
   for (const c of candidates) {
-    try { return await fetchImage(c); } catch (e) { /* try next */ }
+    try {
+      const { dataUri, dims } = await fetchImage(c);
+      return { dataUri, dims, source: c === url ? "cdn" : "direct" };
+    } catch (e) { /* try next */ }
   }
   return null;
 }
@@ -148,9 +157,9 @@ async function imageToDataUri(url) {
 const deals = [];
 for (const d of rawDeals) {
   if (deals.length >= 5) break;
-  const dataUri = await imageToDataUri(d.image_url);
-  if (!dataUri) {
-    console.log(`   ⏭️  Skipping ${d.brand} — image unavailable`);
+  const result = await imageToDataUri(d.image_url);
+  if (!result) {
+    console.log(`   ⏭️  ${d.brand} — no usable image (≥${MIN_IMG_SIZE}px)`);
     continue;
   }
   deals.push({
@@ -159,13 +168,13 @@ for (const d of rawDeals) {
     originalPrice: d.original_price,
     salePrice: d.sale_price,
     discountPercent: d.discount_percent,
-    imageUrl: dataUri,
+    imageUrl: result.dataUri,
     category: d.category.charAt(0).toUpperCase() + d.category.slice(1),
     currency: d.currency || "EUR",
     merchant: d.merchant,
     productUrl: "goldealsclub.com",
   });
-  console.log(`   ✅ ${d.brand} — ${d.title.slice(0, 50)}`);
+  console.log(`   ✅ ${d.brand} — ${result.dims.width}×${result.dims.height} [${result.source}] — ${d.title.slice(0, 45)}`);
 }
 
 if (deals.length < 5) {
