@@ -288,9 +288,6 @@ Deno.serve(async (req) => {
       buffer = [];
     }
 
-    // DEBUG: dump first row of Snipes to logs to understand RRP availability
-    let debugDumped = false;
-
     for await (const line of iterateCsvLines(textStream)) {
       if (!line) continue;
 
