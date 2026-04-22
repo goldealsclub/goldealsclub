@@ -195,7 +195,10 @@ function inferCategory(category: string, title: string): Category {
 
 
 
-/** Normalize raw JSON deals, filtering out broken entries */
+/** Normalize raw JSON deals, filtering out broken entries.
+ *  Dedupe strategy: collapse SKU/size variants but PRESERVE color variants.
+ *  → primary key = merchant + image_url (different colors = different images)
+ *  → fallback   = merchant + brand + normalized title (when image is missing) */
 function normalizeDeals(raw: any[]): Deal[] {
   const uniqueDeals = new Map<string, any>();
 
@@ -204,7 +207,7 @@ function normalizeDeals(raw: any[]): Deal[] {
 
     const orig = Number(d.original_price);
     const sale = Number(d.sale_price);
-    const merchant = (d.merchant || "").toLowerCase();
+    const merchant = (d.merchant || "").toLowerCase().trim();
 
     if (!sale || sale <= 0) continue;
 
@@ -217,17 +220,17 @@ function normalizeDeals(raw: any[]): Deal[] {
       if (!orig || orig <= sale) continue;
     }
 
-    const dedupeKey = [
-      merchant.trim(),
-      (d.brand || "").toString().trim().toLowerCase(),
-      (d.title || "")
-        .toString()
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim(),
-    ].join("|");
+    const img = (d.image_url || "").trim();
+    const titleNorm = (d.title || "")
+      .toString()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+    const dedupeKey = img
+      ? `${merchant}|img:${img}`
+      : `${merchant}|t:${(d.brand || "").toString().trim().toLowerCase()}|${titleNorm}`;
 
     if (!uniqueDeals.has(dedupeKey)) {
       uniqueDeals.set(dedupeKey, d);

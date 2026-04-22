@@ -31,7 +31,7 @@ Deno.serve(async (req) => {
 
     // Only return deals detected in the last 30 days to keep payload + query bounded.
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const MAX_ROWS = 3000;
+    const PER_MERCHANT = 2500; // freshest N per merchant — keeps catalog diverse
     const PAGE = 1000;
     const all: any[] = [];
     const seen = new Set<string>();
@@ -45,38 +45,43 @@ Deno.serve(async (req) => {
       }
     };
 
-    // 1) Guarantee partner representation (Snipes) — fetched first so it survives the cap.
-    const PARTNER_QUOTA = 600;
-    const { data: partnerRows, error: partnerErr } = await supabase
+    // Discover active merchants in the window
+    const { data: merchantRows, error: merchantErr } = await supabase
       .from("deals")
-      .select(FIELDS)
+      .select("merchant")
       .gte("detected_at", since)
-      .ilike("merchant", "%snipes%")
-      .order("detected_at", { ascending: false, nullsFirst: false })
-      .range(0, PARTNER_QUOTA - 1);
-    if (partnerErr) throw partnerErr;
-    pushUnique(partnerRows || []);
+      .limit(50000);
+    if (merchantErr) throw merchantErr;
+    const merchants = Array.from(
+      new Set((merchantRows || []).map((r: any) => r.merchant).filter(Boolean)),
+    );
 
-    // 2) Fill the rest with the most recent deals across all merchants.
-    let from = 0;
-    while (all.length < MAX_ROWS) {
-      const to = from + PAGE - 1;
-      const { data, error } = await supabase
-        .from("deals")
-        .select(FIELDS)
-        .gte("detected_at", since)
-        .order("detected_at", { ascending: false, nullsFirst: false })
-        .range(from, to);
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      pushUnique(data);
-      if (data.length < PAGE) break;
-      from += PAGE;
+    // Fetch the freshest PER_MERCHANT rows for each merchant in parallel pages.
+    for (const m of merchants) {
+      let from = 0;
+      let collected = 0;
+      while (collected < PER_MERCHANT) {
+        const to = from + PAGE - 1;
+        const { data, error } = await supabase
+          .from("deals")
+          .select(FIELDS)
+          .gte("detected_at", since)
+          .eq("merchant", m)
+          .order("detected_at", { ascending: false, nullsFirst: false })
+          .range(from, Math.min(to, from + (PER_MERCHANT - collected) - 1));
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        pushUnique(data);
+        collected += data.length;
+        if (data.length < PAGE) break;
+        from += PAGE;
+      }
     }
 
-    // Final dedupe: collapse SKU/size variants from feeds (esp. Snipes) by
-    // (merchant, brand, normalized-title). Keeps the first occurrence which —
-    // because rows are ordered by detected_at desc — is the freshest variant.
+    // Final dedupe: collapse SKU/size variants while preserving COLOR variants.
+    // Variants of the same product/color share the same image URL on every feed
+    // (Snipes, Sneakin, etc.) but different colors have different images, so
+    // image_url is the most precise key. Fallback to title-norm when missing.
     const norm = (s: string) =>
       (s || "")
         .toLowerCase()
@@ -87,7 +92,11 @@ Deno.serve(async (req) => {
     const dedupKey = new Set<string>();
     const deduped: any[] = [];
     for (const r of all) {
-      const k = `${norm(r.merchant)}|${norm(r.brand)}|${norm(r.title)}`;
+      const merchant = norm(r.merchant);
+      const img = (r.image_url || "").trim();
+      const k = img
+        ? `${merchant}|img:${img}`
+        : `${merchant}|t:${norm(r.brand)}|${norm(r.title)}`;
       if (dedupKey.has(k)) continue;
       dedupKey.add(k);
       deduped.push(r);
