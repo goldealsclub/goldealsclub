@@ -96,13 +96,18 @@ if (rawDeals.length < 3) {
 }
 
 // ── 3. Write data.ts ──
+// Use simple text-based SVG data URIs — Wikimedia blocks puppeteer requests
+const makeBrandLogo = (label) => {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 60'><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='Helvetica,Arial,sans-serif' font-size='42' font-weight='800' letter-spacing='2' fill='%23111'>${label}</text></svg>`;
+  return `data:image/svg+xml;utf8,${svg}`;
+};
 const brandLogos = {
-  Nike: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
-  adidas: "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
-  Jordan: "https://upload.wikimedia.org/wikipedia/en/3/37/Jumpman_logo.svg",
-  "New Balance": "https://upload.wikimedia.org/wikipedia/commons/e/ea/New_Balance_logo.svg",
-  Puma: "https://upload.wikimedia.org/wikipedia/commons/d/da/Puma_complete_logo.svg",
-  Reebok: "https://upload.wikimedia.org/wikipedia/commons/0/0e/Reebok_2019_logo.svg",
+  Nike: makeBrandLogo("NIKE"),
+  adidas: makeBrandLogo("adidas"),
+  Jordan: makeBrandLogo("JORDAN"),
+  "New Balance": makeBrandLogo("NB"),
+  Puma: makeBrandLogo("PUMA"),
+  Reebok: makeBrandLogo("Reebok"),
 };
 
 const deals = rawDeals.map((d) => ({
