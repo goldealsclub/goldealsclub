@@ -128,6 +128,7 @@ async function imageToDataUri(url) {
 
 const deals = [];
 for (const d of rawDeals) {
+  if (deals.length >= 5) break;
   const dataUri = await imageToDataUri(d.image_url);
   if (!dataUri) {
     console.log(`   ⏭️  Skipping ${d.brand} — image unavailable`);
