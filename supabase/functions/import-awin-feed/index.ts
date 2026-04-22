@@ -332,21 +332,6 @@ Deno.serve(async (req) => {
         originalPrice = salePrice + savingAbs;
       }
 
-      // DEBUG: log first 3 Snipes rows raw price fields
-      if (fidParam === "122628" && !debugDumped) {
-        console.log("🔍 SNIPES sample raw fields:", JSON.stringify({
-          search_price: r.search_price,
-          rrp_price: r.rrp_price,
-          product_price_old: r.product_price_old,
-          base_price: r.base_price,
-          saving: r.saving,
-          savings_percent: r.savings_percent,
-          parsed_sale: salePrice,
-          parsed_orig: originalPrice,
-        }));
-        debugDumped = true;
-      }
-
       // Sanitize: 0 or values not strictly greater than sale_price are not real RRPs
       if (!originalPrice || originalPrice <= 0 || (salePrice && originalPrice <= salePrice)) {
         originalPrice = null;
