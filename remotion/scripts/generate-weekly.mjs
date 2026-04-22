@@ -113,17 +113,36 @@ const brandLogos = {
 // Pre-download deal images as base64 data URIs (productserve.com blocks puppeteer)
 console.log("🖼️  Downloading deal images...");
 const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
-async function imageToDataUri(url) {
+
+function extractDirectImageUrl(productserveUrl) {
+  // productserve URLs embed the real image as ?url=ssl%3A<encoded>
   try {
-    const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "image/*,*/*" } });
-    if (!r.ok) throw new Error(`HTTP ${r.status}`);
-    const buf = Buffer.from(await r.arrayBuffer());
-    const ct = r.headers.get("content-type") || "image/jpeg";
-    return `data:${ct};base64,${buf.toString("base64")}`;
-  } catch (e) {
-    console.warn(`   ⚠️  Failed to download ${url.slice(0, 80)}... (${e.message})`);
-    return null;
+    const u = new URL(productserveUrl);
+    const inner = u.searchParams.get("url");
+    if (!inner) return null;
+    const decoded = decodeURIComponent(inner).replace(/^ssl:/, "https://").replace(/^http:/, "http://");
+    return decoded.startsWith("http") ? decoded : `https://${decoded.replace(/^\/+/, "")}`;
+  } catch { return null; }
+}
+
+async function fetchImage(url) {
+  const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://www.google.com/" } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  const ct = r.headers.get("content-type") || "image/jpeg";
+  if (!ct.startsWith("image/")) throw new Error(`bad type ${ct}`);
+  return `data:${ct};base64,${buf.toString("base64")}`;
+}
+
+async function imageToDataUri(url) {
+  // Try original first, then direct merchant URL fallback
+  const candidates = [url];
+  const direct = extractDirectImageUrl(url);
+  if (direct) candidates.push(direct);
+  for (const c of candidates) {
+    try { return await fetchImage(c); } catch (e) { /* try next */ }
   }
+  return null;
 }
 
 const deals = [];
