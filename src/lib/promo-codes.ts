@@ -56,3 +56,20 @@ export function getAllActivePromos(): MerchantPromo[] {
     }))
     .filter((p) => p.codes.length > 0);
 }
+
+/**
+ * Returns the best applicable promo code for a merchant (the one with the highest discountPercent).
+ * Returns null if no code with a numeric discount is available.
+ */
+export function getBestPromoForMerchant(merchant: string | null | undefined): PromoCode | null {
+  const codes = getPromoCodesForMerchant(merchant).filter((c) => typeof c.discountPercent === "number" && c.discountPercent! > 0);
+  if (codes.length === 0) return null;
+  return codes.reduce((best, c) => (c.discountPercent! > (best.discountPercent ?? 0) ? c : best));
+}
+
+/** Apply a promo code's percentage to a price. Returns null if not applicable. */
+export function applyPromoToPrice(price: number | null | undefined, code: PromoCode | null): number | null {
+  if (!price || price <= 0 || !code || !code.discountPercent) return null;
+  const result = price * (1 - code.discountPercent / 100);
+  return Math.round(result * 100) / 100;
+}
