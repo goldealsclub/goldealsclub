@@ -149,8 +149,8 @@ for (const d of rawDeals) {
   console.log(`   ✅ ${d.brand} — ${d.title.slice(0, 50)}`);
 }
 
-if (deals.length < 3) {
-  console.error(`❌ Only ${deals.length} deals with valid images — need 3+`);
+if (deals.length < 5) {
+  console.error(`❌ Only ${deals.length} deals with valid images — need 5`);
   process.exit(1);
 }
 console.log(`✅ ${deals.length} deals ready with embedded images`);
