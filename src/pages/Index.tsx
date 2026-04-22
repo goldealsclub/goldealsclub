@@ -10,6 +10,7 @@ import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import BrandBanner from "@/components/BrandBanner";
+import WorldCupBanner from "@/components/WorldCupBanner";
 import hero1 from "@/assets/hero-1.jpg";
 import hero2 from "@/assets/hero-2.jpg";
 import hero3 from "@/assets/hero-3.jpg";
@@ -185,6 +186,9 @@ const Index = () => {
             </div>
           </section>
       )}
+
+      {/* World Cup 2026 — Sport Is Good editorial banner */}
+      <WorldCupBanner />
 
       {/* Categories */}
       <section className="bg-sable/30">
