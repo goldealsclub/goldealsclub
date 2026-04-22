@@ -249,6 +249,8 @@ Deno.serve(async (req) => {
       "merchant_name","merchant_id","category_name","aw_image_url","currency",
       "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
       "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
+      // Some merchants (e.g. Snipes EU) ship the RRP only via product_price_old / base_price / saving
+      "product_price_old","base_price","saving",
     ].join(",");
 
     const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
@@ -312,9 +314,24 @@ Deno.serve(async (req) => {
       if (!rawImage || !rawImage.startsWith("http")) { skippedNoImage++; continue; }
       const imageUrl = upscaleImageUrl(rawImage);
 
-      // Price
+      // Price — sale_price comes from search_price.
+      // For original_price, try rrp_price first (standard Awin), then merchant-specific
+      // fallbacks: product_price_old (used by Snipes EU) and base_price.
+      // Also derive an original price from `saving` (absolute discount in currency)
+      // when no reference price column is filled.
       const salePrice = toNum(r.search_price);
-      const originalPrice = toNum(r.rrp_price);
+      let originalPrice =
+        toNum(r.rrp_price) ??
+        toNum(r.product_price_old) ??
+        toNum(r.base_price);
+      const savingAbs = toNum(r.saving);
+      if ((!originalPrice || originalPrice <= 0) && salePrice && savingAbs && savingAbs > 0) {
+        originalPrice = salePrice + savingAbs;
+      }
+      // Sanitize: 0 or values not strictly greater than sale_price are not real RRPs
+      if (!originalPrice || originalPrice <= 0 || (salePrice && originalPrice <= salePrice)) {
+        originalPrice = null;
+      }
       if (!salePrice || salePrice <= 0) { skippedNoPrice++; continue; }
 
       let discount = toNum(r.savings_percent);
