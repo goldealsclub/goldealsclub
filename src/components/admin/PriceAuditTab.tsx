@@ -14,7 +14,15 @@ interface MerchantStat {
 }
 
 const PriceAuditTab = () => {
-  const { allDeals } = useGender();
+  const [allDeals, setAllDeals] = useState<Deal[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDeals().then((d) => {
+      setAllDeals(d);
+      setLoading(false);
+    });
+  }, []);
 
   const { merchantStats, globalStats, samplesMissing, samplesEqual } = useMemo(() => {
     const byMerchant: Record<string, {
