@@ -36,7 +36,7 @@ const envContent = fs.readFileSync(envPath, "utf-8");
 const env = {};
 for (const line of envContent.split("\n")) {
   const match = line.match(/^(\w+)=(.*)$/);
-  if (match) env[match[1]] = match[2];
+  if (match) env[match[1]] = match[2].trim().replace(/^["']|["']$/g, "");
 }
 
 const SUPABASE_URL = env.VITE_SUPABASE_URL;
@@ -52,29 +52,43 @@ console.log("📡 Fetching top deals from database...");
 
 const query = new URLSearchParams({
   select: "title,brand,merchant,original_price,sale_price,discount_percent,image_url,category,currency,product_url",
-  order: "discount_percent.desc",
-  limit: "5",
-  discount_percent: "gte.40",
-  image_url: "not.is.null",
-  sale_price: "not.is.null",
-  category: "in.(sneakers,hoodies,vestes,t-shirts,pantalons)",
-  brand: "in.(Nike,adidas,Jordan,New Balance,Puma,Reebok)",
+  order: "discount_percent.desc.nullslast",
+  limit: "300",
+  category: "eq.sneakers",
 });
 
-const res = await fetch(`${SUPABASE_URL}/rest/v1/deals?${query}`, {
-  headers: {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
-  },
-});
-
-if (!res.ok) {
-  console.error("DB fetch failed:", res.status, await res.text());
-  process.exit(1);
+const localDealsPath = path.resolve(rootDir, "../public/deals.json");
+let allDeals;
+if (fs.existsSync(localDealsPath)) {
+  console.log("📂 Reading deals from local public/deals.json");
+  const payload = JSON.parse(fs.readFileSync(localDealsPath, "utf-8"));
+  allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
+} else {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/deals-json`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+  });
+  if (!res.ok) {
+    console.error("Edge function fetch failed:", res.status, await res.text());
+    process.exit(1);
+  }
+  const payload = await res.json();
+  allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
 }
+const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok", "Asics", "Converse", "Vans", "Salomon", "Mizuno", "Saucony", "Hoka", "Under Armour"]);
 
-const rawDeals = await res.json();
-console.log(`✅ Got ${rawDeals.length} deals`);
+const rawDeals = allDeals
+  .filter((d) => {
+    const cat = (d.category || "").toLowerCase();
+    return cat === "sneakers" &&
+      d.image_url &&
+      d.sale_price &&
+      (d.discount_percent ?? 0) >= 30 &&
+      allowedBrands.has(d.brand);
+  })
+  .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0))
+  .slice(0, 100);
+
+console.log(`✅ Got ${rawDeals.length} sneakers deals (from ${allDeals.length} total)`);
 
 if (rawDeals.length < 3) {
   console.error("Not enough deals found (need at least 3)");
@@ -82,27 +96,83 @@ if (rawDeals.length < 3) {
 }
 
 // ── 3. Write data.ts ──
+// Use simple text-based SVG data URIs — Wikimedia blocks puppeteer requests
+const makeBrandLogo = (label) => {
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 240 60'><text x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='Helvetica,Arial,sans-serif' font-size='42' font-weight='800' letter-spacing='2' fill='%23111'>${label}</text></svg>`;
+  return `data:image/svg+xml;utf8,${svg}`;
+};
 const brandLogos = {
-  Nike: "https://upload.wikimedia.org/wikipedia/commons/a/a6/Logo_NIKE.svg",
-  adidas: "https://upload.wikimedia.org/wikipedia/commons/2/20/Adidas_Logo.svg",
-  Jordan: "https://upload.wikimedia.org/wikipedia/en/3/37/Jumpman_logo.svg",
-  "New Balance": "https://upload.wikimedia.org/wikipedia/commons/e/ea/New_Balance_logo.svg",
-  Puma: "https://upload.wikimedia.org/wikipedia/commons/d/da/Puma_complete_logo.svg",
-  Reebok: "https://upload.wikimedia.org/wikipedia/commons/0/0e/Reebok_2019_logo.svg",
+  Nike: makeBrandLogo("NIKE"),
+  adidas: makeBrandLogo("adidas"),
+  Jordan: makeBrandLogo("JORDAN"),
+  "New Balance": makeBrandLogo("NB"),
+  Puma: makeBrandLogo("PUMA"),
+  Reebok: makeBrandLogo("Reebok"),
 };
 
-const deals = rawDeals.map((d) => ({
-  title: d.title,
-  brand: d.brand,
-  originalPrice: d.original_price,
-  salePrice: d.sale_price,
-  discountPercent: d.discount_percent,
-  imageUrl: d.image_url,
-  category: d.category.charAt(0).toUpperCase() + d.category.slice(1),
-  currency: d.currency || "EUR",
-  merchant: d.merchant,
-  productUrl: "goldealsclub.com",
-}));
+// Pre-download deal images as base64 data URIs (productserve.com blocks puppeteer)
+console.log("🖼️  Downloading deal images...");
+const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+
+function extractDirectImageUrl(productserveUrl) {
+  // productserve URLs embed the real image as ?url=ssl%3A<encoded>
+  try {
+    const u = new URL(productserveUrl);
+    const inner = u.searchParams.get("url");
+    if (!inner) return null;
+    const decoded = decodeURIComponent(inner).replace(/^ssl:/, "https://").replace(/^http:/, "http://");
+    return decoded.startsWith("http") ? decoded : `https://${decoded.replace(/^\/+/, "")}`;
+  } catch { return null; }
+}
+
+async function fetchImage(url) {
+  const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://www.google.com/" } });
+  if (!r.ok) throw new Error(`HTTP ${r.status}`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  const ct = r.headers.get("content-type") || "image/jpeg";
+  if (!ct.startsWith("image/")) throw new Error(`bad type ${ct}`);
+  return `data:${ct};base64,${buf.toString("base64")}`;
+}
+
+async function imageToDataUri(url) {
+  // Try original first, then direct merchant URL fallback
+  const candidates = [url];
+  const direct = extractDirectImageUrl(url);
+  if (direct) candidates.push(direct);
+  for (const c of candidates) {
+    try { return await fetchImage(c); } catch (e) { /* try next */ }
+  }
+  return null;
+}
+
+const deals = [];
+for (const d of rawDeals) {
+  if (deals.length >= 5) break;
+  const dataUri = await imageToDataUri(d.image_url);
+  if (!dataUri) {
+    console.log(`   ⏭️  Skipping ${d.brand} — image unavailable`);
+    continue;
+  }
+  deals.push({
+    title: d.title,
+    brand: d.brand,
+    originalPrice: d.original_price,
+    salePrice: d.sale_price,
+    discountPercent: d.discount_percent,
+    imageUrl: dataUri,
+    category: d.category.charAt(0).toUpperCase() + d.category.slice(1),
+    currency: d.currency || "EUR",
+    merchant: d.merchant,
+    productUrl: "goldealsclub.com",
+  });
+  console.log(`   ✅ ${d.brand} — ${d.title.slice(0, 50)}`);
+}
+
+if (deals.length < 5) {
+  console.error(`❌ Only ${deals.length} deals with valid images — need 5`);
+  process.exit(1);
+}
+console.log(`✅ ${deals.length} deals ready with embedded images`);
 
 const dataTs = `export interface Deal {
   title: string;
