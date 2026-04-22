@@ -86,7 +86,7 @@ const rawDeals = allDeals
       allowedBrands.has(d.brand);
   })
   .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0))
-  .slice(0, 20);
+  .slice(0, 50);
 
 console.log(`✅ Got ${rawDeals.length} sneakers deals (from ${allDeals.length} total)`);
 
