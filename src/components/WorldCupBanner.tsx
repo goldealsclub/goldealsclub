@@ -1,20 +1,33 @@
 import { ArrowUpRight, Trophy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { trackOutboundClick } from "@/lib/track-click";
+import { buildAwinDeeplink } from "@/lib/awin-deeplink";
 
 /**
  * Editorial banner promoting the FIFA World Cup 2026 national team jerseys
  * available at Sport Is Good (Awin partner). Two CTAs (adidas / Puma) link
  * directly to the merchant category pages and surface the SIG5 promo code.
+ *
+ * Tracking: each CTA goes through Awin's deeplink generator with a stable
+ * clickref (campaign + brand) so commissions and analytics line up.
  */
 
-const ADIDAS_URL =
-  "https://sportisgood.fr/football/equipes/equipes-nationales?brand=adidas&utm_source=goldealsclub&utm_medium=affiliate&utm_campaign=worldcup2026";
-const PUMA_URL =
-  "https://sportisgood.fr/football/equipes/equipes-nationales?brand=Puma&utm_source=goldealsclub&utm_medium=affiliate&utm_campaign=worldcup2026";
+const CAMPAIGN = "worldcup2026";
+
+const ADIDAS_TARGET =
+  "https://sportisgood.fr/football/equipes/equipes-nationales?brand=adidas&utm_source=goldealsclub&utm_medium=affiliate&utm_campaign=" +
+  CAMPAIGN +
+  "&utm_content=banner-adidas";
+const PUMA_TARGET =
+  "https://sportisgood.fr/football/equipes/equipes-nationales?brand=Puma&utm_source=goldealsclub&utm_medium=affiliate&utm_campaign=" +
+  CAMPAIGN +
+  "&utm_content=banner-puma";
+
+const ADIDAS_URL = buildAwinDeeplink(ADIDAS_TARGET, `${CAMPAIGN}-adidas-banner`);
+const PUMA_URL = buildAwinDeeplink(PUMA_TARGET, `${CAMPAIGN}-puma-banner`);
 
 const handleClick = (brand: "adidas" | "puma", url: string) => {
-  trackOutboundClick(`worldcup-2026-${brand}`, url);
+  trackOutboundClick(`worldcup-2026-${brand}-banner`, url);
 };
 
 const WorldCupBanner = () => {
