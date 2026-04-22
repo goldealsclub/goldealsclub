@@ -243,13 +243,16 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Snipes EU (FID 112989) is a pan-European catalog imported with `language/fr`.
+    // Some merchants reject the extended price columns; Snipes accepts the
+    // standard set + product_price_old / base_price / saving fallbacks.
     const COLUMNS = [
       "aw_deep_link","product_name","aw_product_id","merchant_product_id",
       "merchant_image_url","description","merchant_category","search_price",
       "merchant_name","merchant_id","category_name","aw_image_url","currency",
       "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
       "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
-      // Some merchants (e.g. Snipes EU) ship the RRP only via product_price_old / base_price / saving
+      // Some merchants ship the RRP only via product_price_old / base_price / saving
       "product_price_old","base_price","saving",
     ].join(",");
 
@@ -328,6 +331,7 @@ Deno.serve(async (req) => {
       if ((!originalPrice || originalPrice <= 0) && salePrice && savingAbs && savingAbs > 0) {
         originalPrice = salePrice + savingAbs;
       }
+
       // Sanitize: 0 or values not strictly greater than sale_price are not real RRPs
       if (!originalPrice || originalPrice <= 0 || (salePrice && originalPrice <= salePrice)) {
         originalPrice = null;
