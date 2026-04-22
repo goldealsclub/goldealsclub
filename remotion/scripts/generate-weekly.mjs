@@ -36,7 +36,7 @@ const envContent = fs.readFileSync(envPath, "utf-8");
 const env = {};
 for (const line of envContent.split("\n")) {
   const match = line.match(/^(\w+)=(.*)$/);
-  if (match) env[match[1]] = match[2];
+  if (match) env[match[1]] = match[2].trim().replace(/^["']|["']$/g, "");
 }
 
 const SUPABASE_URL = env.VITE_SUPABASE_URL;
