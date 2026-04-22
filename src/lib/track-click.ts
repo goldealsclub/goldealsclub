@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { hasAnalyticsConsent } from "@/lib/cookie-consent";
 
 /**
  * Generate a unique click reference for Awin conversion tracking.
@@ -38,6 +39,9 @@ export function buildAwinUrl(url: string, dealId: string): string {
 }
 
 export function trackOutboundClick(dealId: string, destinationUrl: string) {
+  // Respect cookie consent: skip recording if analytics opt-in not granted.
+  if (!hasAnalyticsConsent()) return;
+
   // Fire-and-forget: don't block navigation
   supabase
     .from("outbound_clicks" as any)
