@@ -197,29 +197,44 @@ function inferCategory(category: string, title: string): Category {
 
 /** Normalize raw JSON deals, filtering out broken entries */
 function normalizeDeals(raw: any[]): Deal[] {
-  return raw
-    .filter((d) => {
-      // Exclude deals with no image
-      if (!isValidImage(d.image_url || "")) return false;
-      const orig = Number(d.original_price);
-      const sale = Number(d.sale_price);
-      const merchant = (d.merchant || "").toLowerCase();
-      // Snipes ne fournit pas de RRP via Awin. On garde le produit s'il a un
-      // prix de vente valide, mais on n'invente JAMAIS de prix barré : afficher
-      // un faux RRP serait trompeur (ex. AF1 '07 à 129,99€ = tarif Nike plein).
-      if (merchant.includes("snipes")) {
-        if (!sale || sale <= 0) return false;
-        if (!orig || orig <= sale) {
-          d.original_price = null;
-          d.discount_percent = null;
-        }
-        return true;
+  const uniqueDeals = new Map<string, any>();
+
+  for (const d of raw) {
+    if (!isValidImage(d.image_url || "")) continue;
+
+    const orig = Number(d.original_price);
+    const sale = Number(d.sale_price);
+    const merchant = (d.merchant || "").toLowerCase();
+
+    if (!sale || sale <= 0) continue;
+
+    if (merchant.includes("snipes")) {
+      if (!orig || orig <= sale) {
+        d.original_price = null;
+        d.discount_percent = null;
       }
-      // Tous les autres marchands : exiger une vraie remise (prix barré)
-      if (!orig || !sale || orig <= sale) return false;
-      return true;
-    })
-    .map((d, i) => {
+    } else {
+      if (!orig || orig <= sale) continue;
+    }
+
+    const dedupeKey = [
+      merchant.trim(),
+      (d.brand || "").toString().trim().toLowerCase(),
+      (d.title || "")
+        .toString()
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim(),
+    ].join("|");
+
+    if (!uniqueDeals.has(dedupeKey)) {
+      uniqueDeals.set(dedupeKey, d);
+    }
+  }
+
+  return Array.from(uniqueDeals.values()).map((d, i) => {
     const brand = inferBrand(d.brand || "", d.title || "");
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
     const category = inferCategory(d.category || "autres", d.title || "");
