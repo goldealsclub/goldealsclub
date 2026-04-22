@@ -303,7 +303,7 @@ const AdminDashboard = () => {
             >
               {t.icon}
               <span className="hidden xs:inline">{t.label}</span>
-              <span className="xs:hidden">{t.key === "overview" ? "Vue" : t.key === "analytics" ? "Stats" : t.key === "awin" ? "Awin" : "Users"}</span>
+              <span className="xs:hidden">{t.key === "overview" ? "Vue" : t.key === "analytics" ? "Stats" : t.key === "awin" ? "Awin" : t.key === "audit" ? "Audit" : "Users"}</span>
             </button>
           ))}
         </div>
