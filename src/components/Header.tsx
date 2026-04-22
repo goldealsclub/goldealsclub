@@ -83,6 +83,7 @@ const Header = () => {
     { to: "/category/sneakers", label: t.sneakers },
     { to: "/category/vestes", label: t.jackets },
     { to: "/category/hoodies", label: t.hoodies },
+    { to: "/coupe-du-monde-2026", label: "Coupe du Monde" },
     { to: "/trends", label: t.trends },
   ];
 

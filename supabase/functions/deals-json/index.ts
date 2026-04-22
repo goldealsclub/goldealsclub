@@ -74,7 +74,26 @@ Deno.serve(async (req) => {
       from += PAGE;
     }
 
-    return new Response(JSON.stringify(all), {
+    // Final dedupe: collapse SKU/size variants from feeds (esp. Snipes) by
+    // (merchant, brand, normalized-title). Keeps the first occurrence which —
+    // because rows are ordered by detected_at desc — is the freshest variant.
+    const norm = (s: string) =>
+      (s || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, " ")
+        .trim();
+    const dedupKey = new Set<string>();
+    const deduped: any[] = [];
+    for (const r of all) {
+      const k = `${norm(r.merchant)}|${norm(r.brand)}|${norm(r.title)}`;
+      if (dedupKey.has(k)) continue;
+      dedupKey.add(k);
+      deduped.push(r);
+    }
+
+    return new Response(JSON.stringify(deduped), {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
