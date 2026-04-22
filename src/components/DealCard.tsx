@@ -11,7 +11,7 @@ import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
 import { motion } from "framer-motion";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { useDealVotes } from "@/hooks/use-deal-votes";
-import { getPromoCodesForMerchant } from "@/lib/promo-codes";
+import { getPromoCodesForMerchant, getBestPromoForMerchant, applyPromoToPrice } from "@/lib/promo-codes";
 import PromoCodeBadge from "./PromoCodeBadge";
 
 interface DealCardProps {
@@ -42,6 +42,8 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const comparing = isComparing(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
   const promoCodes = getPromoCodesForMerchant(deal.merchant);
+  const bestPromo = getBestPromoForMerchant(deal.merchant);
+  const promoPrice = applyPromoToPrice(deal.sale_price, bestPromo);
   const startDate = formatDate(deal.promo_start_date);
   const endDate = formatDate(deal.promo_end_date);
   const [imageLoaded, setImageLoaded] = useState(false);
@@ -153,9 +155,16 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           </h3>
         </Link>
 
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="font-display text-lg">{formatCurrency(deal.sale_price, deal.currency)}</span>
-          {deal.original_price && (
+        <div className="flex items-baseline gap-2 mb-3 flex-wrap">
+          <span className={`font-display text-lg ${promoPrice ? "text-foreground/40 line-through" : ""}`}>
+            {formatCurrency(deal.sale_price, deal.currency)}
+          </span>
+          {promoPrice && bestPromo && (
+            <span className="font-display text-lg text-foreground" title={`Avec le code ${bestPromo.code}`}>
+              {formatCurrency(promoPrice, deal.currency)}
+            </span>
+          )}
+          {deal.original_price && !promoPrice && (
             <span className="font-body text-sm text-foreground/40 line-through">{formatCurrency(deal.original_price, deal.currency)}</span>
           )}
         </div>

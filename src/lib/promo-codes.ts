@@ -5,6 +5,8 @@ export interface PromoCode {
   code: string;
   description: string; // e.g. "-5% sur tout le site"
   discountLabel: string; // short label shown in badge, e.g. "-5%"
+  /** Percentage discount applied to sale_price (e.g. 5 for -5%). Used to compute estimated final price. */
+  discountPercent?: number;
   conditions?: string;
   expiresAt?: string; // ISO date
   url?: string; // optional landing URL
@@ -27,6 +29,7 @@ export const PROMO_CODES: MerchantPromo[] = [
         code: "SIG5",
         description: "-5% sur l'ensemble du site",
         discountLabel: "-5%",
+        discountPercent: 5,
         conditions: "Cumulable avec les promotions en cours.",
       },
     ],
@@ -52,4 +55,21 @@ export function getAllActivePromos(): MerchantPromo[] {
       codes: p.codes.filter((c) => !c.expiresAt || new Date(c.expiresAt).getTime() > now),
     }))
     .filter((p) => p.codes.length > 0);
+}
+
+/**
+ * Returns the best applicable promo code for a merchant (the one with the highest discountPercent).
+ * Returns null if no code with a numeric discount is available.
+ */
+export function getBestPromoForMerchant(merchant: string | null | undefined): PromoCode | null {
+  const codes = getPromoCodesForMerchant(merchant).filter((c) => typeof c.discountPercent === "number" && c.discountPercent! > 0);
+  if (codes.length === 0) return null;
+  return codes.reduce((best, c) => (c.discountPercent! > (best.discountPercent ?? 0) ? c : best));
+}
+
+/** Apply a promo code's percentage to a price. Returns null if not applicable. */
+export function applyPromoToPrice(price: number | null | undefined, code: PromoCode | null): number | null {
+  if (!price || price <= 0 || !code || !code.discountPercent) return null;
+  const result = price * (1 - code.discountPercent / 100);
+  return Math.round(result * 100) / 100;
 }
