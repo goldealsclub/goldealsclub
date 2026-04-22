@@ -57,20 +57,23 @@ const query = new URLSearchParams({
   category: "eq.sneakers",
 });
 
-const res = await fetch(`${SUPABASE_URL}/functions/v1/deals-json`, {
-  headers: {
-    apikey: SUPABASE_KEY,
-    Authorization: `Bearer ${SUPABASE_KEY}`,
-  },
-});
-
-if (!res.ok) {
-  console.error("Edge function fetch failed:", res.status, await res.text());
-  process.exit(1);
+const localDealsPath = path.resolve(rootDir, "../public/deals.json");
+let allDeals;
+if (fs.existsSync(localDealsPath)) {
+  console.log("📂 Reading deals from local public/deals.json");
+  const payload = JSON.parse(fs.readFileSync(localDealsPath, "utf-8"));
+  allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
+} else {
+  const res = await fetch(`${SUPABASE_URL}/functions/v1/deals-json`, {
+    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
+  });
+  if (!res.ok) {
+    console.error("Edge function fetch failed:", res.status, await res.text());
+    process.exit(1);
+  }
+  const payload = await res.json();
+  allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
 }
-
-const payload = await res.json();
-const allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
 const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok"]);
 
 const rawDeals = allDeals
