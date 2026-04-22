@@ -1,4 +1,5 @@
 import { ArrowUpRight, Trophy } from "lucide-react";
+import { Link } from "react-router-dom";
 import { trackOutboundClick } from "@/lib/track-click";
 
 /**
@@ -60,6 +61,10 @@ const WorldCupBanner = () => {
             </div>
 
             <p className="mt-6 text-[10px] font-body uppercase tracking-[0.18em] text-background/30">
+              <Link to="/coupe-du-monde-2026" className="hover:text-background/60 transition-colors">
+                En savoir plus →
+              </Link>
+              <span className="mx-2 text-background/15">·</span>
               En partenariat avec Sport Is Good · Lien affilié
             </p>
           </div>
