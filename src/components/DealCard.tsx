@@ -155,9 +155,16 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           </h3>
         </Link>
 
-        <div className="flex items-baseline gap-2 mb-3">
-          <span className="font-display text-lg">{formatCurrency(deal.sale_price, deal.currency)}</span>
-          {deal.original_price && (
+        <div className="flex items-baseline gap-2 mb-3 flex-wrap">
+          <span className={`font-display text-lg ${promoPrice ? "text-foreground/40 line-through" : ""}`}>
+            {formatCurrency(deal.sale_price, deal.currency)}
+          </span>
+          {promoPrice && bestPromo && (
+            <span className="font-display text-lg text-foreground" title={`Avec le code ${bestPromo.code}`}>
+              {formatCurrency(promoPrice, deal.currency)}
+            </span>
+          )}
+          {deal.original_price && !promoPrice && (
             <span className="font-body text-sm text-foreground/40 line-through">{formatCurrency(deal.original_price, deal.currency)}</span>
           )}
         </div>
