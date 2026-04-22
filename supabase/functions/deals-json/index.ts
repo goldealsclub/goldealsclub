@@ -78,9 +78,10 @@ Deno.serve(async (req) => {
       }
     }
 
-    // Final dedupe: collapse SKU/size variants from feeds (esp. Snipes) by
-    // (merchant, brand, normalized-title). Keeps the first occurrence which —
-    // because rows are ordered by detected_at desc — is the freshest variant.
+    // Final dedupe: collapse SKU/size variants while preserving COLOR variants.
+    // Variants of the same product/color share the same image URL on every feed
+    // (Snipes, Sneakin, etc.) but different colors have different images, so
+    // image_url is the most precise key. Fallback to title-norm when missing.
     const norm = (s: string) =>
       (s || "")
         .toLowerCase()
@@ -91,7 +92,11 @@ Deno.serve(async (req) => {
     const dedupKey = new Set<string>();
     const deduped: any[] = [];
     for (const r of all) {
-      const k = `${norm(r.merchant)}|${norm(r.brand)}|${norm(r.title)}`;
+      const merchant = norm(r.merchant);
+      const img = (r.image_url || "").trim();
+      const k = img
+        ? `${merchant}|img:${img}`
+        : `${merchant}|t:${norm(r.brand)}|${norm(r.title)}`;
       if (dedupKey.has(k)) continue;
       dedupKey.add(k);
       deduped.push(r);
