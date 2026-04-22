@@ -52,13 +52,9 @@ console.log("📡 Fetching top deals from database...");
 
 const query = new URLSearchParams({
   select: "title,brand,merchant,original_price,sale_price,discount_percent,image_url,category,currency,product_url",
-  order: "discount_percent.desc",
-  limit: "5",
-  discount_percent: "gte.40",
-  image_url: "not.is.null",
-  sale_price: "not.is.null",
-  category: "in.(sneakers,hoodies,vestes,t-shirts,pantalons)",
-  brand: "in.(Nike,adidas,Jordan,New Balance,Puma,Reebok)",
+  order: "discount_percent.desc.nullslast",
+  limit: "300",
+  category: "eq.sneakers",
 });
 
 const res = await fetch(`${SUPABASE_URL}/rest/v1/deals?${query}`, {
@@ -73,8 +69,18 @@ if (!res.ok) {
   process.exit(1);
 }
 
-const rawDeals = await res.json();
-console.log(`✅ Got ${rawDeals.length} deals`);
+const allDeals = await res.json();
+const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok"]);
+const rawDeals = allDeals
+  .filter((d) =>
+    d.image_url &&
+    d.sale_price &&
+    (d.discount_percent ?? 0) >= 40 &&
+    allowedBrands.has(d.brand)
+  )
+  .slice(0, 5);
+
+console.log(`✅ Got ${rawDeals.length} deals (from ${allDeals.length} sneakers)`);
 
 if (rawDeals.length < 3) {
   console.error("Not enough deals found (need at least 3)");
