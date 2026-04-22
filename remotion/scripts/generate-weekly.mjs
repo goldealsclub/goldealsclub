@@ -74,7 +74,7 @@ if (fs.existsSync(localDealsPath)) {
   const payload = await res.json();
   allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
 }
-const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok"]);
+const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok", "Asics", "Converse", "Vans", "Salomon", "Mizuno", "Saucony", "Hoka", "Under Armour"]);
 
 const rawDeals = allDeals
   .filter((d) => {
@@ -82,11 +82,11 @@ const rawDeals = allDeals
     return cat === "sneakers" &&
       d.image_url &&
       d.sale_price &&
-      (d.discount_percent ?? 0) >= 40 &&
+      (d.discount_percent ?? 0) >= 30 &&
       allowedBrands.has(d.brand);
   })
   .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0))
-  .slice(0, 50);
+  .slice(0, 100);
 
 console.log(`✅ Got ${rawDeals.length} sneakers deals (from ${allDeals.length} total)`);
 
