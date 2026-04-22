@@ -89,7 +89,7 @@ interface ChartData {
   provider_breakdown: { name: string; value: number }[];
 }
 
-type Tab = "overview" | "analytics" | "awin" | "users";
+type Tab = "overview" | "analytics" | "awin" | "audit" | "users";
 
 const AdminDashboard = () => {
   const { user, session, loading: authLoading } = useAuth();
