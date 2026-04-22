@@ -16,7 +16,7 @@ const CookieBanner = () => {
       role="dialog"
       aria-live="polite"
       aria-label="Consentement aux cookies"
-      className="fixed bottom-0 left-0 right-0 z-[60] border-t border-foreground/10 bg-background/98 shadow-[0_-8px_30px_rgba(0,0,0,0.08)]"
+      className="fixed bottom-0 left-0 right-0 z-[60] border-t border-foreground/15 bg-background shadow-[0_-12px_40px_rgba(0,0,0,0.18)]"
     >
       <div className="container mx-auto px-4 py-5 md:py-6">
         <div className="flex flex-col lg:flex-row gap-5 lg:gap-8 lg:items-center">
