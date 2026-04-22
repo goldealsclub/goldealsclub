@@ -110,18 +110,49 @@ const brandLogos = {
   Reebok: makeBrandLogo("Reebok"),
 };
 
-const deals = rawDeals.map((d) => ({
-  title: d.title,
-  brand: d.brand,
-  originalPrice: d.original_price,
-  salePrice: d.sale_price,
-  discountPercent: d.discount_percent,
-  imageUrl: d.image_url,
-  category: d.category.charAt(0).toUpperCase() + d.category.slice(1),
-  currency: d.currency || "EUR",
-  merchant: d.merchant,
-  productUrl: "goldealsclub.com",
-}));
+// Pre-download deal images as base64 data URIs (productserve.com blocks puppeteer)
+console.log("🖼️  Downloading deal images...");
+const UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36";
+async function imageToDataUri(url) {
+  try {
+    const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "image/*,*/*" } });
+    if (!r.ok) throw new Error(`HTTP ${r.status}`);
+    const buf = Buffer.from(await r.arrayBuffer());
+    const ct = r.headers.get("content-type") || "image/jpeg";
+    return `data:${ct};base64,${buf.toString("base64")}`;
+  } catch (e) {
+    console.warn(`   ⚠️  Failed to download ${url.slice(0, 80)}... (${e.message})`);
+    return null;
+  }
+}
+
+const deals = [];
+for (const d of rawDeals) {
+  const dataUri = await imageToDataUri(d.image_url);
+  if (!dataUri) {
+    console.log(`   ⏭️  Skipping ${d.brand} — image unavailable`);
+    continue;
+  }
+  deals.push({
+    title: d.title,
+    brand: d.brand,
+    originalPrice: d.original_price,
+    salePrice: d.sale_price,
+    discountPercent: d.discount_percent,
+    imageUrl: dataUri,
+    category: d.category.charAt(0).toUpperCase() + d.category.slice(1),
+    currency: d.currency || "EUR",
+    merchant: d.merchant,
+    productUrl: "goldealsclub.com",
+  });
+  console.log(`   ✅ ${d.brand} — ${d.title.slice(0, 50)}`);
+}
+
+if (deals.length < 3) {
+  console.error(`❌ Only ${deals.length} deals with valid images — need 3+`);
+  process.exit(1);
+}
+console.log(`✅ ${deals.length} deals ready with embedded images`);
 
 const dataTs = `export interface Deal {
   title: string;
