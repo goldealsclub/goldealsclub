@@ -157,9 +157,9 @@ async function imageToDataUri(url) {
 const deals = [];
 for (const d of rawDeals) {
   if (deals.length >= 5) break;
-  const dataUri = await imageToDataUri(d.image_url);
-  if (!dataUri) {
-    console.log(`   ⏭️  Skipping ${d.brand} — image unavailable`);
+  const result = await imageToDataUri(d.image_url);
+  if (!result) {
+    console.log(`   ⏭️  ${d.brand} — no usable image (≥${MIN_IMG_SIZE}px)`);
     continue;
   }
   deals.push({
@@ -168,13 +168,13 @@ for (const d of rawDeals) {
     originalPrice: d.original_price,
     salePrice: d.sale_price,
     discountPercent: d.discount_percent,
-    imageUrl: dataUri,
+    imageUrl: result.dataUri,
     category: d.category.charAt(0).toUpperCase() + d.category.slice(1),
     currency: d.currency || "EUR",
     merchant: d.merchant,
     productUrl: "goldealsclub.com",
   });
-  console.log(`   ✅ ${d.brand} — ${d.title.slice(0, 50)}`);
+  console.log(`   ✅ ${d.brand} — ${result.dims.width}×${result.dims.height} [${result.source}] — ${d.title.slice(0, 45)}`);
 }
 
 if (deals.length < 5) {
