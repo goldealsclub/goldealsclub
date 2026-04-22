@@ -160,6 +160,14 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           )}
         </div>
 
+        {promoCodes.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mb-3">
+            {promoCodes.map((code) => (
+              <PromoCodeBadge key={code.code} code={code} variant="compact" />
+            ))}
+          </div>
+        )}
+
         {/* Actions */}
         <div className="flex items-center justify-between pt-3 border-t border-foreground/8">
           <div className="flex items-center gap-1">

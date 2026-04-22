@@ -15,6 +15,8 @@ import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
+import PromoCodeBadge from "@/components/PromoCodeBadge";
+import { getPromoCodesForMerchant } from "@/lib/promo-codes";
 
 function formatCurrency(price: number | null, currency: string): string {
   if (price === null) return "";
@@ -47,6 +49,7 @@ const DealPage = () => {
 
   const saved = isFav(deal.id);
   const trusted = isTrustedMerchant(deal.merchant);
+  const promoCodes = getPromoCodesForMerchant(deal.merchant);
   // Improved similar deals: prioritize same brand+category, then same brand, then same category
   const similar = deals
     .filter((d) => d.id !== deal.id)
@@ -165,6 +168,14 @@ const DealPage = () => {
 
             {deal.description && (
               <p className="font-body text-sm text-foreground/60 leading-relaxed mb-8">{deal.description}</p>
+            )}
+
+            {promoCodes.length > 0 && (
+              <div className="space-y-3 mb-8">
+                {promoCodes.map((code) => (
+                  <PromoCodeBadge key={code.code} code={code} variant="full" />
+                ))}
+              </div>
             )}
 
             {/* CTA */}
