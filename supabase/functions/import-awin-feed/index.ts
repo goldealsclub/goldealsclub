@@ -243,17 +243,31 @@ Deno.serve(async (req) => {
       );
     }
 
-    const COLUMNS = [
-      "aw_deep_link","product_name","aw_product_id","merchant_product_id",
-      "merchant_image_url","description","merchant_category","search_price",
-      "merchant_name","merchant_id","category_name","aw_image_url","currency",
-      "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
-      "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
-      // Some merchants (e.g. Snipes EU) ship the RRP only via product_price_old / base_price / saving
-      "product_price_old","base_price","saving",
-    ].join(",");
+    // Snipes EU (FID 122628) is a pan-European catalog and uses `any` language;
+    // it also rejects the `product_price_old/base_price/saving` columns. We use
+    // a leaner column set + `language/any` for it. All other FIDs keep the
+    // extended set (with merchant-specific RRP fallbacks) and `language/fr`.
+    const isSnipes = fidParam === "122628";
+    const COLUMNS = isSnipes
+      ? [
+          "aw_deep_link","product_name","aw_product_id","merchant_product_id",
+          "merchant_image_url","description","merchant_category","search_price",
+          "merchant_name","merchant_id","category_name","aw_image_url","currency",
+          "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
+          "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
+        ].join(",")
+      : [
+          "aw_deep_link","product_name","aw_product_id","merchant_product_id",
+          "merchant_image_url","description","merchant_category","search_price",
+          "merchant_name","merchant_id","category_name","aw_image_url","currency",
+          "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
+          "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
+          // Some merchants ship the RRP only via product_price_old / base_price / saving
+          "product_price_old","base_price","saving",
+        ].join(",");
 
-    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
+    const language = isSnipes ? "any" : "fr";
+    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/${language}/fid/${fidParam}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
 
     console.log(`📡 Streaming Awin feed for FID ${fidParam}...`);
     const feedRes = await fetch(feedUrl);
