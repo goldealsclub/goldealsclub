@@ -1,6 +1,6 @@
-import { useMemo } from "react";
-import { useGender } from "@/lib/gender-context";
-import { AlertTriangle, CheckCircle2, TrendingDown, ExternalLink } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { Deal, loadDeals } from "@/lib/data";
+import { AlertTriangle, CheckCircle2, Loader2, TrendingDown, ExternalLink } from "lucide-react";
 
 interface MerchantStat {
   merchant: string;
