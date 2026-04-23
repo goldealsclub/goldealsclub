@@ -76,6 +76,9 @@ Deno.serve(async (req) => {
       rolesResult,
       recentClicksResult,
       alertPrefsResult,
+      pageViewsCountResult,
+      pageViewsSessionsResult,
+      recentPageViewsResult,
     ] = await Promise.all([
       supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
       supabase.from("email_alert_preferences").select("id", { count: "exact", head: true }).eq("enabled", true),
@@ -89,6 +92,9 @@ Deno.serve(async (req) => {
       supabase.from("user_roles").select("user_id, role"),
       supabase.from("outbound_clicks").select("clicked_at").order("clicked_at", { ascending: false }).limit(500),
       supabase.from("email_alert_preferences").select("user_id, enabled, frequency"),
+      supabase.from("page_views").select("id", { count: "exact", head: true }),
+      supabase.from("page_views").select("session_id", { count: "exact", head: true }),
+      supabase.from("page_views").select("viewed_at, path, session_id").order("viewed_at", { ascending: false }).limit(5000),
     ]);
 
     // Fetch profiles
@@ -129,6 +135,10 @@ Deno.serve(async (req) => {
     const allRoles = rolesResult.data || [];
     const recentClicks = recentClicksResult.data || [];
     const alertPrefs = alertPrefsResult.data || [];
+    const totalPageViews = pageViewsCountResult.count || 0;
+    const recentPageViews = recentPageViewsResult.data || [];
+    const uniqueSessionsSet = new Set<string>();
+    recentPageViews.forEach((v: any) => v.session_id && uniqueSessionsSet.add(v.session_id));
 
     // Build per-user maps
     const favCountMap: Record<string, number> = {};
@@ -182,6 +192,24 @@ Deno.serve(async (req) => {
     const clickTimeline = Object.entries(clicksByDay)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
+
+    // Page views over last 30 days + top pages
+    const viewsByDay: Record<string, number> = {};
+    const pathCount: Record<string, number> = {};
+    (recentPageViews || []).forEach((v: any) => {
+      const d = v.viewed_at?.slice(0, 10);
+      if (d && new Date(d) >= thirtyDaysAgo) {
+        viewsByDay[d] = (viewsByDay[d] || 0) + 1;
+      }
+      if (v.path) pathCount[v.path] = (pathCount[v.path] || 0) + 1;
+    });
+    const viewTimeline = Object.entries(viewsByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, count]) => ({ date, count }));
+    const topPages = Object.entries(pathCount)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([path, count]) => ({ path, count }));
 
     // Provider breakdown
     const providerCount: Record<string, number> = {};
@@ -246,11 +274,15 @@ Deno.serve(async (req) => {
           total_deals: totalDeals || 0,
           confirmed_users: confirmedCount,
           unconfirmed_users: unconfirmedCount,
+          total_page_views: totalPageViews,
+          unique_sessions: uniqueSessionsSet.size,
         },
         charts: {
           signup_timeline: signupTimeline,
           click_timeline: clickTimeline,
+          view_timeline: viewTimeline,
           provider_breakdown: providerBreakdown,
+          top_pages: topPages,
         },
       }),
       { headers: jsonHeaders }

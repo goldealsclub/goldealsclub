@@ -15,6 +15,7 @@ import {
   Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download,
   Eye, UserCheck, UserX, Activity, Star, Clock, Calendar,
   ExternalLink, Link2, RefreshCw, Download as DownloadIcon, AlertTriangle,
+  Globe,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -81,12 +82,16 @@ interface SiteStats {
   total_deals: number;
   confirmed_users: number;
   unconfirmed_users: number;
+  total_page_views: number;
+  unique_sessions: number;
 }
 
 interface ChartData {
   signup_timeline: { date: string; count: number }[];
   click_timeline: { date: string; count: number }[];
+  view_timeline: { date: string; count: number }[];
   provider_breakdown: { name: string; value: number }[];
+  top_pages: { path: string; count: number }[];
 }
 
 type Tab = "overview" | "analytics" | "awin" | "audit" | "users";
@@ -389,6 +394,14 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 
   return (
     <>
+      {/* Traffic KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<Eye className="w-4 h-4 sm:w-5 sm:h-5" />} label="Pages vues" value={stats?.total_page_views || 0} accent="green" />
+        <KpiCard icon={<Globe className="w-4 h-4 sm:w-5 sm:h-5" />} label="Visiteurs uniques" value={stats?.unique_sessions || 0} accent="green" />
+        <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics sortants" value={stats?.total_clicks || totalClicks} />
+        <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Taux clic" value={`${stats?.total_page_views ? ((stats.total_clicks / stats.total_page_views) * 100).toFixed(1) : "0"}%`} />
+      </div>
+
       {/* Main KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
         <KpiCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
@@ -424,6 +437,32 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
+        {charts?.view_timeline && charts.view_timeline.length > 0 && (
+          <ChartCard title="Pages vues (30 derniers jours)">
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={charts.view_timeline}>
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
+                <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
+                <Area type="monotone" dataKey="count" stroke="hsl(140,30%,40%)" fill="hsl(140,30%,40%)" fillOpacity={0.15} name="Vues" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+
+        {charts?.top_pages && charts.top_pages.length > 0 && (
+          <ChartCard title="Top pages visitées">
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              {charts.top_pages.map((p, i) => (
+                <div key={i} className="flex justify-between items-center text-xs gap-2">
+                  <span className="truncate font-mono">{p.path || "/"}</span>
+                  <span className="font-display tabular-nums">{p.count}</span>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+        )}
+
         {charts?.signup_timeline && charts.signup_timeline.length > 0 && (
           <ChartCard title="Inscriptions (30 derniers jours)">
             <ResponsiveContainer width="100%" height={200}>
