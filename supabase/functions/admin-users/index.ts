@@ -79,6 +79,8 @@ Deno.serve(async (req) => {
       pageViewsCountResult,
       pageViewsSessionsResult,
       recentPageViewsResult,
+      eventsCountResult,
+      recentEventsResult,
     ] = await Promise.all([
       supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
       supabase.from("email_alert_preferences").select("id", { count: "exact", head: true }).eq("enabled", true),
@@ -95,6 +97,8 @@ Deno.serve(async (req) => {
       supabase.from("page_views").select("id", { count: "exact", head: true }),
       supabase.from("page_views").select("session_id", { count: "exact", head: true }),
       supabase.from("page_views").select("viewed_at, path, session_id").order("viewed_at", { ascending: false }).limit(5000),
+      supabase.from("events").select("id", { count: "exact", head: true }),
+      supabase.from("events").select("event_type, deal_id, created_at").order("created_at", { ascending: false }).limit(5000),
     ]);
 
     // Fetch profiles
