@@ -1348,4 +1348,171 @@ const ChartCard = ({ title, children }: { title: string; children: React.ReactNo
   </div>
 );
 
+const PartnersTab = ({ merchantStats, loading }: { merchantStats: MerchantStat[]; loading: boolean }) => {
+  const [sortKey, setSortKey] = useState<keyof MerchantStat>("outbound_clicks");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  const sorted = useMemo(() => {
+    const arr = [...merchantStats];
+    arr.sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      if (typeof av === "number" && typeof bv === "number") {
+        return sortDir === "desc" ? bv - av : av - bv;
+      }
+      return sortDir === "desc"
+        ? String(bv).localeCompare(String(av))
+        : String(av).localeCompare(String(bv));
+    });
+    return arr;
+  }, [merchantStats, sortKey, sortDir]);
+
+  const totals = useMemo(() => {
+    return merchantStats.reduce(
+      (acc, m) => ({
+        deals: acc.deals + m.deals_count,
+        views: acc.views + m.views,
+        favorites: acc.favorites + m.favorites,
+        redirects: acc.redirects + m.redirects,
+        clicks: acc.clicks + m.outbound_clicks,
+      }),
+      { deals: 0, views: 0, favorites: 0, redirects: 0, clicks: 0 }
+    );
+  }, [merchantStats]);
+
+  const handleSort = (key: keyof MerchantStat) => {
+    if (sortKey === key) setSortDir(sortDir === "desc" ? "asc" : "desc");
+    else { setSortKey(key); setSortDir("desc"); }
+  };
+
+  const exportCsv = () => {
+    const header = ["Partenaire", "Deals", "Vues", "Favoris", "Partages", "Codes copies", "Redirections", "Clics sortants", "CTR (%)", "Conversion (%)"];
+    const rows = sorted.map((m) => [
+      m.merchant, m.deals_count, m.views, m.favorites, m.shares,
+      m.promo_copies, m.redirects, m.outbound_clicks, m.ctr, m.conversion_rate,
+    ]);
+    const csv = [header, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `partenaires_stats_${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="w-6 h-6 animate-spin text-foreground/40" />
+      </div>
+    );
+  }
+
+  if (merchantStats.length === 0) {
+    return (
+      <div className="text-center py-20 text-foreground/50 font-body text-sm">
+        Aucune donnée partenaire disponible pour le moment.
+      </div>
+    );
+  }
+
+  const SortBtn = ({ k, label }: { k: keyof MerchantStat; label: string }) => (
+    <button
+      onClick={() => handleSort(k)}
+      className={`flex items-center gap-1 hover:text-foreground transition-colors ${sortKey === k ? "text-foreground" : ""}`}
+    >
+      {label}
+      {sortKey === k && <span className="text-[8px]">{sortDir === "desc" ? "▼" : "▲"}</span>}
+    </button>
+  );
+
+  return (
+    <div className="space-y-6">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <KpiCard label="Partenaires" value={merchantStats.length.toString()} icon={<ShoppingBag className="w-4 h-4" />} />
+        <KpiCard label="Deals total" value={totals.deals.toLocaleString("fr-FR")} icon={<ShoppingBag className="w-4 h-4" />} />
+        <KpiCard label="Vues produit" value={totals.views.toLocaleString("fr-FR")} icon={<Eye className="w-4 h-4" />} />
+        <KpiCard label="Redirections" value={totals.redirects.toLocaleString("fr-FR")} icon={<ExternalLink className="w-4 h-4" />} />
+        <KpiCard label="Clics Awin" value={totals.clicks.toLocaleString("fr-FR")} icon={<MousePointerClick className="w-4 h-4" />} />
+      </div>
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <ChartCard title="Clics sortants par partenaire">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={sorted.slice(0, 8).map((m) => ({ name: m.merchant, value: m.outbound_clicks }))}>
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} />
+              <Tooltip />
+              <Bar dataKey="value" fill="hsl(30,40%,45%)" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+        <ChartCard title="Taux de conversion (redirections / vues)">
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={sorted.filter((m) => m.views > 0).slice(0, 8).map((m) => ({ name: m.merchant, value: m.conversion_rate }))}>
+              <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+              <YAxis tick={{ fontSize: 10 }} unit="%" />
+              <Tooltip formatter={(v: number) => `${v}%`} />
+              <Bar dataKey="value" fill="hsl(30,30%,55%)" />
+            </BarChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+
+      <div className="border border-foreground/8">
+        <div className="flex items-center justify-between p-3 sm:p-4 border-b border-foreground/8">
+          <h3 className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-foreground/60">
+            Détail par partenaire — comparez avec leurs chiffres
+          </h3>
+          <button
+            onClick={exportCsv}
+            className="flex items-center gap-1.5 px-3 py-1.5 border border-foreground/10 text-[10px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors"
+          >
+            <Download className="w-3 h-3" />
+            CSV
+          </button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-foreground/[0.02] border-b border-foreground/8">
+              <tr className="text-left font-display uppercase tracking-widest text-[9px] text-foreground/50">
+                <th className="px-3 py-3"><SortBtn k="merchant" label="Partenaire" /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="deals_count" label="Deals" /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="views" label="Vues" /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="favorites" label="Favoris" /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="shares" label="Partages" /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="promo_copies" label="Codes" /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="redirects" label="Redirect." /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="outbound_clicks" label="Clics Awin" /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="ctr" label="CTR" /></th>
+                <th className="px-3 py-3 text-right"><SortBtn k="conversion_rate" label="Conv." /></th>
+              </tr>
+            </thead>
+            <tbody>
+              {sorted.map((m) => (
+                <tr key={m.merchant} className="border-b border-foreground/5 hover:bg-foreground/[0.02]">
+                  <td className="px-3 py-3 font-display uppercase tracking-wider text-[11px] text-foreground">{m.merchant}</td>
+                  <td className="px-3 py-3 text-right text-foreground/70">{m.deals_count.toLocaleString("fr-FR")}</td>
+                  <td className="px-3 py-3 text-right text-foreground/70">{m.views.toLocaleString("fr-FR")}</td>
+                  <td className="px-3 py-3 text-right text-foreground/70">{m.favorites.toLocaleString("fr-FR")}</td>
+                  <td className="px-3 py-3 text-right text-foreground/70">{m.shares.toLocaleString("fr-FR")}</td>
+                  <td className="px-3 py-3 text-right text-foreground/70">{m.promo_copies.toLocaleString("fr-FR")}</td>
+                  <td className="px-3 py-3 text-right text-foreground/70">{m.redirects.toLocaleString("fr-FR")}</td>
+                  <td className="px-3 py-3 text-right text-foreground font-medium">{m.outbound_clicks.toLocaleString("fr-FR")}</td>
+                  <td className="px-3 py-3 text-right text-foreground/70">{m.ctr > 0 ? `${m.ctr}%` : "—"}</td>
+                  <td className="px-3 py-3 text-right text-foreground/70">{m.conversion_rate > 0 ? `${m.conversion_rate}%` : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-3 py-2 border-t border-foreground/8 text-[10px] text-foreground/40 font-body">
+          <strong>CTR</strong> = clics Awin / vues produit · <strong>Conv.</strong> = redirections vendeur / vues produit. Comparez avec les rapports Awin/Snipes/Nike pour réconcilier les chiffres.
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default AdminDashboard;
