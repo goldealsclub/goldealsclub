@@ -291,6 +291,7 @@ const AdminDashboard = () => {
   const tabs: { key: Tab; label: string; icon: React.ReactNode }[] = [
     { key: "overview", label: "Vue d'ensemble", icon: <Eye className="w-4 h-4" /> },
     { key: "analytics", label: "Analytics", icon: <TrendingUp className="w-4 h-4" /> },
+    { key: "partners", label: "Partenaires", icon: <ShoppingBag className="w-4 h-4" /> },
     { key: "awin", label: "Awin Tracking", icon: <Link2 className="w-4 h-4" /> },
     { key: "audit", label: "Audit prix", icon: <AlertTriangle className="w-4 h-4" /> },
     { key: "users", label: "Utilisateurs", icon: <Users className="w-4 h-4" /> },
