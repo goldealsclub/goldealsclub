@@ -9,7 +9,7 @@ interface ShareMenuProps {
   title: string;
 }
 
-const ShareMenu = ({ url, title }: ShareMenuProps) => {
+const ShareMenu = ({ url, title, dealId }: ShareMenuProps) => {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
@@ -24,6 +24,7 @@ const ShareMenu = ({ url, title }: ShareMenuProps) => {
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success(t.copied);
+    trackEvent("share_action", { dealId, metadata: { channel: "copy" } });
     setTimeout(() => setCopied(false), 2000);
   };
 

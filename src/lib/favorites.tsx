@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useCallback, useEffect, use
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { trackEvent } from "@/lib/track-event";
 
 interface FavoritesContextType {
   favorites: Set<string>;
@@ -98,6 +99,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       });
 
       toast({ title: wasAdded ? "Ajouté aux favoris ♥" : "Retiré des favoris" });
+      trackEvent(wasAdded ? "favorite_add" : "favorite_remove", { dealId: id });
 
       // Sync to DB for authenticated users
       if (user) {
