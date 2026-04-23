@@ -30,6 +30,7 @@ export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ child
   const add = useCallback((deal: Deal) => {
     setItems((prev) => {
       if (prev.length >= 3 || prev.find((d) => d.id === deal.id)) return prev;
+      trackEvent("compare_add", { dealId: deal.id });
       return [...prev, deal];
     });
   }, []);

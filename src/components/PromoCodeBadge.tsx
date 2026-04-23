@@ -15,6 +15,7 @@ const PromoCodeBadge = ({ code, variant = "compact" }: PromoCodeBadgeProps) => {
     e.stopPropagation();
     navigator.clipboard.writeText(code.code).then(() => {
       setCopied(true);
+      trackEvent("promo_code_copy", { metadata: { code: code.code, merchant: code.merchant ?? null } });
       setTimeout(() => setCopied(false), 1500);
     });
   };

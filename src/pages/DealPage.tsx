@@ -37,7 +37,10 @@ const DealPage = () => {
   const deal = deals.find((d) => d.id === id);
 
   useEffect(() => {
-    if (deal) addViewed(deal.id);
+    if (deal) {
+      addViewed(deal.id);
+      trackEvent("deal_view", { dealId: deal.id, metadata: { brand: deal.brand, merchant: deal.merchant, category: deal.category } });
+    }
   }, [deal?.id]);
 
   if (!deal) {
