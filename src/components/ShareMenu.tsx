@@ -3,10 +3,12 @@ import { Share2, Facebook, MessageCircle, Copy, Check } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { trackEvent } from "@/lib/track-event";
 
 interface ShareMenuProps {
   url: string;
   title: string;
+  dealId?: string;
 }
 
 const ShareMenu = ({ url, title, dealId }: ShareMenuProps) => {
