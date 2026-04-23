@@ -193,6 +193,24 @@ Deno.serve(async (req) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
 
+    // Page views over last 30 days + top pages
+    const viewsByDay: Record<string, number> = {};
+    const pathCount: Record<string, number> = {};
+    (recentPageViews || []).forEach((v: any) => {
+      const d = v.viewed_at?.slice(0, 10);
+      if (d && new Date(d) >= thirtyDaysAgo) {
+        viewsByDay[d] = (viewsByDay[d] || 0) + 1;
+      }
+      if (v.path) pathCount[v.path] = (pathCount[v.path] || 0) + 1;
+    });
+    const viewTimeline = Object.entries(viewsByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, count]) => ({ date, count }));
+    const topPages = Object.entries(pathCount)
+      .sort(([, a], [, b]) => b - a)
+      .slice(0, 10)
+      .map(([path, count]) => ({ path, count }));
+
     // Provider breakdown
     const providerCount: Record<string, number> = {};
     (users || []).forEach((u) => {
@@ -256,11 +274,15 @@ Deno.serve(async (req) => {
           total_deals: totalDeals || 0,
           confirmed_users: confirmedCount,
           unconfirmed_users: unconfirmedCount,
+          total_page_views: totalPageViews,
+          unique_sessions: uniqueSessionsSet.size,
         },
         charts: {
           signup_timeline: signupTimeline,
           click_timeline: clickTimeline,
+          view_timeline: viewTimeline,
           provider_breakdown: providerBreakdown,
+          top_pages: topPages,
         },
       }),
       { headers: jsonHeaders }
