@@ -28,6 +28,18 @@ const COLORS = [
   "hsl(30,10%,78%)", "hsl(30,5%,84%)", "hsl(0,0%,88%)", "hsl(0,0%,92%)",
 ];
 
+const EVENT_LABELS: Record<string, string> = {
+  deal_view: "Vue produit",
+  favorite_add: "Favori ajouté",
+  favorite_remove: "Favori retiré",
+  share_open: "Partage ouvert",
+  share_action: "Partage cliqué",
+  merchant_redirect: "Vers vendeur",
+  promo_code_copy: "Code promo copié",
+  compare_add: "Ajout au comparateur",
+  search_query: "Recherche",
+};
+
 interface ClickStat {
   deal_id: string;
   deal_title: string | null;
