@@ -189,6 +189,7 @@ const AdminDashboard = () => {
       setAdminUsers(Array.isArray(parsed?.users) ? parsed.users : []);
       setSiteStats(parsed?.stats || null);
       setCharts(parsed?.charts || null);
+      setMerchantStats(Array.isArray(parsed?.merchant_stats) ? parsed.merchant_stats : []);
       setUsersLoaded(true);
     } catch (err) {
       console.error("[admin-users] load failed:", err);
