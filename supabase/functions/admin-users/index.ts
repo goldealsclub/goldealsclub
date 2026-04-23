@@ -135,6 +135,10 @@ Deno.serve(async (req) => {
     const allRoles = rolesResult.data || [];
     const recentClicks = recentClicksResult.data || [];
     const alertPrefs = alertPrefsResult.data || [];
+    const totalPageViews = pageViewsCountResult.count || 0;
+    const recentPageViews = recentPageViewsResult.data || [];
+    const uniqueSessionsSet = new Set<string>();
+    recentPageViews.forEach((v: any) => v.session_id && uniqueSessionsSet.add(v.session_id));
 
     // Build per-user maps
     const favCountMap: Record<string, number> = {};
