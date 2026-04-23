@@ -15,6 +15,7 @@ import {
   Mail, Bell, ThumbsUp, Shield, CheckCircle, XCircle, Download,
   Eye, UserCheck, UserX, Activity, Star, Clock, Calendar,
   ExternalLink, Link2, RefreshCw, Download as DownloadIcon, AlertTriangle,
+  Globe,
 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -81,12 +82,16 @@ interface SiteStats {
   total_deals: number;
   confirmed_users: number;
   unconfirmed_users: number;
+  total_page_views: number;
+  unique_sessions: number;
 }
 
 interface ChartData {
   signup_timeline: { date: string; count: number }[];
   click_timeline: { date: string; count: number }[];
+  view_timeline: { date: string; count: number }[];
   provider_breakdown: { name: string; value: number }[];
+  top_pages: { path: string; count: number }[];
 }
 
 type Tab = "overview" | "analytics" | "awin" | "audit" | "users";
