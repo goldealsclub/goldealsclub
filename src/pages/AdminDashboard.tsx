@@ -110,7 +110,20 @@ interface ChartData {
   top_deals_by_event: Record<string, { deal_id: string; count: number }[]>;
 }
 
-type Tab = "overview" | "analytics" | "awin" | "audit" | "users";
+type Tab = "overview" | "analytics" | "partners" | "awin" | "audit" | "users";
+
+interface MerchantStat {
+  merchant: string;
+  deals_count: number;
+  views: number;
+  favorites: number;
+  shares: number;
+  promo_copies: number;
+  redirects: number;
+  outbound_clicks: number;
+  ctr: number;
+  conversion_rate: number;
+}
 
 const AdminDashboard = () => {
   const { user, session, loading: authLoading } = useAuth();
