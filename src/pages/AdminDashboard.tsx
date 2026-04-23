@@ -374,6 +374,10 @@ const AdminDashboard = () => {
           />
         )}
 
+        {tab === "partners" && (
+          <PartnersTab merchantStats={merchantStats} loading={usersLoading} />
+        )}
+
         {tab === "awin" && (
           <AwinTab />
         )}
