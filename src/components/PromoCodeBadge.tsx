@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Copy, Check, Tag } from "lucide-react";
 import type { PromoCode } from "@/lib/promo-codes";
+import { trackEvent } from "@/lib/track-event";
 
 interface PromoCodeBadgeProps {
   code: PromoCode;
@@ -15,7 +16,7 @@ const PromoCodeBadge = ({ code, variant = "compact" }: PromoCodeBadgeProps) => {
     e.stopPropagation();
     navigator.clipboard.writeText(code.code).then(() => {
       setCopied(true);
-      trackEvent("promo_code_copy", { metadata: { code: code.code, merchant: code.merchant ?? null } });
+      trackEvent("promo_code_copy", { metadata: { code: code.code } });
       setTimeout(() => setCopied(false), 1500);
     });
   };
