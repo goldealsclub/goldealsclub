@@ -315,6 +315,7 @@ Deno.serve(async (req) => {
           unconfirmed_users: unconfirmedCount,
           total_page_views: totalPageViews,
           unique_sessions: uniqueSessionsSet.size,
+          total_events: totalEvents,
         },
         charts: {
           signup_timeline: signupTimeline,
@@ -322,6 +323,10 @@ Deno.serve(async (req) => {
           view_timeline: viewTimeline,
           provider_breakdown: providerBreakdown,
           top_pages: topPages,
+          events_breakdown: eventsBreakdown,
+          events_timeline: eventsTimeline,
+          top_deals_by_event: topDealsByEvent,
+        },
         },
       }),
       { headers: jsonHeaders }
