@@ -47,6 +47,7 @@ const ShareMenu = ({ url, title, dealId }: ShareMenuProps) => {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackEvent("share_action", { dealId, metadata: { channel: link.name } })}
             className="flex items-center gap-2 px-3 py-2 text-xs font-body text-foreground/70 hover:text-foreground hover:bg-accent/30 rounded-sm transition-colors"
           >
             <link.icon className="w-3.5 h-3.5" strokeWidth={1.5} />
