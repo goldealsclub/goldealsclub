@@ -136,6 +136,7 @@ const AdminDashboard = () => {
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [siteStats, setSiteStats] = useState<SiteStats | null>(null);
   const [charts, setCharts] = useState<ChartData | null>(null);
+  const [merchantStats, setMerchantStats] = useState<MerchantStat[]>([]);
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
