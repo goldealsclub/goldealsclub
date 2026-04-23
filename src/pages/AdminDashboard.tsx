@@ -394,6 +394,14 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 
   return (
     <>
+      {/* Traffic KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<Eye className="w-4 h-4 sm:w-5 sm:h-5" />} label="Pages vues" value={stats?.total_page_views || 0} accent="green" />
+        <KpiCard icon={<Globe className="w-4 h-4 sm:w-5 sm:h-5" />} label="Visiteurs uniques" value={stats?.unique_sessions || 0} accent="green" />
+        <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics sortants" value={stats?.total_clicks || totalClicks} />
+        <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Taux clic" value={`${stats?.total_page_views ? ((stats.total_clicks / stats.total_page_views) * 100).toFixed(1) : "0"}%`} />
+      </div>
+
       {/* Main KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
         <KpiCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
