@@ -144,6 +144,41 @@ Deno.serve(async (req) => {
     const uniqueSessionsSet = new Set<string>();
     recentPageViews.forEach((v: any) => v.session_id && uniqueSessionsSet.add(v.session_id));
 
+    // Aggregate events
+    const totalEvents = eventsCountResult.count || 0;
+    const recentEvents = recentEventsResult.data || [];
+    const eventTypeCount: Record<string, number> = {};
+    const eventByDay: Record<string, Record<string, number>> = {};
+    const eventDealCount: Record<string, Record<string, number>> = {};
+    const thirtyDaysAgoEv = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    (recentEvents as any[]).forEach((e) => {
+      const t = e.event_type;
+      eventTypeCount[t] = (eventTypeCount[t] || 0) + 1;
+      const d = e.created_at?.slice(0, 10);
+      if (d && new Date(d) >= thirtyDaysAgoEv) {
+        eventByDay[d] = eventByDay[d] || {};
+        eventByDay[d][t] = (eventByDay[d][t] || 0) + 1;
+      }
+      if (e.deal_id) {
+        eventDealCount[t] = eventDealCount[t] || {};
+        eventDealCount[t][e.deal_id] = (eventDealCount[t][e.deal_id] || 0) + 1;
+      }
+    });
+    const eventsBreakdown = Object.entries(eventTypeCount)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+    const eventsTimeline = Object.entries(eventByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, perType]) => ({ date, ...perType }));
+    // Top 5 deals per event type
+    const topDealsByEvent: Record<string, { deal_id: string; count: number }[]> = {};
+    Object.entries(eventDealCount).forEach(([type, deals]) => {
+      topDealsByEvent[type] = Object.entries(deals)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([deal_id, count]) => ({ deal_id, count }));
+    });
+
     // Build per-user maps
     const favCountMap: Record<string, number> = {};
     (favoritesPerUser || []).forEach((f: any) => {
