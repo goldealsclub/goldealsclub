@@ -81,6 +81,8 @@ Deno.serve(async (req) => {
       recentPageViewsResult,
       eventsCountResult,
       recentEventsResult,
+      dealsMerchantResult,
+      allClicksDealsResult,
     ] = await Promise.all([
       supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
       supabase.from("email_alert_preferences").select("id", { count: "exact", head: true }).eq("enabled", true),
@@ -99,6 +101,8 @@ Deno.serve(async (req) => {
       supabase.from("page_views").select("viewed_at, path, session_id").order("viewed_at", { ascending: false }).limit(5000),
       supabase.from("events").select("id", { count: "exact", head: true }),
       supabase.from("events").select("event_type, deal_id, created_at").order("created_at", { ascending: false }).limit(5000),
+      supabase.from("deals").select("id, merchant, brand"),
+      supabase.from("outbound_clicks").select("deal_id"),
     ]);
 
     // Fetch profiles
@@ -179,7 +183,68 @@ Deno.serve(async (req) => {
         .map(([deal_id, count]) => ({ deal_id, count }));
     });
 
-    // Build per-user maps
+    // ===== Per-merchant aggregation =====
+    const dealsMerchantList = (dealsMerchantResult?.data || []) as any[];
+    const allClicksDeals = (allClicksDealsResult?.data || []) as any[];
+    const dealToMerchant: Record<string, string> = {};
+    const merchantDealCount: Record<string, number> = {};
+    dealsMerchantList.forEach((d: any) => {
+      const m = d.merchant || "Inconnu";
+      dealToMerchant[d.id] = m;
+      merchantDealCount[m] = (merchantDealCount[m] || 0) + 1;
+    });
+
+    const merchantClicks: Record<string, number> = {};
+    allClicksDeals.forEach((c: any) => {
+      const m = dealToMerchant[c.deal_id] || "Inconnu";
+      merchantClicks[m] = (merchantClicks[m] || 0) + 1;
+    });
+
+    const merchantViews: Record<string, number> = {};
+    const merchantRedirects: Record<string, number> = {};
+    const merchantFavAdd: Record<string, number> = {};
+    const merchantPromoCopy: Record<string, number> = {};
+    const merchantShares: Record<string, number> = {};
+    (recentEvents as any[]).forEach((e) => {
+      if (!e.deal_id) return;
+      const m = dealToMerchant[e.deal_id];
+      if (!m) return;
+      if (e.event_type === "deal_view") merchantViews[m] = (merchantViews[m] || 0) + 1;
+      else if (e.event_type === "merchant_redirect") merchantRedirects[m] = (merchantRedirects[m] || 0) + 1;
+      else if (e.event_type === "favorite_add") merchantFavAdd[m] = (merchantFavAdd[m] || 0) + 1;
+      else if (e.event_type === "promo_code_copy") merchantPromoCopy[m] = (merchantPromoCopy[m] || 0) + 1;
+      else if (e.event_type === "share_action") merchantShares[m] = (merchantShares[m] || 0) + 1;
+    });
+
+    const merchantNames = new Set<string>([
+      ...Object.keys(merchantDealCount),
+      ...Object.keys(merchantClicks),
+      ...Object.keys(merchantViews),
+      ...Object.keys(merchantRedirects),
+    ]);
+
+    const merchantStats = Array.from(merchantNames).map((m) => {
+      const views = merchantViews[m] || 0;
+      const redirects = merchantRedirects[m] || 0;
+      const clicksTotal = merchantClicks[m] || 0;
+      // Conversion rate: redirects / views (intent to leave the site)
+      const conversionRate = views > 0 ? (redirects / views) * 100 : 0;
+      // Click-through rate: outbound clicks / views
+      const ctr = views > 0 ? (clicksTotal / views) * 100 : 0;
+      return {
+        merchant: m,
+        deals_count: merchantDealCount[m] || 0,
+        views,
+        favorites: merchantFavAdd[m] || 0,
+        shares: merchantShares[m] || 0,
+        promo_copies: merchantPromoCopy[m] || 0,
+        redirects,
+        outbound_clicks: clicksTotal,
+        ctr: Math.round(ctr * 10) / 10,
+        conversion_rate: Math.round(conversionRate * 10) / 10,
+      };
+    }).sort((a, b) => b.outbound_clicks - a.outbound_clicks);
+
     const favCountMap: Record<string, number> = {};
     (favoritesPerUser || []).forEach((f: any) => {
       favCountMap[f.user_id] = (favCountMap[f.user_id] || 0) + 1;
@@ -327,6 +392,7 @@ Deno.serve(async (req) => {
           events_timeline: eventsTimeline,
           top_deals_by_event: topDealsByEvent,
         },
+        merchant_stats: merchantStats,
         },
       }),
       { headers: jsonHeaders }
