@@ -84,6 +84,7 @@ interface SiteStats {
   unconfirmed_users: number;
   total_page_views: number;
   unique_sessions: number;
+  total_events: number;
 }
 
 interface ChartData {
@@ -92,6 +93,9 @@ interface ChartData {
   view_timeline: { date: string; count: number }[];
   provider_breakdown: { name: string; value: number }[];
   top_pages: { path: string; count: number }[];
+  events_breakdown: { name: string; value: number }[];
+  events_timeline: ({ date: string } & Record<string, number | string>)[];
+  top_deals_by_event: Record<string, { deal_id: string; count: number }[]>;
 }
 
 type Tab = "overview" | "analytics" | "awin" | "audit" | "users";
