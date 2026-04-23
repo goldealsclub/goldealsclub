@@ -76,6 +76,9 @@ Deno.serve(async (req) => {
       rolesResult,
       recentClicksResult,
       alertPrefsResult,
+      pageViewsCountResult,
+      pageViewsSessionsResult,
+      recentPageViewsResult,
     ] = await Promise.all([
       supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
       supabase.from("email_alert_preferences").select("id", { count: "exact", head: true }).eq("enabled", true),
