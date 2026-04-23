@@ -437,6 +437,32 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
 
       {/* Charts row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8 mb-8 sm:mb-12">
+        {charts?.view_timeline && charts.view_timeline.length > 0 && (
+          <ChartCard title="Pages vues (30 derniers jours)">
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={charts.view_timeline}>
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
+                <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
+                <Area type="monotone" dataKey="count" stroke="hsl(140,30%,40%)" fill="hsl(140,30%,40%)" fillOpacity={0.15} name="Vues" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+
+        {charts?.top_pages && charts.top_pages.length > 0 && (
+          <ChartCard title="Top pages visitées">
+            <div className="space-y-2 max-h-[200px] overflow-y-auto">
+              {charts.top_pages.map((p, i) => (
+                <div key={i} className="flex justify-between items-center text-xs gap-2">
+                  <span className="truncate font-mono">{p.path || "/"}</span>
+                  <span className="font-display tabular-nums">{p.count}</span>
+                </div>
+              ))}
+            </div>
+          </ChartCard>
+        )}
+
         {charts?.signup_timeline && charts.signup_timeline.length > 0 && (
           <ChartCard title="Inscriptions (30 derniers jours)">
             <ResponsiveContainer width="100%" height={200}>
