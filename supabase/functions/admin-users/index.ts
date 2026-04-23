@@ -99,6 +99,8 @@ Deno.serve(async (req) => {
       supabase.from("page_views").select("viewed_at, path, session_id").order("viewed_at", { ascending: false }).limit(5000),
       supabase.from("events").select("id", { count: "exact", head: true }),
       supabase.from("events").select("event_type, deal_id, created_at").order("created_at", { ascending: false }).limit(5000),
+      supabase.from("deals").select("id, merchant, brand"),
+      supabase.from("outbound_clicks").select("deal_id"),
     ]);
 
     // Fetch profiles
