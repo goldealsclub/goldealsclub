@@ -392,6 +392,7 @@ Deno.serve(async (req) => {
           events_timeline: eventsTimeline,
           top_deals_by_event: topDealsByEvent,
         },
+        merchant_stats: merchantStats,
         },
       }),
       { headers: jsonHeaders }
