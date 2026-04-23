@@ -8,6 +8,7 @@ import { useCompare } from "./CompareDrawer";
 import FlameIndicator from "./FlameIndicator";
 import ShareMenu from "./ShareMenu";
 import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
+import { trackEvent } from "@/lib/track-event";
 import { motion } from "framer-motion";
 import { ThumbsUp, ThumbsDown } from "lucide-react";
 import { useDealVotes } from "@/hooks/use-deal-votes";
@@ -192,7 +193,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
                 />
               </motion.div>
             </button>
-            <ShareMenu url={`/deal/${deal.id}`} title={deal.title} />
+            <ShareMenu url={`/deal/${deal.id}`} title={deal.title} dealId={deal.id} />
             <button
               onClick={() => add(deal)}
               className={`p-2 hover:bg-accent/50 rounded-sm transition-colors ${comparing ? "text-foreground" : "text-foreground/40"}`}
@@ -215,7 +216,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
             href={buildAwinUrl(deal.affiliate_url || deal.product_url, deal.id)}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={() => trackOutboundClick(deal.id, deal.affiliate_url || deal.product_url)}
+            onClick={() => { trackOutboundClick(deal.id, deal.affiliate_url || deal.product_url); trackEvent("merchant_redirect", { dealId: deal.id, metadata: { merchant: deal.merchant, source: "card" } }); }}
             className="inline-flex items-center gap-1.5 text-[10px] font-display uppercase tracking-wider text-foreground/50 hover:text-foreground transition-colors"
           >
             {t.seeOffer}

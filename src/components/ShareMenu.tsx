@@ -3,13 +3,15 @@ import { Share2, Facebook, MessageCircle, Copy, Check } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { trackEvent } from "@/lib/track-event";
 
 interface ShareMenuProps {
   url: string;
   title: string;
+  dealId?: string;
 }
 
-const ShareMenu = ({ url, title }: ShareMenuProps) => {
+const ShareMenu = ({ url, title, dealId }: ShareMenuProps) => {
   const { t } = useI18n();
   const [copied, setCopied] = useState(false);
 
@@ -24,6 +26,7 @@ const ShareMenu = ({ url, title }: ShareMenuProps) => {
     navigator.clipboard.writeText(url);
     setCopied(true);
     toast.success(t.copied);
+    trackEvent("share_action", { dealId, metadata: { channel: "copy" } });
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -44,6 +47,7 @@ const ShareMenu = ({ url, title }: ShareMenuProps) => {
             href={link.href}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={() => trackEvent("share_action", { dealId, metadata: { channel: link.name } })}
             className="flex items-center gap-2 px-3 py-2 text-xs font-body text-foreground/70 hover:text-foreground hover:bg-accent/30 rounded-sm transition-colors"
           >
             <link.icon className="w-3.5 h-3.5" strokeWidth={1.5} />

@@ -79,6 +79,8 @@ Deno.serve(async (req) => {
       pageViewsCountResult,
       pageViewsSessionsResult,
       recentPageViewsResult,
+      eventsCountResult,
+      recentEventsResult,
     ] = await Promise.all([
       supabase.from("newsletter_subscribers").select("id", { count: "exact", head: true }),
       supabase.from("email_alert_preferences").select("id", { count: "exact", head: true }).eq("enabled", true),
@@ -95,6 +97,8 @@ Deno.serve(async (req) => {
       supabase.from("page_views").select("id", { count: "exact", head: true }),
       supabase.from("page_views").select("session_id", { count: "exact", head: true }),
       supabase.from("page_views").select("viewed_at, path, session_id").order("viewed_at", { ascending: false }).limit(5000),
+      supabase.from("events").select("id", { count: "exact", head: true }),
+      supabase.from("events").select("event_type, deal_id, created_at").order("created_at", { ascending: false }).limit(5000),
     ]);
 
     // Fetch profiles
@@ -139,6 +143,41 @@ Deno.serve(async (req) => {
     const recentPageViews = recentPageViewsResult.data || [];
     const uniqueSessionsSet = new Set<string>();
     recentPageViews.forEach((v: any) => v.session_id && uniqueSessionsSet.add(v.session_id));
+
+    // Aggregate events
+    const totalEvents = eventsCountResult.count || 0;
+    const recentEvents = recentEventsResult.data || [];
+    const eventTypeCount: Record<string, number> = {};
+    const eventByDay: Record<string, Record<string, number>> = {};
+    const eventDealCount: Record<string, Record<string, number>> = {};
+    const thirtyDaysAgoEv = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    (recentEvents as any[]).forEach((e) => {
+      const t = e.event_type;
+      eventTypeCount[t] = (eventTypeCount[t] || 0) + 1;
+      const d = e.created_at?.slice(0, 10);
+      if (d && new Date(d) >= thirtyDaysAgoEv) {
+        eventByDay[d] = eventByDay[d] || {};
+        eventByDay[d][t] = (eventByDay[d][t] || 0) + 1;
+      }
+      if (e.deal_id) {
+        eventDealCount[t] = eventDealCount[t] || {};
+        eventDealCount[t][e.deal_id] = (eventDealCount[t][e.deal_id] || 0) + 1;
+      }
+    });
+    const eventsBreakdown = Object.entries(eventTypeCount)
+      .map(([name, value]) => ({ name, value }))
+      .sort((a, b) => b.value - a.value);
+    const eventsTimeline = Object.entries(eventByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, perType]) => ({ date, ...perType }));
+    // Top 5 deals per event type
+    const topDealsByEvent: Record<string, { deal_id: string; count: number }[]> = {};
+    Object.entries(eventDealCount).forEach(([type, deals]) => {
+      topDealsByEvent[type] = Object.entries(deals)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 5)
+        .map(([deal_id, count]) => ({ deal_id, count }));
+    });
 
     // Build per-user maps
     const favCountMap: Record<string, number> = {};
@@ -276,6 +315,7 @@ Deno.serve(async (req) => {
           unconfirmed_users: unconfirmedCount,
           total_page_views: totalPageViews,
           unique_sessions: uniqueSessionsSet.size,
+          total_events: totalEvents,
         },
         charts: {
           signup_timeline: signupTimeline,
@@ -283,6 +323,10 @@ Deno.serve(async (req) => {
           view_timeline: viewTimeline,
           provider_breakdown: providerBreakdown,
           top_pages: topPages,
+          events_breakdown: eventsBreakdown,
+          events_timeline: eventsTimeline,
+          top_deals_by_event: topDealsByEvent,
+        },
         },
       }),
       { headers: jsonHeaders }

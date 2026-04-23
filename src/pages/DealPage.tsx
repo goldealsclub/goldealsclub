@@ -12,6 +12,7 @@ import ShareMenu from "@/components/ShareMenu";
 import PriceAlertButton from "@/components/PriceAlertButton";
 import DealCard from "@/components/DealCard";
 import { trackOutboundClick, buildAwinUrl } from "@/lib/track-click";
+import { trackEvent } from "@/lib/track-event";
 import RecentlyViewed from "@/components/RecentlyViewed";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -36,7 +37,10 @@ const DealPage = () => {
   const deal = deals.find((d) => d.id === id);
 
   useEffect(() => {
-    if (deal) addViewed(deal.id);
+    if (deal) {
+      addViewed(deal.id);
+      trackEvent("deal_view", { dealId: deal.id, metadata: { brand: deal.brand, merchant: deal.merchant, category: deal.category } });
+    }
   }, [deal?.id]);
 
   if (!deal) {
@@ -197,7 +201,7 @@ const DealPage = () => {
               href={buildAwinUrl(deal.affiliate_url || deal.product_url, deal.id)}
               target="_blank"
               rel="noopener noreferrer"
-              onClick={() => trackOutboundClick(deal.id, deal.affiliate_url || deal.product_url)}
+              onClick={() => { trackOutboundClick(deal.id, deal.affiliate_url || deal.product_url); trackEvent("merchant_redirect", { dealId: deal.id, metadata: { merchant: deal.merchant, source: "deal_page" } }); }}
               className="inline-flex items-center justify-center gap-3 bg-primary text-primary-foreground px-8 py-4 text-[11px] font-display uppercase tracking-[0.2em] hover:bg-foreground/80 transition-colors mb-6"
             >
               {t.seeOfferAt} {deal.merchant}
@@ -213,7 +217,7 @@ const DealPage = () => {
                 <Heart className={`w-4 h-4 ${saved ? "fill-foreground text-foreground" : ""}`} strokeWidth={1.5} />
                 {t.save}
               </button>
-              <ShareMenu url={`/deal/${deal.id}`} title={deal.title} />
+              <ShareMenu url={`/deal/${deal.id}`} title={deal.title} dealId={deal.id} />
               <PriceAlertButton dealId={deal.id} dealTitle={deal.title} />
               <div className="flex items-center gap-1 text-foreground/35 ml-auto">
                 <Eye className="w-3.5 h-3.5" strokeWidth={1.5} />

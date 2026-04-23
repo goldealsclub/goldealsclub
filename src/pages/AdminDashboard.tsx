@@ -28,6 +28,18 @@ const COLORS = [
   "hsl(30,10%,78%)", "hsl(30,5%,84%)", "hsl(0,0%,88%)", "hsl(0,0%,92%)",
 ];
 
+const EVENT_LABELS: Record<string, string> = {
+  deal_view: "Vue produit",
+  favorite_add: "Favori ajouté",
+  favorite_remove: "Favori retiré",
+  share_open: "Partage ouvert",
+  share_action: "Partage cliqué",
+  merchant_redirect: "Vers vendeur",
+  promo_code_copy: "Code promo copié",
+  compare_add: "Ajout au comparateur",
+  search_query: "Recherche",
+};
+
 interface ClickStat {
   deal_id: string;
   deal_title: string | null;
@@ -84,6 +96,7 @@ interface SiteStats {
   unconfirmed_users: number;
   total_page_views: number;
   unique_sessions: number;
+  total_events: number;
 }
 
 interface ChartData {
@@ -92,6 +105,9 @@ interface ChartData {
   view_timeline: { date: string; count: number }[];
   provider_breakdown: { name: string; value: number }[];
   top_pages: { path: string; count: number }[];
+  events_breakdown: { name: string; value: number }[];
+  events_timeline: ({ date: string } & Record<string, number | string>)[];
+  top_deals_by_event: Record<string, { deal_id: string; count: number }[]>;
 }
 
 type Tab = "overview" | "analytics" | "awin" | "audit" | "users";
@@ -490,7 +506,70 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         )}
       </div>
 
-      {/* Provider breakdown + Active users */}
+      {/* Événements clés */}
+      {charts?.events_breakdown && charts.events_breakdown.length > 0 && (
+        <div className="mb-8 sm:mb-12">
+          <h3 className="text-xs sm:text-sm font-display uppercase tracking-[0.2em] text-foreground/60 mb-4">
+            Événements clés ({stats?.total_events || 0} total)
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4 mb-6">
+            {charts.events_breakdown.map((e) => (
+              <KpiCard
+                key={e.name}
+                icon={<Activity className="w-4 h-4 sm:w-5 sm:h-5" />}
+                label={EVENT_LABELS[e.name] || e.name}
+                value={e.value}
+              />
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+            {charts.events_timeline && charts.events_timeline.length > 0 && (
+              <ChartCard title="Timeline des événements (30j)">
+                <ResponsiveContainer width="100%" height={220}>
+                  <LineChart data={charts.events_timeline}>
+                    <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => String(d).slice(5)} />
+                    <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
+                    <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d as string), "dd MMM yyyy", { locale: fr })} />
+                    {charts.events_breakdown.slice(0, 6).map((e, i) => (
+                      <Line
+                        key={e.name}
+                        type="monotone"
+                        dataKey={e.name}
+                        stroke={COLORS[i % COLORS.length]}
+                        strokeWidth={1.5}
+                        dot={false}
+                        name={EVENT_LABELS[e.name] || e.name}
+                      />
+                    ))}
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartCard>
+            )}
+
+            {charts.top_deals_by_event && Object.keys(charts.top_deals_by_event).length > 0 && (
+              <ChartCard title="Top deals par événement">
+                <div className="space-y-3 max-h-[220px] overflow-y-auto text-xs">
+                  {Object.entries(charts.top_deals_by_event).map(([type, deals]) => (
+                    <div key={type}>
+                      <p className="font-display uppercase tracking-wider text-[10px] text-foreground/50 mb-1">
+                        {EVENT_LABELS[type] || type}
+                      </p>
+                      {deals.map((d) => (
+                        <div key={d.deal_id} className="flex justify-between items-center gap-2 pl-2">
+                          <span className="truncate font-mono text-[10px]">{d.deal_id}</span>
+                          <span className="font-display tabular-nums">{d.count}</span>
+                        </div>
+                      ))}
+                    </div>
+                  ))}
+                </div>
+              </ChartCard>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 mb-8 sm:mb-12">
         {charts?.provider_breakdown && (
           <ChartCard title="Méthodes d'inscription">
