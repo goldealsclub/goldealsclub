@@ -29,53 +29,31 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Only return deals detected in the last 30 days to keep payload + query bounded.
-    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const PER_MERCHANT = 2500; // freshest N per merchant — keeps catalog diverse
+    // Only return deals detected in the last 14 days to keep payload + query bounded.
+    const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
     const PAGE = 1000;
+    const MAX_PAGES = 12; // cap at ~12k rows to stay within DB statement timeout
     const all: any[] = [];
     const seen = new Set<string>();
 
-    const pushUnique = (rows: any[]) => {
-      for (const r of rows) {
+    for (let p = 0; p < MAX_PAGES; p++) {
+      const from = p * PAGE;
+      const to = from + PAGE - 1;
+      const { data, error } = await supabase
+        .from("deals")
+        .select(FIELDS)
+        .gte("detected_at", since)
+        .order("detected_at", { ascending: false, nullsFirst: false })
+        .range(from, to);
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      for (const r of data) {
         if (r?.id && !seen.has(r.id)) {
           seen.add(r.id);
           all.push(r);
         }
       }
-    };
-
-    // Discover active merchants in the window
-    const { data: merchantRows, error: merchantErr } = await supabase
-      .from("deals")
-      .select("merchant")
-      .gte("detected_at", since)
-      .limit(50000);
-    if (merchantErr) throw merchantErr;
-    const merchants = Array.from(
-      new Set((merchantRows || []).map((r: any) => r.merchant).filter(Boolean)),
-    );
-
-    // Fetch the freshest PER_MERCHANT rows for each merchant in parallel pages.
-    for (const m of merchants) {
-      let from = 0;
-      let collected = 0;
-      while (collected < PER_MERCHANT) {
-        const to = from + PAGE - 1;
-        const { data, error } = await supabase
-          .from("deals")
-          .select(FIELDS)
-          .gte("detected_at", since)
-          .eq("merchant", m)
-          .order("detected_at", { ascending: false, nullsFirst: false })
-          .range(from, Math.min(to, from + (PER_MERCHANT - collected) - 1));
-        if (error) throw error;
-        if (!data || data.length === 0) break;
-        pushUnique(data);
-        collected += data.length;
-        if (data.length < PAGE) break;
-        from += PAGE;
-      }
+      if (data.length < PAGE) break;
     }
 
     // Final dedupe: collapse SKU/size variants while preserving COLOR variants.
