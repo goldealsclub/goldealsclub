@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
         .range(from, to);
       if (error) throw error;
       if (!data || data.length === 0) break;
-      for (const r of data) {
+      for (const r of data as any[]) {
         if (r?.id && !seen.has(r.id)) {
           seen.add(r.id);
           all.push(r);
