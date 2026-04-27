@@ -170,7 +170,7 @@ function extractDirectImageUrl(productserveUrl) {
   } catch { return null; }
 }
 
-const MIN_IMG_SIZE = 600; // px (smallest dimension); rejects merchant thumbnails
+const MIN_IMG_SIZE = theme.minImgSize ?? 600; // px (smallest dimension); rejects merchant thumbnails
 
 async function fetchImage(url) {
   const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://www.google.com/" } });
