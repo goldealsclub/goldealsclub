@@ -87,9 +87,9 @@ const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0
 // Rotation déterministe sur le n° du jour (julien) → cycle Sneakers → Streetwear → Accessoires.
 // Override possible via env: THEME=streetwear node scripts/generate-weekly.mjs
 const THEMES = {
-  sneakers:    { label: "Sneakers",    cats: new Set(["sneakers"]),                                          minDiscount: 30, requireAllowedBrand: true,  maxPerBrand: 2 },
-  streetwear:  { label: "Streetwear",  cats: new Set(["vestes", "hoodies", "t-shirts", "pantalons"]),        minDiscount: 25, requireAllowedBrand: true,  maxPerBrand: 2 },
-  accessoires: { label: "Accessoires", cats: new Set(["accessoires"]),                                       minDiscount: 20, requireAllowedBrand: false, maxPerBrand: 3 },
+  sneakers:    { label: "Sneakers",    cats: new Set(["sneakers"]),                                          minDiscount: 30, requireAllowedBrand: true,  maxPerBrand: 2, minImgSize: 600 },
+  streetwear:  { label: "Streetwear",  cats: new Set(["vestes", "hoodies", "t-shirts", "pantalons"]),        minDiscount: 25, requireAllowedBrand: false, maxPerBrand: 2, minImgSize: 200 },
+  accessoires: { label: "Accessoires", cats: new Set(["accessoires"]),                                       minDiscount: 20, requireAllowedBrand: false, maxPerBrand: 3, minImgSize: 200 },
 };
 const themeOrder = ["sneakers", "streetwear", "accessoires"];
 const dayNumber = Math.floor(Date.UTC(...today.split("-").map((v, i) => i === 1 ? +v - 1 : +v)) / 86400000);
@@ -115,8 +115,19 @@ for (const d of eligible) {
   if (key && !seenTitles.has(key)) { seenTitles.add(key); dedup.push(d); }
 }
 
-// Pool = top 60 best discounts, then daily-shuffle so we rotate
-const pool = dedup.sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0)).slice(0, 60);
+// Exclude known-blocked image feeds (return 403 / 404)
+const BLOCKED_FEEDS = new Set(["48225"]);
+const isBlockedImage = (u) => {
+  if (!u) return true;
+  for (const f of BLOCKED_FEEDS) if (u.includes(`feedId=${f}`)) return true;
+  return false;
+};
+
+// Pool = top 200 best discounts (filtered), then daily-shuffle so we rotate
+const pool = dedup
+  .filter((d) => !isBlockedImage(d.image_url))
+  .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0))
+  .slice(0, 200);
 for (let i = pool.length - 1; i > 0; i--) {
   const j = Math.floor(rand() * (i + 1));
   [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -130,7 +141,7 @@ for (const d of pool) {
   if (c >= theme.maxPerBrand) continue;
   perBrand[d.brand] = c + 1;
   rawDeals.push(d);
-  if (rawDeals.length >= 25) break;
+  if (rawDeals.length >= 80) break;
 }
 
 console.log(`🎲 Daily seed: ${today} → ${rawDeals.length} candidates [${theme.label}] (from ${dedup.length} unique, ${allDeals.length} total)`);
@@ -170,7 +181,7 @@ function extractDirectImageUrl(productserveUrl) {
   } catch { return null; }
 }
 
-const MIN_IMG_SIZE = 600; // px (smallest dimension); rejects merchant thumbnails
+const MIN_IMG_SIZE = theme.minImgSize ?? 600; // px (smallest dimension); rejects merchant thumbnails
 
 async function fetchImage(url) {
   const r = await fetch(url, { headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://www.google.com/" } });
@@ -189,21 +200,22 @@ async function imageToDataUri(url) {
   const candidates = [url];
   const direct = extractDirectImageUrl(url);
   if (direct) candidates.push(direct);
+  const errors = [];
   for (const c of candidates) {
     try {
       const { dataUri, dims } = await fetchImage(c);
       return { dataUri, dims, source: c === url ? "cdn" : "direct" };
-    } catch (e) { /* try next */ }
+    } catch (e) { errors.push(e.message); }
   }
-  return null;
+  return { error: errors.join(" | ") };
 }
 
 const deals = [];
 for (const d of rawDeals) {
   if (deals.length >= 5) break;
   const result = await imageToDataUri(d.image_url);
-  if (!result) {
-    console.log(`   ⏭️  ${d.brand} — no usable image (≥${MIN_IMG_SIZE}px)`);
+  if (!result || !result.dataUri) {
+    console.log(`   ⏭️  ${d.brand} — ${result?.error || "no image"}`);
     continue;
   }
   deals.push({
