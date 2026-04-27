@@ -189,13 +189,14 @@ async function imageToDataUri(url) {
   const candidates = [url];
   const direct = extractDirectImageUrl(url);
   if (direct) candidates.push(direct);
+  const errors = [];
   for (const c of candidates) {
     try {
       const { dataUri, dims } = await fetchImage(c);
       return { dataUri, dims, source: c === url ? "cdn" : "direct" };
-    } catch (e) { /* try next */ }
+    } catch (e) { errors.push(e.message); }
   }
-  return null;
+  return { error: errors.join(" | ") };
 }
 
 const deals = [];
