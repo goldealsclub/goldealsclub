@@ -115,8 +115,19 @@ for (const d of eligible) {
   if (key && !seenTitles.has(key)) { seenTitles.add(key); dedup.push(d); }
 }
 
-// Pool = top 60 best discounts, then daily-shuffle so we rotate
-const pool = dedup.sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0)).slice(0, 60);
+// Exclude known-blocked image feeds (return 403 / 404)
+const BLOCKED_FEEDS = new Set(["48225"]);
+const isBlockedImage = (u) => {
+  if (!u) return true;
+  for (const f of BLOCKED_FEEDS) if (u.includes(`feedId=${f}`)) return true;
+  return false;
+};
+
+// Pool = top 200 best discounts (filtered), then daily-shuffle so we rotate
+const pool = dedup
+  .filter((d) => !isBlockedImage(d.image_url))
+  .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0))
+  .slice(0, 200);
 for (let i = pool.length - 1; i > 0; i--) {
   const j = Math.floor(rand() * (i + 1));
   [pool[i], pool[j]] = [pool[j], pool[i]];
@@ -130,7 +141,7 @@ for (const d of pool) {
   if (c >= theme.maxPerBrand) continue;
   perBrand[d.brand] = c + 1;
   rawDeals.push(d);
-  if (rawDeals.length >= 25) break;
+  if (rawDeals.length >= 80) break;
 }
 
 console.log(`🎲 Daily seed: ${today} → ${rawDeals.length} candidates [${theme.label}] (from ${dedup.length} unique, ${allDeals.length} total)`);
