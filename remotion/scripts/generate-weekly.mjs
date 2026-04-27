@@ -83,13 +83,28 @@ let seed = 0;
 for (const c of today) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
 const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0xffffffff; };
 
+// ── Theme rotation: sneakers / streetwear / accessoires ──
+// Rotation déterministe sur le n° du jour (julien) → cycle Sneakers → Streetwear → Accessoires.
+// Override possible via env: THEME=streetwear node scripts/generate-weekly.mjs
+const THEMES = {
+  sneakers:    { label: "Sneakers",    cats: new Set(["sneakers"]),                                          minDiscount: 30, requireAllowedBrand: true,  maxPerBrand: 2 },
+  streetwear:  { label: "Streetwear",  cats: new Set(["vestes", "hoodies", "t-shirts", "pantalons"]),        minDiscount: 25, requireAllowedBrand: true,  maxPerBrand: 2 },
+  accessoires: { label: "Accessoires", cats: new Set(["accessoires"]),                                       minDiscount: 20, requireAllowedBrand: false, maxPerBrand: 3 },
+};
+const themeOrder = ["sneakers", "streetwear", "accessoires"];
+const dayNumber = Math.floor(Date.UTC(...today.split("-").map((v, i) => i === 1 ? +v - 1 : +v)) / 86400000);
+const forced = (process.env.THEME || "").toLowerCase();
+const themeKey = THEMES[forced] ? forced : themeOrder[dayNumber % themeOrder.length];
+const theme = THEMES[themeKey];
+console.log(`🎯 Theme du jour : ${theme.label}${forced ? " (forcé)" : ""}`);
+
 const eligible = allDeals.filter((d) => {
   const cat = (d.category || "").toLowerCase();
-  return cat === "sneakers" &&
+  return theme.cats.has(cat) &&
     d.image_url &&
     d.sale_price &&
-    (d.discount_percent ?? 0) >= 30 &&
-    allowedBrands.has(d.brand);
+    (d.discount_percent ?? 0) >= theme.minDiscount &&
+    (!theme.requireAllowedBrand || allowedBrands.has(d.brand));
 });
 
 // Deduplicate by title (avoid same product twice)
@@ -107,18 +122,18 @@ for (let i = pool.length - 1; i > 0; i--) {
   [pool[i], pool[j]] = [pool[j], pool[i]];
 }
 
-// Enforce brand diversity: max 2 per brand
+// Enforce brand diversity (variable selon le thème)
 const perBrand = {};
 const rawDeals = [];
 for (const d of pool) {
   const c = perBrand[d.brand] || 0;
-  if (c >= 2) continue;
+  if (c >= theme.maxPerBrand) continue;
   perBrand[d.brand] = c + 1;
   rawDeals.push(d);
   if (rawDeals.length >= 25) break;
 }
 
-console.log(`🎲 Daily seed: ${today} → ${rawDeals.length} candidates (from ${dedup.length} unique deals, ${allDeals.length} total)`);
+console.log(`🎲 Daily seed: ${today} → ${rawDeals.length} candidates [${theme.label}] (from ${dedup.length} unique, ${allDeals.length} total)`);
 
 if (rawDeals.length < 3) {
   console.error("Not enough deals found (need at least 3)");
