@@ -77,19 +77,48 @@ if (fs.existsSync(localDealsPath)) {
 }
 const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok", "Asics", "Converse", "Vans", "Salomon", "Mizuno", "Saucony", "Hoka", "Under Armour"]);
 
-const rawDeals = allDeals
-  .filter((d) => {
-    const cat = (d.category || "").toLowerCase();
-    return cat === "sneakers" &&
-      d.image_url &&
-      d.sale_price &&
-      (d.discount_percent ?? 0) >= 30 &&
-      allowedBrands.has(d.brand);
-  })
-  .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0))
-  .slice(0, 100);
+// Daily-seeded shuffle so each day picks a different selection
+const today = new Date().toISOString().slice(0, 10);
+let seed = 0;
+for (const c of today) seed = (seed * 31 + c.charCodeAt(0)) >>> 0;
+const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0xffffffff; };
 
-console.log(`✅ Got ${rawDeals.length} sneakers deals (from ${allDeals.length} total)`);
+const eligible = allDeals.filter((d) => {
+  const cat = (d.category || "").toLowerCase();
+  return cat === "sneakers" &&
+    d.image_url &&
+    d.sale_price &&
+    (d.discount_percent ?? 0) >= 30 &&
+    allowedBrands.has(d.brand);
+});
+
+// Deduplicate by title (avoid same product twice)
+const seenTitles = new Set();
+const dedup = [];
+for (const d of eligible) {
+  const key = (d.title || "").toLowerCase().trim();
+  if (key && !seenTitles.has(key)) { seenTitles.add(key); dedup.push(d); }
+}
+
+// Pool = top 60 best discounts, then daily-shuffle so we rotate
+const pool = dedup.sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0)).slice(0, 60);
+for (let i = pool.length - 1; i > 0; i--) {
+  const j = Math.floor(rand() * (i + 1));
+  [pool[i], pool[j]] = [pool[j], pool[i]];
+}
+
+// Enforce brand diversity: max 2 per brand
+const perBrand = {};
+const rawDeals = [];
+for (const d of pool) {
+  const c = perBrand[d.brand] || 0;
+  if (c >= 2) continue;
+  perBrand[d.brand] = c + 1;
+  rawDeals.push(d);
+  if (rawDeals.length >= 25) break;
+}
+
+console.log(`🎲 Daily seed: ${today} → ${rawDeals.length} candidates (from ${dedup.length} unique deals, ${allDeals.length} total)`);
 
 if (rawDeals.length < 3) {
   console.error("Not enough deals found (need at least 3)");
