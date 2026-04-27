@@ -87,9 +87,9 @@ const rand = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 0
 // Rotation déterministe sur le n° du jour (julien) → cycle Sneakers → Streetwear → Accessoires.
 // Override possible via env: THEME=streetwear node scripts/generate-weekly.mjs
 const THEMES = {
-  sneakers:    { label: "Sneakers",    cats: new Set(["sneakers"]),                                          minDiscount: 30, requireAllowedBrand: true,  maxPerBrand: 2 },
-  streetwear:  { label: "Streetwear",  cats: new Set(["vestes", "hoodies", "t-shirts", "pantalons"]),        minDiscount: 25, requireAllowedBrand: true,  maxPerBrand: 2 },
-  accessoires: { label: "Accessoires", cats: new Set(["accessoires"]),                                       minDiscount: 20, requireAllowedBrand: false, maxPerBrand: 3 },
+  sneakers:    { label: "Sneakers",    cats: new Set(["sneakers"]),                                          minDiscount: 30, requireAllowedBrand: true,  maxPerBrand: 2, minImgSize: 600 },
+  streetwear:  { label: "Streetwear",  cats: new Set(["vestes", "hoodies", "t-shirts", "pantalons"]),        minDiscount: 25, requireAllowedBrand: false, maxPerBrand: 2, minImgSize: 400 },
+  accessoires: { label: "Accessoires", cats: new Set(["accessoires"]),                                       minDiscount: 20, requireAllowedBrand: false, maxPerBrand: 3, minImgSize: 400 },
 };
 const themeOrder = ["sneakers", "streetwear", "accessoires"];
 const dayNumber = Math.floor(Date.UTC(...today.split("-").map((v, i) => i === 1 ? +v - 1 : +v)) / 86400000);
