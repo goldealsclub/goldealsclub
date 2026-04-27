@@ -2,12 +2,18 @@
 /**
  * Upload the generated TikTok video to Supabase Storage (public bucket).
  *
- * Required env vars (set as GitHub Actions secrets):
+ * Required env vars:
  *   SUPABASE_URL
  *   SUPABASE_SERVICE_ROLE_KEY
  *
  * Usage:
  *   node remotion/scripts/upload-to-storage.mjs <local-video-path>
+ *
+ * Le nom du fichier doit suivre `goldeals-tiktok-YYYY-MM-DD-<theme>.mp4`.
+ * Upload :
+ *   - <bucket>/goldeals-tiktok-YYYY-MM-DD-<theme>.mp4  (archive datée)
+ *   - <bucket>/latest-<theme>.mp4                       (URL stable par thème)
+ *   - <bucket>/latest.mp4                               (URL stable globale = dernier upload)
  */
 
 import fs from "fs";
@@ -26,45 +32,38 @@ if (!localPath || !fs.existsSync(localPath)) {
   process.exit(1);
 }
 
-const date = new Date().toISOString().slice(0, 10);
-const fileName = `goldeals-tiktok-${date}.mp4`;
 const bucket = "tiktok-videos";
+const fileName = path.basename(localPath);
+// Extract theme from filename: goldeals-tiktok-YYYY-MM-DD-<theme>.mp4
+const themeMatch = fileName.match(/-(\d{4}-\d{2}-\d{2})-([a-z]+)\.mp4$/);
+const theme = themeMatch?.[2] || "default";
 
 const buffer = fs.readFileSync(localPath);
-console.log(`📤 Uploading ${(buffer.length / 1024 / 1024).toFixed(1)} MB to ${bucket}/${fileName}...`);
+const sizeMb = (buffer.length / 1024 / 1024).toFixed(1);
 
-const uploadUrl = `${SUPABASE_URL}/storage/v1/object/${bucket}/${fileName}`;
-const res = await fetch(uploadUrl, {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${SERVICE_KEY}`,
-    "Content-Type": "video/mp4",
-    "x-upsert": "true",
-  },
-  body: buffer,
-});
-
-if (!res.ok) {
-  console.error(`❌ Upload failed [${res.status}]:`, await res.text());
-  process.exit(1);
+async function upload(remoteName) {
+  const res = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/${remoteName}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${SERVICE_KEY}`,
+      "Content-Type": "video/mp4",
+      "x-upsert": "true",
+    },
+    body: buffer,
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    console.error(`❌ Upload failed for ${remoteName} [${res.status}]:`, body);
+    return false;
+  }
+  console.log(`📎 ${SUPABASE_URL}/storage/v1/object/public/${bucket}/${remoteName}`);
+  return true;
 }
 
-// Also upload as "latest.mp4" for stable URL
-const latestRes = await fetch(`${SUPABASE_URL}/storage/v1/object/${bucket}/latest.mp4`, {
-  method: "POST",
-  headers: {
-    Authorization: `Bearer ${SERVICE_KEY}`,
-    "Content-Type": "video/mp4",
-    "x-upsert": "true",
-  },
-  body: buffer,
-});
-if (!latestRes.ok) {
-  console.warn(`⚠️  latest.mp4 upload failed [${latestRes.status}]:`, await latestRes.text());
-}
+console.log(`📤 Uploading ${sizeMb} MB → bucket="${bucket}" theme="${theme}"`);
+const ok1 = await upload(fileName);
+const ok2 = await upload(`latest-${theme}.mp4`);
+const ok3 = await upload("latest.mp4");
 
-const publicUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${fileName}`;
-const latestUrl = `${SUPABASE_URL}/storage/v1/object/public/${bucket}/latest.mp4`;
-console.log(`✅ Uploaded!`);
-console.log(`📎 Dated URL  : ${publicUrl}`);
-console.log(`📎 Latest URL : ${latestUrl}`);
+if (!(ok1 && ok2 && ok3)) process.exit(1);
+console.log(`✅ Uploaded all 3 variants`);
