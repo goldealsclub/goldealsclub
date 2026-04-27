@@ -203,8 +203,8 @@ const deals = [];
 for (const d of rawDeals) {
   if (deals.length >= 5) break;
   const result = await imageToDataUri(d.image_url);
-  if (!result) {
-    console.log(`   ⏭️  ${d.brand} — no usable image (≥${MIN_IMG_SIZE}px)`);
+  if (!result || !result.dataUri) {
+    console.log(`   ⏭️  ${d.brand} — ${result?.error || "no image"}`);
     continue;
   }
   deals.push({
