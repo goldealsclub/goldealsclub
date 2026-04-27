@@ -274,8 +274,8 @@ const composition = await selectComposition({
 });
 
 const date = new Date().toISOString().slice(0, 10);
-const rawVideoPath = `/tmp/goldeals-raw-${date}.mp4`;
-const outputPath = `/mnt/documents/goldeals-tiktok-${date}.mp4`;
+const rawVideoPath = `/tmp/goldeals-raw-${date}-${themeKey}.mp4`;
+const outputPath = `/mnt/documents/goldeals-tiktok-${date}-${themeKey}.mp4`;
 
 await renderMedia({
   composition,
