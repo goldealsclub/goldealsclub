@@ -1,0 +1,62 @@
+name: Daily TikTok video
+
+on:
+  schedule:
+    # 06:00 UTC every day (07h Paris hiver / 08h Paris été)
+    - cron: "0 6 * * *"
+  workflow_dispatch: # allow manual trigger from GitHub UI
+
+jobs:
+  generate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install ffmpeg + chromium
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg chromium-browser
+
+      - name: Install Remotion deps
+        working-directory: remotion
+        run: npm install --no-audit --no-fund
+
+      - name: Write .env for the script
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
+          echo "VITE_SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" >> .env
+
+      - name: Generate video
+        working-directory: remotion
+        env:
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+        run: |
+          mkdir -p /mnt/documents
+          # Script writes to /mnt/documents which doesn't exist on GH runners — symlink to ./out
+          mkdir -p out
+          sudo mkdir -p /mnt/documents
+          sudo chmod 777 /mnt/documents
+          node scripts/generate-weekly.mjs
+
+      - name: Upload to Supabase Storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          DATE=$(date -u +%Y-%m-%d)
+          node remotion/scripts/upload-to-storage.mjs "/mnt/documents/goldeals-tiktok-${DATE}.mp4"
+
+      - name: Upload as workflow artifact (backup)
+        uses: actions/upload-artifact@v4
+        with:
+          name: tiktok-video
+          path: /mnt/documents/goldeals-tiktok-*.mp4
+          retention-days: 14
