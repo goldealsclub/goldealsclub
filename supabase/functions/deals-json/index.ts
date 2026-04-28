@@ -31,29 +31,46 @@ Deno.serve(async (req) => {
 
     // Only return deals detected in the last 14 days to keep payload + query bounded.
     const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
-    const PAGE = 1000;
-    const MAX_PAGES = 12; // cap at ~12k rows to stay within DB statement timeout
     const all: any[] = [];
     const seen = new Set<string>();
 
-    for (let p = 0; p < MAX_PAGES; p++) {
-      const from = p * PAGE;
-      const to = from + PAGE - 1;
-      const { data, error } = await supabase
-        .from("deals")
-        .select(FIELDS)
-        .gte("detected_at", since)
-        .order("detected_at", { ascending: false, nullsFirst: false })
-        .range(from, to);
-      if (error) throw error;
-      if (!data || data.length === 0) break;
-      for (const r of data as any[]) {
-        if (r?.id && !seen.has(r.id)) {
-          seen.add(r.id);
-          all.push(r);
+    // CRITICAL: Fetch PER MERCHANT to avoid starvation.
+    // A global ORDER BY detected_at DESC + LIMIT 12000 lets the most-recently-refreshed
+    // merchants monopolize the payload and pushes others (Snipes, Sneakin...) out entirely.
+    // See mem://constraints/deals-pipeline-no-regression.
+    const { data: merchantRows, error: merchantsErr } = await supabase
+      .from("deals")
+      .select("merchant")
+      .gte("detected_at", since)
+      .not("merchant", "is", null);
+    if (merchantsErr) throw merchantsErr;
+    const merchants = Array.from(
+      new Set((merchantRows ?? []).map((r: any) => r.merchant).filter(Boolean)),
+    );
+
+    const PER_MERCHANT_CAP = 2500;
+    const PAGE = 1000;
+
+    for (const merchant of merchants) {
+      for (let from = 0; from < PER_MERCHANT_CAP; from += PAGE) {
+        const to = Math.min(from + PAGE, PER_MERCHANT_CAP) - 1;
+        const { data, error } = await supabase
+          .from("deals")
+          .select(FIELDS)
+          .eq("merchant", merchant)
+          .gte("detected_at", since)
+          .order("detected_at", { ascending: false, nullsFirst: false })
+          .range(from, to);
+        if (error) throw error;
+        if (!data || data.length === 0) break;
+        for (const r of data as any[]) {
+          if (r?.id && !seen.has(r.id)) {
+            seen.add(r.id);
+            all.push(r);
+          }
         }
+        if (data.length < to - from + 1) break;
       }
-      if (data.length < PAGE) break;
     }
 
     // Final dedupe: collapse SKU/size variants while preserving COLOR variants.
