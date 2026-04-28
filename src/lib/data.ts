@@ -278,6 +278,49 @@ let _revalidating = false;
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
 const PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
 
+/* -------------------------------------------------------------------------- */
+/* Browser-side cache (localStorage) with TTL.                                */
+/*   - FRESH window (15 min): served instantly, no revalidation needed.       */
+/*   - STALE window (24 h): served instantly, revalidated in background.      */
+/*   - Past 24 h: cache is ignored.                                           */
+/*   Keyed by build version so a deploy invalidates everything atomically.    */
+/* -------------------------------------------------------------------------- */
+const CACHE_KEY = "gdc:deals-cache:v1";
+const CACHE_FRESH_MS = 15 * 60 * 1000;          // 15 minutes
+const CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;   // 24 hours
+const BUILD_VERSION = (import.meta.env.VITE_APP_VERSION as string | undefined)
+  ?? (import.meta.env.MODE as string | undefined)
+  ?? "dev";
+
+type CachedPayload = { v: string; ts: number; raw: any[] };
+
+function readCache(): CachedPayload | null {
+  if (typeof window === "undefined" || !window.localStorage) return null;
+  try {
+    const txt = window.localStorage.getItem(CACHE_KEY);
+    if (!txt) return null;
+    const parsed = JSON.parse(txt) as CachedPayload;
+    if (!parsed || parsed.v !== BUILD_VERSION || !Array.isArray(parsed.raw)) return null;
+    if (Date.now() - parsed.ts > CACHE_MAX_AGE_MS) return null;
+    return parsed;
+  } catch { return null; }
+}
+
+function writeCache(raw: any[]) {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try {
+    const payload: CachedPayload = { v: BUILD_VERSION, ts: Date.now(), raw };
+    window.localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+  } catch {
+    // Quota exceeded → drop the cache silently.
+    try { window.localStorage.removeItem(CACHE_KEY); } catch {}
+  }
+}
+
+function isCacheFresh(c: CachedPayload): boolean {
+  return Date.now() - c.ts < CACHE_FRESH_MS;
+}
+
 /** Fetch the live edge function (deals-json). Slow (2-5s) but always fresh. */
 async function fetchLive(): Promise<any[] | null> {
   if (!SUPABASE_URL || !PUBLISHABLE_KEY) return null;
