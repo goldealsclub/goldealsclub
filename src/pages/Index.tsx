@@ -126,8 +126,17 @@ const Index = () => {
       {/* Scroll target for gender filter */}
       <div id="deals-section" />
 
+      {/* Skeleton state — premium shimmer while deals load */}
+      {loading && (
+        <>
+          <SectionSkeleton title="Hot Deals" count={4} />
+          <SectionSkeleton title="Nouveautés" count={4} dark />
+          <SectionSkeleton title="Tendances" count={4} />
+        </>
+      )}
+
       {/* Hot Deals — APERÇU */}
-      {hotDeals.length > 0 && (
+      {!loading && hotDeals.length > 0 && (
         <AnimatedSection className="container mx-auto px-4 py-20">
           <div className="flex items-end justify-between mb-12">
             <div>
