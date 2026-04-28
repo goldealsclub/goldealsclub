@@ -16,11 +16,14 @@ const corsHeaders = {
   "Access-Control-Allow-Methods": "GET, OPTIONS",
 };
 
+// IMPORTANT: `description` est volontairement EXCLU pour alléger le payload
+// (-35 % ≈ -2.4 MB). Elle n'est pas utilisée pour le rendu de la liste — seule
+// DealPage l'affiche et la charge à la demande via PostgREST direct.
 const FIELDS = [
   "id", "title", "brand", "category", "gender", "gender_label",
   "sale_price", "original_price", "discount_percent",
   "image_url", "product_url", "affiliate_url",
-  "merchant", "source", "currency", "description",
+  "merchant", "source", "currency",
   "promo_start_date", "promo_end_date",
   "is_super_deal", "deal_level", "flame_count", "popularity", "saved",
   "detected_at",
