@@ -192,14 +192,48 @@ const KEYWORD_BRANDS: [string[], string][] = [
   [["inhale ", "citigo", "serenus", "neo run", "runner prm", "goalgetter", "goldenglow", "session ", "stadium 90", "play off", "echo ", "aura ", "pluto ", "shadow skate", "venice skate", "skate low", "command ", "club low ", "h-street", "delta ", "lxry 2k", "lxyr 2k", "hidden in plain", "far away from", "box logo", "reflective globe", "another ", "vortex knit", "union jacquard", "metal signature", "small logo", "small signature", "snipes varsity", "snipes essential", "snipes box", "french terry small", "jersey small logo", "varsity raglan", "pintuck", "sport diamond", "carson ", "bobby ", "adrik ", "in game", "coated light", "horse racer", "signar ", "peak satin", "liberty baseball", "color block & piping", "shining lights", "praying mary", "babygal", "mini sweat skirt", "heart oversized", "running wild", "everyday oxford", "college tee", "hooded-sweatshirt box", "long sleeve-sweatshirt", "og trackpants", "velvet track", "loose jersey", "woven tapered", "jersey tee", "graphics tee", "tech sport", "long sleeve full zip", "waist length full zip", "long sleeve rugby", "sport-tanktop"], "Snipes"],
 ];
 
+// Tokens trop génériques pour identifier seuls une marque canonique.
+// Ex.: "Sportswear", "WMNS", "Originals" ne doivent JAMAIS suffire à
+// classer un produit chez Nike/adidas/etc.
+const GENERIC_TOKENS = new Set([
+  "sportswear", "sportstyle", "originals", "performance", "brand",
+  "wmns", "mns", "kids", "junior", "jr", "men", "women", "unisex",
+  "sport", "sports", "athletic", "athletics", "classic", "essentials",
+  "essential", "training", "running", "lifestyle", "outdoor",
+]);
+
+export const UNCLASSIFIED_BRAND = "Non classé";
+
+function stripGenericTokens(value: string): string {
+  return value
+    .split(/\s+/)
+    .filter((tok) => tok && !GENERIC_TOKENS.has(tok))
+    .join(" ")
+    .trim();
+}
+
 function canonicalizeBrand(value: string): string | null {
   if (!value) return null;
   const normalized = value.trim().toLowerCase();
-  const cleaned = normalized
-    .replace(/\b(sportswear|sportstyle|originals|performance|brand)\b/g, "")
-    .replace(/\s+/g, " ")
-    .trim();
-  return CANONICAL_BRANDS[normalized] || CANONICAL_BRANDS[cleaned] || null;
+  if (!normalized) return null;
+
+  // Match exact d'abord (ex: "nike", "adidas")
+  if (CANONICAL_BRANDS[normalized]) return CANONICAL_BRANDS[normalized];
+
+  // Si après retrait des tokens génériques il ne reste rien, refuser le match.
+  // Ex.: "Sportswear" seul ou "WMNS Originals" => null (aucun token spécifique).
+  const cleaned = stripGenericTokens(normalized);
+  if (!cleaned) return null;
+
+  if (CANONICAL_BRANDS[cleaned]) return CANONICAL_BRANDS[cleaned];
+
+  // Tenter sur le premier token non-générique restant.
+  const firstSpecific = cleaned.split(/\s+/)[0];
+  if (firstSpecific && CANONICAL_BRANDS[firstSpecific]) {
+    return CANONICAL_BRANDS[firstSpecific];
+  }
+
+  return null;
 }
 
 export function inferBrand(rawBrand: string, title: string): string {
