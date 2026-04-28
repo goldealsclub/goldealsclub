@@ -16,7 +16,7 @@ describe("brand and merchant filtering — anti-regression", () => {
   it("retourne 'Non classé' quand seuls des tokens génériques sont fournis", () => {
     expect(inferBrand("Sportswear", "")).toBe("Non classé");
     expect(inferBrand("WMNS Originals", "")).toBe("Non classé");
-    expect(inferBrand("", "Sport Essentials Tee")).toBe("Non classé");
+    expect(inferBrand("", "Training Top Generic")).toBe("Non classé");
     expect(inferBrand("Performance", "Training Top")).toBe("Non classé");
   });
 
