@@ -5,6 +5,7 @@ import { categoryList, sellers, Deal } from "@/lib/data";
 import { useGender } from "@/lib/gender-context";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
 import DealCard from "@/components/DealCard";
+import DealCardSkeleton from "@/components/DealCardSkeleton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
