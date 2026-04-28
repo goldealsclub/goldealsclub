@@ -15,10 +15,27 @@
 //   5. Aucun PROTECTED_MERCHANT n'est dropé même si recentMerchants() est vide.
 
 import {
-  assert,
-  assertEquals,
-  assertGreater,
-} from "https://deno.land/std@0.224.0/assert/mod.ts";
+  buildMerchantList,
+  type DealRow,
+  type DealsRepo,
+  dedupePreservingColors,
+  PROTECTED_MERCHANTS,
+  runPipeline,
+} from "./pipeline.ts";
+
+// Inline assertions — pas de dépendance réseau (sandbox offline-friendly).
+function assert(cond: unknown, msg = "assertion failed"): asserts cond {
+  if (!cond) throw new Error(msg);
+}
+function assertEquals<T>(a: T, b: T, msg?: string) {
+  const ja = JSON.stringify(a);
+  const jb = JSON.stringify(b);
+  if (ja !== jb) throw new Error(msg ?? `expected ${jb}, got ${ja}`);
+}
+function assertGreater(a: number, b: number, msg?: string) {
+  if (!(a > b)) throw new Error(msg ?? `expected ${a} > ${b}`);
+}
+
 import {
   buildMerchantList,
   type DealRow,
