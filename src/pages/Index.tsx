@@ -65,7 +65,7 @@ const PREVIEW_LIMIT = 4;
 
 const Index = () => {
   const { t } = useI18n();
-  const { filteredDeals: deals } = useGender();
+  const { filteredDeals: deals, loading } = useGender();
 
   const hotDeals = deals.filter(d => d.deal_level === "hot-deal").sort(sortPartnersFirst);
   const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortPartnersFirst);
