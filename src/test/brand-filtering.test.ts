@@ -13,6 +13,19 @@ describe("brand and merchant filtering — anti-regression", () => {
     expect(inferBrand("Nike Sportswear", "Club Fleece Hoodie")).toBe("Nike");
   });
 
+  it("retourne 'Non classé' quand seuls des tokens génériques sont fournis", () => {
+    expect(inferBrand("Sportswear", "")).toBe("Non classé");
+    expect(inferBrand("WMNS Originals", "")).toBe("Non classé");
+    expect(inferBrand("", "Sport Essentials Tee")).toBe("Non classé");
+    expect(inferBrand("Performance", "Training Top")).toBe("Non classé");
+  });
+
+  it("ne classe pas en Snipes par défaut quand la confiance est faible", () => {
+    // Régression historique : la valeur par défaut était "Snipes",
+    // ce qui polluait le filtre Snipes avec n'importe quel produit inconnu.
+    expect(inferBrand("Inconnu XYZ", "Produit mystère 123")).toBe("Non classé");
+  });
+
   it("filtre Sport Outlet malgré la différence tiret/espace du bouton partenaire", () => {
     expect(matchesMerchant({ source: "awin", merchant: "Sport Outlet FR" }, "sport-outlet")).toBe(true);
     expect(matchesMerchant({ source: "awin", merchant: "Sport Is Good FR" }, "sport-outlet")).toBe(false);
