@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
+import DealCardSkeleton from "@/components/DealCardSkeleton";
 import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,7 +12,7 @@ import { useLoadVotes } from "@/hooks/use-deal-votes";
 const BrandPage = () => {
   const { brand } = useParams<{ brand: string }>();
   const { t } = useI18n();
-  const { filteredDeals } = useGender();
+  const { filteredDeals, loading } = useGender();
 
   const brandName = decodeURIComponent(brand || "");
   const brandDeals = useMemo(() => {
