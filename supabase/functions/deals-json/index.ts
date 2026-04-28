@@ -29,8 +29,9 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Only return deals detected in the last 14 days to keep payload + query bounded.
-    const since = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString();
+    // Keep 30 days as the stable catalog window. Do not reduce this without
+    // updating mem://constraints/deals-pipeline-no-regression.
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
     const all: any[] = [];
     const seen = new Set<string>();
 
@@ -38,15 +39,27 @@ Deno.serve(async (req) => {
     // A global ORDER BY detected_at DESC + LIMIT 12000 lets the most-recently-refreshed
     // merchants monopolize the payload and pushes others (Snipes, Sneakin...) out entirely.
     // See mem://constraints/deals-pipeline-no-regression.
-    const { data: merchantRows, error: merchantsErr } = await supabase
+    // Never discover merchants by selecting all merchant rows: with 100k+ deals
+    // this can hit statement timeouts before Snipes/Sneakin/Sport Outlet load.
+    const PROTECTED_MERCHANTS = [
+      "Snipes EU",
+      "Sneakin FR",
+      "Sport Outlet FR",
+      "Sport Is Good FR",
+      "Kappa FR",
+      "Training Fit FR",
+    ];
+    const { data: recentRows, error: recentErr } = await supabase
       .from("deals")
       .select("merchant")
       .gte("detected_at", since)
-      .not("merchant", "is", null);
-    if (merchantsErr) throw merchantsErr;
-    const merchants = Array.from(
-      new Set((merchantRows ?? []).map((r: any) => r.merchant).filter(Boolean)),
-    );
+      .order("detected_at", { ascending: false, nullsFirst: false })
+      .limit(5000);
+    if (recentErr) throw recentErr;
+    const merchants = Array.from(new Set([
+      ...PROTECTED_MERCHANTS,
+      ...((recentRows ?? []).map((r: any) => r.merchant).filter(Boolean)),
+    ]));
 
     const PER_MERCHANT_CAP = 2500;
     const PAGE = 1000;
