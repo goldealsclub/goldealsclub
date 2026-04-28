@@ -311,5 +311,9 @@ export function inferBrand(rawBrand: string, title: string): string {
     }
   }
 
-  return directBrand || "Snipes";
+  // Confiance faible : aucune marque canonique fiable détectée à partir
+  // de la marque brute ni du titre. On retourne "Non classé" plutôt que
+  // d'attribuer arbitrairement une marque (régression historique : tout
+  // finissait en "Snipes" quand la détection échouait).
+  return directBrand || UNCLASSIFIED_BRAND;
 }
