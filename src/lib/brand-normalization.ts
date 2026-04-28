@@ -194,7 +194,12 @@ const KEYWORD_BRANDS: [string[], string][] = [
 
 function canonicalizeBrand(value: string): string | null {
   if (!value) return null;
-  return CANONICAL_BRANDS[value.trim().toLowerCase()] || null;
+  const normalized = value.trim().toLowerCase();
+  const cleaned = normalized
+    .replace(/\b(sportswear|sportstyle|originals|performance|brand)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return CANONICAL_BRANDS[normalized] || CANONICAL_BRANDS[cleaned] || null;
 }
 
 export function inferBrand(rawBrand: string, title: string): string {
@@ -241,7 +246,9 @@ export function inferBrand(rawBrand: string, title: string): string {
       }
     }
 
-    // No override matched → keep original brand
+    // No override matched → keep original brand. Never let generic title
+    // tokens such as "WMNS" or "Sportswear" move another canonical brand
+    // into Nike; this is what polluted the Nike filter.
     return directBrand;
   }
 
