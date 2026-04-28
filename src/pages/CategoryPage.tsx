@@ -9,6 +9,7 @@ import Footer from "@/components/Footer";
 import { useMemo } from "react";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
 import DealCardSkeleton from "@/components/DealCardSkeleton";
+import DealFiltersSkeleton from "@/components/DealFiltersSkeleton";
 
 const CategoryPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -80,11 +81,14 @@ const CategoryPage = () => {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <DealCardSkeleton key={i} />
-            ))}
-          </div>
+          <>
+            <DealFiltersSkeleton />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-px bg-foreground/8">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <DealCardSkeleton key={i} />
+              ))}
+            </div>
+          </>
         ) : (
           <DealFilters sourceDeals={categoryDeals}>
             {(filtered) => (
