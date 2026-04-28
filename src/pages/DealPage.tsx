@@ -36,12 +36,29 @@ const DealPage = () => {
   const { addViewed } = useRecentlyViewed();
 
   const deal = deals.find((d) => d.id === id);
+  // `description` est exclue du payload deals-json (perf : -35 % de payload).
+  // On la charge à la demande ici, pour la seule page qui l'affiche.
+  const [description, setDescription] = useState<string>("");
 
   useEffect(() => {
     if (deal) {
       addViewed(deal.id);
       trackEvent("deal_view", { dealId: deal.id, metadata: { brand: deal.brand, merchant: deal.merchant, category: deal.category } });
     }
+  }, [deal?.id]);
+
+  useEffect(() => {
+    if (!deal?.id) return;
+    let cancelled = false;
+    supabase
+      .from("deals")
+      .select("description")
+      .eq("id", deal.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data?.description) setDescription(data.description);
+      });
+    return () => { cancelled = true; };
   }, [deal?.id]);
 
   if (!deal) {
