@@ -5,6 +5,7 @@ import { categoryList, sellers, Deal } from "@/lib/data";
 import { useGender } from "@/lib/gender-context";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
 import DealCard from "@/components/DealCard";
+import DealCardSkeleton from "@/components/DealCardSkeleton";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
@@ -64,7 +65,7 @@ const PREVIEW_LIMIT = 4;
 
 const Index = () => {
   const { t } = useI18n();
-  const { filteredDeals: deals } = useGender();
+  const { filteredDeals: deals, loading } = useGender();
 
   const hotDeals = deals.filter(d => d.deal_level === "hot-deal").sort(sortPartnersFirst);
   const bonDeals = deals.filter(d => d.deal_level === "bon-deal").sort(sortPartnersFirst);
@@ -125,8 +126,17 @@ const Index = () => {
       {/* Scroll target for gender filter */}
       <div id="deals-section" />
 
+      {/* Skeleton state — premium shimmer while deals load */}
+      {loading && (
+        <>
+          <SectionSkeleton title="Hot Deals" count={4} />
+          <SectionSkeleton title="Nouveautés" count={4} dark />
+          <SectionSkeleton title="Tendances" count={4} />
+        </>
+      )}
+
       {/* Hot Deals — APERÇU */}
-      {hotDeals.length > 0 && (
+      {!loading && hotDeals.length > 0 && (
         <AnimatedSection className="container mx-auto px-4 py-20">
           <div className="flex items-end justify-between mb-12">
             <div>
@@ -434,5 +444,24 @@ const NewsletterSection = () => {
     </section>
   );
 };
+
+const SectionSkeleton = ({ title, count = 4, dark = false }: { title: string; count?: number; dark?: boolean }) => (
+  <section className={dark ? "bg-foreground text-background" : ""}>
+    <div className="container mx-auto px-4 py-20">
+      <div className="flex items-end justify-between mb-12">
+        <div className="space-y-2">
+          <div className={`h-6 w-40 rounded-sm ${dark ? "bg-background/10" : "bg-foreground/8"}`} />
+          <div className={`h-2 w-24 rounded-sm ${dark ? "bg-background/10" : "bg-foreground/8"}`} />
+        </div>
+        <div className={`h-2.5 w-20 rounded-sm ${dark ? "bg-background/10" : "bg-foreground/8"}`} />
+      </div>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px ${dark ? "bg-background/10" : "bg-foreground/8"}`}>
+        {Array.from({ length: count }).map((_, i) => (
+          <DealCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  </section>
+);
 
 export default Index;

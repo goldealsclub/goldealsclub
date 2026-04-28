@@ -2,6 +2,7 @@ import { useParams } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
 import { useGender } from "@/lib/gender-context";
 import DealCard from "@/components/DealCard";
+import DealCardSkeleton from "@/components/DealCardSkeleton";
 import DealFilters from "@/components/DealFilters";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
@@ -11,7 +12,7 @@ import { useLoadVotes } from "@/hooks/use-deal-votes";
 const BrandPage = () => {
   const { brand } = useParams<{ brand: string }>();
   const { t } = useI18n();
-  const { filteredDeals } = useGender();
+  const { filteredDeals, loading } = useGender();
 
   const brandName = decodeURIComponent(brand || "");
   const brandDeals = useMemo(() => {
@@ -57,15 +58,23 @@ const BrandPage = () => {
         </div>
 
         {/* All deals — NO LIMIT */}
-        <DealFilters sourceDeals={brandDeals} defaultSort="discount">
-          {(filtered) => (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-              {filtered.map((deal) => (
-                <DealCard key={deal.id} deal={deal} />
-              ))}
-            </div>
-          )}
-        </DealFilters>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <DealCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <DealFilters sourceDeals={brandDeals} defaultSort="discount">
+            {(filtered) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+                {filtered.map((deal) => (
+                  <DealCard key={deal.id} deal={deal} />
+                ))}
+              </div>
+            )}
+          </DealFilters>
+        )}
       </div>
       <Footer />
     </div>
