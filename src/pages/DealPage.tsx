@@ -1,4 +1,5 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import { Heart, ArrowLeft, Eye, ExternalLink, Star, Clock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
