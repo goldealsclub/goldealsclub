@@ -5,7 +5,7 @@
  * (`supabase/functions/deals-json/index.ts` ou `src/lib/data.ts`) :
  *
  *  1. Le catalogue total renvoyé par la source live reste ≥ 4 000 deals.
- *  2. Les marchands clés attendus (Snipes, Sneakin, JD Sports, Nike…) sont
+ *  2. Les marchands clés attendus (Snipes, Sneakin, Sport Outlet…) sont
  *     toujours présents — détecte automatiquement un changement de label
  *     côté flux Awin (ex: "Snipes EU" → "SNIPES.com").
  *  3. Snipes (peu importe la variante d'orthographe du merchant) expose des
@@ -42,8 +42,7 @@ const MIN_SNIPES_WITH_STRIKETHROUGH_RATIO = 0.2;
 const EXPECTED_MERCHANTS: Record<string, string[]> = {
   Snipes: ["snipes"],
   Sneakin: ["sneakin"],
-  "JD Sports": ["jd sports", "jdsports"],
-  Nike: ["nike"],
+  "Sport Outlet": ["sport outlet"],
 };
 
 interface RawDeal {
