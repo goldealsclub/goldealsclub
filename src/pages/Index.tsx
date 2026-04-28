@@ -445,4 +445,23 @@ const NewsletterSection = () => {
   );
 };
 
+const SectionSkeleton = ({ title, count = 4, dark = false }: { title: string; count?: number; dark?: boolean }) => (
+  <section className={dark ? "bg-foreground text-background" : ""}>
+    <div className="container mx-auto px-4 py-20">
+      <div className="flex items-end justify-between mb-12">
+        <div className="space-y-2">
+          <div className={`h-6 w-40 rounded-sm ${dark ? "bg-background/10" : "bg-foreground/8"}`} />
+          <div className={`h-2 w-24 rounded-sm ${dark ? "bg-background/10" : "bg-foreground/8"}`} />
+        </div>
+        <div className={`h-2.5 w-20 rounded-sm ${dark ? "bg-background/10" : "bg-foreground/8"}`} />
+      </div>
+      <div className={`grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px ${dark ? "bg-background/10" : "bg-foreground/8"}`}>
+        {Array.from({ length: count }).map((_, i) => (
+          <DealCardSkeleton key={i} />
+        ))}
+      </div>
+    </div>
+  </section>
+);
+
 export default Index;
