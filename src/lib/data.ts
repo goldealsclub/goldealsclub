@@ -362,14 +362,16 @@ function applyDeals(raw: any[]) {
 }
 
 /**
- * SNAPSHOT-FIRST loading strategy.
+ * SNAPSHOT-FIRST loading strategy with browser cache (stale-while-revalidate).
  *
- * 1. Race snapshot CDN (~1s, brotli) vs live edge function (~3s).
+ * 0. Browser cache (localStorage, keyed by build version):
+ *    - FRESH (<15 min) → render instantly, skip network entirely.
+ *    - STALE (<24 h)   → render instantly, revalidate in background.
+ * 1. Otherwise race snapshot CDN (~1s) vs live edge function (~3s).
  *    Whichever returns first is shown immediately.
  * 2. If snapshot wins, kick off a background revalidation with the live
- *    feed so the next render sees the freshest data — without blocking
- *    the user's first paint.
- * 3. Bundled `public/deals.json` is the ultimate fallback (offline / outage).
+ *    feed so the next render sees the freshest data.
+ * 3. Bundled `public/deals.json` is the ultimate fallback.
  */
 export async function loadDeals(): Promise<Deal[]> {
   if (_loaded) return deals;
@@ -380,6 +382,32 @@ export async function loadDeals(): Promise<Deal[]> {
   }
   _loading = true;
   try {
+    // Step 0 — try browser cache first.
+    const cached = readCache();
+    if (cached) {
+      applyDeals(cached.raw);
+      _loaded = true;
+      _loading = false;
+
+      if (!isCacheFresh(cached) && !_revalidating) {
+        // Stale → revalidate in background, don't block UI.
+        _revalidating = true;
+        (async () => {
+          const live = await fetchLive();
+          const fresh = live ?? (await fetchSnapshot());
+          if (fresh && fresh.length > 0) {
+            writeCache(fresh);
+            applyDeals(fresh);
+            _listeners.forEach((fn) => fn());
+            _listeners = [];
+          }
+          _revalidating = false;
+        })();
+      }
+
+      return deals;
+    }
+
     const livePromise = fetchLive();
     const snapPromise = fetchSnapshot();
 
@@ -403,6 +431,7 @@ export async function loadDeals(): Promise<Deal[]> {
     if (!raw) raw = [];
 
     applyDeals(raw);
+    if (raw.length > 0) writeCache(raw);
     _loaded = true;
 
     // Background revalidation: if snapshot won, fetch live to refresh.
@@ -411,6 +440,7 @@ export async function loadDeals(): Promise<Deal[]> {
       livePromise
         .then((live) => {
           if (live && live.length > 0) {
+            writeCache(live);
             applyDeals(live);
             _listeners.forEach((fn) => fn());
             _listeners = [];
@@ -426,6 +456,12 @@ export async function loadDeals(): Promise<Deal[]> {
   _listeners.forEach((fn) => fn());
   _listeners = [];
   return deals;
+}
+
+/** Force-clear the browser cache (e.g. after a manual refresh action). */
+export function clearDealsCache() {
+  if (typeof window === "undefined" || !window.localStorage) return;
+  try { window.localStorage.removeItem(CACHE_KEY); } catch {}
 }
 
 import catSneakers from "@/assets/cat-sneakers.jpg";
