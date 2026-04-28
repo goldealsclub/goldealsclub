@@ -157,7 +157,37 @@ describe("deals pipeline — anti-regression invariants", () => {
       return;
     }
 
-    const snipes = dealsForMerchant(deals, EXPECTED_MERCHANTS.Snipes);
+  it("volume minimum par marchand clé (anti merchant-starvation, fenêtre 30j)", async () => {
+    const deals = await fetchLiveDeals();
+    if (!deals) {
+      console.warn(
+        "[skip] deals-json injoignable, test ignoré:",
+        fetchError?.message,
+      );
+      return;
+    }
+
+    const failures: string[] = [];
+    const summary: string[] = [];
+    for (const [label, minCount] of Object.entries(MIN_DEALS_PER_MERCHANT)) {
+      const variants = EXPECTED_MERCHANTS[label] ?? [label.toLowerCase()];
+      const count = dealsForMerchant(deals, variants).length;
+      summary.push(`${label}=${count} (min ${minCount})`);
+      if (count < minCount) {
+        failures.push(`${label}: ${count} < ${minCount}`);
+      }
+    }
+
+    expect(
+      failures,
+      `Régression de volume détectée — ${failures.join(" ; ")}. ` +
+        `Détail: ${summary.join(", ")}. ` +
+        `Vérifier deals-json (PROTECTED_MERCHANTS, PER_MERCHANT_CAP, ` +
+        `fenêtre 30j) ou le scraper Awin.`,
+    ).toEqual([]);
+  }, 60_000);
+
+  const snipes = dealsForMerchant(deals, EXPECTED_MERCHANTS.Snipes);
 
     // Si Snipes est absent du catalogue, les autres tests l'auront déjà
     // signalé — on évite ici un faux négatif "ratio NaN".
