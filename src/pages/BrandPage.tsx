@@ -58,15 +58,23 @@ const BrandPage = () => {
         </div>
 
         {/* All deals — NO LIMIT */}
-        <DealFilters sourceDeals={brandDeals} defaultSort="discount">
-          {(filtered) => (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-              {filtered.map((deal) => (
-                <DealCard key={deal.id} deal={deal} />
-              ))}
-            </div>
-          )}
-        </DealFilters>
+        {loading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <DealCardSkeleton key={i} />
+            ))}
+          </div>
+        ) : (
+          <DealFilters sourceDeals={brandDeals} defaultSort="discount">
+            {(filtered) => (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+                {filtered.map((deal) => (
+                  <DealCard key={deal.id} deal={deal} />
+                ))}
+              </div>
+            )}
+          </DealFilters>
+        )}
       </div>
       <Footer />
     </div>
