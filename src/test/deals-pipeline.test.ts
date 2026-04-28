@@ -29,6 +29,18 @@ const PUBLISHABLE_KEY =
 
 const MIN_TOTAL_DEALS = 4000;
 const MIN_SNIPES_DEALS = 100;
+
+/**
+ * Volume minimum par marchand sur la fenêtre 30 jours.
+ * Ces seuils sont calibrés ~50% sous le volume observé en prod pour
+ * tolérer les variations naturelles tout en détectant une régression
+ * type "merchant starvation" (cf. incident 28/04/2026).
+ */
+const MIN_DEALS_PER_MERCHANT: Record<string, number> = {
+  Snipes: 300,
+  Sneakin: 300,
+  "Sport Outlet": 500,
+};
 // Réaliste vu le flux Awin actuel (≈30 % des Snipes ont un RRP).
 // Si ce taux chute brutalement, c'est probablement une régression du mapping.
 const MIN_SNIPES_WITH_STRIKETHROUGH_RATIO = 0.2;
@@ -132,6 +144,36 @@ describe("deals pipeline — anti-regression invariants", () => {
         (presentMerchants.length > 30 ? " | …" : "") +
         `. Vérifier un éventuel renommage côté flux Awin et mettre à jour ` +
         `EXPECTED_MERCHANTS dans ce test.`,
+    ).toEqual([]);
+  }, 60_000);
+
+  it("volume minimum par marchand clé (anti merchant-starvation, fenêtre 30j)", async () => {
+    const deals = await fetchLiveDeals();
+    if (!deals) {
+      console.warn(
+        "[skip] deals-json injoignable, test ignoré:",
+        fetchError?.message,
+      );
+      return;
+    }
+
+    const failures: string[] = [];
+    const summary: string[] = [];
+    for (const [label, minCount] of Object.entries(MIN_DEALS_PER_MERCHANT)) {
+      const variants = EXPECTED_MERCHANTS[label] ?? [label.toLowerCase()];
+      const count = dealsForMerchant(deals, variants).length;
+      summary.push(`${label}=${count} (min ${minCount})`);
+      if (count < minCount) {
+        failures.push(`${label}: ${count} < ${minCount}`);
+      }
+    }
+
+    expect(
+      failures,
+      `Régression de volume détectée — ${failures.join(" ; ")}. ` +
+        `Détail: ${summary.join(", ")}. ` +
+        `Vérifier deals-json (PROTECTED_MERCHANTS, PER_MERCHANT_CAP, ` +
+        `fenêtre 30j) ou le scraper Awin.`,
     ).toEqual([]);
   }, 60_000);
 
