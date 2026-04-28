@@ -24,11 +24,19 @@ const GenderContext = createContext<GenderContextType>({
   loading: true,
 });
 
-/** Match a deal against a merchant key (case-insensitive substring on source/merchant) */
-function matchesMerchant(deal: Deal, key: string): boolean {
-  const k = key.toLowerCase();
-  const src = deal.source?.toLowerCase() || "";
-  const merchant = deal.merchant?.toLowerCase() || "";
+/** Match a deal against a merchant key (case-insensitive, hyphen/space tolerant). */
+export function matchesMerchant(deal: Pick<Deal, "source" | "merchant">, key: string): boolean {
+  const normalize = (value: string | null | undefined) =>
+    (value || "")
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+
+  const k = normalize(key);
+  const src = normalize(deal.source);
+  const merchant = normalize(deal.merchant);
   return src.includes(k) || merchant.includes(k);
 }
 
