@@ -6,6 +6,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
 import DealCardSkeleton from "@/components/DealCardSkeleton";
+import DealFiltersSkeleton from "@/components/DealFiltersSkeleton";
 
 const TrendsPage = () => {
   const { t } = useI18n();
@@ -20,11 +21,14 @@ const TrendsPage = () => {
         <p className="font-body text-xs text-foreground/50 mb-8">{t.premiumSub}</p>
 
         {loading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
-            {Array.from({ length: 12 }).map((_, i) => (
-              <DealCardSkeleton key={i} />
-            ))}
-          </div>
+          <>
+            <DealFiltersSkeleton />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-px bg-foreground/8">
+              {Array.from({ length: 12 }).map((_, i) => (
+                <DealCardSkeleton key={i} />
+              ))}
+            </div>
+          </>
         ) : (
           <DealFilters sourceDeals={deals}>
             {(filtered) => (
