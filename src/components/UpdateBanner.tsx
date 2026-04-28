@@ -39,6 +39,8 @@ const UpdateBanner = () => {
   }, [checkForUpdate]);
 
   const handleUpdate = () => {
+    // Drop the cached deals so the new build fetches fresh data on reload.
+    import("@/lib/data").then((m) => m.clearDealsCache?.()).catch(() => {});
     window.location.reload();
   };
 
