@@ -36,14 +36,6 @@ function assertGreater(a: number, b: number, msg?: string) {
   if (!(a > b)) throw new Error(msg ?? `expected ${a} > ${b}`);
 }
 
-import {
-  buildMerchantList,
-  type DealRow,
-  type DealsRepo,
-  dedupePreservingColors,
-  PROTECTED_MERCHANTS,
-  runPipeline,
-} from "./pipeline.ts";
 
 // ---------- In-memory repo factory ----------
 
