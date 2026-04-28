@@ -147,16 +147,6 @@ describe("deals pipeline — anti-regression invariants", () => {
     ).toEqual([]);
   }, 60_000);
 
-  it("Snipes affiche des prix barrés sur une part significative de ses deals", async () => {
-    const deals = await fetchLiveDeals();
-    if (!deals) {
-      console.warn(
-        "[skip] deals-json injoignable, test ignoré:",
-        fetchError?.message,
-      );
-      return;
-    }
-
   it("volume minimum par marchand clé (anti merchant-starvation, fenêtre 30j)", async () => {
     const deals = await fetchLiveDeals();
     if (!deals) {
@@ -187,7 +177,17 @@ describe("deals pipeline — anti-regression invariants", () => {
     ).toEqual([]);
   }, 60_000);
 
-  const snipes = dealsForMerchant(deals, EXPECTED_MERCHANTS.Snipes);
+  it("Snipes affiche des prix barrés sur une part significative de ses deals", async () => {
+    const deals = await fetchLiveDeals();
+    if (!deals) {
+      console.warn(
+        "[skip] deals-json injoignable, test ignoré:",
+        fetchError?.message,
+      );
+      return;
+    }
+
+    const snipes = dealsForMerchant(deals, EXPECTED_MERCHANTS.Snipes);
 
     // Si Snipes est absent du catalogue, les autres tests l'auront déjà
     // signalé — on évite ici un faux négatif "ratio NaN".
