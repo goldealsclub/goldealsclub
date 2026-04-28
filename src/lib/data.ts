@@ -313,6 +313,26 @@ export async function loadDeals(): Promise<Deal[]> {
     }
 
     if (!raw) {
+      // Fallback #1 : snapshot quotidien dans Storage (mis à jour par la cron
+      // `snapshot-deals`). Sert de filet immédiat si la live function régresse.
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        if (supabaseUrl) {
+          const snapResp = await fetch(
+            `${supabaseUrl}/storage/v1/object/public/deals-snapshots/all.json`,
+            { cache: "no-store" },
+          );
+          if (snapResp.ok) {
+            const data = await snapResp.json();
+            if (Array.isArray(data) && data.length > 0) raw = data;
+          }
+        }
+      } catch (e) {
+        console.warn("Snapshot fetch failed, falling back to bundled JSON:", e);
+      }
+    }
+
+    if (!raw) {
       const resp = await fetch("/deals.json", { cache: "no-store" });
       raw = await resp.json();
     }
