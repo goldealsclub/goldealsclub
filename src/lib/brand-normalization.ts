@@ -160,7 +160,7 @@ const SINGLE_WORD_BRANDS = new Set([
 
 const KEYWORD_BRANDS: [string[], string][] = [
   [["air jordan", "jumpman", "jordan ", "jdb ", "jdg ", "j brkln", "j flight", "jordan los", "jordan post", "jordan 1", "jordan 4", "jordan 5", "jordan 11", "jordan mvp", "jordan remix", "jordan sky", "jordan essentials", "jordan brooklyn", "j brooklyn", "mj brooklyn", "jdg brooklyn", "wj brooklyn", "jdb brooklyn", "spizike low", "flight fleece", "flight mvp", "flight essentials", "flight washed", "flight barrel", "flight graphics", "flight chicago", "brooklyn fleece", "brooklyn motorsport", "brooklyn flannel", "brooklyn essential", "brooklyn t-shirt"], "Jordan"],
-  [["air max", "air force", "air zoom", "air huarache", "sportswear", "dri-fit", "dri fit", "tech fleece", "acg ", "wmns ", "nsw ", "sb force", "sb chron", "sb dunk", "nike blazer", "cortez", "pegasus", "vomero", "shox ", "total 90", "windrunner", "tech woven", "one dri-fit", "dunk low", "dunk high", "m nk ", "w nk ", "b nk ", "force 1 ", "p-6000", "waffle one", "react ", "flyknit", "air rift", "huarache", "indy bra", "swoosh", "renew", "downshifter", "revolution ", "wearallday", "crater impact", "presto ", "killshot", "tailwind", "structure ", "zoom fly", "vapormax", "invincible", "panda retro", "nk df ", "nk dry", "nk club", "tech pack", "everyday max", "everyday plus", "everyday cotton stretch", "m nsw", "w nsw", "nsw essential", "nsw club", "nike "], "Nike"],
+  [["air max", "air force", "air zoom", "air huarache", "dri-fit", "dri fit", "tech fleece", "acg ", "nsw ", "sb force", "sb chron", "sb dunk", "nike blazer", "cortez", "pegasus", "vomero", "shox ", "total 90", "windrunner", "tech woven", "one dri-fit", "dunk low", "dunk high", "m nk ", "w nk ", "b nk ", "force 1 ", "p-6000", "waffle one", "react ", "flyknit", "air rift", "huarache", "indy bra", "swoosh", "renew", "downshifter", "revolution ", "wearallday", "crater impact", "presto ", "killshot", "tailwind", "structure ", "zoom fly", "vapormax", "invincible", "panda retro", "nk df ", "nk dry", "nk club", "tech pack", "everyday max", "everyday plus", "everyday cotton stretch", "m nsw", "w nsw", "nsw essential", "nsw club", "nike "], "Nike"],
   [["superstar", "adicolor", "firebird", "ozweego", "forum ", "campus ", "gazelle", "samba", "stan smith", "nmd ", "yeezy", "ultraboost", "spezial", "adilette", "zx ", "la franc", "taekwondo", "italia 70s", "spiritain", "spiritian", "galaxy og", "dame x ", "spacer cutline", "sl 72", "climacool", "teamgeist", "adistar", "megaride", "predator", "rivalry ", "handball spezial", "marathon ", "response ", "busenitz", "3-streifen", "3-stripes", "trefoil", "adibreak", "3 stripes", "adiletten", "sambae", "handball ", "badlander", "adi2000", "adifom", "ozelia", "retropy", "country og", "sl72", "centennial", "adi ", "adicolour"], "adidas"],
   [["fresh foam", "fuelcell", "2002r", "2002 ", "574 ", "990 ", "327 ", "1906", "9060", "740 ", "530 ", "1000 ", "204 ", "550 ", "480 ", "1080", "860 ", "linear heritage", "nb essentials", "sport essentials", "athletics remastered", "numeric ", "made in usa", "made in uk", "hoops "], "New Balance"],
   [["speedcat", "mostro", "suede xl", "suede ", "cali ", "fenty", "avanti ", "rs-x", "rs x", "mayze", "ca pro", "fade nitro", "halo runner", "puma ", "palermo ", "clyde ", "blaze of glory", "mb.", "lamelo", "disc ", "rider ", "mirage", "future rider", "wild rider", "trinity "], "PUMA"],
@@ -194,7 +194,12 @@ const KEYWORD_BRANDS: [string[], string][] = [
 
 function canonicalizeBrand(value: string): string | null {
   if (!value) return null;
-  return CANONICAL_BRANDS[value.trim().toLowerCase()] || null;
+  const normalized = value.trim().toLowerCase();
+  const cleaned = normalized
+    .replace(/\b(sportswear|sportstyle|originals|performance|brand)\b/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  return CANONICAL_BRANDS[normalized] || CANONICAL_BRANDS[cleaned] || null;
 }
 
 export function inferBrand(rawBrand: string, title: string): string {
@@ -241,7 +246,9 @@ export function inferBrand(rawBrand: string, title: string): string {
       }
     }
 
-    // No override matched → keep original brand
+    // No override matched → keep original brand. Never let generic title
+    // tokens such as "WMNS" or "Sportswear" move another canonical brand
+    // into Nike; this is what polluted the Nike filter.
     return directBrand;
   }
 

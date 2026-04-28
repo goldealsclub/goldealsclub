@@ -158,7 +158,8 @@ function cleanBrand(brand: string, merchant: string): string {
   const b = brand.trim();
   const lower = b.toLowerCase();
   if (lower === "nike sportswear") return "Nike";
-  if (lower === "adidas originals" || lower === "adidas performance") return "adidas";
+  if (lower === "adidas originals" || lower === "adidas performance" || lower === "adidas sportswear") return "adidas";
+  if (lower === "asics sportstyle") return "ASICS";
   if (lower === "jordan brand") return "Jordan";
   if (lower === "puma") return "PUMA";
   if (lower === "asics") return "ASICS";
