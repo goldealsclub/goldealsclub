@@ -1,0 +1,27 @@
+name: Audit non-régression
+
+# Lance l'audit complet du site (volume catalogue, marchands protégés,
+# pureté des filtres marque, intégrité des prix, classification…) :
+#   - sur chaque PR / push main → bloque le merge si régression
+#   - toutes les 6 h en cron → alerte si le pipeline live se dégrade
+#     entre deux déploiements (ex. flux Awin renommé, scraper en panne)
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 */6 * * *"
+  workflow_dispatch:
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+      - run: bun install --frozen-lockfile
+      - name: Audit complet (live + invariants statiques)
+        run: bun run audit:full
+        env:
+          AUDIT_SOURCE_URL: https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/deals-json

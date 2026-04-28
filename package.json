@@ -5,14 +5,16 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "prebuild": "vitest run src/test/brand-filter-audit.test.ts src/test/brand-filtering.test.ts",
+    "prebuild": "vitest run src/test/brand-filter-audit.test.ts src/test/brand-filtering.test.ts src/test/site-audit.test.ts",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "audit:brands": "vitest run src/test/brand-filter-audit.test.ts"
+    "audit:brands": "vitest run src/test/brand-filter-audit.test.ts",
+    "audit:site": "vitest run src/test/site-audit.test.ts",
+    "audit:full": "vitest run src/test/site-audit.test.ts src/test/brand-filter-audit.test.ts src/test/brand-filtering.test.ts src/test/deals-pipeline.test.ts"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
