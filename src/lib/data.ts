@@ -273,8 +273,61 @@ export const deals: Deal[] = [];
 let _loading = false;
 let _loaded = false;
 let _listeners: Array<() => void> = [];
+let _revalidating = false;
 
-/** Fetch and cache deals from JSON file */
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string | undefined;
+const PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string | undefined;
+
+/** Fetch the live edge function (deals-json). Slow (2-5s) but always fresh. */
+async function fetchLive(): Promise<any[] | null> {
+  if (!SUPABASE_URL || !PUBLISHABLE_KEY) return null;
+  try {
+    const r = await fetch(`${SUPABASE_URL}/functions/v1/deals-json`, {
+      headers: { apikey: PUBLISHABLE_KEY, Authorization: `Bearer ${PUBLISHABLE_KEY}` },
+    });
+    if (!r.ok) return null;
+    const data = await r.json();
+    return Array.isArray(data) && data.length > 0 ? data : null;
+  } catch { return null; }
+}
+
+/** Fetch the daily snapshot from Storage CDN. Fast (~1s, brotli + edge cached). */
+async function fetchSnapshot(): Promise<any[] | null> {
+  if (!SUPABASE_URL) return null;
+  try {
+    const r = await fetch(
+      `${SUPABASE_URL}/storage/v1/object/public/deals-snapshots/all.json`,
+    );
+    if (!r.ok) return null;
+    const data = await r.json();
+    return Array.isArray(data) && data.length > 0 ? data : null;
+  } catch { return null; }
+}
+
+/** Fetch the bundled static fallback. Always available, may be stale. */
+async function fetchBundled(): Promise<any[] | null> {
+  try {
+    const r = await fetch("/deals.json");
+    return await r.json();
+  } catch { return null; }
+}
+
+function applyDeals(raw: any[]) {
+  const normalized = normalizeDeals(raw);
+  deals.length = 0;
+  deals.push(...normalized);
+}
+
+/**
+ * SNAPSHOT-FIRST loading strategy.
+ *
+ * 1. Race snapshot CDN (~1s, brotli) vs live edge function (~3s).
+ *    Whichever returns first is shown immediately.
+ * 2. If snapshot wins, kick off a background revalidation with the live
+ *    feed so the next render sees the freshest data — without blocking
+ *    the user's first paint.
+ * 3. Bundled `public/deals.json` is the ultimate fallback (offline / outage).
+ */
 export async function loadDeals(): Promise<Deal[]> {
   if (_loaded) return deals;
   if (_loading) {
@@ -284,63 +337,44 @@ export async function loadDeals(): Promise<Deal[]> {
   }
   _loading = true;
   try {
-    let raw: any[] | null = null;
+    const livePromise = fetchLive();
+    const snapPromise = fetchSnapshot();
 
-    try {
-      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-      const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+    // Race: take whichever arrives first with a valid payload.
+    const winner = await Promise.race([
+      snapPromise.then((d) => (d ? { source: "snapshot", data: d } : null)),
+      livePromise.then((d) => (d ? { source: "live", data: d } : null)),
+    ]);
 
-      if (supabaseUrl && publishableKey) {
-        const liveResp = await fetch(`${supabaseUrl}/functions/v1/deals-json`, {
-          headers: {
-            apikey: publishableKey,
-            Authorization: `Bearer ${publishableKey}`,
-          },
-          cache: "no-store",
-        });
+    let raw = winner?.data ?? null;
+    let firstSource = winner?.source ?? null;
 
-        if (liveResp.ok) {
-          const data = await liveResp.json();
-          if (Array.isArray(data) && data.length > 0) {
-            raw = data;
-          }
-        } else {
-          console.warn("Live deals fetch returned", liveResp.status);
-        }
-      }
-    } catch (e) {
-      console.warn("Live deals fetch failed, falling back to static JSON:", e);
-    }
-
+    // If the racer was null (e.g. snapshot 404), wait for the other.
     if (!raw) {
-      // Fallback #1 : snapshot quotidien dans Storage (mis à jour par la cron
-      // `snapshot-deals`). Sert de filet immédiat si la live function régresse.
-      try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        if (supabaseUrl) {
-          const snapResp = await fetch(
-            `${supabaseUrl}/storage/v1/object/public/deals-snapshots/all.json`,
-            { cache: "no-store" },
-          );
-          if (snapResp.ok) {
-            const data = await snapResp.json();
-            if (Array.isArray(data) && data.length > 0) raw = data;
-          }
-        }
-      } catch (e) {
-        console.warn("Snapshot fetch failed, falling back to bundled JSON:", e);
-      }
+      const both = await Promise.all([livePromise, snapPromise]);
+      raw = both[0] ?? both[1];
+      firstSource = both[0] ? "live" : "snapshot";
     }
 
-    if (!raw) {
-      const resp = await fetch("/deals.json", { cache: "no-store" });
-      raw = await resp.json();
-    }
+    if (!raw) raw = await fetchBundled();
+    if (!raw) raw = [];
 
-    const normalized = normalizeDeals(raw);
-    deals.length = 0;
-    deals.push(...normalized);
+    applyDeals(raw);
     _loaded = true;
+
+    // Background revalidation: if snapshot won, fetch live to refresh.
+    if (firstSource === "snapshot" && !_revalidating) {
+      _revalidating = true;
+      livePromise
+        .then((live) => {
+          if (live && live.length > 0) {
+            applyDeals(live);
+            _listeners.forEach((fn) => fn());
+            _listeners = [];
+          }
+        })
+        .finally(() => { _revalidating = false; });
+    }
   } catch (e) {
     console.error("Failed to load deals:", e);
     _loaded = true;
