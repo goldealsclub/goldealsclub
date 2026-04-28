@@ -202,8 +202,8 @@ const DealPage = () => {
               </div>
             )}
 
-            {deal.description && (
-              <p className="font-body text-sm text-foreground/60 leading-relaxed mb-8">{deal.description}</p>
+            {description && (
+              <p className="font-body text-sm text-foreground/60 leading-relaxed mb-8">{description}</p>
             )}
 
             {promoCodes.length > 0 && (
