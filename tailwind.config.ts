@@ -115,6 +115,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "fade-in": "fade-in 0.5s ease-out forwards",
         "slide-up": "slide-up 0.3s ease-out forwards",
+        shimmer: "shimmer 1.6s ease-in-out infinite",
       },
     },
   },
