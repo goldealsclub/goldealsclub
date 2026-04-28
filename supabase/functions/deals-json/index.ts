@@ -3,6 +3,12 @@
 // without needing to redeploy public/deals.json.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import {
+  type DealRow,
+  type DealsRepo,
+  RECENT_DISCOVERY_LIMIT,
+  runPipeline,
+} from "./pipeline.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -32,41 +38,24 @@ Deno.serve(async (req) => {
     // Keep 30 days as the stable catalog window. Do not reduce this without
     // updating mem://constraints/deals-pipeline-no-regression.
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
-    const all: any[] = [];
-    const seen = new Set<string>();
 
-    // CRITICAL: Fetch PER MERCHANT to avoid starvation.
-    // A global ORDER BY detected_at DESC + LIMIT 12000 lets the most-recently-refreshed
-    // merchants monopolize the payload and pushes others (Snipes, Sneakin...) out entirely.
-    // See mem://constraints/deals-pipeline-no-regression.
-    // Never discover merchants by selecting all merchant rows: with 100k+ deals
-    // this can hit statement timeouts before Snipes/Sneakin/Sport Outlet load.
-    const PROTECTED_MERCHANTS = [
-      "Snipes EU",
-      "Sneakin FR",
-      "Sport Outlet FR",
-      "Sport Is Good FR",
-      "Kappa FR",
-      "Training Fit FR",
-    ];
-    const { data: recentRows, error: recentErr } = await supabase
-      .from("deals")
-      .select("merchant")
-      .gte("detected_at", since)
-      .order("detected_at", { ascending: false, nullsFirst: false })
-      .limit(5000);
-    if (recentErr) throw recentErr;
-    const merchants = Array.from(new Set([
-      ...PROTECTED_MERCHANTS,
-      ...((recentRows ?? []).map((r: any) => r.merchant).filter(Boolean)),
-    ]));
-
-    const PER_MERCHANT_CAP = 2500;
-    const PAGE = 1000;
-
-    for (const merchant of merchants) {
-      for (let from = 0; from < PER_MERCHANT_CAP; from += PAGE) {
-        const to = Math.min(from + PAGE, PER_MERCHANT_CAP) - 1;
+    // CRITICAL: Fetch PER MERCHANT to avoid starvation. See pipeline.ts and
+    // mem://constraints/deals-pipeline-no-regression. Pure logic lives in
+    // pipeline.ts so it can be unit-tested without the live DB.
+    const repo: DealsRepo = {
+      async recentMerchants(limit) {
+        const { data, error } = await supabase
+          .from("deals")
+          .select("merchant")
+          .gte("detected_at", since)
+          .order("detected_at", { ascending: false, nullsFirst: false })
+          .limit(limit);
+        if (error) throw error;
+        return ((data ?? []) as Array<{ merchant: string | null }>)
+          .map((r) => r.merchant ?? "")
+          .filter(Boolean);
+      },
+      async pageForMerchant(merchant, from, to) {
         const { data, error } = await supabase
           .from("deals")
           .select(FIELDS)
@@ -75,42 +64,15 @@ Deno.serve(async (req) => {
           .order("detected_at", { ascending: false, nullsFirst: false })
           .range(from, to);
         if (error) throw error;
-        if (!data || data.length === 0) break;
-        for (const r of data as any[]) {
-          if (r?.id && !seen.has(r.id)) {
-            seen.add(r.id);
-            all.push(r);
-          }
-        }
-        if (data.length < to - from + 1) break;
-      }
-    }
+        return (data ?? []) as DealRow[];
+      },
+    };
 
-    // Final dedupe: collapse SKU/size variants while preserving COLOR variants.
-    // Variants of the same product/color share the same image URL on every feed
-    // (Snipes, Sneakin, etc.) but different colors have different images, so
-    // image_url is the most precise key. Fallback to title-norm when missing.
-    const norm = (s: string) =>
-      (s || "")
-        .toLowerCase()
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .replace(/[^a-z0-9]+/g, " ")
-        .trim();
-    const dedupKey = new Set<string>();
-    const deduped: any[] = [];
-    for (const r of all) {
-      const merchant = norm(r.merchant);
-      const img = (r.image_url || "").trim();
-      const k = img
-        ? `${merchant}|img:${img}`
-        : `${merchant}|t:${norm(r.brand)}|${norm(r.title)}`;
-      if (dedupKey.has(k)) continue;
-      dedupKey.add(k);
-      deduped.push(r);
-    }
+    const { deals } = await runPipeline(repo, {
+      recentDiscoveryLimit: RECENT_DISCOVERY_LIMIT,
+    });
 
-    return new Response(JSON.stringify(deduped), {
+    return new Response(JSON.stringify(deals), {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
