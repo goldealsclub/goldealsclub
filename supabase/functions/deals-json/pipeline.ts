@@ -58,6 +58,13 @@ export function buildMerchantList(
 /**
  * Dedup that preserves color variants: same merchant + same image = dup.
  * Falls back to (brand, title) when image is missing.
+ *
+ * IMPORTANT: when several rows share the same dedup key, we KEEP the one
+ * that has a real strikethrough price (original_price > sale_price).
+ * Without this, Snipes (which re-imports the same product several times
+ * per day, sometimes losing the RRP on the freshest re-import) was
+ * dropping ~96 % of its strikethrough prices because `detected_at DESC`
+ * surfaced the RRP-less variant first. See site-audit "Snipes RRP ≥ 20 %".
  */
 export function dedupePreservingColors(rows: DealRow[]): DealRow[] {
   const norm = (s: string | null | undefined) =>
@@ -68,7 +75,13 @@ export function dedupePreservingColors(rows: DealRow[]): DealRow[] {
       .replace(/[^a-z0-9]+/g, " ")
       .trim();
 
-  const seen = new Set<string>();
+  const hasRrp = (r: DealRow): boolean => {
+    const o = Number((r as any).original_price);
+    const s = Number((r as any).sale_price);
+    return Number.isFinite(o) && Number.isFinite(s) && o > s;
+  };
+
+  const indexByKey = new Map<string, number>();
   const out: DealRow[] = [];
   for (const r of rows) {
     const merchant = norm(r.merchant);
@@ -76,9 +89,17 @@ export function dedupePreservingColors(rows: DealRow[]): DealRow[] {
     const k = img
       ? `${merchant}|img:${img}`
       : `${merchant}|t:${norm(r.brand)}|${norm(r.title)}`;
-    if (seen.has(k)) continue;
-    seen.add(k);
-    out.push(r);
+    const existingIdx = indexByKey.get(k);
+    if (existingIdx === undefined) {
+      indexByKey.set(k, out.length);
+      out.push(r);
+      continue;
+    }
+    // Prefer the variant with a real RRP over the one without.
+    const existing = out[existingIdx];
+    if (!hasRrp(existing) && hasRrp(r)) {
+      out[existingIdx] = r;
+    }
   }
   return out;
 }
