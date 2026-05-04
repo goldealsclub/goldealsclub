@@ -297,21 +297,74 @@ Deno.serve(async (req) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
 
-    // Page views over last 30 days + top pages + unique visitors per day
+    // Classify a visit into a traffic source bucket
+    const OWN_DOMAINS = ["goldealsclub.com", "goldealsclub.fr", "goldealsclub.lovable.app", "lovable.app"];
+    const SOCIAL_HOSTS = ["instagram", "facebook", "fb.", "tiktok", "twitter", "x.com", "t.co", "youtube", "youtu.be", "linkedin", "pinterest", "reddit", "snapchat", "threads"];
+    const SEARCH_HOSTS = ["google.", "bing.", "duckduckgo", "yahoo.", "ecosia", "qwant", "yandex", "baidu", "brave"];
+    const SOCIAL_UTM = ["instagram", "facebook", "tiktok", "twitter", "x", "youtube", "linkedin", "pinterest", "reddit", "snapchat", "social"];
+    const NEWSLETTER_UTM = ["newsletter", "email", "mail", "mailchimp", "sendgrid", "alerts"];
+
+    function classifySource(referrer: string | null, path: string | null): string {
+      // utm_source from path query string
+      let utmSource: string | null = null;
+      if (path && path.includes("utm_source=")) {
+        try {
+          const qs = path.split("?")[1] || "";
+          const params = new URLSearchParams(qs);
+          utmSource = (params.get("utm_source") || "").toLowerCase();
+        } catch { /* ignore */ }
+      }
+      if (utmSource) {
+        if (NEWSLETTER_UTM.some((k) => utmSource!.includes(k))) return "Newsletter";
+        if (SOCIAL_UTM.some((k) => utmSource === k || utmSource!.includes(k))) return "Réseaux sociaux";
+        if (utmSource.includes("google") || utmSource.includes("bing")) return "Google / Search";
+        return "Référent";
+      }
+      const ref = (referrer || "").toLowerCase().trim();
+      if (!ref) return "Direct";
+      let host = ref;
+      try { host = new URL(ref).hostname.toLowerCase(); } catch { /* ignore */ }
+      if (OWN_DOMAINS.some((d) => host.includes(d))) return "Direct";
+      if (SOCIAL_HOSTS.some((h) => host.includes(h))) return "Réseaux sociaux";
+      if (SEARCH_HOSTS.some((h) => host.includes(h))) return "Google / Search";
+      return "Référent";
+    }
+
+    // Page views over last 30 days + top pages + unique visitors per day + traffic sources
     const viewsByDay: Record<string, number> = {};
     const pathCount: Record<string, number> = {};
     const sessionsByDay: Record<string, Set<string>> = {};
+    const sourceCount: Record<string, number> = {};
+    const sourceByDay: Record<string, Record<string, number>> = {};
+    const sourceSessions: Record<string, Set<string>> = {};
     (recentPageViews || []).forEach((v: any) => {
       const d = v.viewed_at?.slice(0, 10);
+      const src = classifySource(v.referrer, v.path);
+      sourceCount[src] = (sourceCount[src] || 0) + 1;
+      if (v.session_id) {
+        if (!sourceSessions[src]) sourceSessions[src] = new Set();
+        sourceSessions[src].add(v.session_id);
+      }
       if (d && new Date(d) >= thirtyDaysAgo) {
         viewsByDay[d] = (viewsByDay[d] || 0) + 1;
         if (v.session_id) {
           if (!sessionsByDay[d]) sessionsByDay[d] = new Set();
           sessionsByDay[d].add(v.session_id);
         }
+        sourceByDay[d] = sourceByDay[d] || {};
+        sourceByDay[d][src] = (sourceByDay[d][src] || 0) + 1;
       }
-      if (v.path) pathCount[v.path] = (pathCount[v.path] || 0) + 1;
+      if (v.path) {
+        const cleanPath = v.path.split("?")[0];
+        pathCount[cleanPath] = (pathCount[cleanPath] || 0) + 1;
+      }
     });
+    const trafficSourcesBreakdown = Object.entries(sourceCount)
+      .map(([name, value]) => ({ name, value, unique_visitors: sourceSessions[name]?.size || 0 }))
+      .sort((a, b) => b.value - a.value);
+    const trafficSourcesTimeline = Object.entries(sourceByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, perSource]) => ({ date, ...perSource }));
     const viewTimeline = Object.entries(viewsByDay)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
