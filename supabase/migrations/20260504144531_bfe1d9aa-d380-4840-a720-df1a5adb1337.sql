@@ -1,0 +1,1 @@
+ALTER TABLE public.page_views ADD COLUMN IF NOT EXISTS country text; ALTER TABLE public.page_views ADD COLUMN IF NOT EXISTS user_id_visitor uuid; CREATE INDEX IF NOT EXISTS page_views_country_idx ON public.page_views(country); CREATE INDEX IF NOT EXISTS page_views_session_idx ON public.page_views(session_id);
