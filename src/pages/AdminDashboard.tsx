@@ -420,7 +420,14 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   const engagedUsers = users.filter((u) => u.clicks_count > 0 || u.favorites_count > 0 || u.votes_count > 0);
   const engagementRate = users.length > 0 ? ((engagedUsers.length / users.length) * 100).toFixed(1) : "0";
   const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const signupsToday = users.filter((u) => u.created_at?.startsWith(todayStr)).length;
+  const viewsToday = charts?.view_timeline?.find((v) => v.date === todayStr)?.count || 0;
+  const viewsYesterday = charts?.view_timeline?.find((v) => v.date === yesterdayStr)?.count || 0;
+  const last7Views = (charts?.view_timeline || []).slice(-7).reduce((s, v) => s + v.count, 0);
+  const viewsTrend = viewsYesterday > 0
+    ? (((viewsToday - viewsYesterday) / viewsYesterday) * 100).toFixed(0)
+    : null;
   const avgDiscount = filteredDeals.length > 0
     ? (filteredDeals.reduce((s, d) => s + (d.discount_percent || 0), 0) / filteredDeals.filter(d => d.discount_percent).length).toFixed(0)
     : "0";
@@ -438,7 +445,32 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Taux clic" value={`${stats?.total_page_views ? ((stats.total_clicks / stats.total_page_views) * 100).toFixed(1) : "0"}%`} />
       </div>
 
-      {/* Main KPIs */}
+      {/* Daily visits KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard
+          icon={<Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visites aujourd'hui"
+          value={viewsToday}
+          accent={viewsTrend && Number(viewsTrend) >= 0 ? "green" : undefined}
+        />
+        <KpiCard
+          icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visites hier"
+          value={viewsYesterday}
+        />
+        <KpiCard
+          icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Évolution j/j"
+          value={viewsTrend !== null ? `${Number(viewsTrend) >= 0 ? "+" : ""}${viewsTrend}%` : "—"}
+          accent={viewsTrend && Number(viewsTrend) >= 0 ? "green" : undefined}
+        />
+        <KpiCard
+          icon={<Activity className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visites 7 derniers j."
+          value={last7Views}
+        />
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
         <KpiCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
         <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={dealsCount} />
