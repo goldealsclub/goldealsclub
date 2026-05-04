@@ -20,8 +20,8 @@ function getSessionId(): string {
 }
 
 /**
- * Record a page view. Fire-and-forget, dedups same-path within 1.5s
- * (avoids React StrictMode double-render duplicates).
+ * Record a page view via edge function so geo (country) + auth user_id
+ * are resolved server-side. Fire-and-forget, dedups same-path within 1.5s.
  */
 export function trackPageView(path: string) {
   if (!hasAnalyticsConsent()) return;
@@ -37,13 +37,14 @@ export function trackPageView(path: string) {
     // ignore
   }
 
-  supabase
-    .from("page_views" as any)
-    .insert({
-      path,
-      referrer: document.referrer || null,
-      session_id: getSessionId(),
-      user_agent: navigator.userAgent.slice(0, 300),
+  supabase.functions
+    .invoke("track-pageview", {
+      body: {
+        path,
+        referrer: document.referrer || null,
+        session_id: getSessionId(),
+        user_agent: navigator.userAgent.slice(0, 300),
+      },
     })
     .then(({ error }) => {
       if (error) console.warn("Pageview tracking failed:", error.message);
