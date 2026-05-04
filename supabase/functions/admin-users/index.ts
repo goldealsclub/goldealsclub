@@ -496,6 +496,8 @@ Deno.serve(async (req) => {
           events_breakdown: eventsBreakdown,
           events_timeline: eventsTimeline,
           top_deals_by_event: topDealsByEvent,
+          country_breakdown: countryBreakdown,
+          visitor_method: visitorMethod,
         },
         merchant_stats: merchantStats,
       }),
