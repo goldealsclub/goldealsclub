@@ -103,6 +103,7 @@ interface ChartData {
   signup_timeline: { date: string; count: number }[];
   click_timeline: { date: string; count: number }[];
   view_timeline: { date: string; count: number }[];
+  unique_visitors_timeline?: { date: string; count: number }[];
   provider_breakdown: { name: string; value: number }[];
   top_pages: { path: string; count: number }[];
   events_breakdown: { name: string; value: number }[];
@@ -428,6 +429,12 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   const viewsTrend = viewsYesterday > 0
     ? (((viewsToday - viewsYesterday) / viewsYesterday) * 100).toFixed(0)
     : null;
+  const uniqueVisitorsToday = charts?.unique_visitors_timeline?.find((v) => v.date === todayStr)?.count || 0;
+  const uniqueVisitorsYesterday = charts?.unique_visitors_timeline?.find((v) => v.date === yesterdayStr)?.count || 0;
+  const last7UniqueVisitors = (charts?.unique_visitors_timeline || []).slice(-7).reduce((s, v) => s + v.count, 0);
+  const uniqueVisitorsTrend = uniqueVisitorsYesterday > 0
+    ? (((uniqueVisitorsToday - uniqueVisitorsYesterday) / uniqueVisitorsYesterday) * 100).toFixed(0)
+    : null;
   const avgDiscount = filteredDeals.length > 0
     ? (filteredDeals.reduce((s, d) => s + (d.discount_percent || 0), 0) / filteredDeals.filter(d => d.discount_percent).length).toFixed(0)
     : "0";
@@ -468,6 +475,32 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
           icon={<Activity className="w-4 h-4 sm:w-5 sm:h-5" />}
           label="Visites 7 derniers j."
           value={last7Views}
+        />
+      </div>
+
+      {/* Daily unique visitors KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard
+          icon={<Globe className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visiteurs uniques auj."
+          value={uniqueVisitorsToday}
+          accent={uniqueVisitorsTrend && Number(uniqueVisitorsTrend) >= 0 ? "green" : undefined}
+        />
+        <KpiCard
+          icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visiteurs uniques hier"
+          value={uniqueVisitorsYesterday}
+        />
+        <KpiCard
+          icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Évolution j/j"
+          value={uniqueVisitorsTrend !== null ? `${Number(uniqueVisitorsTrend) >= 0 ? "+" : ""}${uniqueVisitorsTrend}%` : "—"}
+          accent={uniqueVisitorsTrend && Number(uniqueVisitorsTrend) >= 0 ? "green" : undefined}
+        />
+        <KpiCard
+          icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Uniques 7 derniers j."
+          value={last7UniqueVisitors}
         />
       </div>
 
@@ -513,6 +546,19 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Area type="monotone" dataKey="count" stroke="hsl(140,30%,40%)" fill="hsl(140,30%,40%)" fillOpacity={0.15} name="Vues" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+
+        {charts?.unique_visitors_timeline && charts.unique_visitors_timeline.length > 0 && (
+          <ChartCard title="Visiteurs uniques par jour (30 derniers jours)">
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={charts.unique_visitors_timeline}>
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
+                <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
+                <Area type="monotone" dataKey="count" stroke="hsl(220,40%,45%)" fill="hsl(220,40%,45%)" fillOpacity={0.15} name="Visiteurs uniques" />
               </AreaChart>
             </ResponsiveContainer>
           </ChartCard>
