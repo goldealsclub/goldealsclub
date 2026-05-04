@@ -551,6 +551,19 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
           </ChartCard>
         )}
 
+        {charts?.unique_visitors_timeline && charts.unique_visitors_timeline.length > 0 && (
+          <ChartCard title="Visiteurs uniques par jour (30 derniers jours)">
+            <ResponsiveContainer width="100%" height={200}>
+              <AreaChart data={charts.unique_visitors_timeline}>
+                <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
+                <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
+                <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
+                <Area type="monotone" dataKey="count" stroke="hsl(220,40%,45%)" fill="hsl(220,40%,45%)" fillOpacity={0.15} name="Visiteurs uniques" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+
         {charts?.top_pages && charts.top_pages.length > 0 && (
           <ChartCard title="Top pages visitées">
             <div className="space-y-2 max-h-[200px] overflow-y-auto">
