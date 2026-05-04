@@ -420,7 +420,14 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   const engagedUsers = users.filter((u) => u.clicks_count > 0 || u.favorites_count > 0 || u.votes_count > 0);
   const engagementRate = users.length > 0 ? ((engagedUsers.length / users.length) * 100).toFixed(1) : "0";
   const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
   const signupsToday = users.filter((u) => u.created_at?.startsWith(todayStr)).length;
+  const viewsToday = charts?.view_timeline?.find((v) => v.date === todayStr)?.count || 0;
+  const viewsYesterday = charts?.view_timeline?.find((v) => v.date === yesterdayStr)?.count || 0;
+  const last7Views = (charts?.view_timeline || []).slice(-7).reduce((s, v) => s + v.count, 0);
+  const viewsTrend = viewsYesterday > 0
+    ? (((viewsToday - viewsYesterday) / viewsYesterday) * 100).toFixed(0)
+    : null;
   const avgDiscount = filteredDeals.length > 0
     ? (filteredDeals.reduce((s, d) => s + (d.discount_percent || 0), 0) / filteredDeals.filter(d => d.discount_percent).length).toFixed(0)
     : "0";
