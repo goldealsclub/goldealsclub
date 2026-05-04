@@ -1603,4 +1603,119 @@ const PartnersTab = ({ merchantStats, loading }: { merchantStats: MerchantStat[]
   );
 };
 
+const SOURCE_COLORS: Record<string, string> = {
+  "Direct": "hsl(220,15%,50%)",
+  "Réseaux sociaux": "hsl(330,55%,55%)",
+  "Google / Search": "hsl(140,40%,45%)",
+  "Newsletter": "hsl(30,55%,50%)",
+  "Référent": "hsl(200,40%,55%)",
+};
+
+const TrafficSourcesSection = ({ breakdown, timeline }: {
+  breakdown: { name: string; value: number; unique_visitors: number }[];
+  timeline: ({ date: string } & Record<string, number | string>)[];
+}) => {
+  const allSources = ["all", ...breakdown.map((b) => b.name)];
+  const [selected, setSelected] = useState<string>("all");
+
+  const total = breakdown.reduce((s, b) => s + b.value, 0);
+  const totalUniques = breakdown.reduce((s, b) => s + b.unique_visitors, 0);
+
+  const filteredBreakdown = selected === "all" ? breakdown : breakdown.filter((b) => b.name === selected);
+  const filteredTimeline = timeline.map((row) => {
+    if (selected === "all") return row;
+    return { date: row.date, [selected]: (row[selected] as number) || 0 };
+  });
+  const seriesNames = selected === "all" ? breakdown.map((b) => b.name) : [selected];
+
+  return (
+    <div className="mb-8 sm:mb-12">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <h3 className="text-xs sm:text-sm font-display uppercase tracking-[0.2em] text-foreground/60">
+          Sources de trafic ({total.toLocaleString("fr-FR")} visites · {totalUniques.toLocaleString("fr-FR")} uniques)
+        </h3>
+        <div className="flex flex-wrap gap-1.5">
+          {allSources.map((s) => (
+            <button
+              key={s}
+              onClick={() => setSelected(s)}
+              className={`px-2.5 py-1 text-[10px] font-display uppercase tracking-widest border transition-colors ${
+                selected === s
+                  ? "border-foreground text-foreground bg-foreground/5"
+                  : "border-foreground/15 text-foreground/50 hover:text-foreground hover:border-foreground/30"
+              }`}
+            >
+              {s === "all" ? "Toutes" : s}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6">
+        {filteredBreakdown.map((s) => {
+          const pct = total > 0 ? ((s.value / total) * 100).toFixed(1) : "0";
+          return (
+            <div key={s.name} className="border border-foreground/8 p-3 sm:p-4 bg-card">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: SOURCE_COLORS[s.name] || "hsl(0,0%,55%)" }} />
+                <p className="font-display text-[10px] sm:text-[11px] uppercase tracking-widest text-foreground/60 truncate">{s.name}</p>
+              </div>
+              <p className="font-display text-xl sm:text-2xl tracking-wider tabular-nums">{s.value.toLocaleString("fr-FR")}</p>
+              <p className="text-[10px] font-body text-foreground/40 mt-1">
+                {pct}% · {s.unique_visitors.toLocaleString("fr-FR")} uniques
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-8">
+        <ChartCard title={`Répartition par source${selected !== "all" ? ` — ${selected}` : ""}`}>
+          <ResponsiveContainer width="100%" height={220}>
+            <PieChart>
+              <Pie
+                data={filteredBreakdown}
+                dataKey="value"
+                nameKey="name"
+                cx="50%"
+                cy="50%"
+                outerRadius={75}
+                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                labelLine={false}
+                fontSize={9}
+              >
+                {filteredBreakdown.map((s, i) => (
+                  <Cell key={i} fill={SOURCE_COLORS[s.name] || COLORS[i % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip contentStyle={{ fontSize: 11 }} />
+            </PieChart>
+          </ResponsiveContainer>
+        </ChartCard>
+
+        <ChartCard title="Évolution sources (30j)">
+          <ResponsiveContainer width="100%" height={220}>
+            <LineChart data={filteredTimeline}>
+              <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => String(d).slice(5)} />
+              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
+              <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d as string), "dd MMM yyyy", { locale: fr })} />
+              {seriesNames.map((name, i) => (
+                <Line
+                  key={name}
+                  type="monotone"
+                  dataKey={name}
+                  stroke={SOURCE_COLORS[name] || COLORS[i % COLORS.length]}
+                  strokeWidth={1.5}
+                  dot={false}
+                  name={name}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
+        </ChartCard>
+      </div>
+    </div>
+  );
+};
+
 export default AdminDashboard;
