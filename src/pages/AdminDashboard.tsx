@@ -418,6 +418,7 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   filteredDeals: any[];
   loading: boolean;
 }) => {
+  const [uniquePeriod, setUniquePeriod] = useState<7 | 30 | 90>(30);
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>;
   }
