@@ -478,8 +478,32 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         />
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
-        <KpiCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
+      {/* Daily unique visitors KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard
+          icon={<Globe className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visiteurs uniques auj."
+          value={uniqueVisitorsToday}
+          accent={uniqueVisitorsTrend && Number(uniqueVisitorsTrend) >= 0 ? "green" : undefined}
+        />
+        <KpiCard
+          icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visiteurs uniques hier"
+          value={uniqueVisitorsYesterday}
+        />
+        <KpiCard
+          icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Évolution j/j"
+          value={uniqueVisitorsTrend !== null ? `${Number(uniqueVisitorsTrend) >= 0 ? "+" : ""}${uniqueVisitorsTrend}%` : "—"}
+          accent={uniqueVisitorsTrend && Number(uniqueVisitorsTrend) >= 0 ? "green" : undefined}
+        />
+        <KpiCard
+          icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Uniques 7 derniers j."
+          value={last7UniqueVisitors}
+        />
+      </div>
+
         <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={dealsCount} />
         <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics totaux" value={stats?.total_clicks || totalClicks} />
         <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris totaux" value={stats?.total_favorites || totalFavorites} />
