@@ -297,19 +297,27 @@ Deno.serve(async (req) => {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
 
-    // Page views over last 30 days + top pages
+    // Page views over last 30 days + top pages + unique visitors per day
     const viewsByDay: Record<string, number> = {};
     const pathCount: Record<string, number> = {};
+    const sessionsByDay: Record<string, Set<string>> = {};
     (recentPageViews || []).forEach((v: any) => {
       const d = v.viewed_at?.slice(0, 10);
       if (d && new Date(d) >= thirtyDaysAgo) {
         viewsByDay[d] = (viewsByDay[d] || 0) + 1;
+        if (v.session_id) {
+          if (!sessionsByDay[d]) sessionsByDay[d] = new Set();
+          sessionsByDay[d].add(v.session_id);
+        }
       }
       if (v.path) pathCount[v.path] = (pathCount[v.path] || 0) + 1;
     });
     const viewTimeline = Object.entries(viewsByDay)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
+    const uniqueVisitorsTimeline = Object.entries(sessionsByDay)
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([date, set]) => ({ date, count: set.size }));
     const topPages = Object.entries(pathCount)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
