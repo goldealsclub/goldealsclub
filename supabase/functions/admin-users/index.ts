@@ -330,29 +330,53 @@ Deno.serve(async (req) => {
       return "Référent";
     }
 
-    // Page views over last 30 days + top pages + unique visitors per day + traffic sources
+    // Page views aggregations.
+    // Robust unique visitor key: user_id when available, otherwise session_id.
+    // Track method usage so the dashboard can display it.
+    const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     const viewsByDay: Record<string, number> = {};
     const pathCount: Record<string, number> = {};
-    const sessionsByDay: Record<string, Set<string>> = {};
+    const visitorsByDay: Record<string, Set<string>> = {};
     const sourceCount: Record<string, number> = {};
     const sourceByDay: Record<string, Record<string, number>> = {};
-    const sourceSessions: Record<string, Set<string>> = {};
+    const sourceVisitors: Record<string, Set<string>> = {};
+    const countryCount: Record<string, number> = {};
+    const countryVisitors: Record<string, Set<string>> = {};
+    let methodUserId = 0;
+    let methodSession = 0;
+    let methodNone = 0;
+
     (recentPageViews || []).forEach((v: any) => {
       const d = v.viewed_at?.slice(0, 10);
+      const visitorKey: string | null = v.user_id || v.session_id || null;
+      if (v.user_id) methodUserId++;
+      else if (v.session_id) methodSession++;
+      else methodNone++;
+
       const src = classifySource(v.referrer, v.path);
       sourceCount[src] = (sourceCount[src] || 0) + 1;
-      if (v.session_id) {
-        if (!sourceSessions[src]) sourceSessions[src] = new Set();
-        sourceSessions[src].add(v.session_id);
+      if (visitorKey) {
+        if (!sourceVisitors[src]) sourceVisitors[src] = new Set();
+        sourceVisitors[src].add(visitorKey);
       }
-      if (d && new Date(d) >= thirtyDaysAgo) {
+
+      const country = (v.country || "??").toUpperCase().slice(0, 2);
+      countryCount[country] = (countryCount[country] || 0) + 1;
+      if (visitorKey) {
+        if (!countryVisitors[country]) countryVisitors[country] = new Set();
+        countryVisitors[country].add(visitorKey);
+      }
+
+      if (d && new Date(d) >= ninetyDaysAgo) {
         viewsByDay[d] = (viewsByDay[d] || 0) + 1;
-        if (v.session_id) {
-          if (!sessionsByDay[d]) sessionsByDay[d] = new Set();
-          sessionsByDay[d].add(v.session_id);
+        if (visitorKey) {
+          if (!visitorsByDay[d]) visitorsByDay[d] = new Set();
+          visitorsByDay[d].add(visitorKey);
         }
-        sourceByDay[d] = sourceByDay[d] || {};
-        sourceByDay[d][src] = (sourceByDay[d][src] || 0) + 1;
+        if (new Date(d) >= thirtyDaysAgo) {
+          sourceByDay[d] = sourceByDay[d] || {};
+          sourceByDay[d][src] = (sourceByDay[d][src] || 0) + 1;
+        }
       }
       if (v.path) {
         const cleanPath = v.path.split("?")[0];
@@ -360,7 +384,7 @@ Deno.serve(async (req) => {
       }
     });
     const trafficSourcesBreakdown = Object.entries(sourceCount)
-      .map(([name, value]) => ({ name, value, unique_visitors: sourceSessions[name]?.size || 0 }))
+      .map(([name, value]) => ({ name, value, unique_visitors: sourceVisitors[name]?.size || 0 }))
       .sort((a, b) => b.value - a.value);
     const trafficSourcesTimeline = Object.entries(sourceByDay)
       .sort(([a], [b]) => a.localeCompare(b))
@@ -368,13 +392,30 @@ Deno.serve(async (req) => {
     const viewTimeline = Object.entries(viewsByDay)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, count]) => ({ date, count }));
-    const uniqueVisitorsTimeline = Object.entries(sessionsByDay)
+    const uniqueVisitorsTimeline = Object.entries(visitorsByDay)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([date, set]) => ({ date, count: set.size }));
     const topPages = Object.entries(pathCount)
       .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
       .map(([path, count]) => ({ path, count }));
+    const countryBreakdown = Object.entries(countryCount)
+      .map(([code, views]) => ({
+        code,
+        views,
+        unique_visitors: countryVisitors[code]?.size || 0,
+      }))
+      .sort((a, b) => b.unique_visitors - a.unique_visitors)
+      .slice(0, 10);
+    const totalMethod = methodUserId + methodSession + methodNone;
+    const visitorMethod = {
+      total: totalMethod,
+      by_user_id: methodUserId,
+      by_session_id: methodSession,
+      unidentified: methodNone,
+      coverage_pct: totalMethod > 0 ? Math.round(((methodUserId + methodSession) / totalMethod) * 1000) / 10 : 0,
+      user_id_share_pct: totalMethod > 0 ? Math.round((methodUserId / totalMethod) * 1000) / 10 : 0,
+    };
 
     // Provider breakdown
     const providerCount: Record<string, number> = {};
