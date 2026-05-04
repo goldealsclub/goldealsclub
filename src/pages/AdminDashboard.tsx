@@ -109,6 +109,8 @@ interface ChartData {
   events_breakdown: { name: string; value: number }[];
   events_timeline: ({ date: string } & Record<string, number | string>)[];
   top_deals_by_event: Record<string, { deal_id: string; count: number }[]>;
+  traffic_sources_breakdown?: { name: string; value: number; unique_visitors: number }[];
+  traffic_sources_timeline?: ({ date: string } & Record<string, number | string>)[];
 }
 
 type Tab = "overview" | "analytics" | "partners" | "awin" | "audit" | "users";
