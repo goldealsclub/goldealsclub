@@ -445,7 +445,32 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         <KpiCard icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />} label="Taux clic" value={`${stats?.total_page_views ? ((stats.total_clicks / stats.total_page_views) * 100).toFixed(1) : "0"}%`} />
       </div>
 
-      {/* Main KPIs */}
+      {/* Daily visits KPIs */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard
+          icon={<Eye className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visites aujourd'hui"
+          value={viewsToday}
+          accent={viewsTrend && Number(viewsTrend) >= 0 ? "green" : undefined}
+        />
+        <KpiCard
+          icon={<Calendar className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visites hier"
+          value={viewsYesterday}
+        />
+        <KpiCard
+          icon={<TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Évolution j/j"
+          value={viewsTrend !== null ? `${Number(viewsTrend) >= 0 ? "+" : ""}${viewsTrend}%` : "—"}
+          accent={viewsTrend && Number(viewsTrend) >= 0 ? "green" : undefined}
+        />
+        <KpiCard
+          icon={<Activity className="w-4 h-4 sm:w-5 sm:h-5" />}
+          label="Visites 7 derniers j."
+          value={last7Views}
+        />
+      </div>
+
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
         <KpiCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
         <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={dealsCount} />
