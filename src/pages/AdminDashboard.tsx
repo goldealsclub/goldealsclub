@@ -103,6 +103,7 @@ interface ChartData {
   signup_timeline: { date: string; count: number }[];
   click_timeline: { date: string; count: number }[];
   view_timeline: { date: string; count: number }[];
+  unique_visitors_timeline?: { date: string; count: number }[];
   provider_breakdown: { name: string; value: number }[];
   top_pages: { path: string; count: number }[];
   events_breakdown: { name: string; value: number }[];
