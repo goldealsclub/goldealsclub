@@ -111,6 +111,15 @@ interface ChartData {
   top_deals_by_event: Record<string, { deal_id: string; count: number }[]>;
   traffic_sources_breakdown?: { name: string; value: number; unique_visitors: number }[];
   traffic_sources_timeline?: ({ date: string } & Record<string, number | string>)[];
+  country_breakdown?: { code: string; views: number; unique_visitors: number }[];
+  visitor_method?: {
+    total: number;
+    by_user_id: number;
+    by_session_id: number;
+    unidentified: number;
+    coverage_pct: number;
+    user_id_share_pct: number;
+  };
 }
 
 type Tab = "overview" | "analytics" | "partners" | "awin" | "audit" | "users";
@@ -409,6 +418,7 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   filteredDeals: any[];
   loading: boolean;
 }) => {
+  const [uniquePeriod, setUniquePeriod] = useState<7 | 30 | 90>(30);
   if (loading) {
     return <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-foreground/30" /></div>;
   }
@@ -554,15 +564,70 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         )}
 
         {charts?.unique_visitors_timeline && charts.unique_visitors_timeline.length > 0 && (
-          <ChartCard title="Visiteurs uniques par jour (30 derniers jours)">
+          <ChartCard
+            title="Visiteurs uniques par jour"
+            action={
+              <div className="flex gap-1">
+                {([7, 30, 90] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setUniquePeriod(p)}
+                    className={`px-2 py-1 text-[10px] rounded border transition ${
+                      uniquePeriod === p
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-background text-foreground/70 border-foreground/20 hover:border-foreground/40"
+                    }`}
+                  >
+                    {p}j
+                  </button>
+                ))}
+              </div>
+            }
+            subtitle={
+              charts.visitor_method
+                ? `Méthode : ${charts.visitor_method.user_id_share_pct}% via user_id, complément via session_id (couverture ${charts.visitor_method.coverage_pct}%)`
+                : undefined
+            }
+          >
             <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={charts.unique_visitors_timeline}>
+              <AreaChart data={charts.unique_visitors_timeline.slice(-uniquePeriod)}>
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Area type="monotone" dataKey="count" stroke="hsl(220,40%,45%)" fill="hsl(220,40%,45%)" fillOpacity={0.15} name="Visiteurs uniques" />
               </AreaChart>
             </ResponsiveContainer>
+          </ChartCard>
+        )}
+
+        {charts?.country_breakdown && charts.country_breakdown.length > 0 && (
+          <ChartCard title="Top 10 pays (visiteurs uniques)">
+            <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+              {charts.country_breakdown.map((c, i) => {
+                const max = charts.country_breakdown![0].unique_visitors || 1;
+                const pct = Math.round((c.unique_visitors / max) * 100);
+                const flag = c.code === "??" ? "🌐" : c.code
+                  .replace(/./g, (ch) => String.fromCodePoint(127397 + ch.charCodeAt(0)));
+                return (
+                  <div key={i} className="text-xs">
+                    <div className="flex justify-between items-center gap-2 mb-1">
+                      <span className="font-display flex items-center gap-1.5">
+                        <span className="text-base leading-none">{flag}</span>
+                        <span className="tabular-nums w-6 text-foreground/50">{c.code}</span>
+                      </span>
+                      <span className="font-display tabular-nums">
+                        {c.unique_visitors.toLocaleString("fr-FR")}
+                        <span className="text-foreground/40 ml-1">({c.views.toLocaleString("fr-FR")} vues)</span>
+                      </span>
+                    </div>
+                    <div className="h-1 bg-foreground/5 rounded overflow-hidden">
+                      <div className="h-full bg-foreground/40" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </ChartCard>
         )}
 
@@ -1429,9 +1494,15 @@ const KpiCard = ({ icon, label, value, accent, suffix }: { icon: React.ReactNode
   </div>
 );
 
-const ChartCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const ChartCard = ({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) => (
   <div className="border border-foreground/8 p-3 sm:p-6">
-    <h3 className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-foreground/50 mb-3 sm:mb-4">{title}</h3>
+    <div className="flex items-start justify-between gap-2 mb-3 sm:mb-4">
+      <div className="min-w-0">
+        <h3 className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-foreground/50">{title}</h3>
+        {subtitle && <p className="text-[10px] text-foreground/40 mt-1">{subtitle}</p>}
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
     {children}
   </div>
 );

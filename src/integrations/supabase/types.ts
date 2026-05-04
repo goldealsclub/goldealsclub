@@ -253,30 +253,36 @@ export type Database = {
       }
       page_views: {
         Row: {
+          country: string | null
           id: string
           path: string
           referrer: string | null
           session_id: string | null
           user_agent: string | null
           user_id: string | null
+          user_id_visitor: string | null
           viewed_at: string
         }
         Insert: {
+          country?: string | null
           id?: string
           path: string
           referrer?: string | null
           session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
+          user_id_visitor?: string | null
           viewed_at?: string
         }
         Update: {
+          country?: string | null
           id?: string
           path?: string
           referrer?: string | null
           session_id?: string | null
           user_agent?: string | null
           user_id?: string | null
+          user_id_visitor?: string | null
           viewed_at?: string
         }
         Relationships: []
