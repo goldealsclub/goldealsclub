@@ -504,6 +504,8 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         />
       </div>
 
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-2 sm:gap-4 mb-6 sm:mb-10">
+        <KpiCard icon={<Users className="w-4 h-4 sm:w-5 sm:h-5" />} label="Utilisateurs" value={stats?.total_users || 0} />
         <KpiCard icon={<ShoppingBag className="w-4 h-4 sm:w-5 sm:h-5" />} label="Deals actifs" value={dealsCount} />
         <KpiCard icon={<MousePointerClick className="w-4 h-4 sm:w-5 sm:h-5" />} label="Clics totaux" value={stats?.total_clicks || totalClicks} />
         <KpiCard icon={<Heart className="w-4 h-4 sm:w-5 sm:h-5" />} label="Favoris totaux" value={stats?.total_favorites || totalFavorites} />
