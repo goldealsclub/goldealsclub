@@ -111,6 +111,15 @@ interface ChartData {
   top_deals_by_event: Record<string, { deal_id: string; count: number }[]>;
   traffic_sources_breakdown?: { name: string; value: number; unique_visitors: number }[];
   traffic_sources_timeline?: ({ date: string } & Record<string, number | string>)[];
+  country_breakdown?: { code: string; views: number; unique_visitors: number }[];
+  visitor_method?: {
+    total: number;
+    by_user_id: number;
+    by_session_id: number;
+    unidentified: number;
+    coverage_pct: number;
+    user_id_share_pct: number;
+  };
 }
 
 type Tab = "overview" | "analytics" | "partners" | "awin" | "audit" | "users";
