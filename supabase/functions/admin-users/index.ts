@@ -394,6 +394,7 @@ Deno.serve(async (req) => {
           signup_timeline: signupTimeline,
           click_timeline: clickTimeline,
           view_timeline: viewTimeline,
+          unique_visitors_timeline: uniqueVisitorsTimeline,
           provider_breakdown: providerBreakdown,
           top_pages: topPages,
           events_breakdown: eventsBreakdown,
