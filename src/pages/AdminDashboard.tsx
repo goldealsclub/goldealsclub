@@ -606,6 +606,14 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         )}
       </div>
 
+      {/* Traffic sources */}
+      {charts?.traffic_sources_breakdown && charts.traffic_sources_breakdown.length > 0 && (
+        <TrafficSourcesSection
+          breakdown={charts.traffic_sources_breakdown}
+          timeline={charts.traffic_sources_timeline || []}
+        />
+      )}
+
       {/* Événements clés */}
       {charts?.events_breakdown && charts.events_breakdown.length > 0 && (
         <div className="mb-8 sm:mb-12">
