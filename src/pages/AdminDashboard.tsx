@@ -1494,9 +1494,15 @@ const KpiCard = ({ icon, label, value, accent, suffix }: { icon: React.ReactNode
   </div>
 );
 
-const ChartCard = ({ title, children }: { title: string; children: React.ReactNode }) => (
+const ChartCard = ({ title, subtitle, action, children }: { title: string; subtitle?: string; action?: React.ReactNode; children: React.ReactNode }) => (
   <div className="border border-foreground/8 p-3 sm:p-6">
-    <h3 className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-foreground/50 mb-3 sm:mb-4">{title}</h3>
+    <div className="flex items-start justify-between gap-2 mb-3 sm:mb-4">
+      <div className="min-w-0">
+        <h3 className="font-display text-[10px] sm:text-xs uppercase tracking-widest text-foreground/50">{title}</h3>
+        {subtitle && <p className="text-[10px] text-foreground/40 mt-1">{subtitle}</p>}
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
     {children}
   </div>
 );
