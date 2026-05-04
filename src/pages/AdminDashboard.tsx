@@ -429,6 +429,12 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
   const viewsTrend = viewsYesterday > 0
     ? (((viewsToday - viewsYesterday) / viewsYesterday) * 100).toFixed(0)
     : null;
+  const uniqueVisitorsToday = charts?.unique_visitors_timeline?.find((v) => v.date === todayStr)?.count || 0;
+  const uniqueVisitorsYesterday = charts?.unique_visitors_timeline?.find((v) => v.date === yesterdayStr)?.count || 0;
+  const last7UniqueVisitors = (charts?.unique_visitors_timeline || []).slice(-7).reduce((s, v) => s + v.count, 0);
+  const uniqueVisitorsTrend = uniqueVisitorsYesterday > 0
+    ? (((uniqueVisitorsToday - uniqueVisitorsYesterday) / uniqueVisitorsYesterday) * 100).toFixed(0)
+    : null;
   const avgDiscount = filteredDeals.length > 0
     ? (filteredDeals.reduce((s, d) => s + (d.discount_percent || 0), 0) / filteredDeals.filter(d => d.discount_percent).length).toFixed(0)
     : "0";
