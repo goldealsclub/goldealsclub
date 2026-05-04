@@ -564,15 +564,70 @@ const OverviewTab = ({ stats, charts, users, totalClicks, totalFavorites, dealsC
         )}
 
         {charts?.unique_visitors_timeline && charts.unique_visitors_timeline.length > 0 && (
-          <ChartCard title="Visiteurs uniques par jour (30 derniers jours)">
+          <ChartCard
+            title="Visiteurs uniques par jour"
+            action={
+              <div className="flex gap-1">
+                {([7, 30, 90] as const).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setUniquePeriod(p)}
+                    className={`px-2 py-1 text-[10px] rounded border transition ${
+                      uniquePeriod === p
+                        ? "bg-foreground text-background border-foreground"
+                        : "bg-background text-foreground/70 border-foreground/20 hover:border-foreground/40"
+                    }`}
+                  >
+                    {p}j
+                  </button>
+                ))}
+              </div>
+            }
+            subtitle={
+              charts.visitor_method
+                ? `Méthode : ${charts.visitor_method.user_id_share_pct}% via user_id, complément via session_id (couverture ${charts.visitor_method.coverage_pct}%)`
+                : undefined
+            }
+          >
             <ResponsiveContainer width="100%" height={200}>
-              <AreaChart data={charts.unique_visitors_timeline}>
+              <AreaChart data={charts.unique_visitors_timeline.slice(-uniquePeriod)}>
                 <XAxis dataKey="date" tick={{ fontSize: 9 }} tickFormatter={(d) => d.slice(5)} />
                 <YAxis tick={{ fontSize: 10 }} allowDecimals={false} width={30} />
                 <Tooltip contentStyle={{ fontSize: 11 }} labelFormatter={(d) => format(new Date(d), "dd MMM yyyy", { locale: fr })} />
                 <Area type="monotone" dataKey="count" stroke="hsl(220,40%,45%)" fill="hsl(220,40%,45%)" fillOpacity={0.15} name="Visiteurs uniques" />
               </AreaChart>
             </ResponsiveContainer>
+          </ChartCard>
+        )}
+
+        {charts?.country_breakdown && charts.country_breakdown.length > 0 && (
+          <ChartCard title="Top 10 pays (visiteurs uniques)">
+            <div className="space-y-1.5 max-h-[200px] overflow-y-auto">
+              {charts.country_breakdown.map((c, i) => {
+                const max = charts.country_breakdown![0].unique_visitors || 1;
+                const pct = Math.round((c.unique_visitors / max) * 100);
+                const flag = c.code === "??" ? "🌐" : c.code
+                  .replace(/./g, (ch) => String.fromCodePoint(127397 + ch.charCodeAt(0)));
+                return (
+                  <div key={i} className="text-xs">
+                    <div className="flex justify-between items-center gap-2 mb-1">
+                      <span className="font-display flex items-center gap-1.5">
+                        <span className="text-base leading-none">{flag}</span>
+                        <span className="tabular-nums w-6 text-foreground/50">{c.code}</span>
+                      </span>
+                      <span className="font-display tabular-nums">
+                        {c.unique_visitors.toLocaleString("fr-FR")}
+                        <span className="text-foreground/40 ml-1">({c.views.toLocaleString("fr-FR")} vues)</span>
+                      </span>
+                    </div>
+                    <div className="h-1 bg-foreground/5 rounded overflow-hidden">
+                      <div className="h-full bg-foreground/40" style={{ width: `${pct}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
           </ChartCard>
         )}
 
