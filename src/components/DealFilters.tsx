@@ -3,6 +3,7 @@ import { X, SlidersHorizontal, ChevronDown } from "lucide-react";
 import { Deal, DealLevel, Category, deals as allDealsGlobal } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import FlameIndicator from "./FlameIndicator";
+import { sortBrandsByPopularity } from "@/lib/brand-popularity";
 
 export type SortKey = "relevance" | "discount" | "popularity" | "newest" | "priceAsc" | "priceDesc";
 
