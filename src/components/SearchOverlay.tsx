@@ -169,14 +169,11 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     (filters.trustedOnly ? 1 : 0) +
     (filters.minDiscount !== "all" ? 1 : 0);
 
-  // Trending brands = top brands in current scope
+  // Trending brands = top brands in current scope, ranked by hype score
   const trendingBrands = useMemo(() => {
     const counts: Record<string, number> = {};
     for (const d of scopedDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([b]) => b);
+    return sortBrandsByPopularity(Object.keys(counts), counts).slice(0, 8);
   }, [scopedDeals]);
 
   // Brand suggestions matching query
