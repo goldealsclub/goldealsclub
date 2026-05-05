@@ -201,7 +201,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     pushRecent(query);
     onClose();
     if (item.kind === "brand") {
-      navigate(`/marque/${encodeURIComponent(item.value.toLowerCase().replace(/\s+/g, "-"))}`);
+      navigate(`/brand/${encodeURIComponent(item.value.toLowerCase().replace(/\s+/g, "-"))}`);
     } else if (item.deal) {
       navigate(`/deal/${item.deal.id}`);
     }
