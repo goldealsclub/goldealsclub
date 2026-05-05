@@ -315,9 +315,14 @@ export function inferBrand(rawBrand: string, title: string): string {
   // la marque brute fournie par le marchand (proprement capitalisée) plutôt
   // que de tout regrouper sous "Non classé" — sinon des marques légitimes
   // comme Craft, Hummel, Urban Classics, Kariban, Zeus… disparaissent.
+  // Garde-fou : si rawBrand n'est constitué que de tokens génériques
+  // (ex: "Sportswear", "WMNS Originals"), on reste sur "Non classé".
   if (directBrand) return directBrand;
   const cleaned = (rawBrand || "").trim();
-  if (cleaned) return prettifyBrand(cleaned);
+  if (cleaned) {
+    const specific = stripGenericTokens(cleaned.toLowerCase());
+    if (specific) return prettifyBrand(cleaned);
+  }
   return UNCLASSIFIED_BRAND;
 }
 
