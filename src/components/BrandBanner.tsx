@@ -54,9 +54,11 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
       if (!d.brand || EXCLUDED_BANNER_BRANDS.has(d.brand)) return;
       counts[d.brand] = (counts[d.brand] || 0) + 1;
     });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .map(([name, count]) => ({ name, count }));
+    // Tri par hype/popularité (Nike, Jordan, Adidas… en tête), volume en tie-breaker
+    return sortBrandsByPopularity(Object.keys(counts), counts).map((name) => ({
+      name,
+      count: counts[name],
+    }));
   }, [deals]);
 
   return (
