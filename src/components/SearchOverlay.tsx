@@ -139,6 +139,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const [recent, setRecent] = useState<string[]>([]);
+  const [filters, setFilters] = useState<QuickFilters>(DEFAULT_FILTERS);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -146,10 +147,27 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     if (open) {
       setQuery("");
       setActiveIdx(0);
+      setFilters(DEFAULT_FILTERS);
       setRecent(loadRecent());
       setTimeout(() => inputRef.current?.focus(), 80);
     }
   }, [open]);
+
+  // Apply quick filters BEFORE search scoring
+  const scopedDeals = useMemo(() => {
+    const minD = filters.minDiscount === "all" ? 0 : Number(filters.minDiscount);
+    return filteredDeals.filter((d) => {
+      if (filters.category !== "all" && d.category !== filters.category) return false;
+      if (filters.trustedOnly && !isTrusted(d.merchant)) return false;
+      if (minD > 0 && (d.discount_percent || 0) < minD) return false;
+      return true;
+    });
+  }, [filteredDeals, filters]);
+
+  const activeFilterCount =
+    (filters.category !== "all" ? 1 : 0) +
+    (filters.trustedOnly ? 1 : 0) +
+    (filters.minDiscount !== "all" ? 1 : 0);
 
   // Trending brands = top brands in current gender slice
   const trendingBrands = useMemo(() => {
