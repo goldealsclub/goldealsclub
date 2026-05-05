@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, X, Clock, TrendingUp, ArrowRight, CornerDownLeft } from "lucide-react";
+import { Search, X, Clock, TrendingUp, ArrowRight, CornerDownLeft, ShieldCheck, Flame } from "lucide-react";
 import { useGender } from "@/lib/gender-context";
 import { useI18n } from "@/lib/i18n";
 import type { Deal } from "@/lib/data";
@@ -14,6 +14,45 @@ const RECENT_KEY = "goldeals.recent-searches";
 const MAX_RECENT = 6;
 const MAX_RESULTS = 8;
 const MAX_BRANDS = 6;
+
+// Marchands "fiables" : partenaires Awin officiels avec suivi conversion
+const TRUSTED_MERCHANTS = new Set(
+  ["snipes", "sneakin", "sport outlet", "sport is good", "kappa", "training fit", "jd sports", "nike"]
+);
+const isTrusted = (m: string) =>
+  TRUSTED_MERCHANTS.has((m || "").toLowerCase().replace(/\s*(fr|eu|uk|de)\s*$/i, "").trim());
+
+type CategoryFilter = "all" | "sneakers" | "vestes" | "hoodies" | "t-shirts" | "pantalons" | "accessoires";
+type DiscountFilter = "all" | "30" | "50" | "70";
+
+interface QuickFilters {
+  category: CategoryFilter;
+  trustedOnly: boolean;
+  minDiscount: DiscountFilter;
+}
+
+const DEFAULT_FILTERS: QuickFilters = {
+  category: "all",
+  trustedOnly: false,
+  minDiscount: "all",
+};
+
+const CATEGORY_OPTIONS: { key: CategoryFilter; label: string }[] = [
+  { key: "all", label: "Toutes" },
+  { key: "sneakers", label: "Sneakers" },
+  { key: "vestes", label: "Vestes" },
+  { key: "hoodies", label: "Hoodies" },
+  { key: "t-shirts", label: "T-shirts" },
+  { key: "pantalons", label: "Pantalons" },
+  { key: "accessoires", label: "Accessoires" },
+];
+
+const DISCOUNT_OPTIONS: { key: DiscountFilter; label: string }[] = [
+  { key: "all", label: "Toutes remises" },
+  { key: "30", label: "-30 % et +" },
+  { key: "50", label: "-50 % et +" },
+  { key: "70", label: "-70 % et +" },
+];
 
 // ── Utilities ────────────────────────────────────────────────────────────
 const norm = (s: string) =>
