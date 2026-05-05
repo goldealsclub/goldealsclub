@@ -54,8 +54,15 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   // image_url is already normalized in src/lib/data.ts (HD upgrades, productserve→sportspar fix)
   const enhancedImageUrl = deal.image_url;
 
-  // Detect broken Snipes images that show brand logo instead of product
+  // Detect broken / low-res images. We hide the entire card instead of
+  // rendering an ugly placeholder so users never see "deals without photos".
   const [imageBroken, setImageBroken] = useState(false);
+
+  // No image URL at all → don't even render the card
+  if (!deal.image_url || deal.image_url.trim() === "" || deal.image_url.includes("/placeholder")) {
+    return null;
+  }
+  if (imageBroken) return null;
 
   const imageFitClass = isSnipesImage
     ? "object-cover object-center scale-[1.05] group-hover:scale-[1.1]"
