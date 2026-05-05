@@ -44,7 +44,7 @@ export const BRAND_POPULARITY: Record<string, number> = {
   "under armour": 28,
   dickies: 28,
   columbia: 26,
-  helly hansen: 24,
+  "helly hansen": 24,
   oakley: 22,
   diadora: 22,
   mizuno: 20,
