@@ -325,7 +325,69 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
           </button>
         </div>
 
-        {/* Initial state — recent + trending */}
+        {/* Quick filters bar */}
+        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 brand-scroll">
+          {/* Category select-style chips (horizontal scroll) */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {CATEGORY_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setFilters((f) => ({ ...f, category: opt.key }))}
+                className={`text-[10px] font-display uppercase tracking-wider px-2.5 py-1 border whitespace-nowrap transition-colors ${
+                  filters.category === opt.key
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground/15 hover:border-foreground/40"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <span className="h-4 w-px bg-foreground/15 flex-shrink-0 mx-1" aria-hidden />
+
+          <button
+            onClick={() => setFilters((f) => ({ ...f, trustedOnly: !f.trustedOnly }))}
+            className={`flex items-center gap-1 text-[10px] font-display uppercase tracking-wider px-2.5 py-1 border whitespace-nowrap transition-colors flex-shrink-0 ${
+              filters.trustedOnly
+                ? "border-foreground bg-foreground text-background"
+                : "border-foreground/15 hover:border-foreground/40"
+            }`}
+            title="Marchands partenaires officiels avec suivi de commande"
+          >
+            <ShieldCheck className="w-3 h-3" strokeWidth={1.5} />
+            Vendeurs fiables
+          </button>
+
+          <span className="h-4 w-px bg-foreground/15 flex-shrink-0 mx-1" aria-hidden />
+
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {DISCOUNT_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setFilters((f) => ({ ...f, minDiscount: opt.key }))}
+                className={`flex items-center gap-1 text-[10px] font-display uppercase tracking-wider px-2.5 py-1 border whitespace-nowrap transition-colors ${
+                  filters.minDiscount === opt.key
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground/15 hover:border-foreground/40"
+                }`}
+              >
+                {opt.key !== "all" && <Flame className="w-3 h-3" strokeWidth={1.5} />}
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => setFilters(DEFAULT_FILTERS)}
+              className="ml-auto text-[10px] font-body uppercase tracking-wider text-foreground/50 hover:text-foreground transition-colors flex-shrink-0"
+            >
+              Réinitialiser ({activeFilterCount})
+            </button>
+          )}
+        </div>
+
         {showInitial && (
           <div className="mt-8 space-y-8">
             {recent.length > 0 && (
