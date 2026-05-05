@@ -23,7 +23,11 @@ describe("brand and merchant filtering — anti-regression", () => {
   it("ne classe pas en Snipes par défaut quand la confiance est faible", () => {
     // Régression historique : la valeur par défaut était "Snipes",
     // ce qui polluait le filtre Snipes avec n'importe quel produit inconnu.
-    expect(inferBrand("Inconnu XYZ", "Produit mystère 123")).toBe("Non classé");
+    // Nouvelle politique : on préserve la marque brute (proprement capitalisée)
+    // plutôt que de la perdre sous "Non classé".
+    expect(inferBrand("Inconnu XYZ", "Produit mystère 123")).toBe("Inconnu XYZ");
+    expect(inferBrand("HUMMEL", "")).toBe("Hummel");
+    expect(inferBrand("urban classics", "")).toBe("Urban Classics");
   });
 
   it("filtre Sport Outlet malgré la différence tiret/espace du bouton partenaire", () => {
