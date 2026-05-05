@@ -242,6 +242,46 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     return items;
   }, [brandMatches, dealResults]);
 
+  // "Did you mean?" suggestions: closest brand/token names by edit distance
+  const suggestions = useMemo<string[]>(() => {
+    const q = norm(query);
+    if (q.length < 2 || flatItems.length > 0) return [];
+    // Build vocabulary: brands + frequent title tokens
+    const vocab = new Map<string, number>();
+    for (const d of scopedDeals) {
+      const b = norm(d.brand);
+      if (b) vocab.set(b, (vocab.get(b) || 0) + 5); // brand weight
+      for (const tok of norm(d.title).split(/\s+/)) {
+        if (tok.length >= 4) vocab.set(tok, (vocab.get(tok) || 0) + 1);
+      }
+    }
+    const lev = (a: string, b: string) => {
+      const m = a.length, n = b.length;
+      if (Math.abs(m - n) > 3) return 99;
+      const dp = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
+      for (let i = 0; i <= m; i++) dp[i][0] = i;
+      for (let j = 0; j <= n; j++) dp[0][j] = j;
+      for (let i = 1; i <= m; i++) {
+        for (let j = 1; j <= n; j++) {
+          dp[i][j] = a[i - 1] === b[j - 1]
+            ? dp[i - 1][j - 1]
+            : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1]);
+        }
+      }
+      return dp[m][n];
+    };
+    const scored: { word: string; score: number }[] = [];
+    const maxDist = q.length <= 4 ? 1 : q.length <= 7 ? 2 : 3;
+    for (const [word, freq] of vocab) {
+      const d = lev(q, word);
+      if (d <= maxDist) scored.push({ word, score: d * 100 - Math.log(freq + 1) * 5 });
+    }
+    return scored
+      .sort((a, b) => a.score - b.score)
+      .slice(0, 4)
+      .map((x) => x.word);
+  }, [query, scopedDeals, flatItems.length]);
+
   useEffect(() => { setActiveIdx(0); }, [query]);
 
   const submitQuery = useCallback((q: string) => {
