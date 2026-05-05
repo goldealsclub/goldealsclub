@@ -4,6 +4,7 @@ import { Search, X, Clock, TrendingUp, ArrowRight, CornerDownLeft, ShieldCheck, 
 import { useGender } from "@/lib/gender-context";
 import { useI18n } from "@/lib/i18n";
 import type { Deal } from "@/lib/data";
+import { sortBrandsByPopularity } from "@/lib/brand-popularity";
 
 interface SearchOverlayProps {
   open: boolean;
