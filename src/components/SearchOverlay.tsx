@@ -583,7 +583,9 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
+  );
   );
 };
 
