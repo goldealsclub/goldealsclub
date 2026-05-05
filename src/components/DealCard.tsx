@@ -54,8 +54,15 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   // image_url is already normalized in src/lib/data.ts (HD upgrades, productserve→sportspar fix)
   const enhancedImageUrl = deal.image_url;
 
-  // Detect broken Snipes images that show brand logo instead of product
+  // Detect broken / low-res images. We hide the entire card instead of
+  // rendering an ugly placeholder so users never see "deals without photos".
   const [imageBroken, setImageBroken] = useState(false);
+
+  // No image URL at all → don't even render the card
+  if (!deal.image_url || deal.image_url.trim() === "" || deal.image_url.includes("/placeholder")) {
+    return null;
+  }
+  if (imageBroken) return null;
 
   const imageFitClass = isSnipesImage
     ? "object-cover object-center scale-[1.05] group-hover:scale-[1.1]"
@@ -80,24 +87,22 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           loading="lazy"
           onLoad={(e) => {
             const img = e.target as HTMLImageElement;
-            // Detect tiny placeholder images (Snipes brand logos are typically very small or wrong aspect)
-            if (img.naturalWidth > 0 && img.naturalHeight > 0) {
-              setImageLoaded(true);
+            // Reject low-res / placeholder thumbnails (< 400px = blurry).
+            // Also rejects 1x1 tracking pixels and brand-logo placeholders.
+            if (img.naturalWidth < 400 || img.naturalHeight < 400) {
+              setImageBroken(true);
+              return;
             }
-          }}
-          onError={(e) => {
-            setImageBroken(true);
-            const img = e.target as HTMLImageElement;
-            img.src = "/placeholder.svg";
+            // Reject extreme aspect ratios (often brand logos, not products)
+            const ratio = img.naturalWidth / img.naturalHeight;
+            if (ratio < 0.5 || ratio > 2) {
+              setImageBroken(true);
+              return;
+            }
             setImageLoaded(true);
           }}
+          onError={() => setImageBroken(true)}
         />
-        {/* Fallback for broken images */}
-        {imageBroken && (
-          <div className="absolute inset-0 flex items-center justify-center bg-muted/30">
-            <span className="font-display text-xs uppercase tracking-wider text-foreground/30">{deal.brand}</span>
-          </div>
-        )}
         {/* Hover overlay */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 bg-foreground/10">
           <span className="bg-primary text-primary-foreground px-6 py-3 text-[10px] font-display uppercase tracking-[0.2em]">
