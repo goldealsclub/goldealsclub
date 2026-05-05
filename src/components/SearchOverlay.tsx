@@ -455,13 +455,61 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
 
         {/* No results */}
         {noResults && (
-          <div className="mt-12 text-center">
-            <p className="text-sm font-body text-foreground/60">
-              Aucun résultat pour <span className="font-display">"{query}"</span>
+          <div className="mt-12 max-w-md mx-auto text-center">
+            <Search className="w-8 h-8 text-foreground/20 mx-auto mb-4" strokeWidth={1.25} />
+            <p className="text-sm font-body text-foreground/70">
+              Aucun résultat pour <span className="font-display">«&nbsp;{query}&nbsp;»</span>
             </p>
             <p className="text-xs font-body text-foreground/40 mt-2">
-              Essayez avec un autre mot-clé ou explorez nos marques populaires.
+              Vérifiez l'orthographe ou essayez une recherche plus courte.
             </p>
+
+            {suggestions.length > 0 && (
+              <div className="mt-6">
+                <p className="text-[10px] font-display uppercase tracking-widest text-foreground/40 mb-3">
+                  Vouliez-vous dire ?
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {suggestions.map((s) => (
+                    <button
+                      key={s}
+                      onClick={() => setQuery(s)}
+                      className="text-xs font-display uppercase tracking-wider px-3 py-1.5 border border-foreground/20 hover:border-foreground hover:bg-accent/30 transition-colors"
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {trendingBrands.length > 0 && (
+              <div className="mt-8">
+                <p className="text-[10px] font-display uppercase tracking-widest text-foreground/40 mb-3 flex items-center justify-center gap-2">
+                  <TrendingUp className="w-3 h-3" strokeWidth={1.5} /> Marques populaires
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {trendingBrands.slice(0, 6).map((b) => (
+                    <button
+                      key={b}
+                      onClick={() => setQuery(b)}
+                      className="text-xs font-display uppercase tracking-wider px-3 py-1.5 border border-foreground/15 hover:border-foreground/40 hover:bg-accent/30 transition-colors"
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {activeFilterCount > 0 && (
+              <button
+                onClick={() => setFilters(DEFAULT_FILTERS)}
+                className="mt-8 text-[10px] font-display uppercase tracking-wider text-foreground/60 hover:text-foreground transition-colors underline underline-offset-4"
+              >
+                Réinitialiser les {activeFilterCount} filtre{activeFilterCount > 1 ? "s" : ""} actif{activeFilterCount > 1 ? "s" : ""}
+              </button>
+            )}
           </div>
         )}
 
