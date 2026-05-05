@@ -586,7 +586,6 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     </div>,
     document.body
   );
-  );
 };
 
 export default SearchOverlay;
