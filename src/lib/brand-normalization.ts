@@ -311,9 +311,30 @@ export function inferBrand(rawBrand: string, title: string): string {
     }
   }
 
-  // Confiance faible : aucune marque canonique fiable détectée à partir
-  // de la marque brute ni du titre. On retourne "Non classé" plutôt que
-  // d'attribuer arbitrairement une marque (régression historique : tout
-  // finissait en "Snipes" quand la détection échouait).
-  return directBrand || UNCLASSIFIED_BRAND;
+  // Confiance faible : aucune marque canonique fiable détectée. On préserve
+  // la marque brute fournie par le marchand (proprement capitalisée) plutôt
+  // que de tout regrouper sous "Non classé" — sinon des marques légitimes
+  // comme Craft, Hummel, Urban Classics, Kariban, Zeus… disparaissent.
+  if (directBrand) return directBrand;
+  const cleaned = (rawBrand || "").trim();
+  if (cleaned) return prettifyBrand(cleaned);
+  return UNCLASSIFIED_BRAND;
+}
+
+/**
+ * Met en forme une marque brute : "JACK & JONES" → "Jack & Jones",
+ * "new era" → "New Era", "SNIPES" → "Snipes", en respectant les sigles
+ * courts (≤ 3 lettres) qui restent en majuscules (ex: "DC", "MBT", "XTI").
+ */
+function prettifyBrand(value: string): string {
+  return value
+    .split(/(\s+|[-&/])/)
+    .map((part) => {
+      if (/^\s+$/.test(part) || /^[-&/]$/.test(part)) return part;
+      const lower = part.toLowerCase();
+      if (CANONICAL_BRANDS[lower]) return CANONICAL_BRANDS[lower];
+      if (part.length <= 3 && /^[A-Za-z]+$/.test(part)) return part.toUpperCase();
+      return lower.charAt(0).toUpperCase() + lower.slice(1);
+    })
+    .join("");
 }
