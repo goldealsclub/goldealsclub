@@ -169,15 +169,15 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     (filters.trustedOnly ? 1 : 0) +
     (filters.minDiscount !== "all" ? 1 : 0);
 
-  // Trending brands = top brands in current gender slice
+  // Trending brands = top brands in current scope
   const trendingBrands = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const d of filteredDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
+    for (const d of scopedDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
       .map(([b]) => b);
-  }, [filteredDeals]);
+  }, [scopedDeals]);
 
   // Brand suggestions matching query
   const brandMatches = useMemo(() => {
@@ -185,7 +185,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     const seen = new Set<string>();
     const scored: { brand: string; count: number; score: number }[] = [];
     const counts: Record<string, number> = {};
-    for (const d of filteredDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
+    for (const d of scopedDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
     for (const brand of Object.keys(counts)) {
       const s = fuzzyScore(query, brand);
       if (s > 0 && !seen.has(brand)) {
@@ -196,13 +196,13 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     return scored
       .sort((a, b) => b.score - a.score || b.count - a.count)
       .slice(0, MAX_BRANDS);
-  }, [query, filteredDeals]);
+  }, [query, scopedDeals]);
 
   // Deal results with weighted scoring
   const dealResults = useMemo<Deal[]>(() => {
     if (query.trim().length < 2) return [];
     const scored: { deal: Deal; score: number }[] = [];
-    for (const d of filteredDeals) {
+    for (const d of scopedDeals) {
       const titleScore = fuzzyScore(query, d.title) * 1.0;
       const brandScore = fuzzyScore(query, d.brand) * 0.8;
       const merchantScore = fuzzyScore(query, d.merchant) * 0.4;
@@ -217,12 +217,12 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
       .sort((a, b) => b.score - a.score)
       .slice(0, MAX_RESULTS)
       .map((x) => x.deal);
-  }, [query, filteredDeals]);
+  }, [query, scopedDeals]);
 
   const totalMatches = useMemo(() => {
     if (query.trim().length < 2) return 0;
     let n = 0;
-    for (const d of filteredDeals) {
+    for (const d of scopedDeals) {
       if (
         fuzzyScore(query, d.title) > 0 ||
         fuzzyScore(query, d.brand) > 0 ||
@@ -230,7 +230,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
       ) n++;
     }
     return n;
-  }, [query, filteredDeals]);
+  }, [query, scopedDeals]);
 
   // Flat keyboard-navigable list: brands then deals
   const flatItems = useMemo(() => {
