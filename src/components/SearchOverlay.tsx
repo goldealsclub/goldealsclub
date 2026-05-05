@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, X, Clock, TrendingUp, ArrowRight, CornerDownLeft, ShieldCheck, Flame } from "lucide-react";
 import { useGender } from "@/lib/gender-context";
