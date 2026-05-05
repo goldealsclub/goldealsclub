@@ -81,11 +81,11 @@ const DealFilters = ({ sourceDeals, children, defaultSort = "relevance" }: DealF
   const resetPage = () => setPage(1);
 
   // Use ALL deals for filter options so gender filtering doesn't hide categories
-  // Brands sorted by popularity (most deals first); merchants/categories alpha
+  // Brands sorted by hype/popularity (Nike, Adidas… first), volume as tie-breaker
   const allBrands = useMemo(() => {
     const counts: Record<string, number> = {};
     allDealsGlobal.forEach((d) => { counts[d.brand] = (counts[d.brand] || 0) + 1; });
-    return Object.keys(counts).sort((a, b) => counts[b] - counts[a] || a.localeCompare(b));
+    return sortBrandsByPopularity(Object.keys(counts), counts);
   }, [allDealsGlobal.length]);
   const allMerchants = useMemo(() => getUniqueValues(allDealsGlobal, "merchant"), [allDealsGlobal.length]);
   const allCategories = useMemo(() => getUniqueValues(allDealsGlobal, "category") as Category[], [allDealsGlobal.length]);
