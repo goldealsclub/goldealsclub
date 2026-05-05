@@ -293,18 +293,26 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIdx]);
 
+  // Lock background scroll while overlay is open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
   if (!open) return null;
 
   const showInitial = query.trim().length < 2;
   const noResults = !showInitial && flatItems.length === 0;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] bg-background animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[100] bg-background animate-fade-in overflow-y-auto overscroll-contain"
       role="dialog"
       aria-label={t.search}
     >
-      <div className="container mx-auto px-4 pt-6 pb-12 max-w-3xl">
+      <div className="container mx-auto px-4 pt-6 pb-12 max-w-3xl min-h-full">
         {/* Search input */}
         <div className="flex items-center gap-3 border-b border-foreground/15 pb-3">
           <Search className="w-5 h-5 text-foreground/40 flex-shrink-0" strokeWidth={1.5} />
