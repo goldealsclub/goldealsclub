@@ -1,4 +1,5 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
+import { createPortal } from "react-dom";
 import { Link, useNavigate } from "react-router-dom";
 import { Search, X, Clock, TrendingUp, ArrowRight, CornerDownLeft, ShieldCheck, Flame } from "lucide-react";
 import { useGender } from "@/lib/gender-context";
@@ -197,16 +198,23 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
   }, [query, scopedDeals]);
 
   // Deal results with weighted scoring
+  // Scores per-field AND on a combined haystack so multi-word queries
+  // spanning brand + title (e.g. "adidas gazelle") match correctly.
+  const scoreDeal = useCallback((q: string, d: Deal) => {
+    const titleScore = fuzzyScore(q, d.title) * 1.0;
+    const brandScore = fuzzyScore(q, d.brand) * 0.8;
+    const merchantScore = fuzzyScore(q, d.merchant) * 0.4;
+    const combined = `${d.brand} ${d.title} ${d.merchant}`;
+    const combinedScore = fuzzyScore(q, combined) * 0.9;
+    return Math.max(titleScore, brandScore, merchantScore, combinedScore);
+  }, []);
+
   const dealResults = useMemo<Deal[]>(() => {
     if (query.trim().length < 2) return [];
     const scored: { deal: Deal; score: number }[] = [];
     for (const d of scopedDeals) {
-      const titleScore = fuzzyScore(query, d.title) * 1.0;
-      const brandScore = fuzzyScore(query, d.brand) * 0.8;
-      const merchantScore = fuzzyScore(query, d.merchant) * 0.4;
-      const best = Math.max(titleScore, brandScore, merchantScore);
+      const best = scoreDeal(query, d);
       if (best > 0) {
-        // Boost by discount (popular deals first when ties)
         const boost = (d.discount_percent || 0) * 0.3;
         scored.push({ deal: d, score: best + boost });
       }
@@ -215,20 +223,16 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
       .sort((a, b) => b.score - a.score)
       .slice(0, MAX_RESULTS)
       .map((x) => x.deal);
-  }, [query, scopedDeals]);
+  }, [query, scopedDeals, scoreDeal]);
 
   const totalMatches = useMemo(() => {
     if (query.trim().length < 2) return 0;
     let n = 0;
     for (const d of scopedDeals) {
-      if (
-        fuzzyScore(query, d.title) > 0 ||
-        fuzzyScore(query, d.brand) > 0 ||
-        fuzzyScore(query, d.merchant) > 0
-      ) n++;
+      if (scoreDeal(query, d) > 0) n++;
     }
     return n;
-  }, [query, scopedDeals]);
+  }, [query, scopedDeals, scoreDeal]);
 
   // Flat keyboard-navigable list: brands then deals
   const flatItems = useMemo(() => {
@@ -289,18 +293,26 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     el?.scrollIntoView({ block: "nearest" });
   }, [activeIdx]);
 
+  // Lock background scroll while overlay is open
+  useEffect(() => {
+    if (!open) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = prev; };
+  }, [open]);
+
   if (!open) return null;
 
   const showInitial = query.trim().length < 2;
   const noResults = !showInitial && flatItems.length === 0;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-[100] bg-background animate-fade-in overflow-y-auto"
+      className="fixed inset-0 z-[100] bg-background animate-fade-in overflow-y-auto overscroll-contain"
       role="dialog"
       aria-label={t.search}
     >
-      <div className="container mx-auto px-4 pt-6 pb-12 max-w-3xl">
+      <div className="container mx-auto px-4 pt-6 pb-12 max-w-3xl min-h-full">
         {/* Search input */}
         <div className="flex items-center gap-3 border-b border-foreground/15 pb-3">
           <Search className="w-5 h-5 text-foreground/40 flex-shrink-0" strokeWidth={1.5} />
@@ -571,7 +583,8 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
           </div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 
