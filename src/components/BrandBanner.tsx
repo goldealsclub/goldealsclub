@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { Deal } from "@/lib/data";
+import { sortBrandsByPopularity } from "@/lib/brand-popularity";
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import brandNike from "@/assets/brand-nike.svg";
