@@ -1,6 +1,6 @@
 import { useState, useMemo, useRef, useEffect, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Search, X, Clock, TrendingUp, ArrowRight, CornerDownLeft } from "lucide-react";
+import { Search, X, Clock, TrendingUp, ArrowRight, CornerDownLeft, ShieldCheck, Flame } from "lucide-react";
 import { useGender } from "@/lib/gender-context";
 import { useI18n } from "@/lib/i18n";
 import type { Deal } from "@/lib/data";
@@ -14,6 +14,45 @@ const RECENT_KEY = "goldeals.recent-searches";
 const MAX_RECENT = 6;
 const MAX_RESULTS = 8;
 const MAX_BRANDS = 6;
+
+// Marchands "fiables" : partenaires Awin officiels avec suivi conversion
+const TRUSTED_MERCHANTS = new Set(
+  ["snipes", "sneakin", "sport outlet", "sport is good", "kappa", "training fit", "jd sports", "nike"]
+);
+const isTrusted = (m: string) =>
+  TRUSTED_MERCHANTS.has((m || "").toLowerCase().replace(/\s*(fr|eu|uk|de)\s*$/i, "").trim());
+
+type CategoryFilter = "all" | "sneakers" | "vestes" | "hoodies" | "t-shirts" | "pantalons" | "accessoires";
+type DiscountFilter = "all" | "30" | "50" | "70";
+
+interface QuickFilters {
+  category: CategoryFilter;
+  trustedOnly: boolean;
+  minDiscount: DiscountFilter;
+}
+
+const DEFAULT_FILTERS: QuickFilters = {
+  category: "all",
+  trustedOnly: false,
+  minDiscount: "all",
+};
+
+const CATEGORY_OPTIONS: { key: CategoryFilter; label: string }[] = [
+  { key: "all", label: "Toutes" },
+  { key: "sneakers", label: "Sneakers" },
+  { key: "vestes", label: "Vestes" },
+  { key: "hoodies", label: "Hoodies" },
+  { key: "t-shirts", label: "T-shirts" },
+  { key: "pantalons", label: "Pantalons" },
+  { key: "accessoires", label: "Accessoires" },
+];
+
+const DISCOUNT_OPTIONS: { key: DiscountFilter; label: string }[] = [
+  { key: "all", label: "Toutes remises" },
+  { key: "30", label: "-30 % et +" },
+  { key: "50", label: "-50 % et +" },
+  { key: "70", label: "-70 % et +" },
+];
 
 // ── Utilities ────────────────────────────────────────────────────────────
 const norm = (s: string) =>
@@ -100,6 +139,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
   const [query, setQuery] = useState("");
   const [activeIdx, setActiveIdx] = useState(0);
   const [recent, setRecent] = useState<string[]>([]);
+  const [filters, setFilters] = useState<QuickFilters>(DEFAULT_FILTERS);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -107,20 +147,37 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     if (open) {
       setQuery("");
       setActiveIdx(0);
+      setFilters(DEFAULT_FILTERS);
       setRecent(loadRecent());
       setTimeout(() => inputRef.current?.focus(), 80);
     }
   }, [open]);
 
-  // Trending brands = top brands in current gender slice
+  // Apply quick filters BEFORE search scoring
+  const scopedDeals = useMemo(() => {
+    const minD = filters.minDiscount === "all" ? 0 : Number(filters.minDiscount);
+    return filteredDeals.filter((d) => {
+      if (filters.category !== "all" && d.category !== filters.category) return false;
+      if (filters.trustedOnly && !isTrusted(d.merchant)) return false;
+      if (minD > 0 && (d.discount_percent || 0) < minD) return false;
+      return true;
+    });
+  }, [filteredDeals, filters]);
+
+  const activeFilterCount =
+    (filters.category !== "all" ? 1 : 0) +
+    (filters.trustedOnly ? 1 : 0) +
+    (filters.minDiscount !== "all" ? 1 : 0);
+
+  // Trending brands = top brands in current scope
   const trendingBrands = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const d of filteredDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
+    for (const d of scopedDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
     return Object.entries(counts)
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
       .map(([b]) => b);
-  }, [filteredDeals]);
+  }, [scopedDeals]);
 
   // Brand suggestions matching query
   const brandMatches = useMemo(() => {
@@ -128,7 +185,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     const seen = new Set<string>();
     const scored: { brand: string; count: number; score: number }[] = [];
     const counts: Record<string, number> = {};
-    for (const d of filteredDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
+    for (const d of scopedDeals) counts[d.brand] = (counts[d.brand] || 0) + 1;
     for (const brand of Object.keys(counts)) {
       const s = fuzzyScore(query, brand);
       if (s > 0 && !seen.has(brand)) {
@@ -139,13 +196,13 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
     return scored
       .sort((a, b) => b.score - a.score || b.count - a.count)
       .slice(0, MAX_BRANDS);
-  }, [query, filteredDeals]);
+  }, [query, scopedDeals]);
 
   // Deal results with weighted scoring
   const dealResults = useMemo<Deal[]>(() => {
     if (query.trim().length < 2) return [];
     const scored: { deal: Deal; score: number }[] = [];
-    for (const d of filteredDeals) {
+    for (const d of scopedDeals) {
       const titleScore = fuzzyScore(query, d.title) * 1.0;
       const brandScore = fuzzyScore(query, d.brand) * 0.8;
       const merchantScore = fuzzyScore(query, d.merchant) * 0.4;
@@ -160,12 +217,12 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
       .sort((a, b) => b.score - a.score)
       .slice(0, MAX_RESULTS)
       .map((x) => x.deal);
-  }, [query, filteredDeals]);
+  }, [query, scopedDeals]);
 
   const totalMatches = useMemo(() => {
     if (query.trim().length < 2) return 0;
     let n = 0;
-    for (const d of filteredDeals) {
+    for (const d of scopedDeals) {
       if (
         fuzzyScore(query, d.title) > 0 ||
         fuzzyScore(query, d.brand) > 0 ||
@@ -173,7 +230,7 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
       ) n++;
     }
     return n;
-  }, [query, filteredDeals]);
+  }, [query, scopedDeals]);
 
   // Flat keyboard-navigable list: brands then deals
   const flatItems = useMemo(() => {
@@ -268,7 +325,69 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
           </button>
         </div>
 
-        {/* Initial state — recent + trending */}
+        {/* Quick filters bar */}
+        <div className="mt-3 flex items-center gap-2 overflow-x-auto pb-1 brand-scroll">
+          {/* Category select-style chips (horizontal scroll) */}
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {CATEGORY_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setFilters((f) => ({ ...f, category: opt.key }))}
+                className={`text-[10px] font-display uppercase tracking-wider px-2.5 py-1 border whitespace-nowrap transition-colors ${
+                  filters.category === opt.key
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground/15 hover:border-foreground/40"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          <span className="h-4 w-px bg-foreground/15 flex-shrink-0 mx-1" aria-hidden />
+
+          <button
+            onClick={() => setFilters((f) => ({ ...f, trustedOnly: !f.trustedOnly }))}
+            className={`flex items-center gap-1 text-[10px] font-display uppercase tracking-wider px-2.5 py-1 border whitespace-nowrap transition-colors flex-shrink-0 ${
+              filters.trustedOnly
+                ? "border-foreground bg-foreground text-background"
+                : "border-foreground/15 hover:border-foreground/40"
+            }`}
+            title="Marchands partenaires officiels avec suivi de commande"
+          >
+            <ShieldCheck className="w-3 h-3" strokeWidth={1.5} />
+            Vendeurs fiables
+          </button>
+
+          <span className="h-4 w-px bg-foreground/15 flex-shrink-0 mx-1" aria-hidden />
+
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            {DISCOUNT_OPTIONS.map((opt) => (
+              <button
+                key={opt.key}
+                onClick={() => setFilters((f) => ({ ...f, minDiscount: opt.key }))}
+                className={`flex items-center gap-1 text-[10px] font-display uppercase tracking-wider px-2.5 py-1 border whitespace-nowrap transition-colors ${
+                  filters.minDiscount === opt.key
+                    ? "border-foreground bg-foreground text-background"
+                    : "border-foreground/15 hover:border-foreground/40"
+                }`}
+              >
+                {opt.key !== "all" && <Flame className="w-3 h-3" strokeWidth={1.5} />}
+                {opt.label}
+              </button>
+            ))}
+          </div>
+
+          {activeFilterCount > 0 && (
+            <button
+              onClick={() => setFilters(DEFAULT_FILTERS)}
+              className="ml-auto text-[10px] font-body uppercase tracking-wider text-foreground/50 hover:text-foreground transition-colors flex-shrink-0"
+            >
+              Réinitialiser ({activeFilterCount})
+            </button>
+          )}
+        </div>
+
         {showInitial && (
           <div className="mt-8 space-y-8">
             {recent.length > 0 && (
