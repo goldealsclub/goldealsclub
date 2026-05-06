@@ -30,6 +30,7 @@ import NewDealNotifier from "./components/NewDealNotifier";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
+import AdminVideoPage from "./pages/AdminVideoPage";
 import InstallPage from "./pages/InstallPage";
 import PromoCodesPage from "./pages/PromoCodesPage";
 import WorldCup2026Page from "./pages/WorldCup2026Page";
@@ -70,6 +71,7 @@ const App = () => (
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/video" element={<AdminVideoPage />} />
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/codes-promo" element={<PromoCodesPage />} />
                 <Route path="/coupe-du-monde-2026" element={<WorldCup2026Page />} />

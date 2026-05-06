@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      daily_video_briefs: {
+        Row: {
+          brief_date: string
+          caption: string
+          created_at: string
+          deals: Json
+          focus_brand: string
+          hashtags: string
+          id: string
+        }
+        Insert: {
+          brief_date: string
+          caption?: string
+          created_at?: string
+          deals?: Json
+          focus_brand: string
+          hashtags?: string
+          id?: string
+        }
+        Update: {
+          brief_date?: string
+          caption?: string
+          created_at?: string
+          deals?: Json
+          focus_brand?: string
+          hashtags?: string
+          id?: string
+        }
+        Relationships: []
+      }
       deal_votes: {
         Row: {
           created_at: string
