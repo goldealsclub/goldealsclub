@@ -504,10 +504,14 @@ Deno.serve(async (req) => {
       }),
       { headers: jsonHeaders }
     );
-  } catch (err) {
-    console.error("admin-users failed", err);
+  } catch (err: any) {
+    const message =
+      (err && (err.message || err.error_description || err.hint || err.details)) ||
+      (typeof err === "string" ? err : JSON.stringify(err)) ||
+      "Unknown error";
+    console.error("admin-users failed", { message, err });
 
-    return new Response(JSON.stringify({ error: err instanceof Error ? err.message : "Unknown error" }), {
+    return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: jsonHeaders,
     });
