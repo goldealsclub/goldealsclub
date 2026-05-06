@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
       supabase.from("deal_votes").select("id", { count: "exact", head: true }),
       supabase.from("outbound_clicks").select("id", { count: "exact", head: true }),
       supabase.from("favorites").select("id", { count: "exact", head: true }),
-      supabase.from("deals").select("id", { count: "exact", head: true }),
+      supabase.from("deals").select("id", { count: "estimated", head: true }),
       supabase.from("favorites").select("user_id"),
       supabase.from("outbound_clicks").select("user_id"),
       supabase.from("deal_votes").select("user_id"),
