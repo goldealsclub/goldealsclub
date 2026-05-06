@@ -342,13 +342,27 @@ const AdminDashboard = () => {
               disabled={refreshing}
               className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-foreground/10 text-[10px] sm:text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors disabled:opacity-50"
             >
-              <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${refreshing || autoRefreshSec ? "animate-spin" : ""}`} />
               <span className="hidden sm:inline">Rafraîchir</span>
               <span className="sm:hidden">↻</span>
             </button>
+            <select
+              value={autoRefreshSec}
+              onChange={(e) => setAutoRefreshSec(Number(e.target.value) as 0 | 30 | 60 | 300)}
+              title="Rafraîchissement automatique des KPI"
+              className="bg-background px-2 sm:px-3 py-1.5 sm:py-2 border border-foreground/10 text-[10px] sm:text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer"
+            >
+              <option value={0}>Auto · Off</option>
+              <option value={30}>Auto · 30s</option>
+              <option value={60}>Auto · 1min</option>
+              <option value={300}>Auto · 5min</option>
+            </select>
           </div>
         </div>
-        <p className="font-body text-[10px] sm:text-xs text-foreground/50 mb-6 sm:mb-8">Dashboard administrateur — données en temps réel</p>
+        <p className="font-body text-[10px] sm:text-xs text-foreground/50 mb-6 sm:mb-8">
+          Dashboard administrateur — données en temps réel
+          {autoRefreshSec > 0 && <span className="ml-2 text-foreground/40">· auto-refresh toutes les {autoRefreshSec}s</span>}
+        </p>
 
         <div className="flex gap-0.5 sm:gap-1 mb-6 sm:mb-10 border-b border-foreground/8 overflow-x-auto scrollbar-none">
           {tabs.map((t) => (
