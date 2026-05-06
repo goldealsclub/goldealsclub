@@ -216,7 +216,7 @@ export default function AdminVideoPage() {
       .maybeSingle();
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
     if (data) {
-      setBrief(data as Brief);
+      setBrief(data as unknown as Brief);
       setEditableCaption(`${data.caption}\n\n${data.hashtags}`);
     }
     setLoading(false);
