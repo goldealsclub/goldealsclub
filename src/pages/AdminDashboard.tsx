@@ -152,7 +152,17 @@ const AdminDashboard = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [autoRefreshSec, setAutoRefreshSec] = useState<0 | 30 | 60 | 300>(0);
+  const [autoRefreshSec, setAutoRefreshSec] = useState<0 | 30 | 60 | 300>(() => {
+    if (typeof window === "undefined") return 0;
+    const v = Number(localStorage.getItem("admin.autoRefreshSec") || "0");
+    return ([0, 30, 60, 300].includes(v) ? v : 0) as 0 | 30 | 60 | 300;
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem("admin.autoRefreshSec", String(autoRefreshSec));
+    } catch { /* ignore */ }
+  }, [autoRefreshSec]);
   const [importingAwin, setImportingAwin] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
 
