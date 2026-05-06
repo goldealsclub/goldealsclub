@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Download, Copy, RefreshCw, ArrowLeft } from "lucide-react";
+import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Swords } from "lucide-react";
 
 type Deal = {
   id: string;
@@ -20,10 +20,18 @@ type Deal = {
   url: string;
 };
 
+type Battle = {
+  type: "battle";
+  category: string;
+  label: string;
+  a: Deal;
+  b: Deal;
+};
+
 type Brief = {
   brief_date: string;
   focus_brand: string;
-  deals: Deal[];
+  deals: Battle[];
   caption: string;
   hashtags: string;
 };
@@ -31,151 +39,161 @@ type Brief = {
 const W = 1080;
 const H = 1920;
 const FPS = 30;
-const SEC_PER_DEAL = 5; // 5 deals × 5s = 25s + 2.5s intro + 2.5s outro = 30s
-const INTRO = 2.5;
-const OUTRO = 2.5;
+const TOTAL_SEC = 15;
+const INTRO = 1.5;
+const OUTRO = 2;
 
-async function loadImage(src: string): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
+async function loadImage(src: string): Promise<HTMLImageElement | null> {
+  return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
     img.onload = () => resolve(img);
-    img.onerror = reject;
+    img.onerror = () => resolve(null);
     img.src = src;
   });
 }
 
-function easeOut(t: number) {
-  return 1 - Math.pow(1 - t, 3);
-}
+const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 
-function drawFrame(
+function drawBattleFrame(
   ctx: CanvasRenderingContext2D,
   t: number,
-  total: number,
-  brief: Brief,
-  images: (HTMLImageElement | null)[],
+  battle: Battle,
+  imgA: HTMLImageElement | null,
+  imgB: HTMLImageElement | null,
 ) {
-  // Background
-  ctx.fillStyle = "#0a0a0a";
-  ctx.fillRect(0, 0, W, H);
-
-  // Subtle gradient
+  // Background gradient
   const g = ctx.createLinearGradient(0, 0, 0, H);
   g.addColorStop(0, "#1a1a1a");
   g.addColorStop(1, "#000");
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, W, H);
 
-  // INTRO
+  // INTRO — VS reveal
   if (t < INTRO) {
     const k = easeOut(t / INTRO);
     ctx.globalAlpha = k;
-    ctx.fillStyle = "#f5f1ea";
-    ctx.font = "900 96px 'Inter','Helvetica',sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("GOLDEALS", W / 2, H / 2 - 40);
     ctx.fillStyle = "#c9a870";
-    ctx.font = "600 56px 'Inter','Helvetica',sans-serif";
-    ctx.fillText("CLUB", W / 2, H / 2 + 40);
-    ctx.fillStyle = "#999";
-    ctx.font = "400 36px 'Inter','Helvetica',sans-serif";
-    ctx.fillText(`Top deals — ${new Date(brief.brief_date).toLocaleDateString("fr-FR", { day: "numeric", month: "long" })}`, W / 2, H / 2 + 130);
+    ctx.font = "900 200px 'Inter','Helvetica',sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("VS", W / 2, H / 2);
+    ctx.fillStyle = "#f5f1ea";
+    ctx.font = "700 64px 'Inter',sans-serif";
+    ctx.fillText(battle.label, W / 2, H / 2 + 180);
     ctx.globalAlpha = 1;
+    ctx.textBaseline = "alphabetic";
     return;
   }
 
   // OUTRO
-  if (t > total - OUTRO) {
-    const k = easeOut((t - (total - OUTRO)) / OUTRO);
+  if (t > TOTAL_SEC - OUTRO) {
+    const k = easeOut((t - (TOTAL_SEC - OUTRO)) / OUTRO);
     ctx.globalAlpha = k;
     ctx.fillStyle = "#f5f1ea";
-    ctx.font = "900 88px 'Inter','Helvetica',sans-serif";
+    ctx.font = "900 88px 'Inter',sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("Tous les deals sur", W / 2, H / 2 - 40);
+    ctx.fillText("Tu choisis qui ?", W / 2, H / 2 - 40);
     ctx.fillStyle = "#c9a870";
-    ctx.font = "900 84px 'Inter','Helvetica',sans-serif";
+    ctx.font = "900 76px 'Inter',sans-serif";
     ctx.fillText("goldealsclub.com", W / 2, H / 2 + 60);
     ctx.globalAlpha = 1;
     return;
   }
 
-  // DEALS
-  const elapsed = t - INTRO;
-  const idx = Math.min(brief.deals.length - 1, Math.floor(elapsed / SEC_PER_DEAL));
-  const localT = elapsed - idx * SEC_PER_DEAL;
-  const deal = brief.deals[idx];
-  const img = images[idx];
-
-  // Slide-in
-  const slide = easeOut(Math.min(1, localT / 0.5));
-  const yOffset = (1 - slide) * 80;
+  // BATTLE — split screen
+  const battleT = t - INTRO;
+  const slide = easeOut(Math.min(1, battleT / 0.4));
   ctx.globalAlpha = slide;
 
-  // Image card
-  const cardX = 60;
-  const cardY = 200 + yOffset;
-  const cardW = W - 120;
-  const cardH = 1100;
-  ctx.fillStyle = "#fff";
+  // Diagonal split background
+  ctx.save();
   ctx.beginPath();
-  (ctx as any).roundRect?.(cardX, cardY, cardW, cardH, 32);
-  ctx.fill();
+  ctx.moveTo(0, 0);
+  ctx.lineTo(W, 0);
+  ctx.lineTo(W, H * 0.45);
+  ctx.lineTo(0, H * 0.55);
+  ctx.closePath();
+  ctx.clip();
+  ctx.fillStyle = "#0d0d0d";
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
 
-  if (img) {
-    // contain
-    const ratio = Math.min((cardW - 80) / img.width, (cardH - 80) / img.height);
-    const iw = img.width * ratio;
-    const ih = img.height * ratio;
-    ctx.drawImage(img, cardX + (cardW - iw) / 2, cardY + (cardH - ih) / 2, iw, ih);
-  }
-
-  // Rank badge
-  ctx.fillStyle = "#0a0a0a";
+  ctx.save();
   ctx.beginPath();
-  ctx.arc(cardX + 80, cardY + 80, 50, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.moveTo(0, H * 0.55);
+  ctx.lineTo(W, H * 0.45);
+  ctx.lineTo(W, H);
+  ctx.lineTo(0, H);
+  ctx.closePath();
+  ctx.clip();
+  ctx.fillStyle = "#1a1a1a";
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // Diagonal divider line
+  ctx.strokeStyle = "#c9a870";
+  ctx.lineWidth = 6;
+  ctx.beginPath();
+  ctx.moveTo(0, H * 0.55);
+  ctx.lineTo(W, H * 0.45);
+  ctx.stroke();
+
+  // Helper to draw one side
+  const drawSide = (deal: Deal, img: HTMLImageElement | null, top: boolean) => {
+    const cx = W / 2;
+    const cy = top ? H * 0.22 : H * 0.78;
+    const offset = top ? -W * (1 - slide) : W * (1 - slide);
+    ctx.save();
+    ctx.translate(offset, 0);
+
+    // Image
+    if (img) {
+      const maxW = 700;
+      const maxH = 540;
+      const ratio = Math.min(maxW / img.width, maxH / img.height);
+      const iw = img.width * ratio;
+      const ih = img.height * ratio;
+      ctx.drawImage(img, cx - iw / 2, cy - ih / 2 - 40, iw, ih);
+    }
+
+    // Brand
+    ctx.fillStyle = "#f5f1ea";
+    ctx.font = "900 88px 'Inter',sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(deal.brand.toUpperCase(), cx, cy + 290);
+
+    // Discount
+    ctx.fillStyle = "#c9a870";
+    ctx.font = "900 110px 'Inter',sans-serif";
+    ctx.fillText(`-${Math.round(Number(deal.discount_percent || 0))}%`, cx, cy + 410);
+
+    // Price
+    if (deal.sale_price) {
+      ctx.fillStyle = "#fff";
+      ctx.font = "700 56px 'Inter',sans-serif";
+      const cur = deal.currency === "EUR" ? "€" : deal.currency;
+      ctx.fillText(`${Number(deal.sale_price).toFixed(2)} ${cur}`, cx, cy + 480);
+    }
+    ctx.restore();
+  };
+
+  drawSide(battle.a, imgA, true);
+  drawSide(battle.b, imgB, false);
+
+  // VS centered
   ctx.fillStyle = "#c9a870";
-  ctx.font = "900 56px 'Inter',sans-serif";
+  ctx.font = "900 130px 'Inter',sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(String(idx + 1), cardX + 80, cardY + 80);
+  // Pulse
+  const pulse = 1 + Math.sin(battleT * 8) * 0.05;
+  ctx.save();
+  ctx.translate(W / 2, H / 2);
+  ctx.scale(pulse, pulse);
+  ctx.fillText("VS", 0, 0);
+  ctx.restore();
   ctx.textBaseline = "alphabetic";
-
-  // Brand
-  ctx.fillStyle = "#f5f1ea";
-  ctx.font = "900 72px 'Inter',sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText(deal.brand.toUpperCase(), W / 2, cardY + cardH + 110);
-
-  // Discount
-  ctx.fillStyle = "#c9a870";
-  ctx.font = "900 140px 'Inter',sans-serif";
-  ctx.fillText(`-${Math.round(Number(deal.discount_percent || 0))}%`, W / 2, cardY + cardH + 280);
-
-  // Prices
-  if (deal.sale_price && deal.original_price) {
-    ctx.fillStyle = "#fff";
-    ctx.font = "700 56px 'Inter',sans-serif";
-    const cur = deal.currency === "EUR" ? "€" : deal.currency;
-    const saleTxt = `${Number(deal.sale_price).toFixed(2)} ${cur}`;
-    const origTxt = `${Number(deal.original_price).toFixed(2)} ${cur}`;
-    const sw = ctx.measureText(saleTxt).width;
-    const ow = ctx.measureText(origTxt).width;
-    const gap = 40;
-    const totalW = sw + ow + gap;
-    const startX = (W - totalW) / 2;
-    ctx.fillText(saleTxt, startX + sw / 2, cardY + cardH + 380);
-    ctx.fillStyle = "#888";
-    ctx.fillText(origTxt, startX + sw + gap + ow / 2, cardY + cardH + 380);
-    // strike
-    ctx.strokeStyle = "#888";
-    ctx.lineWidth = 4;
-    ctx.beginPath();
-    ctx.moveTo(startX + sw + gap, cardY + cardH + 360);
-    ctx.lineTo(startX + sw + gap + ow, cardY + cardH + 360);
-    ctx.stroke();
-  }
 
   ctx.globalAlpha = 1;
 }
@@ -185,22 +203,19 @@ export default function AdminVideoPage() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [brief, setBrief] = useState<Brief | null>(null);
   const [loading, setLoading] = useState(true);
-  const [rendering, setRendering] = useState(false);
+  const [renderingIdx, setRenderingIdx] = useState<number | null>(null);
   const [progress, setProgress] = useState(0);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUrls, setVideoUrls] = useState<Record<number, string>>({});
   const [editableCaption, setEditableCaption] = useState("");
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    document.title = "Vidéo du jour — Admin";
+    document.title = "Vidéos Hype Battle — Admin";
   }, []);
 
   useEffect(() => {
     (async () => {
-      if (!user) {
-        setIsAdmin(false);
-        return;
-      }
+      if (!user) return setIsAdmin(false);
       const { data } = await supabase.rpc("has_role", { _user_id: user.id, _role: "admin" });
       setIsAdmin(Boolean(data));
     })();
@@ -218,6 +233,8 @@ export default function AdminVideoPage() {
     if (data) {
       setBrief(data as unknown as Brief);
       setEditableCaption(`${data.caption}\n\n${data.hashtags}`);
+    } else {
+      setBrief(null);
     }
     setLoading(false);
   };
@@ -228,17 +245,23 @@ export default function AdminVideoPage() {
 
   const regenerate = async () => {
     setLoading(true);
+    setVideoUrls({});
     const { error } = await supabase.functions.invoke("prepare-daily-video-brief");
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
     else toast({ title: "Brief régénéré" });
     await loadBrief();
   };
 
-  const renderVideo = async () => {
+  const renderBattle = async (idx: number) => {
     if (!brief) return;
-    setRendering(true);
+    const battle = brief.deals[idx];
+    setRenderingIdx(idx);
     setProgress(0);
-    setVideoUrl(null);
+    setVideoUrls((prev) => {
+      const n = { ...prev };
+      delete n[idx];
+      return n;
+    });
 
     try {
       const canvas = canvasRef.current!;
@@ -246,18 +269,9 @@ export default function AdminVideoPage() {
       canvas.height = H;
       const ctx = canvas.getContext("2d")!;
 
-      // Preload images via deals-image-proxy if needed; here we use direct (CORS may fail)
-      // Fallback: use a known-good proxy or allow taint
-      const images = await Promise.all(
-        brief.deals.map((d) =>
-          loadImage(d.image_url).catch(() => null),
-        ),
-      );
+      const [imgA, imgB] = await Promise.all([loadImage(battle.a.image_url), loadImage(battle.b.image_url)]);
 
-      const totalDeals = Math.min(brief.deals.length, 5);
-      const total = INTRO + totalDeals * SEC_PER_DEAL + OUTRO;
-      const totalFrames = Math.floor(total * FPS);
-
+      const totalFrames = TOTAL_SEC * FPS;
       const stream = (canvas as any).captureStream(FPS) as MediaStream;
       const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
         ? "video/webm;codecs=vp9"
@@ -270,31 +284,27 @@ export default function AdminVideoPage() {
       });
 
       recorder.start();
-
-      // Render frame by frame in real-time-ish
       const start = performance.now();
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
-        drawFrame(ctx, t, total, brief, images);
+        drawBattleFrame(ctx, t, battle, imgA, imgB);
         setProgress(Math.round((f / totalFrames) * 100));
-        // wait until real time matches
         const target = start + (f / FPS) * 1000;
         const now = performance.now();
         if (target > now) await new Promise((r) => setTimeout(r, target - now));
       }
-      // Ensure last frame captured
       await new Promise((r) => setTimeout(r, 200));
       recorder.stop();
 
       const blob = await done;
       const url = URL.createObjectURL(blob);
-      setVideoUrl(url);
+      setVideoUrls((prev) => ({ ...prev, [idx]: url }));
       setProgress(100);
-      toast({ title: "Vidéo prête !" });
+      toast({ title: `Vidéo ${battle.label} prête !` });
     } catch (e: any) {
       toast({ title: "Échec du rendu", description: e?.message || String(e), variant: "destructive" });
     } finally {
-      setRendering(false);
+      setRenderingIdx(null);
     }
   };
 
@@ -311,96 +321,112 @@ export default function AdminVideoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 max-w-5xl mx-auto">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 max-w-6xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour Admin
         </Link>
-        <Button variant="outline" size="sm" onClick={regenerate} disabled={loading || rendering}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Régénérer brief
+        <Button variant="outline" size="sm" onClick={regenerate} disabled={loading || renderingIdx !== null}>
+          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Régénérer briefs
         </Button>
       </div>
 
-      <h1 className="text-3xl font-bold mb-2">Vidéo du jour</h1>
+      <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
+        <Swords className="h-7 w-7" /> Hype Battle du jour
+      </h1>
       <p className="text-muted-foreground mb-6">
-        Format 9:16 vertical · 30 s · prêt pour TikTok / Reels
+        Une vidéo VS par catégorie · 9:16 · 15s · marques hype
       </p>
 
       {loading && <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>}
 
-      {!loading && !brief && (
+      {!loading && (!brief || brief.deals.length === 0) && (
         <div className="border rounded-lg p-6 text-center">
-          <p className="mb-4">Aucun brief pour aujourd'hui.</p>
-          <Button onClick={regenerate}>Générer maintenant</Button>
+          <p className="mb-4">Aucun battle disponible aujourd'hui (pas assez de deals hype par catégorie).</p>
+          <Button onClick={regenerate}>Régénérer</Button>
         </div>
       )}
 
-      {!loading && brief && (
-        <div className="grid md:grid-cols-2 gap-6">
-          <div>
-            <div className="border rounded-lg p-4 mb-4">
-              <h2 className="font-semibold mb-2">Sélection ({brief.deals.length})</h2>
-              <p className="text-sm text-muted-foreground mb-3">Marque mise en avant : <strong>{brief.focus_brand}</strong></p>
-              <ul className="space-y-2 text-sm">
-                {brief.deals.map((d, i) => (
-                  <li key={d.id} className="flex items-center gap-3">
-                    <span className="font-bold w-6">{i + 1}.</span>
-                    <img src={d.image_url} alt="" className="w-12 h-12 object-cover rounded" />
-                    <div className="flex-1 min-w-0">
-                      <div className="truncate">{d.brand} — {d.title}</div>
-                      <div className="text-xs text-muted-foreground">-{Math.round(Number(d.discount_percent))}% · {d.merchant}</div>
+      {!loading && brief && brief.deals.length > 0 && (
+        <>
+          {/* Caption globale */}
+          <div className="border rounded-lg p-4 mb-6">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="font-semibold">Caption (utilisable pour tous les posts)</h2>
+              <Button size="sm" variant="ghost" onClick={copyCaption}><Copy className="h-4 w-4" /> Copier</Button>
+            </div>
+            <Textarea
+              value={editableCaption}
+              onChange={(e) => setEditableCaption(e.target.value)}
+              rows={6}
+              className="text-sm font-mono"
+            />
+          </div>
+
+          {/* Canvas hidden — utilisé en rendu */}
+          <canvas ref={canvasRef} className="hidden" />
+
+          {/* Une carte par battle */}
+          <div className="grid md:grid-cols-3 gap-4">
+            {brief.deals.map((battle, idx) => (
+              <div key={idx} className="border rounded-lg p-4 flex flex-col">
+                <div className="flex items-center gap-2 mb-3">
+                  <Swords className="h-4 w-4" />
+                  <h3 className="font-semibold">{battle.label}</h3>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  {[battle.a, battle.b].map((d, i) => (
+                    <div key={i} className="text-center">
+                      <img src={d.image_url} alt="" className="w-full aspect-square object-cover rounded mb-1" />
+                      <div className="text-xs font-bold uppercase">{d.brand}</div>
+                      <div className="text-xs text-muted-foreground">-{Math.round(Number(d.discount_percent))}%</div>
                     </div>
-                  </li>
-                ))}
-              </ul>
-            </div>
+                  ))}
+                </div>
 
-            <div className="border rounded-lg p-4">
-              <div className="flex items-center justify-between mb-2">
-                <h2 className="font-semibold">Caption</h2>
-                <Button size="sm" variant="ghost" onClick={copyCaption}><Copy className="h-4 w-4" /></Button>
-              </div>
-              <Textarea
-                value={editableCaption}
-                onChange={(e) => setEditableCaption(e.target.value)}
-                rows={10}
-                className="text-sm font-mono"
-              />
-            </div>
-          </div>
-
-          <div>
-            <div className="border rounded-lg p-4">
-              <h2 className="font-semibold mb-3">Rendu vidéo</h2>
-              <canvas ref={canvasRef} className="w-full max-w-[270px] mx-auto aspect-[9/16] bg-black rounded" />
-              {rendering && (
-                <div className="mt-3">
-                  <div className="h-2 bg-muted rounded overflow-hidden">
-                    <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                {renderingIdx === idx && (
+                  <div className="mb-2">
+                    <div className="h-1.5 bg-muted rounded overflow-hidden">
+                      <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                    <p className="text-xs text-center mt-1 text-muted-foreground">{progress}%</p>
                   </div>
-                  <p className="text-xs text-center mt-2 text-muted-foreground">Rendu en cours… {progress}%</p>
-                </div>
-              )}
-              <Button className="w-full mt-3" onClick={renderVideo} disabled={rendering}>
-                {rendering ? <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Rendu…</> : "Générer la vidéo"}
-              </Button>
+                )}
 
-              {videoUrl && (
-                <div className="mt-4 space-y-2">
-                  <video src={videoUrl} controls className="w-full max-w-[270px] mx-auto rounded" />
-                  <Button asChild className="w-full" variant="default">
-                    <a href={videoUrl} download={`goldeals-${brief.brief_date}.webm`}>
-                      <Download className="h-4 w-4 mr-2" /> Télécharger .webm
-                    </a>
+                {!videoUrls[idx] && (
+                  <Button
+                    size="sm"
+                    onClick={() => renderBattle(idx)}
+                    disabled={renderingIdx !== null}
+                    className="w-full"
+                  >
+                    {renderingIdx === idx ? (
+                      <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Rendu…</>
+                    ) : (
+                      "🎬 Générer la vidéo"
+                    )}
                   </Button>
-                  <p className="text-xs text-muted-foreground text-center">
-                    Astuce : convertis en .mp4 avec un outil en ligne (cloudconvert) avant de poster sur TikTok/Insta si besoin.
-                  </p>
-                </div>
-              )}
-            </div>
+                )}
+
+                {videoUrls[idx] && (
+                  <div className="space-y-2">
+                    <video src={videoUrls[idx]} controls className="w-full rounded" />
+                    <Button asChild size="sm" className="w-full">
+                      <a href={videoUrls[idx]} download={`battle-${battle.category}-${brief.brief_date}.webm`}>
+                        <Download className="h-4 w-4 mr-2" /> Télécharger
+                      </a>
+                    </Button>
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
+
+          <p className="text-xs text-muted-foreground text-center mt-6">
+            Format .webm — accepté par TikTok et Instagram. Sinon convertis en .mp4 via cloudconvert.com
+          </p>
+        </>
       )}
     </div>
   );
