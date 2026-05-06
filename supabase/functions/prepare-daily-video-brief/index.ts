@@ -59,7 +59,7 @@ Deno.serve(async (req) => {
       .not("image_url", "is", null)
       .neq("image_url", "")
       .order("discount_percent", { ascending: false })
-      .limit(1500);
+      .limit(600);
 
     if (error) throw error;
 
