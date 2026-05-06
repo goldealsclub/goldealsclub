@@ -59,26 +59,19 @@ Deno.serve(async (req) => {
           .filter(Boolean);
       },
       async pageForMerchant(merchant, from, to) {
-        // For merchants that re-import the same product several times per day
-        // and sometimes lose the RRP on the freshest re-import (Snipes EU
-        // reimports ~16 K rows/day for 4.9 K unique products, RRP present
-        // on only 30 % of rows), pull RRP-bearing rows first so dedup keeps
-        // the strikethrough variant. See site-audit "Snipes RRP ≥ 20 %".
-        const prioritizeRrp = merchant === "Snipes EU";
-        let q = supabase
+        // NOTE: previously we re-ordered Snipes EU by `original_price DESC
+        // NULLS LAST, detected_at DESC` to keep the RRP-bearing variant
+        // during dedup. That sort triggered Postgres statement timeouts
+        // (no composite index on (merchant, original_price, detected_at)
+        // and ~16 K rows/day to sort in memory). The RRP preference is now
+        // enforced in `dedupePreservingColors` instead — see pipeline.ts.
+        const { data, error } = await supabase
           .from("deals")
           .select(FIELDS)
           .eq("merchant", merchant)
-          .gte("detected_at", since);
-        if (prioritizeRrp) {
-          // NULLS LAST → rows with original_price come first, then by recency.
-          q = q
-            .order("original_price", { ascending: false, nullsFirst: false })
-            .order("detected_at", { ascending: false, nullsFirst: false });
-        } else {
-          q = q.order("detected_at", { ascending: false, nullsFirst: false });
-        }
-        const { data, error } = await q.range(from, to);
+          .gte("detected_at", since)
+          .order("detected_at", { ascending: false, nullsFirst: false })
+          .range(from, to);
         if (error) throw error;
         return (data ?? []) as DealRow[];
       },
