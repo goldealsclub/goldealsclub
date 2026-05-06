@@ -101,7 +101,8 @@ Deno.serve(async (req) => {
       supabase.from("page_views").select("viewed_at, path, session_id, referrer, country, user_id").order("viewed_at", { ascending: false }).limit(10000),
       supabase.from("events").select("id", { count: "exact", head: true }),
       supabase.from("events").select("event_type, deal_id, created_at").order("created_at", { ascending: false }).limit(5000),
-      supabase.from("deals").select("id, merchant, brand"),
+      // Limited to most recent 5000 deals to avoid statement timeout on 170k+ rows.
+      supabase.from("deals").select("id, merchant, brand").order("detected_at", { ascending: false, nullsFirst: false }).limit(5000),
       supabase.from("outbound_clicks").select("deal_id"),
     ]);
 
