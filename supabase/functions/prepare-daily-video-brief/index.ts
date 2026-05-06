@@ -1,6 +1,7 @@
-// Generates the daily TikTok/Instagram video brief: picks 3 top deals + 2 deals
-// from the brand of the day, writes a French caption + hashtags, stores it in
-// public.daily_video_briefs (one row per day, idempotent via UNIQUE brief_date).
+// Generates the daily HYPE BATTLE briefs: one Versus video per category
+// (sneakers, vêtements, accessoires). For each category, picks 2 deals from
+// hype brands with strong discounts. Stored in public.daily_video_briefs.deals
+// as an array of battles: [{type:'battle', category, label, a, b}, ...]
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -8,8 +9,39 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// 7-day rotation of focus brand (Mon=0)
-const BRAND_ROTATION = ["Nike", "Snipes", "JD Sports", "Adidas", "New Balance", "Nike", "Snipes"];
+// Hype brands — sneakers premium + streetwear hype
+const HYPE_BRANDS = [
+  // sneakers premium
+  "nike", "jordan", "air jordan", "yeezy", "adidas", "new balance", "asics",
+  "travis scott", "off-white", "off white", "dunk", "sb dunk",
+  // streetwear hype
+  "trapstar", "corteiz", "stussy", "stüssy", "carhartt", "carhartt wip",
+  "palace", "supreme", "essentials", "fear of god", "represent",
+  "kappa", "the north face", "patta", "aimé leon dore", "ami",
+];
+
+// Categories targeted (slug -> display label + matching keywords in DB category/title)
+const BATTLE_CATEGORIES: { slug: string; label: string; match: (c: string, t: string) => boolean }[] = [
+  {
+    slug: "sneakers",
+    label: "SNEAKERS",
+    match: (c, t) => /sneaker|chaussure|basket|shoe/i.test(c) || /sneaker|jordan|dunk|air max|yeezy|550|990/i.test(t),
+  },
+  {
+    slug: "vetements",
+    label: "VÊTEMENTS",
+    match: (c, t) =>
+      /v[eê]tement|hoodie|sweat|tshirt|t-shirt|pull|veste|jacket|pant|jean|short/i.test(c) ||
+      /hoodie|sweat|t-shirt|tshirt|veste|jacket|pant|jean|short|cargo/i.test(t),
+  },
+  {
+    slug: "accessoires",
+    label: "ACCESSOIRES",
+    match: (c, t) =>
+      /accessoir|sac|bag|cap|bonnet|chaussette|sock|ceinture|belt/i.test(c) ||
+      /sac\b|bag|casquette|cap\b|bonnet|chaussette|sock|ceinture|belt/i.test(t),
+  },
+];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -20,77 +52,91 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Pull a healthy pool of recent, well-discounted deals
     const { data: pool, error } = await supabase
       .from("deals")
-      .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,gender,category")
-      .gte("discount_percent", 20)
+      .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
+      .gte("discount_percent", 15)
       .not("image_url", "is", null)
       .neq("image_url", "")
       .order("discount_percent", { ascending: false })
-      .limit(500);
+      .limit(600);
 
     if (error) throw error;
-    const deals = pool ?? [];
 
-    const today = new Date();
-    const dow = (today.getDay() + 6) % 7; // Monday = 0
-    const focusBrand = BRAND_ROTATION[dow];
+    const norm = (s: string | null) => (s ?? "").toLowerCase().trim();
+    const isHype = (brand: string) => {
+      const b = norm(brand);
+      return HYPE_BRANDS.some((h) => b === h || b.includes(h));
+    };
 
-    const norm = (s: string | null) => (s ?? "").toLowerCase();
+    const hypeDeals = (pool ?? []).filter((d) => isHype(d.brand));
 
-    // Top 3 overall (highest discount, dedup per brand to vary)
-    const seenBrand = new Set<string>();
-    const top: any[] = [];
-    for (const d of deals) {
-      const b = norm(d.brand);
-      if (seenBrand.has(b)) continue;
-      seenBrand.add(b);
-      top.push(d);
-      if (top.length === 3) break;
+    const battles: any[] = [];
+    for (const cat of BATTLE_CATEGORIES) {
+      const candidates = hypeDeals.filter((d) => cat.match(norm(d.category), norm(d.title)));
+      // Try to pick 2 from different brands
+      const seenBrands = new Set<string>();
+      const picks: any[] = [];
+      for (const d of candidates) {
+        const b = norm(d.brand);
+        if (seenBrands.has(b)) continue;
+        seenBrands.add(b);
+        picks.push(d);
+        if (picks.length === 2) break;
+      }
+      if (picks.length === 2) {
+        const map = (d: any) => ({
+          id: d.id,
+          title: d.title,
+          brand: d.brand,
+          merchant: d.merchant,
+          sale_price: d.sale_price,
+          original_price: d.original_price,
+          discount_percent: d.discount_percent,
+          currency: d.currency || "EUR",
+          image_url: d.image_url,
+          url: d.affiliate_url || d.product_url,
+        });
+        battles.push({
+          type: "battle",
+          category: cat.slug,
+          label: cat.label,
+          a: map(picks[0]),
+          b: map(picks[1]),
+        });
+      }
     }
 
-    // 2 from focus brand (excluding ones already in top)
-    const topIds = new Set(top.map((d) => d.id));
-    const focus = deals
-      .filter((d) => norm(d.brand) === norm(focusBrand) && !topIds.has(d.id))
-      .slice(0, 2);
-
-    const selection = [...top, ...focus].slice(0, 5).map((d) => ({
-      id: d.id,
-      title: d.title,
-      brand: d.brand,
-      merchant: d.merchant,
-      sale_price: d.sale_price,
-      original_price: d.original_price,
-      discount_percent: d.discount_percent,
-      currency: d.currency || "EUR",
-      image_url: d.image_url,
-      url: d.affiliate_url || d.product_url,
-    }));
-
+    const today = new Date();
     const dateStr = today.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+    const briefDate = today.toISOString().slice(0, 10);
+
     const caption =
-      `🔥 Les meilleurs deals streetwear du ${dateStr}\n\n` +
-      selection.map((d, i) => `${i + 1}. ${d.brand} — -${Math.round(Number(d.discount_percent))}%`).join("\n") +
-      `\n\n👉 Tous les deals sur goldealsclub.com\n#GOLDEALSCLUB`;
+      `⚔️ HYPE BATTLE — ${dateStr}\n\n` +
+      battles.map((b) => `${b.label} : ${b.a.brand} VS ${b.b.brand}`).join("\n") +
+      `\n\n👉 Quel camp tu choisis ? Tous les deals sur goldealsclub.com\n#GOLDEALSCLUB`;
 
     const hashtags =
-      "#streetwear #sneakers #deals #bonplan #goldealsclub " +
-      `#${(focusBrand || "").toLowerCase().replace(/\s+/g, "")} #nike #snipes #adidas #newbalance #jdsports #fyp #pourtoi`;
-
-    const briefDate = today.toISOString().slice(0, 10);
+      "#sneakers #streetwear #hype #jordan #yeezy #trapstar #corteiz #stussy " +
+      "#dunk #travisscott #offwhite #newbalance #carhartt #palace #supreme " +
+      "#deals #bonplan #goldealsclub #fyp #pourtoi";
 
     const { error: upErr } = await supabase
       .from("daily_video_briefs")
       .upsert(
-        { brief_date: briefDate, focus_brand: focusBrand, deals: selection, caption, hashtags },
+        {
+          brief_date: briefDate,
+          focus_brand: "HYPE_BATTLE",
+          deals: battles,
+          caption,
+          hashtags,
+        },
         { onConflict: "brief_date" },
       );
     if (upErr) throw upErr;
 
     return new Response(
-      JSON.stringify({ ok: true, brief_date: briefDate, focus_brand: focusBrand, count: selection.length }),
+      JSON.stringify({ ok: true, brief_date: briefDate, battles: battles.length, categories: battles.map((b) => b.category) }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err: any) {
