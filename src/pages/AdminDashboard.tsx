@@ -152,6 +152,7 @@ const AdminDashboard = () => {
   const [usersLoading, setUsersLoading] = useState(false);
   const [usersLoaded, setUsersLoaded] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [autoRefreshSec, setAutoRefreshSec] = useState<0 | 30 | 60 | 300>(0);
   const [importingAwin, setImportingAwin] = useState(false);
   const [usersError, setUsersError] = useState<string | null>(null);
 
