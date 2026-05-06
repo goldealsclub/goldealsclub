@@ -71,6 +71,7 @@ const App = () => (
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/admin" element={<AdminDashboard />} />
+                <Route path="/admin/video" element={<AdminVideoPage />} />
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/codes-promo" element={<PromoCodesPage />} />
                 <Route path="/coupe-du-monde-2026" element={<WorldCup2026Page />} />
