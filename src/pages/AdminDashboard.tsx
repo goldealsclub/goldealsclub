@@ -367,6 +367,13 @@ const AdminDashboard = () => {
               <option value={60}>Auto · 1min</option>
               <option value={300}>Auto · 5min</option>
             </select>
+            <a
+              href="/admin/video"
+              title="Vidéo TikTok / Reels du jour"
+              className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 border border-foreground/10 text-[10px] sm:text-[11px] font-display uppercase tracking-widest text-foreground/60 hover:text-foreground hover:border-foreground/30 transition-colors"
+            >
+              🎬 <span className="hidden sm:inline">Vidéo du jour</span><span className="sm:hidden">Vidéo</span>
+            </a>
           </div>
         </div>
         <p className="font-body text-[10px] sm:text-xs text-foreground/50 mb-6 sm:mb-8">
