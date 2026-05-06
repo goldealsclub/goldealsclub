@@ -222,6 +222,16 @@ const AdminDashboard = () => {
     setTimeout(() => setRefreshing(false), 1500);
   };
 
+  // Auto-refresh KPI at chosen interval
+  useEffect(() => {
+    if (!autoRefreshSec) return;
+    const id = window.setInterval(() => {
+      handleRefresh();
+    }, autoRefreshSec * 1000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoRefreshSec]);
+
   const handleImportAwin = async () => {
     if (importingAwin) return;
     setImportingAwin(true);
