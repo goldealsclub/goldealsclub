@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_deals_merchant_detected_at ON public.deals (merchant, detected_at DESC);
