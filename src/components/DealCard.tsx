@@ -64,8 +64,19 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   }
   if (imageBroken) return null;
 
-  // Full-bleed sans découpage : la photo entière est visible, aucun crop.
-  const imageFitClass = "object-contain object-center group-hover:scale-[1.03]";
+  // Full-bleed : la photo remplit tout le cadre (object-cover) avec un léger zoom au hover.
+  const imageFitClass = "object-cover object-center group-hover:scale-[1.04]";
+
+  // Responsive srcset via wsrv.nl proxy → meilleure qualité, formats modernes (webp), tailles adaptées.
+  const buildSrc = (w: number) => {
+    if (!enhancedImageUrl) return "";
+    const stripped = enhancedImageUrl.replace(/^https?:\/\//, "");
+    return `https://wsrv.nl/?url=${encodeURIComponent(stripped)}&w=${w}&h=${w}&fit=cover&a=attention&output=webp&q=85`;
+  };
+  const srcSet = `${buildSrc(400)} 400w, ${buildSrc(600)} 600w, ${buildSrc(900)} 900w, ${buildSrc(1200)} 1200w`;
+  const sizes = featured
+    ? "(max-width: 640px) 100vw, (max-width: 1024px) 66vw, 800px"
+    : "(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 400px";
 
   return (
     <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
@@ -78,20 +89,17 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           </div>
         )}
         <img
-          src={enhancedImageUrl}
+          src={buildSrc(600)}
+          srcSet={srcSet}
+          sizes={sizes}
           alt={deal.title}
-          className={`w-full h-full p-2 sm:p-3 transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
-          loading="lazy"
+          className={`w-full h-full transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
+          loading={featured ? "eager" : "lazy"}
           decoding="async"
           {...({ fetchpriority: featured ? "high" : "auto" } as any)}
           onLoad={(e) => {
             const img = e.target as HTMLImageElement;
-            if (img.naturalWidth < 400 || img.naturalHeight < 400) {
-              setImageBroken(true);
-              return;
-            }
-            const ratio = img.naturalWidth / img.naturalHeight;
-            if (ratio < 0.5 || ratio > 2) {
+            if (img.naturalWidth < 200 || img.naturalHeight < 200) {
               setImageBroken(true);
               return;
             }
