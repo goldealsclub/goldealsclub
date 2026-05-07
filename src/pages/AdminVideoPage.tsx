@@ -490,7 +490,7 @@ function drawBattleFrame(
 
   drawTopBar(ctx, battle.label);
 
-  const barH = 110;
+  const barH = 96;
   const halfH = (H - barH) / 2;
 
   // Slide A from top, B from bottom
