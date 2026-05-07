@@ -303,35 +303,41 @@ function drawDealHalf(
   const alpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.2) / 0.6)));
   ctx.globalAlpha = alpha;
 
-  // Brand
+  // Brand — display serif Zara-like, fin et raffiné
   ctx.fillStyle = NOIR;
-  ctx.font = "900 64px 'Inter','Helvetica',sans-serif";
+  ctx.font = "300 78px Georgia, serif";
   ctx.textAlign = "left";
-  ctx.fillText(deal.brand.toUpperCase(), 50, infoY + 80);
+  ctx.fillText(deal.brand, 60, infoY + 90);
 
-  // Catégorie · merchant
+  // Merchant — petit, taupe, espacé
   ctx.fillStyle = TAUPE;
-  ctx.font = "600 22px 'Inter',sans-serif";
-  ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 50, infoY + 115);
+  ctx.font = "500 18px 'Inter',sans-serif";
+  (ctx as any).letterSpacing = "5px";
+  ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 60, infoY + 122);
+  (ctx as any).letterSpacing = "0px";
 
-  // Prix XXL
-  const priceStr = deal.sale_price != null ? `${Math.round(Number(deal.sale_price))}€` : "—";
+  // Filet doré ultra-fin sous le merchant (signature unique)
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(60, infoY + 138, 32, 1);
+
+  // Prix XXL — sans-serif noir, weight medium pas extra-bold (plus chic)
+  const priceStr = deal.sale_price != null ? `${Math.round(Number(deal.sale_price))} €` : "—";
   ctx.fillStyle = NOIR;
-  ctx.font = "900 130px 'Inter',sans-serif";
-  ctx.fillText(priceStr, 50, infoY + 245);
+  ctx.font = "500 124px 'Inter',sans-serif";
+  ctx.fillText(priceStr, 60, infoY + 260);
 
   // Prix barré
   if (deal.original_price && deal.sale_price && Number(deal.original_price) > Number(deal.sale_price)) {
     ctx.fillStyle = TAUPE;
-    ctx.globalAlpha = alpha * 0.5;
-    ctx.font = "500 38px 'Inter',sans-serif";
-    const op = `${Math.round(Number(deal.original_price))}€`;
-    const x = 50;
-    const y = infoY + 285;
+    ctx.globalAlpha = alpha * 0.55;
+    ctx.font = "400 36px 'Inter',sans-serif";
+    const op = `${Math.round(Number(deal.original_price))} €`;
+    const x = 60;
+    const y = infoY + 305;
     ctx.fillText(op, x, y);
     const w = ctx.measureText(op).width;
     ctx.strokeStyle = TAUPE;
-    ctx.lineWidth = 3;
+    ctx.lineWidth = 1.5;
     ctx.beginPath();
     ctx.moveTo(x, y - 12);
     ctx.lineTo(x + w, y - 12);
@@ -339,34 +345,30 @@ function drawDealHalf(
     ctx.globalAlpha = alpha;
   }
 
-  // Discount pill
+  // Discount — capsule outlined ivoire/noir, plus chic et plus petit
   const disc = Math.round(Number(deal.discount_percent || 0));
   if (disc > 0) {
-    ctx.font = "900 42px 'Inter',sans-serif";
-    const t = `-${disc}%`;
+    ctx.font = "500 30px 'Inter',sans-serif";
+    (ctx as any).letterSpacing = "2px";
+    const t = `−${disc}%`;
     const tw = ctx.measureText(t).width;
-    const padX = 32;
-    const pillH = 78;
+    const padX = 28;
+    const pillH = 56;
     const pillW = tw + padX * 2;
-    const pillX = W - pillW - 50;
-    const pillY = infoY + 175;
+    const pillX = W - pillW - 60;
+    const pillY = infoY + 90;
+    // Capsule outlined noir (pas plein, pas doré)
+    ctx.strokeStyle = NOIR;
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, pillX, pillY, pillW, pillH, 2);
+    ctx.stroke();
     ctx.fillStyle = NOIR;
-    roundRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
-    ctx.fill();
-    ctx.fillStyle = IVOIRE;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(t, pillX + pillW / 2, pillY + pillH / 2 + 2);
     ctx.textBaseline = "alphabetic";
     ctx.textAlign = "left";
-
-    // Flames
-    const flameCount = disc >= 50 ? 3 : disc >= 30 ? 2 : 1;
-    const flameSize = 44;
-    const flameY = pillY + pillH + 18;
-    for (let i = 0; i < flameCount; i++) {
-      drawFlame(ctx, W - 50 - flameSize - i * (flameSize + 6), flameY, flameSize);
-    }
+    (ctx as any).letterSpacing = "0px";
   }
 
   ctx.globalAlpha = 1;
