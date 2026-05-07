@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Swords, Share2, Trash2, Cloud, History } from "lucide-react";
+import VideoHistory from "@/components/admin/VideoHistory";
 
 type Deal = {
   id: string;
