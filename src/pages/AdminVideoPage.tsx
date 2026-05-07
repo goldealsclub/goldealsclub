@@ -157,58 +157,53 @@ function drawPremiumPlaceholder(
   reveal: number,
   time = 0, // secondes — pour animation continue (halo + parallax)
 ) {
-  // Hash deterministe pour varier les teintes par deal
+  // Hash deterministe pour micro-variations subtiles
   let hash = 0;
   const seed = (deal.id || deal.brand || "x") + category;
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
-  const hue = hash % 360;
 
-  // Phase d'animation propre à ce deal
+  // Animation continue (très subtile)
   const phase = (hash % 1000) / 1000;
-  const breathe = (Math.sin((time * 1.4 + phase) * Math.PI * 2) + 1) / 2; // 0..1
-  const drift = Math.sin((time * 0.6 + phase) * Math.PI * 2);             // -1..1
-  const parallaxX = drift * 14;
-  const parallaxY = Math.cos((time * 0.55 + phase) * Math.PI * 2) * 10;
+  const breathe = (Math.sin((time * 1.0 + phase) * Math.PI * 2) + 1) / 2;
+  const drift = Math.sin((time * 0.5 + phase) * Math.PI * 2);
+  const parallaxX = drift * 8;
+  const parallaxY = Math.cos((time * 0.45 + phase) * Math.PI * 2) * 6;
 
-  // Fond éditorial : dégradé diagonal sombre teinté or
-  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
-  grad.addColorStop(0, `hsl(${hue}, 14%, 12%)`);
-  grad.addColorStop(0.55, `hsl(${(hue + 20) % 360}, 18%, 18%)`);
-  grad.addColorStop(1, "#0d0d0d");
+  // Fond éditorial — palette ivoire/taupe (zéro doré sur le fond)
+  const grad = ctx.createLinearGradient(x, y, x, y + h);
+  grad.addColorStop(0, "#efe9df");
+  grad.addColorStop(0.55, "#e7e1d6");
+  grad.addColorStop(1, "#d8d2c5");
   ctx.fillStyle = grad;
   ctx.fillRect(x, y, w, h);
 
-  // Halo doré qui respire — plus large et plus chaud au pic
+  // Vignette taupe
   const cx = x + w / 2;
   const cy = y + h / 2;
-  const haloR = Math.max(w, h) * (0.55 + breathe * 0.25);
-  const haloAlpha = 0.28 + breathe * 0.22;
+  const vignette = ctx.createRadialGradient(cx, cy, Math.min(w, h) * 0.35, cx, cy, Math.max(w, h) * 0.75);
+  vignette.addColorStop(0, "rgba(0,0,0,0)");
+  vignette.addColorStop(1, "rgba(69,64,58,0.18)");
+  ctx.fillStyle = vignette;
+  ctx.fillRect(x, y, w, h);
+
+  // Halo studio ivoire (lumière douce, PAS doré)
+  const haloR = Math.max(w, h) * (0.45 + breathe * 0.18);
+  const haloAlpha = 0.10 + breathe * 0.08;
   const haloCx = cx + parallaxX * 0.6;
-  const haloCy = cy + parallaxY * 0.6;
+  const haloCy = cy + parallaxY * 0.6 - h * 0.12;
   const radial = ctx.createRadialGradient(haloCx, haloCy, 20, haloCx, haloCy, haloR);
-  radial.addColorStop(0, `rgba(212,180,124,${haloAlpha.toFixed(3)})`);
-  radial.addColorStop(0.55, "rgba(201,168,112,0.10)");
-  radial.addColorStop(1, "rgba(0,0,0,0)");
+  radial.addColorStop(0, `rgba(255,250,240,${haloAlpha.toFixed(3)})`);
+  radial.addColorStop(1, "rgba(255,250,240,0)");
   ctx.fillStyle = radial;
   ctx.fillRect(x, y, w, h);
 
-  // Second halo froid pour la profondeur
-  const cool = ctx.createRadialGradient(
-    cx - parallaxX * 0.8, cy - parallaxY * 0.8, 10,
-    cx - parallaxX * 0.8, cy - parallaxY * 0.8, haloR * 0.7,
-  );
-  cool.addColorStop(0, `rgba(80,90,110,${(0.18 - breathe * 0.08).toFixed(3)})`);
-  cool.addColorStop(1, "rgba(0,0,0,0)");
-  ctx.fillStyle = cool;
-  ctx.fillRect(x, y, w, h);
-
-  // Grain subtil via lignes diagonales (offset pour parallax)
+  // Grain papier très léger
   ctx.save();
-  ctx.globalAlpha = 0.06;
-  ctx.strokeStyle = "#ffffff";
+  ctx.globalAlpha = 0.04;
+  ctx.strokeStyle = "#45403a";
   ctx.lineWidth = 1;
-  const off = (drift * 6) | 0;
-  for (let i = -h; i < w; i += 14) {
+  const off = (drift * 4) | 0;
+  for (let i = -h; i < w; i += 22) {
     ctx.beginPath();
     ctx.moveTo(x + i + off, y);
     ctx.lineTo(x + i + h + off, y + h);
@@ -216,51 +211,56 @@ function drawPremiumPlaceholder(
   }
   ctx.restore();
 
-  // Cadre intérieur fin doré (légèrement plus brillant au pic du halo)
-  ctx.strokeStyle = `rgba(201,168,112,${(0.45 + breathe * 0.25).toFixed(3)})`;
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x + 24, y + 24, w - 48, h - 48);
+  // Cadre intérieur taupe ultra-fin
+  ctx.strokeStyle = "rgba(69,64,58,0.30)";
+  ctx.lineWidth = 1;
+  ctx.strokeRect(x + 32, y + 32, w - 64, h - 64);
 
-  // Monogramme géant filigrane (initiale marque) — parallax inverse pour effet de profondeur
+  // Monogramme géant en noir filigrane (pas en or)
   const initial = (deal.brand || "G").trim().charAt(0).toUpperCase();
   ctx.save();
-  ctx.globalAlpha = (0.16 + breathe * 0.08) * easeOut(reveal);
-  ctx.fillStyle = "#c9a870";
-  ctx.font = "900 540px Georgia, serif";
+  ctx.globalAlpha = (0.10 + breathe * 0.04) * easeOut(reveal);
+  ctx.fillStyle = "#1a1a1a";
+  ctx.font = "300 580px Georgia, serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(initial, cx - parallaxX * 1.4, cy + 20 - parallaxY * 1.2);
+  ctx.fillText(initial, cx - parallaxX * 1.2, cy + 20 - parallaxY * 1.0);
   ctx.restore();
 
-  // Étiquette catégorie en haut — léger parallax positif
+  // Étiquette catégorie en haut — taupe sobre
   ctx.save();
   ctx.globalAlpha = easeOut(reveal);
-  ctx.fillStyle = "#c9a870";
-  ctx.font = "800 26px 'Inter',sans-serif";
+  ctx.font = "500 24px 'Inter',sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
-  (ctx as any).letterSpacing = "6px";
+  (ctx as any).letterSpacing = "10px";
   const catLabel = (category || "EXCLUSIVE").toUpperCase();
-  const lineY = y + 70 + parallaxY * 0.25;
+  const lineY = y + 80 + parallaxY * 0.2;
   const tw = ctx.measureText(catLabel).width;
   const labelCx = cx + parallaxX * 0.3;
-  ctx.fillRect(labelCx - tw / 2 - 60, lineY - 12, 40, 2);
-  ctx.fillRect(labelCx + tw / 2 + 20, lineY - 12, 40, 2);
+  // Mini filets dorés ultra fins (signature discrète)
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(labelCx - tw / 2 - 50, lineY - 10, 30, 1);
+  ctx.fillRect(labelCx + tw / 2 + 20, lineY - 10, 30, 1);
+  ctx.fillStyle = TAUPE;
   ctx.fillText(catLabel, labelCx, lineY);
+  (ctx as any).letterSpacing = "0px";
 
-  // Marque centrale — parallax plus marqué (plan avant)
-  ctx.fillStyle = "#f5f1e8";
-  ctx.font = "900 96px 'Inter',sans-serif";
+  // Marque centrale — display serif élégant noir
+  ctx.fillStyle = NOIR;
+  ctx.font = "300 110px Georgia, serif";
   ctx.fillText(
-    (deal.brand || "GOLDEALS").toUpperCase(),
-    cx + parallaxX * 0.7,
-    cy + h * 0.28 + parallaxY * 0.6,
+    (deal.brand || "GOLDEALS"),
+    cx + parallaxX * 0.5,
+    cy + h * 0.26 + parallaxY * 0.5,
   );
 
-  // Mention bas
-  ctx.fillStyle = "rgba(245,241,232,0.55)";
-  ctx.font = "500 20px 'Inter',sans-serif";
-  ctx.fillText("VISUAL COMING SOON", cx, y + h - 50);
+  // Mention bas, taupe clair
+  ctx.fillStyle = "rgba(69,64,58,0.55)";
+  ctx.font = "500 18px 'Inter',sans-serif";
+  (ctx as any).letterSpacing = "6px";
+  ctx.fillText("VISUAL EN COURS", cx, y + h - 50);
+  (ctx as any).letterSpacing = "0px";
   ctx.restore();
 }
 
