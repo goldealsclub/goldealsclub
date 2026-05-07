@@ -55,9 +55,13 @@ Deno.serve(async (req) => {
     const { data: pool, error } = await supabase
       .from("deals")
       .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
-      .gte("discount_percent", 15)
+      .gte("discount_percent", 20)
+      .lte("discount_percent", 70) // au-delà de 70% = prix barré quasi systématiquement gonflé
       .not("image_url", "is", null)
       .neq("image_url", "")
+      .not("sale_price", "is", null)
+      .not("original_price", "is", null)
+      .gt("sale_price", 0)
       .order("discount_percent", { ascending: false })
       .limit(600);
 
@@ -69,7 +73,11 @@ Deno.serve(async (req) => {
       return HYPE_BRANDS.some((h) => b === h || b.includes(h));
     };
 
-    const hypeDeals = (pool ?? []).filter((d) => isHype(d.brand));
+    // Garde-fou supplémentaire : image valide (http) + ratio prix sain
+    const validImage = (u: string | null) => !!u && /^https?:\/\//i.test(u) && !/placeholder|no.?image|default/i.test(u);
+    const hypeDeals = (pool ?? []).filter(
+      (d) => isHype(d.brand) && validImage(d.image_url) && Number(d.sale_price) > 5,
+    );
 
     const battles: any[] = [];
     for (const cat of BATTLE_CATEGORIES) {
