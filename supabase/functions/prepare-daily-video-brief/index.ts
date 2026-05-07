@@ -112,10 +112,27 @@ Deno.serve(async (req) => {
         picks.push(d);
         if (picks.length === 2) break;
       }
-      // Fallback: si on n'a qu'une marque hype, compléter avec les meilleurs candidats restants
+      // Fallback 1 : si on n'a qu'une marque hype, compléter avec les autres hype
       if (picks.length < 2) {
         for (const d of candidates) {
           if (picks.find((p) => p.id === d.id)) continue;
+          picks.push(d);
+          if (picks.length === 2) break;
+        }
+      }
+      // Fallback 2 : pas assez de hype → fallback sur top deals (toutes marques) du catalogue
+      if (picks.length < 2) {
+        const generic = deals.filter(
+          (d) =>
+            validImage(d.image_url) &&
+            isAllowedMerchant(d.merchant) &&
+            Number(d.sale_price) > 5,
+        );
+        const seen = new Set(picks.map((p) => norm(p.brand)));
+        for (const d of generic) {
+          const b = norm(d.brand);
+          if (seen.has(b)) continue;
+          seen.add(b);
           picks.push(d);
           if (picks.length === 2) break;
         }
