@@ -259,6 +259,8 @@ function drawDealHalf(
     const floatY = Math.sin(reveal * Math.PI) * 6;
     const enterY = (1 - reveal) * (isTop ? -40 : 40);
     drawCoverImage(ctx, img, 40, yTop + 20 + enterY + floatY, W - 80, photoH - 40, 1);
+  } else {
+    drawPremiumPlaceholder(ctx, deal, category, 0, yTop, W, photoH, reveal);
   }
   ctx.restore();
 
