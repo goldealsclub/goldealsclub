@@ -60,21 +60,19 @@ function proxify(src: string): string {
 }
 
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
-  const tryLoad = (url: string, withCors = true) =>
+  const tryLoad = (url: string) =>
     new Promise<HTMLImageElement | null>((resolve) => {
       const img = new Image();
-      if (withCors) img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img);
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img.naturalWidth > 0 ? img : null);
       img.onerror = () => resolve(null);
       img.src = url;
     });
-  // 1) direct avec CORS — beaucoup de CDN marchands l'autorisent
-  const direct = await tryLoad(src, true);
-  if (direct && direct.naturalWidth > 0) return direct;
-  // 2) fallback via proxy wsrv.nl (CORS garanti)
-  const viaProxy = await tryLoad(proxify(src), true);
-  if (viaProxy && viaProxy.naturalWidth > 0) return viaProxy;
-  return null;
+  // 1) proxy wsrv.nl en premier — bypass hotlink protection (productserve, etc.) + CORS garanti
+  const viaProxy = await tryLoad(proxify(src));
+  if (viaProxy) return viaProxy;
+  // 2) fallback direct (au cas où le proxy serait down)
+  return tryLoad(src);
 }
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
