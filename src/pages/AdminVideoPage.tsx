@@ -267,7 +267,10 @@ export default function AdminVideoPage() {
   };
 
   useEffect(() => {
-    if (isAdmin) loadBrief();
+    if (isAdmin) {
+      loadBrief();
+      loadHistory();
+    }
   }, [isAdmin]);
 
   const regenerate = async () => {
