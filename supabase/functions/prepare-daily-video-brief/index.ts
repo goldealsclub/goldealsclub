@@ -51,12 +51,25 @@ const isHype = (brand: string) => {
   return HYPE_BRANDS.some((h) => b === h || b.includes(h));
 };
 const validImage = (u: string | null) =>
-  !!u && /^https?:\/\//i.test(u) && !/placeholder|no.?image|default/i.test(u);
+  !!u &&
+  /^https?:\/\//i.test(u) &&
+  !/placeholder|no.?image|default/i.test(u) &&
+  // sportspar/productserve = hotlink bloqué (images cassées dans les vidéos)
+  !/productserve\.com|sportspar\.de/i.test(u);
 
 // Marchands à exclure : sportspar.de bloque le hotlinking (403) ET a des prix d'origine
 // artificiellement gonflés (-94% non crédibles). On les retire des battles vidéo.
-const BLACKLIST_MERCHANTS = new Set(["sport outlet fr"]);
+const BLACKLIST_MERCHANTS = new Set([
+  "sport outlet fr",
+  "sport is good fr",   // même feed productserve / hotlink bloqué
+  "training fit fr",    // même feed productserve / hotlink bloqué
+  "sneakin fr",         // même feed productserve / hotlink bloqué
+]);
 const isAllowedMerchant = (m: string | null) => !BLACKLIST_MERCHANTS.has(norm(m));
+
+// Marchands premium dont les images chargent et les prix sont fiables
+const PREMIUM_MERCHANTS = new Set(["snipes eu", "kappa fr", "jd sports fr", "nike fr"]);
+const isPremium = (m: string | null) => PREMIUM_MERCHANTS.has(norm(m));
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
