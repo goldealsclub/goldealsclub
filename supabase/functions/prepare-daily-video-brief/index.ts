@@ -94,8 +94,9 @@ Deno.serve(async (req) => {
           .eq("category", c)
           .gte("discount_percent", cat.slug === "vetements" ? 50 : 25)
           .lte("discount_percent", 75)
+          .not("merchant", "in", `(${[...BLACKLIST_MERCHANTS].map((m) => `"${m}"`).join(",")})`)
           .order("discount_percent", { ascending: false })
-          .limit(200);
+          .limit(300);
         if (error) {
           console.error(`query ${cat.slug}/${c} failed`, error);
         } else if (data) {
@@ -116,6 +117,13 @@ Deno.serve(async (req) => {
           Number(d.discount_percent) >= 25 &&
           Number(d.discount_percent) <= 75,
       );
+      // Priorité : premium merchants d'abord (Snipes, Kappa, JD…)
+      candidates.sort((a, b) => {
+        const pa = isPremium(a.merchant) ? 0 : 1;
+        const pb = isPremium(b.merchant) ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        return Number(b.discount_percent) - Number(a.discount_percent);
+      });
       const seenBrands = new Set<string>();
       const picks: any[] = [];
       for (const d of candidates) {
