@@ -83,7 +83,7 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           className={`w-full h-full p-2 sm:p-3 transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
           loading="lazy"
           decoding="async"
-          fetchPriority={featured ? "high" : "auto" as any}
+          fetchpriority={featured ? "high" : "auto"} as any
           onLoad={(e) => {
             const img = e.target as HTMLImageElement;
             if (img.naturalWidth < 400 || img.naturalHeight < 400) {
