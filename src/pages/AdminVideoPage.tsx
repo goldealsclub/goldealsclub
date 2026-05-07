@@ -412,11 +412,50 @@ export default function AdminVideoPage() {
                 {videoUrls[idx] && (
                   <div className="space-y-2">
                     <video src={videoUrls[idx]} controls className="w-full rounded" />
-                    <Button asChild size="sm" className="w-full">
-                      <a href={videoUrls[idx]} download={`battle-${battle.category}-${brief.brief_date}.webm`}>
-                        <Download className="h-4 w-4 mr-2" /> Télécharger
-                      </a>
-                    </Button>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button asChild size="sm" variant="outline">
+                        <a href={videoUrls[idx]} download={`battle-${battle.category}-${brief.brief_date}.webm`}>
+                          <Download className="h-4 w-4 mr-1" /> WebM
+                        </a>
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            const blob = await fetch(videoUrls[idx]).then((r) => r.blob());
+                            const file = new File(
+                              [blob],
+                              `battle-${battle.category}-${brief.brief_date}.webm`,
+                              { type: "video/webm" },
+                            );
+                            const nav: any = navigator;
+                            if (nav.canShare && nav.canShare({ files: [file] })) {
+                              await nav.share({
+                                files: [file],
+                                title: battle.label,
+                                text: editableCaption,
+                              });
+                            } else {
+                              await navigator.clipboard.writeText(editableCaption);
+                              toast({
+                                title: "Partage natif indisponible",
+                                description: "Caption copiée. Télécharge la vidéo et poste-la manuellement.",
+                              });
+                            }
+                          } catch (e: any) {
+                            if (e?.name !== "AbortError") {
+                              toast({ title: "Échec partage", description: e?.message || String(e), variant: "destructive" });
+                            }
+                          }
+                        }}
+                      >
+                        <Share2 className="h-4 w-4 mr-1" /> Partager
+                      </Button>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground text-center">
+                      Pour MP4 : <a href="https://cloudconvert.com/webm-to-mp4" target="_blank" rel="noreferrer" className="underline">cloudconvert</a>
+                    </p>
                   </div>
                 )}
               </div>
