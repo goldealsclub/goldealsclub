@@ -507,7 +507,7 @@ export default function AdminVideoPage() {
       const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
         ? "video/webm;codecs=vp9"
         : "video/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 6_000_000 });
+      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 16_000_000 });
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise<Blob>((resolve) => {
