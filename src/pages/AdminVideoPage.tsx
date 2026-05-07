@@ -5,7 +5,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Swords, Share2 } from "lucide-react";
+import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Swords, Share2, Trash2, Cloud, History } from "lucide-react";
 
 type Deal = {
   id: string;
@@ -207,7 +207,34 @@ export default function AdminVideoPage() {
   const [progress, setProgress] = useState(0);
   const [videoUrls, setVideoUrls] = useState<Record<number, string>>({});
   const [editableCaption, setEditableCaption] = useState("");
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    const { data, error } = await supabase
+      .from("generated_videos" as any)
+      .select("*")
+      .order("brief_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) toast({ title: "Erreur historique", description: error.message, variant: "destructive" });
+    setHistory((data as any[]) || []);
+    setHistoryLoading(false);
+  };
+
+  const deleteHistoryItem = async (item: any) => {
+    if (!confirm(`Supprimer "${item.label}" du ${item.brief_date} ?`)) return;
+    await supabase.storage.from("tiktok-videos").remove([item.storage_path]);
+    const { error } = await supabase.from("generated_videos" as any).delete().eq("id", item.id);
+    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    else {
+      toast({ title: "Vidéo supprimée" });
+      loadHistory();
+    }
+  };
 
   useEffect(() => {
     document.title = "Vidéos Hype Battle — Admin";
@@ -240,7 +267,10 @@ export default function AdminVideoPage() {
   };
 
   useEffect(() => {
-    if (isAdmin) loadBrief();
+    if (isAdmin) {
+      loadBrief();
+      loadHistory();
+    }
   }, [isAdmin]);
 
   const regenerate = async () => {
@@ -301,6 +331,35 @@ export default function AdminVideoPage() {
       setVideoUrls((prev) => ({ ...prev, [idx]: url }));
       setProgress(100);
       toast({ title: `Vidéo ${battle.label} prête !` });
+
+      // Auto-save dans le bucket tiktok-videos
+      setUploadingIdx(idx);
+      try {
+        const filename = `battles/${brief!.brief_date}/${battle.category}-${Date.now()}.webm`;
+        const { error: upErr } = await supabase.storage
+          .from("tiktok-videos")
+          .upload(filename, blob, { contentType: "video/webm", upsert: false });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("tiktok-videos").getPublicUrl(filename);
+        const { error: insErr } = await supabase.from("generated_videos" as any).insert({
+          brief_date: brief!.brief_date,
+          category: battle.category,
+          label: battle.label,
+          storage_path: filename,
+          public_url: pub.publicUrl,
+          caption: brief!.caption,
+          hashtags: brief!.hashtags,
+          size_bytes: blob.size,
+          duration_sec: TOTAL_SEC,
+        });
+        if (insErr) throw insErr;
+        toast({ title: "Sauvegardée dans le cloud ☁️" });
+        loadHistory();
+      } catch (e: any) {
+        toast({ title: "Sauvegarde cloud échouée", description: e?.message || String(e), variant: "destructive" });
+      } finally {
+        setUploadingIdx(null);
+      }
     } catch (e: any) {
       toast({ title: "Échec du rendu", description: e?.message || String(e), variant: "destructive" });
     } finally {
@@ -454,7 +513,11 @@ export default function AdminVideoPage() {
                       </Button>
                     </div>
                     <p className="text-[10px] text-muted-foreground text-center">
-                      Pour MP4 : <a href="https://cloudconvert.com/webm-to-mp4" target="_blank" rel="noreferrer" className="underline">cloudconvert</a>
+                      {uploadingIdx === idx ? (
+                        <span className="inline-flex items-center gap-1"><Cloud className="h-3 w-3 animate-pulse" /> Sauvegarde cloud…</span>
+                      ) : (
+                        <>Sauvegardée dans le cloud · MP4 via <a href="https://cloudconvert.com/webm-to-mp4" target="_blank" rel="noreferrer" className="underline">cloudconvert</a></>
+                      )}
                     </p>
                   </div>
                 )}
@@ -467,6 +530,58 @@ export default function AdminVideoPage() {
           </p>
         </>
       )}
+
+      {/* HISTORIQUE DES VIDÉOS */}
+      <div className="mt-12 border-t pt-8">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <History className="h-6 w-6" /> Historique ({history.length})
+          </h2>
+          <Button variant="outline" size="sm" onClick={loadHistory} disabled={historyLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${historyLoading ? "animate-spin" : ""}`} /> Actualiser
+          </Button>
+        </div>
+
+        {historyLoading && (
+          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
+        )}
+
+        {!historyLoading && history.length === 0 && (
+          <p className="text-muted-foreground text-sm text-center py-8">
+            Aucune vidéo sauvegardée pour l'instant. Génère une vidéo : elle sera automatiquement archivée dans le cloud.
+          </p>
+        )}
+
+        {!historyLoading && history.length > 0 && (
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {history.map((item) => (
+              <div key={item.id} className="border rounded-lg p-3 flex flex-col">
+                <video src={item.public_url} controls className="w-full rounded mb-2 bg-black" preload="metadata" />
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-xs font-bold uppercase">{item.category}</span>
+                  <span className="text-xs text-muted-foreground">{item.brief_date}</span>
+                </div>
+                <p className="text-sm font-medium mb-2 line-clamp-1">{item.label}</p>
+                <div className="flex gap-2 mt-auto">
+                  <Button asChild size="sm" variant="outline" className="flex-1">
+                    <a href={item.public_url} download={`battle-${item.category}-${item.brief_date}.webm`}>
+                      <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
+                    </a>
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => deleteHistoryItem(item)}
+                    aria-label="Supprimer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
