@@ -64,15 +64,14 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   }
   if (imageBroken) return null;
 
-  // Full-bleed : la photo remplit tout le cadre (object-cover) avec un léger zoom au hover.
-  const imageFitClass = "object-cover object-center group-hover:scale-[1.04]";
+  // Image entière visible (pas de zoom/recadrage agressif).
+  const imageFitClass = "object-contain object-center group-hover:scale-[1.03]";
 
   // Responsive srcset via wsrv.nl proxy → meilleure qualité, formats modernes (webp), tailles adaptées.
   const buildSrc = (w: number) => {
     if (!enhancedImageUrl) return "";
     const stripped = enhancedImageUrl.replace(/^https?:\/\//, "");
-    // trim=10 → retire les marges blanches du visuel source pour que le produit remplisse vraiment le cadre
-    return `https://wsrv.nl/?url=${encodeURIComponent(stripped)}&w=${w}&h=${w}&fit=cover&a=attention&trim=10&output=webp&q=90`;
+    return `https://wsrv.nl/?url=${encodeURIComponent(stripped)}&w=${w}&output=webp&q=90`;
   };
   const srcSet = `${buildSrc(400)} 400w, ${buildSrc(600)} 600w, ${buildSrc(900)} 900w, ${buildSrc(1200)} 1200w`;
   const sizes = featured
