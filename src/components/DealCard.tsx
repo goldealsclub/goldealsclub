@@ -89,20 +89,17 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
           </div>
         )}
         <img
-          src={enhancedImageUrl}
+          src={buildSrc(600)}
+          srcSet={srcSet}
+          sizes={sizes}
           alt={deal.title}
-          className={`w-full h-full p-2 sm:p-3 transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
-          loading="lazy"
+          className={`w-full h-full transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
+          loading={featured ? "eager" : "lazy"}
           decoding="async"
           {...({ fetchpriority: featured ? "high" : "auto" } as any)}
           onLoad={(e) => {
             const img = e.target as HTMLImageElement;
-            if (img.naturalWidth < 400 || img.naturalHeight < 400) {
-              setImageBroken(true);
-              return;
-            }
-            const ratio = img.naturalWidth / img.naturalHeight;
-            if (ratio < 0.5 || ratio > 2) {
+            if (img.naturalWidth < 200 || img.naturalHeight < 200) {
               setImageBroken(true);
               return;
             }
