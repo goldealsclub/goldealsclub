@@ -481,12 +481,12 @@ function drawBattleFrame(
 
   ctx.save();
   ctx.translate(0, (1 - slideA) * -halfH);
-  drawDealHalf(ctx, battle.a, imgA, barH, halfH, slideA, true, battle.category);
+  drawDealHalf(ctx, battle.a, imgA, barH, halfH, slideA, true, battle.category, battleT);
   ctx.restore();
 
   ctx.save();
   ctx.translate(0, (1 - slideB) * halfH);
-  drawDealHalf(ctx, battle.b, imgB, barH + halfH, halfH, slideB, false, battle.category);
+  drawDealHalf(ctx, battle.b, imgB, barH + halfH, halfH, slideB, false, battle.category, battleT);
   ctx.restore();
 
   // ─── VS BADGE central ───
