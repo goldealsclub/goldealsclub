@@ -70,7 +70,7 @@ Deno.serve(async (req) => {
         .gte("discount_percent", 20)
         .lte("discount_percent", 70)
         .order("discount_percent", { ascending: false })
-        .limit(500);
+        .limit(cat.slug === "vetements" ? 2500 : 600);
       if (error) {
         console.error(`query ${cat.slug} failed`, error);
         perCatResults.push({ cat, deals: [] });
