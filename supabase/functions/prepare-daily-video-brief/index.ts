@@ -113,18 +113,27 @@ Deno.serve(async (req) => {
         }
       }
       if (picks.length === 2) {
-        const map = (d: any) => ({
-          id: d.id,
-          title: d.title,
-          brand: d.brand,
-          merchant: d.merchant,
-          sale_price: d.sale_price,
-          original_price: d.original_price,
-          discount_percent: d.discount_percent,
-          currency: d.currency || "EUR",
-          image_url: d.image_url,
-          url: d.affiliate_url || d.product_url,
-        });
+        const map = (d: any) => {
+          const sale = Number(d.sale_price) || 0;
+          const disc = Number(d.discount_percent) || 0;
+          const orig = d.original_price != null
+            ? Number(d.original_price)
+            : disc > 0 && sale > 0
+              ? Math.round((sale / (1 - disc / 100)) * 100) / 100
+              : sale;
+          return {
+            id: d.id,
+            title: d.title,
+            brand: d.brand,
+            merchant: d.merchant,
+            sale_price: sale,
+            original_price: orig,
+            discount_percent: disc,
+            currency: d.currency || "EUR",
+            image_url: d.image_url,
+            url: d.affiliate_url || d.product_url,
+          };
+        };
         battles.push({
           type: "battle",
           category: cat.slug,
