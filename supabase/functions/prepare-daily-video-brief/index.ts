@@ -51,12 +51,25 @@ const isHype = (brand: string) => {
   return HYPE_BRANDS.some((h) => b === h || b.includes(h));
 };
 const validImage = (u: string | null) =>
-  !!u && /^https?:\/\//i.test(u) && !/placeholder|no.?image|default/i.test(u);
+  !!u &&
+  /^https?:\/\//i.test(u) &&
+  !/placeholder|no.?image|default/i.test(u) &&
+  // sportspar.de = hotlink réellement bloqué (Snipes via productserve charge bien donc on ne bloque pas productserve.com en général)
+  !/sportspar\.de/i.test(u);
 
 // Marchands à exclure : sportspar.de bloque le hotlinking (403) ET a des prix d'origine
 // artificiellement gonflés (-94% non crédibles). On les retire des battles vidéo.
-const BLACKLIST_MERCHANTS = new Set(["sport outlet fr"]);
+const BLACKLIST_MERCHANTS = new Set([
+  "sport outlet fr",
+  "sport is good fr",   // même feed productserve / hotlink bloqué
+  "training fit fr",    // même feed productserve / hotlink bloqué
+  "sneakin fr",         // même feed productserve / hotlink bloqué
+]);
 const isAllowedMerchant = (m: string | null) => !BLACKLIST_MERCHANTS.has(norm(m));
+
+// Marchands premium dont les images chargent et les prix sont fiables
+const PREMIUM_MERCHANTS = new Set(["snipes eu", "kappa fr", "jd sports fr", "nike fr"]);
+const isPremium = (m: string | null) => PREMIUM_MERCHANTS.has(norm(m));
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -79,17 +92,19 @@ Deno.serve(async (req) => {
           .from("deals")
           .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
           .eq("category", c)
-          .gte("discount_percent", cat.slug === "vetements" ? 50 : 25)
+          .gte("discount_percent", 25)
           .lte("discount_percent", 75)
           .order("discount_percent", { ascending: false })
-          .limit(200);
+          .limit(2000);
         if (error) {
           console.error(`query ${cat.slug}/${c} failed`, error);
         } else if (data) {
-          all.push(...data);
+          // Filtre marchands blacklist en JS (PostgREST .not.in casse avec espaces dans valeurs)
+          all.push(...data.filter((d) => isAllowedMerchant(d.merchant)));
         }
       }
       perCatResults.push({ cat, deals: all });
+      console.log(`[${cat.slug}] kept=${all.length} sample_brands=`, [...new Set(all.slice(0, 20).map((d) => d.brand))]);
     }
 
     const battles: any[] = [];
@@ -103,6 +118,13 @@ Deno.serve(async (req) => {
           Number(d.discount_percent) >= 25 &&
           Number(d.discount_percent) <= 75,
       );
+      // Priorité : premium merchants d'abord (Snipes, Kappa, JD…)
+      candidates.sort((a, b) => {
+        const pa = isPremium(a.merchant) ? 0 : 1;
+        const pb = isPremium(b.merchant) ? 0 : 1;
+        if (pa !== pb) return pa - pb;
+        return Number(b.discount_percent) - Number(a.discount_percent);
+      });
       const seenBrands = new Set<string>();
       const picks: any[] = [];
       for (const d of candidates) {
