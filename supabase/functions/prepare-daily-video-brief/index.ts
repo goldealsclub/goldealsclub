@@ -24,24 +24,28 @@ const HYPE_BRANDS = [
 ];
 
 // Categories targeted — pushed as SQL filter via category column (indexed)
-const BATTLE_CATEGORIES: { slug: string; label: string; categories: string[]; titleHints: RegExp }[] = [
+const BATTLE_CATEGORIES: { slug: string; label: string; categories: string[]; titleHints: RegExp; titleExclude: RegExp }[] = [
   {
     slug: "sneakers",
     label: "SNEAKERS",
     categories: ["sneakers", "chaussures"],
-    titleHints: /sneaker|jordan|dunk|air max|yeezy|550|990|nike|adidas/i,
+    // doit ressembler à une chaussure
+    titleHints: /sneaker|basket|chaussure|shoe|trainer|jordan|dunk|air\s?max|air\s?force|yeezy|\b550\b|\b990\b|\b327\b|\b574\b|gel[-\s]?|samba|gazelle|stan\s?smith|superstar|forum|campus|huarache|cortez|blazer|tongs?|adilette|slide|sandal|mule/i,
+    titleExclude: /hoodie|sweat|t-?shirt|tee\b|trikot|jersey|maillot|veste|jacket|pantalon|pant\b|jean|short|cargo|sac\b|bag\b|hip\s?bag|casquette|cap\b|hat\b|bonnet|chaussette|sock|ceinture|belt|ballon|football/i,
   },
   {
     slug: "vetements",
     label: "VÊTEMENTS",
     categories: ["hoodies", "t-shirts", "vestes", "pantalons", "vetements", "vêtements"],
-    titleHints: /hoodie|sweat|t-shirt|tshirt|veste|jacket|pant|jean|short|cargo/i,
+    titleHints: /hoodie|sweat|t-?shirt|tee\b|trikot|jersey|maillot|veste|jacket|pantalon|pant\b|jean|short|cargo|polo|chemise|robe|crewneck|pull/i,
+    titleExclude: /sneaker|basket|chaussure|shoe|trainer|tongs?|adilette|slide|sandal|mule|sac\b|bag\b|casquette|cap\b|bonnet|chaussette|sock|ceinture|belt/i,
   },
   {
     slug: "accessoires",
     label: "ACCESSOIRES",
     categories: ["accessoires"],
-    titleHints: /sac\b|bag|casquette|cap\b|bonnet|chaussette|sock|ceinture|belt/i,
+    titleHints: /sac\b|bag\b|hip\s?bag|backpack|casquette|cap\b|hat\b|bonnet|beanie|chaussette|sock|ceinture|belt|portefeuille|wallet|gants?|scarf|écharpe|bandana/i,
+    titleExclude: /sneaker|basket|chaussure|shoe|trainer|tongs?|adilette|hoodie|sweat|t-?shirt|tee\b|trikot|jersey|maillot|veste|jacket|pantalon|pant\b|jean|short|cargo/i,
   },
 ];
 
