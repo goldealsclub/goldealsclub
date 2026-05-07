@@ -82,7 +82,7 @@ Deno.serve(async (req) => {
           .gte("discount_percent", 25)
           .lte("discount_percent", 75)
           .order("discount_percent", { ascending: false })
-          .limit(cat.slug === "vetements" ? 2500 : 800);
+          .limit(400);
         if (error) {
           console.error(`query ${cat.slug}/${c} failed`, error);
         } else if (data) {
