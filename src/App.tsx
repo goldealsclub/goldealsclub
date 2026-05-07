@@ -73,6 +73,7 @@ const App = () => (
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/video" element={<AdminVideoPage />} />
+                <Route path="/admin/video/historique" element={<AdminVideoHistoryPage />} />
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/codes-promo" element={<PromoCodesPage />} />
                 <Route path="/coupe-du-monde-2026" element={<WorldCup2026Page />} />
