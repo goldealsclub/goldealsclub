@@ -118,7 +118,7 @@ const CompareBar = () => {
             <div className={`grid gap-px bg-foreground/8 ${items.length === 2 ? "grid-cols-2" : "grid-cols-3"}`}>
               {items.map((deal) => (
                 <div key={deal.id} className="bg-background p-4 flex flex-col">
-                  <img src={deal.image_url} alt={deal.title} className="w-full aspect-square object-cover mb-4" />
+                  <img src={deal.image_url} alt={deal.title} className="w-full aspect-square object-contain bg-photo p-2 mb-4" />
                   <div className="flex items-center gap-2 mb-2">
                     <span className="text-[9px] font-body uppercase tracking-wider text-foreground/40">{deal.merchant}</span>
                     <FlameIndicator count={deal.flame_count} className="scale-75" />
