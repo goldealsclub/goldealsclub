@@ -331,6 +331,35 @@ export default function AdminVideoPage() {
       setVideoUrls((prev) => ({ ...prev, [idx]: url }));
       setProgress(100);
       toast({ title: `Vidéo ${battle.label} prête !` });
+
+      // Auto-save dans le bucket tiktok-videos
+      setUploadingIdx(idx);
+      try {
+        const filename = `battles/${brief!.brief_date}/${battle.category}-${Date.now()}.webm`;
+        const { error: upErr } = await supabase.storage
+          .from("tiktok-videos")
+          .upload(filename, blob, { contentType: "video/webm", upsert: false });
+        if (upErr) throw upErr;
+        const { data: pub } = supabase.storage.from("tiktok-videos").getPublicUrl(filename);
+        const { error: insErr } = await supabase.from("generated_videos" as any).insert({
+          brief_date: brief!.brief_date,
+          category: battle.category,
+          label: battle.label,
+          storage_path: filename,
+          public_url: pub.publicUrl,
+          caption: brief!.caption,
+          hashtags: brief!.hashtags,
+          size_bytes: blob.size,
+          duration_sec: TOTAL_SEC,
+        });
+        if (insErr) throw insErr;
+        toast({ title: "Sauvegardée dans le cloud ☁️" });
+        loadHistory();
+      } catch (e: any) {
+        toast({ title: "Sauvegarde cloud échouée", description: e?.message || String(e), variant: "destructive" });
+      } finally {
+        setUploadingIdx(null);
+      }
     } catch (e: any) {
       toast({ title: "Échec du rendu", description: e?.message || String(e), variant: "destructive" });
     } finally {
