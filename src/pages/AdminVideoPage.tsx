@@ -130,142 +130,205 @@ function drawDealFullScreen(
   exit: number,   // 0..1 sortie
   rank: number,
 ) {
-  // Fond ivoire dégradé
+  // Fond gris dégradé chic (verticale + vignette)
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, "#f4efe6");
-  bgGrad.addColorStop(0.6, "#ece6da");
-  bgGrad.addColorStop(1, "#e2dccf");
+  bgGrad.addColorStop(0, GREY_BG_TOP);
+  bgGrad.addColorStop(0.55, GREY_BG_MID);
+  bgGrad.addColorStop(1, GREY_BG_BOT);
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  const barH = 96;
-  const photoH = (H - barH) * 0.62;
-  const infoY = barH + photoH;
-  const infoH = H - infoY;
+  // Vignette douce
+  const vign = ctx.createRadialGradient(W / 2, H * 0.45, W * 0.2, W / 2, H * 0.5, W * 0.85);
+  vign.addColorStop(0, "rgba(0,0,0,0)");
+  vign.addColorStop(1, "rgba(0,0,0,0.22)");
+  ctx.fillStyle = vign;
+  ctx.fillRect(0, 0, W, H);
 
-  // Photo zone
+  // Grain léger (pseudo, statique)
   ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, barH, W, photoH);
-  ctx.clip();
-
-  const cx = W / 2;
-  const cy = barH + photoH / 2;
-  const halo = ctx.createRadialGradient(cx, cy, 60, cx, cy, Math.max(W, photoH) * 0.7);
-  halo.addColorStop(0, "rgba(255,250,240,0.55)");
-  halo.addColorStop(1, "rgba(255,250,240,0)");
-  ctx.fillStyle = halo;
-  ctx.fillRect(0, barH, W, photoH);
-
-  if (img) {
-    const enterY = (1 - reveal) * 60;
-    const exitX = exit * -W * 0.8;
-    const float = Math.sin(reveal * Math.PI) * 4;
-
-    // Ombre douce
-    ctx.save();
-    const sa = 0.22 * easeOut(reveal) * (1 - exit);
-    const shGrad = ctx.createRadialGradient(cx, barH + photoH - 60, 20, cx, barH + photoH - 60, W * 0.42);
-    shGrad.addColorStop(0, `rgba(40,36,32,${sa.toFixed(3)})`);
-    shGrad.addColorStop(1, "rgba(40,36,32,0)");
-    ctx.fillStyle = shGrad;
-    ctx.beginPath();
-    ctx.ellipse(cx, barH + photoH - 50, W * 0.36, 36, 0, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.restore();
-
-    ctx.globalAlpha = (1 - exit);
-    drawContainImage(ctx, img, exitX, barH + enterY + float, W, photoH);
-    ctx.globalAlpha = 1;
-  } else {
-    // Placeholder marque
-    ctx.fillStyle = "#1a1a1a";
-    ctx.globalAlpha = 0.10 * (1 - exit);
-    ctx.font = "300 580px Georgia, serif";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillText((deal.brand || "G").charAt(0).toUpperCase(), cx, cy);
-    ctx.globalAlpha = 1;
+  ctx.globalAlpha = 0.04;
+  for (let i = 0; i < 80; i++) {
+    const gx = (i * 137.13) % W;
+    const gy = (i * 241.91) % H;
+    ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#000000";
+    ctx.fillRect(gx, gy, 2, 2);
   }
   ctx.restore();
 
-  // Bloc info
-  ctx.fillStyle = IVOIRE;
-  ctx.fillRect(0, infoY, W, infoH);
-  ctx.fillStyle = "rgba(201,168,112,0.45)";
-  ctx.fillRect(0, infoY, W, 1);
+  const barH = 96;
+  const cardPadX = 70;
+  const cardY = barH + 70;
+  const cardW = W - cardPadX * 2;
+  const cardH = Math.round((H - barH) * 0.62);
+  const infoY = cardY + cardH + 60;
 
-  const alpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.15) / 0.6))) * (1 - exit);
-  ctx.globalAlpha = alpha;
+  // Spring d'entrée + sortie horizontale élégante
+  const springR = springEase(reveal);
+  const exitE = easeInOut(exit);
+  const slideIn = (1 - springR) * 80;
+  const slideOut = exitE * -W * 0.55;
+  const cardScale = 0.94 + 0.06 * springR;
+  const cardAlpha = (1 - exit) * Math.min(1, reveal * 1.6);
 
-  // Rang gros chiffre à gauche
-  ctx.fillStyle = GOLD;
-  ctx.font = "300 140px Georgia, serif";
+  // Carte studio (image incrustée dans une carte ivoire arrondie avec ombre)
+  ctx.save();
+  ctx.translate(slideOut, slideIn);
+  ctx.globalAlpha = cardAlpha;
+
+  // Ombre sous la carte
+  ctx.save();
+  ctx.shadowColor = "rgba(20,18,16,0.35)";
+  ctx.shadowBlur = 60;
+  ctx.shadowOffsetY = 28;
+  ctx.fillStyle = CARD_BG;
+  const sx = (W - cardW * cardScale) / 2;
+  const sy = cardY + (cardH * (1 - cardScale)) / 2;
+  roundRect(ctx, sx, sy, cardW * cardScale, cardH * cardScale, 28);
+  ctx.fill();
+  ctx.restore();
+
+  // Léger liseré or interne
+  ctx.strokeStyle = "rgba(184,149,106,0.35)";
+  ctx.lineWidth = 1;
+  roundRect(ctx, sx + 8, sy + 8, cardW * cardScale - 16, cardH * cardScale - 16, 22);
+  ctx.stroke();
+
+  // Halo lumineux derrière le produit (radial top-center)
+  ctx.save();
+  roundRect(ctx, sx, sy, cardW * cardScale, cardH * cardScale, 28);
+  ctx.clip();
+  const cxC = sx + (cardW * cardScale) / 2;
+  const cyC = sy + (cardH * cardScale) * 0.42;
+  const halo = ctx.createRadialGradient(cxC, cyC, 40, cxC, cyC, cardW * 0.6);
+  halo.addColorStop(0, "rgba(255,253,247,0.85)");
+  halo.addColorStop(0.6, "rgba(255,253,247,0.15)");
+  halo.addColorStop(1, "rgba(255,253,247,0)");
+  ctx.fillStyle = halo;
+  ctx.fillRect(sx, sy, cardW * cardScale, cardH * cardScale);
+
+  if (img) {
+    // Léger float vertical (parallax doux pendant le hold)
+    const t01 = Math.min(1, Math.max(0, reveal));
+    const float = Math.sin(t01 * Math.PI) * 6;
+    const padImg = 70;
+    const ix = sx + padImg;
+    const iy = sy + padImg + float;
+    const iw = cardW * cardScale - padImg * 2;
+    const ih = cardH * cardScale - padImg * 2;
+
+    // Ombre portée du produit
+    ctx.save();
+    const sa = 0.28 * springR * (1 - exit);
+    const shGrad = ctx.createRadialGradient(cxC, sy + cardH * cardScale - 70, 20, cxC, sy + cardH * cardScale - 70, cardW * 0.4);
+    shGrad.addColorStop(0, `rgba(30,28,24,${sa.toFixed(3)})`);
+    shGrad.addColorStop(1, "rgba(30,28,24,0)");
+    ctx.fillStyle = shGrad;
+    ctx.beginPath();
+    ctx.ellipse(cxC, sy + cardH * cardScale - 60, cardW * 0.32, 30, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    drawContainImage(ctx, img, ix, iy, iw, ih);
+  } else {
+    // Placeholder marque
+    ctx.fillStyle = "#1a1a1a";
+    ctx.globalAlpha = 0.10;
+    ctx.font = "300 520px Georgia, serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText((deal.brand || "G").charAt(0).toUpperCase(), cxC, cyC);
+    ctx.globalAlpha = 1;
+  }
+
+  // Rang (gros chiffre serif en filigrane dans la carte)
+  ctx.save();
+  ctx.globalAlpha = 0.10 * springR;
+  ctx.fillStyle = NOIR;
+  ctx.font = "300 320px Georgia, serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText(`#${rank}`, 60, infoY + 130);
+  ctx.fillText(`${rank}`, sx + 36, sy + 280);
+  ctx.restore();
+
+  ctx.restore(); // clip card
+  ctx.restore(); // translate
+
+  // === Bloc info en bas (sur le fond gris, pas de bandeau ivoire) ===
+  const infoAlpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.25) / 0.55))) * (1 - exit);
+  const infoSlide = (1 - infoAlpha) * 30;
+  ctx.save();
+  ctx.translate(0, infoSlide);
+  ctx.globalAlpha = infoAlpha;
+
+  // Trait or
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(70, infoY - 30, 56, 1);
 
   // Marque
   ctx.fillStyle = NOIR;
-  ctx.font = "300 78px Georgia, serif";
-  ctx.fillText(deal.brand, 220, infoY + 100);
+  ctx.font = "400 84px Georgia, serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(deal.brand, 70, infoY + 50);
 
   // Merchant
   ctx.fillStyle = TAUPE;
   ctx.font = "500 18px 'Inter',sans-serif";
   (ctx as any).letterSpacing = "5px";
-  ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 220, infoY + 138);
+  ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 70, infoY + 90);
   (ctx as any).letterSpacing = "0px";
 
   // Prix
   const priceStr = deal.sale_price != null ? `${Math.round(Number(deal.sale_price))} €` : "—";
   ctx.fillStyle = NOIR;
-  ctx.font = "500 124px 'Inter',sans-serif";
-  ctx.fillText(priceStr, 60, infoY + 290);
+  ctx.font = "500 138px 'Inter',sans-serif";
+  ctx.fillText(priceStr, 70, infoY + 240);
 
   if (deal.original_price && deal.sale_price && Number(deal.original_price) > Number(deal.sale_price)) {
+    ctx.save();
     ctx.fillStyle = TAUPE;
-    ctx.globalAlpha = alpha * 0.55;
-    ctx.font = "400 36px 'Inter',sans-serif";
+    ctx.globalAlpha = infoAlpha * 0.6;
+    ctx.font = "400 38px 'Inter',sans-serif";
     const op = `${Math.round(Number(deal.original_price))} €`;
-    const x = 60;
-    const y = infoY + 340;
+    const x = 70;
+    const y = infoY + 295;
     ctx.fillText(op, x, y);
     const w = ctx.measureText(op).width;
     ctx.strokeStyle = TAUPE;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(x, y - 12);
-    ctx.lineTo(x + w, y - 12);
+    ctx.moveTo(x, y - 13);
+    ctx.lineTo(x + w, y - 13);
     ctx.stroke();
-    ctx.globalAlpha = alpha;
+    ctx.restore();
   }
 
-  // Discount capsule
+  // Discount capsule (à droite, alignée à la marque)
   const disc = Math.round(Number(deal.discount_percent || 0));
   if (disc > 0) {
-    ctx.font = "500 30px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "2px";
+    ctx.save();
+    ctx.font = "500 32px 'Inter',sans-serif";
+    (ctx as any).letterSpacing = "3px";
     const t = `−${disc}%`;
     const tw = ctx.measureText(t).width;
-    const padX = 28;
-    const pillH = 56;
+    const padX = 32;
+    const pillH = 64;
     const pillW = tw + padX * 2;
-    const pillX = W - pillW - 60;
-    const pillY = infoY + 100;
-    ctx.strokeStyle = NOIR;
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, pillX, pillY, pillW, pillH, 2);
-    ctx.stroke();
+    const pillX = W - pillW - 70;
+    const pillY = infoY + 5;
     ctx.fillStyle = NOIR;
+    roundRect(ctx, pillX, pillY, pillW, pillH, 2);
+    ctx.fill();
+    ctx.fillStyle = IVOIRE;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(t, pillX + pillW / 2, pillY + pillH / 2 + 2);
-    ctx.textBaseline = "alphabetic";
-    ctx.textAlign = "left";
     (ctx as any).letterSpacing = "0px";
+    ctx.restore();
   }
 
+  ctx.restore();
   ctx.globalAlpha = 1;
 }
 
