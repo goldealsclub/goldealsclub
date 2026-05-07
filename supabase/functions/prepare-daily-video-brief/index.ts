@@ -71,21 +71,25 @@ Deno.serve(async (req) => {
     // Séquentiel pour éviter de saturer le pool DB et déclencher des statement timeouts.
     const perCatResults: { cat: typeof BATTLE_CATEGORIES[number]; deals: any[] }[] = [];
     for (const cat of BATTLE_CATEGORIES) {
-      const { data, error } = await supabase
-        .from("deals")
-        .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
-        .in("category", cat.categories)
-        .gte("discount_percent", 25)
-        .lte("discount_percent", 75)
-        .neq("merchant", "Sport Outlet FR")
-        .order("discount_percent", { ascending: false })
-        .limit(3000);
-      if (error) {
-        console.error(`query ${cat.slug} failed`, error);
-        perCatResults.push({ cat, deals: [] });
-      } else {
-        perCatResults.push({ cat, deals: data ?? [] });
+      // Stratégie : utiliser l'index (category, discount_percent DESC) en filtrant
+      // par catégorie une à une. neq merchant fait sauter l'index → on filtre en JS.
+      const all: any[] = [];
+      for (const c of cat.categories) {
+        const { data, error } = await supabase
+          .from("deals")
+          .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
+          .eq("category", c)
+          .gte("discount_percent", 25)
+          .lte("discount_percent", 75)
+          .order("discount_percent", { ascending: false })
+          .limit(800);
+        if (error) {
+          console.error(`query ${cat.slug}/${c} failed`, error);
+        } else if (data) {
+          all.push(...data);
+        }
       }
+      perCatResults.push({ cat, deals: all });
     }
 
     const battles: any[] = [];
