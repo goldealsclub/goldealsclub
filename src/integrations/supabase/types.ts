@@ -236,6 +236,48 @@ export type Database = {
         }
         Relationships: []
       }
+      generated_videos: {
+        Row: {
+          brief_date: string
+          caption: string | null
+          category: string
+          created_at: string
+          duration_sec: number | null
+          hashtags: string | null
+          id: string
+          label: string
+          public_url: string
+          size_bytes: number | null
+          storage_path: string
+        }
+        Insert: {
+          brief_date: string
+          caption?: string | null
+          category: string
+          created_at?: string
+          duration_sec?: number | null
+          hashtags?: string | null
+          id?: string
+          label?: string
+          public_url: string
+          size_bytes?: number | null
+          storage_path: string
+        }
+        Update: {
+          brief_date?: string
+          caption?: string | null
+          category?: string
+          created_at?: string
+          duration_sec?: number | null
+          hashtags?: string | null
+          id?: string
+          label?: string
+          public_url?: string
+          size_bytes?: number | null
+          storage_path?: string
+        }
+        Relationships: []
+      }
       newsletter_subscribers: {
         Row: {
           email: string
