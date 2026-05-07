@@ -513,7 +513,11 @@ export default function AdminVideoPage() {
                       </Button>
                     </div>
                     <p className="text-[10px] text-muted-foreground text-center">
-                      Pour MP4 : <a href="https://cloudconvert.com/webm-to-mp4" target="_blank" rel="noreferrer" className="underline">cloudconvert</a>
+                      {uploadingIdx === idx ? (
+                        <span className="inline-flex items-center gap-1"><Cloud className="h-3 w-3 animate-pulse" /> Sauvegarde cloud…</span>
+                      ) : (
+                        <>Sauvegardée dans le cloud · MP4 via <a href="https://cloudconvert.com/webm-to-mp4" target="_blank" rel="noreferrer" className="underline">cloudconvert</a></>
+                      )}
                     </p>
                   </div>
                 )}
