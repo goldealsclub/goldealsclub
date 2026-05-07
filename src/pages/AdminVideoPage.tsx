@@ -247,21 +247,15 @@ function drawDealFullScreen(
     const ix = (W - baseW) / 2;
     const iy = stageY + (stageH - baseH) / 2 + float - 10;
 
-    // Ombre portée subtile sous le produit (drop shadow)
-    ctx.save();
-    ctx.shadowColor = "rgba(20,18,16,0.35)";
-    ctx.shadowBlur = 40;
-    ctx.shadowOffsetY = 24;
-    // Trick : on dessine d'abord en multiply pour fondre le fond blanc
-    (ctx as any).globalCompositeOperation = "multiply";
-    drawContainImage(ctx, img, ix, iy, baseW, baseH);
-    ctx.restore();
+    // Détourage chroma-key blanc
+    const cut = getCutout(img);
 
-    // Repasse en normal pour récupérer la saturation des couleurs vives
+    // Ombre portée propre (sous le produit détouré)
     ctx.save();
-    (ctx as any).globalCompositeOperation = "source-over";
-    ctx.globalAlpha = alphaK * 0.85;
-    drawContainImage(ctx, img, ix, iy, baseW, baseH);
+    ctx.shadowColor = "rgba(20,18,16,0.45)";
+    ctx.shadowBlur = 50;
+    ctx.shadowOffsetY = 30;
+    drawContainImage(ctx, cut, ix, iy, baseW, baseH);
     ctx.restore();
   } else {
     ctx.fillStyle = NOIR;
