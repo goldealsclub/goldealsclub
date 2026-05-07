@@ -31,6 +31,7 @@ import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminVideoPage from "./pages/AdminVideoPage";
+import AdminVideoHistoryPage from "./pages/AdminVideoHistoryPage";
 import InstallPage from "./pages/InstallPage";
 import PromoCodesPage from "./pages/PromoCodesPage";
 import WorldCup2026Page from "./pages/WorldCup2026Page";
