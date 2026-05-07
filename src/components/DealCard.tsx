@@ -64,11 +64,8 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   }
   if (imageBroken) return null;
 
-  const imageFitClass = isSnipesImage
-    ? "object-cover object-center scale-[1.05] group-hover:scale-[1.1]"
-    : isNikeImage
-      ? "object-cover object-center scale-[1.12] group-hover:scale-[1.18]"
-      : "object-cover object-center group-hover:scale-[1.03]";
+  // Full-bleed sans découpage : la photo entière est visible, aucun crop.
+  const imageFitClass = "object-contain object-center group-hover:scale-[1.03]";
 
   return (
     <div className={`group relative border border-foreground/8 bg-background transition-all duration-300 ${featured ? "col-span-2 row-span-2" : ""}`}>
@@ -83,17 +80,16 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
         <img
           src={enhancedImageUrl}
           alt={deal.title}
-          className={`w-full h-full transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
+          className={`w-full h-full p-2 sm:p-3 transition-all duration-500 ${imageFitClass} ${imageLoaded && !imageBroken ? "opacity-100" : "opacity-0"}`}
           loading="lazy"
+          decoding="async"
+          fetchPriority={featured ? "high" : "auto" as any}
           onLoad={(e) => {
             const img = e.target as HTMLImageElement;
-            // Reject low-res / placeholder thumbnails (< 400px = blurry).
-            // Also rejects 1x1 tracking pixels and brand-logo placeholders.
             if (img.naturalWidth < 400 || img.naturalHeight < 400) {
               setImageBroken(true);
               return;
             }
-            // Reject extreme aspect ratios (often brand logos, not products)
             const ratio = img.naturalWidth / img.naturalHeight;
             if (ratio < 0.5 || ratio > 2) {
               setImageBroken(true);
