@@ -656,6 +656,15 @@ export default function AdminVideoPage() {
       const ctx = canvas.getContext("2d")!;
 
       const [imgA, imgB] = await Promise.all([loadImage(battle.a.image_url), loadImage(battle.b.image_url)]);
+      const imagesLoaded = (imgA ? 1 : 0) + (imgB ? 1 : 0);
+      if (imagesLoaded < 2) {
+        const missing = [!imgA && battle.a.brand, !imgB && battle.b.brand].filter(Boolean).join(", ");
+        toast({
+          title: imagesLoaded === 0 ? "⚠️ Aucune photo chargée" : "⚠️ Photo manquante",
+          description: `Placeholder éditorial utilisé pour : ${missing}`,
+          variant: "destructive",
+        });
+      }
 
       const totalFrames = TOTAL_SEC * FPS;
       const videoStream = (canvas as any).captureStream(FPS) as MediaStream;
