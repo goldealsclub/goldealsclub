@@ -82,7 +82,11 @@ Deno.serve(async (req) => {
     const battles: any[] = [];
     for (const { cat, deals } of perCatResults) {
       const candidates = deals.filter(
-        (d) => isHype(d.brand) && validImage(d.image_url) && Number(d.sale_price) > 5,
+        (d) =>
+          isHype(d.brand) &&
+          validImage(d.image_url) &&
+          d.original_price != null &&
+          Number(d.sale_price) > 5,
       );
       const seenBrands = new Set<string>();
       const picks: any[] = [];
