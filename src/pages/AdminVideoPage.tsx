@@ -452,7 +452,7 @@ function drawBattleFrame(
 
   ctx.save();
   ctx.translate(0, (1 - slideA) * -halfH);
-  drawDealHalf(ctx, battle.a, imgA, barH, halfH, slideA, true);
+  drawDealHalf(ctx, battle.a, imgA, barH, halfH, slideA, true, battle.category);
   ctx.restore();
 
   ctx.save();
