@@ -89,13 +89,51 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.closePath();
 }
 
-function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement, x: number, y: number, w: number, h: number) {
-  const ratio = Math.min(w / img.width, h / img.height);
-  const iw = img.width * ratio;
-  const ih = img.height * ratio;
+function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement | HTMLCanvasElement, x: number, y: number, w: number, h: number) {
+  const iw0 = (img as any).width;
+  const ih0 = (img as any).height;
+  const ratio = Math.min(w / iw0, h / ih0);
+  const iw = iw0 * ratio;
+  const ih = ih0 * ratio;
   (ctx as any).imageSmoothingEnabled = true;
   (ctx as any).imageSmoothingQuality = "high";
-  ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+  ctx.drawImage(img as any, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+}
+
+// Cache de détourage chroma-key blanc → canvas avec fond transparent
+const cutoutCache = new WeakMap<HTMLImageElement, HTMLCanvasElement>();
+function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
+  const cached = cutoutCache.get(img);
+  if (cached) return cached;
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  const cx = c.getContext("2d");
+  if (!cx) return img;
+  cx.drawImage(img, 0, 0);
+  try {
+    const id = cx.getImageData(0, 0, c.width, c.height);
+    const d = id.data;
+    const HI = 242;
+    const LO = 215;
+    for (let i = 0; i < d.length; i += 4) {
+      const r = d[i], g = d[i + 1], b = d[i + 2];
+      const mn = Math.min(r, g, b);
+      const mx = Math.max(r, g, b);
+      const sat = mx - mn;
+      if (sat < 12 && mn > HI) {
+        d[i + 3] = 0;
+      } else if (sat < 14 && mn > LO) {
+        const t = (mn - LO) / (HI - LO);
+        d[i + 3] = Math.round(d[i + 3] * (1 - t));
+      }
+    }
+    cx.putImageData(id, 0, 0);
+    cutoutCache.set(img, c);
+    return c;
+  } catch {
+    return img;
+  }
 }
 
 function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, total: number) {
