@@ -113,16 +113,23 @@ Deno.serve(async (req) => {
 
     const battles: any[] = [];
     for (const { cat, deals } of perCatResults) {
+      // La catégorie en base est parfois fausse (ex: short Kappa tagué "sneakers").
+      // On force le titre à matcher la catégorie cible et à NE PAS matcher une catégorie voisine.
+      const matchesCategory = (d: any) => {
+        const t = `${d.title || ""}`;
+        return cat.titleHints.test(t) && !cat.titleExclude.test(t);
+      };
       const candidates = deals.filter(
         (d) =>
           isHype(d.brand) &&
           validImage(d.image_url) &&
           isAllowedMerchant(d.merchant) &&
+          matchesCategory(d) &&
           Number(d.sale_price) > 5 &&
           Number(d.discount_percent) >= 25 &&
           Number(d.discount_percent) <= 75,
       );
-      // Priorité : premium merchants d'abord (Snipes, Kappa, JD…)
+      console.log(`[${cat.slug}] candidates_after_title=${candidates.length} sample=`, candidates.slice(0, 5).map((d: any) => `${d.brand}|${d.title}`));
       candidates.sort((a, b) => {
         const pa = isPremium(a.merchant) ? 0 : 1;
         const pb = isPremium(b.merchant) ? 0 : 1;
@@ -138,7 +145,6 @@ Deno.serve(async (req) => {
         picks.push(d);
         if (picks.length === 2) break;
       }
-      // Fallback 1 : si on n'a qu'une marque hype, compléter avec les autres hype
       if (picks.length < 2) {
         for (const d of candidates) {
           if (picks.find((p) => p.id === d.id)) continue;
@@ -146,12 +152,12 @@ Deno.serve(async (req) => {
           if (picks.length === 2) break;
         }
       }
-      // Fallback 2 : pas assez de hype → fallback sur top deals (toutes marques) du catalogue
       if (picks.length < 2) {
         const generic = deals.filter(
           (d) =>
             validImage(d.image_url) &&
             isAllowedMerchant(d.merchant) &&
+            matchesCategory(d) &&
             Number(d.sale_price) > 5,
         );
         const seen = new Set(picks.map((p) => norm(p.brand)));
