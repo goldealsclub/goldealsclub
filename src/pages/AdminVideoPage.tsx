@@ -531,56 +531,20 @@ export default function AdminVideoPage() {
         </>
       )}
 
-      {/* HISTORIQUE DES VIDÉOS */}
+      {/* HISTORIQUE DES VIDÉOS (avec recherche + filtres) */}
       <div className="mt-12 border-t pt-8">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold flex items-center gap-2">
-            <History className="h-6 w-6" /> Historique ({history.length})
+            <History className="h-6 w-6" /> Historique
           </h2>
-          <Button variant="outline" size="sm" onClick={loadHistory} disabled={historyLoading}>
-            <RefreshCw className={`h-4 w-4 mr-2 ${historyLoading ? "animate-spin" : ""}`} /> Actualiser
-          </Button>
+          <Link
+            to="/admin/video/historique"
+            className="text-sm text-muted-foreground hover:text-foreground underline"
+          >
+            Voir tout →
+          </Link>
         </div>
-
-        {historyLoading && (
-          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin" /></div>
-        )}
-
-        {!historyLoading && history.length === 0 && (
-          <p className="text-muted-foreground text-sm text-center py-8">
-            Aucune vidéo sauvegardée pour l'instant. Génère une vidéo : elle sera automatiquement archivée dans le cloud.
-          </p>
-        )}
-
-        {!historyLoading && history.length > 0 && (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {history.map((item) => (
-              <div key={item.id} className="border rounded-lg p-3 flex flex-col">
-                <video src={item.public_url} controls className="w-full rounded mb-2 bg-black" preload="metadata" />
-                <div className="flex items-center justify-between mb-1">
-                  <span className="text-xs font-bold uppercase">{item.category}</span>
-                  <span className="text-xs text-muted-foreground">{item.brief_date}</span>
-                </div>
-                <p className="text-sm font-medium mb-2 line-clamp-1">{item.label}</p>
-                <div className="flex gap-2 mt-auto">
-                  <Button asChild size="sm" variant="outline" className="flex-1">
-                    <a href={item.public_url} download={`battle-${item.category}-${item.brief_date}.webm`}>
-                      <Download className="h-3.5 w-3.5 mr-1" /> Télécharger
-                    </a>
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => deleteHistoryItem(item)}
-                    aria-label="Supprimer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+        <VideoHistory limit={12} compact />
       </div>
     </div>
   );
