@@ -275,20 +275,48 @@ function drawDealHalf(
   category = "",
   time = 0,
 ) {
-  // Background ivoire/photo
-  ctx.fillStyle = PHOTO_BG;
+  // Fond ivoire subtilement dégradé (studio éditorial, pas gris plat)
+  const bgGrad = ctx.createLinearGradient(0, yTop, 0, yTop + height);
+  bgGrad.addColorStop(0, "#f4efe6");
+  bgGrad.addColorStop(0.6, "#ece6da");
+  bgGrad.addColorStop(1, "#e2dccf");
+  ctx.fillStyle = bgGrad;
   ctx.fillRect(0, yTop, W, height);
 
-  // Photo full-bleed (haut de la moitié)
-  const photoH = height * 0.62;
+  // Photo full-bleed (haut de la moitié) — plus généreuse (68%)
+  const photoH = height * 0.68;
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, yTop, W, photoH);
   ctx.clip();
+
   if (img) {
-    const floatY = Math.sin(reveal * Math.PI) * 6;
-    const enterY = (1 - reveal) * (isTop ? -40 : 40);
-    drawCoverImage(ctx, img, 40, yTop + 20 + enterY + floatY, W - 80, photoH - 40, 1);
+    // Halo lumineux derrière le produit (effet studio)
+    const cx = W / 2;
+    const cy = yTop + photoH / 2;
+    const halo = ctx.createRadialGradient(cx, cy, 60, cx, cy, Math.max(W, photoH) * 0.7);
+    halo.addColorStop(0, "rgba(255,250,240,0.55)");
+    halo.addColorStop(1, "rgba(255,250,240,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, yTop, W, photoH);
+
+    const floatY = Math.sin(reveal * Math.PI) * 4;
+    const enterY = (1 - reveal) * (isTop ? -30 : 30);
+
+    // Ombre portée douce sous le produit
+    ctx.save();
+    const shadowAlpha = 0.22 * easeOut(reveal);
+    const shadowGrad = ctx.createRadialGradient(cx, yTop + photoH - 60, 20, cx, yTop + photoH - 60, W * 0.42);
+    shadowGrad.addColorStop(0, `rgba(40,36,32,${shadowAlpha.toFixed(3)})`);
+    shadowGrad.addColorStop(1, "rgba(40,36,32,0)");
+    ctx.fillStyle = shadowGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, yTop + photoH - 50, W * 0.36, 36, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Le produit lui-même, plus grand et mieux intégré
+    drawCoverImage(ctx, img, 30, yTop + 20 + enterY + floatY, W - 60, photoH - 60, 1.05);
   } else {
     drawPremiumPlaceholder(ctx, deal, category, 0, yTop, W, photoH, reveal, time);
   }
@@ -299,6 +327,9 @@ function drawDealHalf(
   const infoH = height - photoH;
   ctx.fillStyle = IVOIRE;
   ctx.fillRect(0, infoY, W, infoH);
+  // Filet doré séparateur ultra-fin
+  ctx.fillStyle = "rgba(201,168,112,0.45)";
+  ctx.fillRect(0, infoY, W, 1);
 
   const alpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.2) / 0.6)));
   ctx.globalAlpha = alpha;

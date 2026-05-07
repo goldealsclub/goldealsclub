@@ -24,24 +24,28 @@ const HYPE_BRANDS = [
 ];
 
 // Categories targeted — pushed as SQL filter via category column (indexed)
-const BATTLE_CATEGORIES: { slug: string; label: string; categories: string[]; titleHints: RegExp }[] = [
+const BATTLE_CATEGORIES: { slug: string; label: string; categories: string[]; titleHints: RegExp; titleExclude: RegExp }[] = [
   {
     slug: "sneakers",
     label: "SNEAKERS",
     categories: ["sneakers", "chaussures"],
-    titleHints: /sneaker|jordan|dunk|air max|yeezy|550|990|nike|adidas/i,
+    // doit ressembler à une chaussure
+    titleHints: /sneaker|basket|chaussure|shoe|trainer|jordan|dunk|air\s?max|air\s?force|yeezy|\b550\b|\b990\b|\b327\b|\b574\b|gel[-\s]?|samba|gazelle|stan\s?smith|superstar|forum|campus|huarache|cortez|blazer|tongs?|adilette|slide|sandal|mule/i,
+    titleExclude: /hoodie|sweat|t-?shirt|tee\b|trikot|jersey|maillot|veste|jacket|pantalon|pant\b|jean|short|cargo|sac\b|bag\b|hip\s?bag|casquette|cap\b|hat\b|bonnet|chaussette|sock|ceinture|belt|ballon|football/i,
   },
   {
     slug: "vetements",
     label: "VÊTEMENTS",
     categories: ["hoodies", "t-shirts", "vestes", "pantalons", "vetements", "vêtements"],
-    titleHints: /hoodie|sweat|t-shirt|tshirt|veste|jacket|pant|jean|short|cargo/i,
+    titleHints: /hoodie|sweat|t-?shirt|tee\b|trikot|jersey|maillot|veste|jacket|pantalon|pant\b|jean|short|cargo|polo|chemise|robe|crewneck|pull/i,
+    titleExclude: /sneaker|basket|chaussure|shoe|trainer|tongs?|adilette|slide|sandal|mule|sac\b|bag\b|casquette|cap\b|bonnet|chaussette|sock|ceinture|belt/i,
   },
   {
     slug: "accessoires",
     label: "ACCESSOIRES",
     categories: ["accessoires"],
-    titleHints: /sac\b|bag|casquette|cap\b|bonnet|chaussette|sock|ceinture|belt/i,
+    titleHints: /sac\b|bag\b|hip\s?bag|backpack|casquette|cap\b|hat\b|bonnet|beanie|chaussette|sock|ceinture|belt|portefeuille|wallet|gants?|scarf|écharpe|bandana/i,
+    titleExclude: /sneaker|basket|chaussure|shoe|trainer|tongs?|adilette|hoodie|sweat|t-?shirt|tee\b|trikot|jersey|maillot|veste|jacket|pantalon|pant\b|jean|short|cargo/i,
   },
 ];
 
@@ -109,16 +113,23 @@ Deno.serve(async (req) => {
 
     const battles: any[] = [];
     for (const { cat, deals } of perCatResults) {
+      // La catégorie en base est parfois fausse (ex: short Kappa tagué "sneakers").
+      // On force le titre à matcher la catégorie cible et à NE PAS matcher une catégorie voisine.
+      const matchesCategory = (d: any) => {
+        const t = `${d.title || ""}`;
+        return cat.titleHints.test(t) && !cat.titleExclude.test(t);
+      };
       const candidates = deals.filter(
         (d) =>
           isHype(d.brand) &&
           validImage(d.image_url) &&
           isAllowedMerchant(d.merchant) &&
+          matchesCategory(d) &&
           Number(d.sale_price) > 5 &&
           Number(d.discount_percent) >= 25 &&
           Number(d.discount_percent) <= 75,
       );
-      // Priorité : premium merchants d'abord (Snipes, Kappa, JD…)
+      console.log(`[${cat.slug}] candidates_after_title=${candidates.length} sample=`, candidates.slice(0, 5).map((d: any) => `${d.brand}|${d.title}`));
       candidates.sort((a, b) => {
         const pa = isPremium(a.merchant) ? 0 : 1;
         const pb = isPremium(b.merchant) ? 0 : 1;
@@ -134,7 +145,6 @@ Deno.serve(async (req) => {
         picks.push(d);
         if (picks.length === 2) break;
       }
-      // Fallback 1 : si on n'a qu'une marque hype, compléter avec les autres hype
       if (picks.length < 2) {
         for (const d of candidates) {
           if (picks.find((p) => p.id === d.id)) continue;
@@ -142,12 +152,12 @@ Deno.serve(async (req) => {
           if (picks.length === 2) break;
         }
       }
-      // Fallback 2 : pas assez de hype → fallback sur top deals (toutes marques) du catalogue
       if (picks.length < 2) {
         const generic = deals.filter(
           (d) =>
             validImage(d.image_url) &&
             isAllowedMerchant(d.merchant) &&
+            matchesCategory(d) &&
             Number(d.sale_price) > 5,
         );
         const seen = new Set(picks.map((p) => norm(p.brand)));
