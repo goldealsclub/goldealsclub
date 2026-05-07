@@ -787,6 +787,7 @@ export default function AdminVideoPage() {
           hashtags: brief!.hashtags,
           size_bytes: blob.size,
           duration_sec: TOTAL_SEC,
+          images_loaded: imagesLoaded,
         });
         if (insErr) throw insErr;
         toast({ title: "Sauvegardée dans le cloud ☁️" });
