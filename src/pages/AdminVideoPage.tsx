@@ -157,102 +157,85 @@ function drawDealFullScreen(
   ctx.restore();
 
   const barH = 96;
-  const cardPadX = 70;
-  const cardY = barH + 70;
-  const cardW = W - cardPadX * 2;
-  const cardH = Math.round((H - barH) * 0.62);
-  const infoY = cardY + cardH + 60;
+  const stageY = barH + 40;
+  const stageH = Math.round((H - barH) * 0.66);
+  const infoY = stageY + stageH + 40;
+  const cxC = W / 2;
+  const cyC = stageY + stageH * 0.5;
 
-  // Spring d'entrée + sortie horizontale élégante
+  // Spring d'entrée + sortie élégante
   const springR = springEase(reveal);
   const exitE = easeInOut(exit);
-  const slideIn = (1 - springR) * 80;
-  const slideOut = exitE * -W * 0.55;
-  const cardScale = 0.94 + 0.06 * springR;
-  const cardAlpha = (1 - exit) * Math.min(1, reveal * 1.6);
+  const slideIn = (1 - springR) * 60;
+  const slideOut = exitE * -W * 0.5;
+  const scaleK = 0.92 + 0.08 * springR;
+  const alphaK = (1 - exit) * Math.min(1, reveal * 1.6);
 
-  // Carte studio (image incrustée dans une carte ivoire arrondie avec ombre)
+  // Rang en filigrane derrière (énorme chiffre serif)
   ctx.save();
-  ctx.translate(slideOut, slideIn);
-  ctx.globalAlpha = cardAlpha;
+  ctx.globalAlpha = 0.07 * springR * (1 - exit);
+  ctx.fillStyle = NOIR;
+  ctx.font = "300 880px Georgia, serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(`${rank}`, cxC, cyC + 20);
+  ctx.restore();
 
-  // Ombre sous la carte
+  // Ombre au sol (ellipse douce, sous le produit)
   ctx.save();
-  ctx.shadowColor = "rgba(20,18,16,0.35)";
-  ctx.shadowBlur = 60;
-  ctx.shadowOffsetY = 28;
-  ctx.fillStyle = CARD_BG;
-  const sx = (W - cardW * cardScale) / 2;
-  const sy = cardY + (cardH * (1 - cardScale)) / 2;
-  roundRect(ctx, sx, sy, cardW * cardScale, cardH * cardScale, 28);
+  ctx.globalAlpha = 0.32 * springR * (1 - exit);
+  const groundY = stageY + stageH - 30;
+  const shGrad = ctx.createRadialGradient(cxC + slideOut, groundY, 20, cxC + slideOut, groundY, W * 0.38);
+  shGrad.addColorStop(0, "rgba(20,18,16,0.55)");
+  shGrad.addColorStop(0.5, "rgba(20,18,16,0.18)");
+  shGrad.addColorStop(1, "rgba(20,18,16,0)");
+  ctx.fillStyle = shGrad;
+  ctx.beginPath();
+  ctx.ellipse(cxC + slideOut, groundY, W * 0.32, 38, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // Léger liseré or interne
-  ctx.strokeStyle = "rgba(184,149,106,0.35)";
-  ctx.lineWidth = 1;
-  roundRect(ctx, sx + 8, sy + 8, cardW * cardScale - 16, cardH * cardScale - 16, 22);
-  ctx.stroke();
-
-  // Halo lumineux derrière le produit (radial top-center)
+  // Produit détouré — multiply pour neutraliser un fond blanc/clair
   ctx.save();
-  roundRect(ctx, sx, sy, cardW * cardScale, cardH * cardScale, 28);
-  ctx.clip();
-  const cxC = sx + (cardW * cardScale) / 2;
-  const cyC = sy + (cardH * cardScale) * 0.42;
-  const halo = ctx.createRadialGradient(cxC, cyC, 40, cxC, cyC, cardW * 0.6);
-  halo.addColorStop(0, "rgba(255,253,247,0.85)");
-  halo.addColorStop(0.6, "rgba(255,253,247,0.15)");
-  halo.addColorStop(1, "rgba(255,253,247,0)");
-  ctx.fillStyle = halo;
-  ctx.fillRect(sx, sy, cardW * cardScale, cardH * cardScale);
+  ctx.translate(slideOut, slideIn);
+  ctx.globalAlpha = alphaK;
 
   if (img) {
-    // Léger float vertical (parallax doux pendant le hold)
     const t01 = Math.min(1, Math.max(0, reveal));
-    const float = Math.sin(t01 * Math.PI) * 6;
-    const padImg = 70;
-    const ix = sx + padImg;
-    const iy = sy + padImg + float;
-    const iw = cardW * cardScale - padImg * 2;
-    const ih = cardH * cardScale - padImg * 2;
+    const float = Math.sin(t01 * Math.PI) * 8;
+    const padImg = 80;
+    const baseW = (W - padImg * 2) * scaleK;
+    const baseH = (stageH - padImg) * scaleK;
+    const ix = (W - baseW) / 2;
+    const iy = stageY + (stageH - baseH) / 2 + float - 10;
 
-    // Ombre portée du produit
+    // Ombre portée subtile sous le produit (drop shadow)
     ctx.save();
-    const sa = 0.28 * springR * (1 - exit);
-    const shGrad = ctx.createRadialGradient(cxC, sy + cardH * cardScale - 70, 20, cxC, sy + cardH * cardScale - 70, cardW * 0.4);
-    shGrad.addColorStop(0, `rgba(30,28,24,${sa.toFixed(3)})`);
-    shGrad.addColorStop(1, "rgba(30,28,24,0)");
-    ctx.fillStyle = shGrad;
-    ctx.beginPath();
-    ctx.ellipse(cxC, sy + cardH * cardScale - 60, cardW * 0.32, 30, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.shadowColor = "rgba(20,18,16,0.35)";
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetY = 24;
+    // Trick : on dessine d'abord en multiply pour fondre le fond blanc
+    (ctx as any).globalCompositeOperation = "multiply";
+    drawContainImage(ctx, img, ix, iy, baseW, baseH);
     ctx.restore();
 
-    drawContainImage(ctx, img, ix, iy, iw, ih);
+    // Repasse en normal pour récupérer la saturation des couleurs vives
+    ctx.save();
+    (ctx as any).globalCompositeOperation = "source-over";
+    ctx.globalAlpha = alphaK * 0.85;
+    drawContainImage(ctx, img, ix, iy, baseW, baseH);
+    ctx.restore();
   } else {
-    // Placeholder marque
-    ctx.fillStyle = "#1a1a1a";
-    ctx.globalAlpha = 0.10;
-    ctx.font = "300 520px Georgia, serif";
+    ctx.fillStyle = NOIR;
+    ctx.globalAlpha = 0.10 * alphaK;
+    ctx.font = "300 560px Georgia, serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText((deal.brand || "G").charAt(0).toUpperCase(), cxC, cyC);
     ctx.globalAlpha = 1;
   }
 
-  // Rang (gros chiffre serif en filigrane dans la carte)
-  ctx.save();
-  ctx.globalAlpha = 0.10 * springR;
-  ctx.fillStyle = NOIR;
-  ctx.font = "300 320px Georgia, serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  ctx.fillText(`${rank}`, sx + 36, sy + 280);
   ctx.restore();
-
-  ctx.restore(); // clip card
-  ctx.restore(); // translate
 
   // === Bloc info en bas (sur le fond gris, pas de bandeau ivoire) ===
   const infoAlpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.25) / 0.55))) * (1 - exit);
