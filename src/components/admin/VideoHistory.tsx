@@ -23,6 +23,7 @@ type VideoRow = {
   hashtags: string;
   size_bytes: number | null;
   duration_sec: number | null;
+  images_loaded: number | null;
   created_at: string;
 };
 
