@@ -94,17 +94,17 @@ Deno.serve(async (req) => {
           .eq("category", c)
           .gte("discount_percent", 25)
           .lte("discount_percent", 75)
-          .not("merchant", "in", `(${[...BLACKLIST_MERCHANTS].map((m) => `"${m}"`).join(",")})`)
           .order("discount_percent", { ascending: false })
-          .limit(300);
+          .limit(2000);
         if (error) {
           console.error(`query ${cat.slug}/${c} failed`, error);
         } else if (data) {
-          all.push(...data);
+          // Filtre marchands blacklist en JS (PostgREST .not.in casse avec espaces dans valeurs)
+          all.push(...data.filter((d) => isAllowedMerchant(d.merchant)));
         }
       }
       perCatResults.push({ cat, deals: all });
-      console.log(`[${cat.slug}] fetched=${all.length} sample_brands=`, [...new Set(all.slice(0, 20).map((d) => d.brand))]);
+      console.log(`[${cat.slug}] kept=${all.length} sample_brands=`, [...new Set(all.slice(0, 20).map((d) => d.brand))]);
     }
 
     const battles: any[] = [];
