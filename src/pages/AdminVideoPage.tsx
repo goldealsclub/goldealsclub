@@ -509,41 +509,44 @@ function drawBattleFrame(
   drawDealHalf(ctx, battle.b, imgB, barH + halfH, halfH, slideB, false, battle.category, battleT);
   ctx.restore();
 
-  // ─── VS BADGE central ───
+  // ─── VS BADGE central — chic, ivoire/noir, accent or 1px ───
   const vsAppear = easeOut(Math.min(1, (battleT - 0.5) / 0.4));
-  const pulse = 1 + Math.sin(battleT * 6) * 0.06;
+  const pulse = 1 + Math.sin(battleT * 4) * 0.025; // pulse très subtil
   const vsScale = vsAppear * pulse;
   const vsCx = W / 2;
   const vsCy = barH + halfH;
 
-  // halo
-  ctx.globalAlpha = vsAppear;
-  const haloGrad = ctx.createRadialGradient(vsCx, vsCy, 20, vsCx, vsCy, 250);
-  haloGrad.addColorStop(0, "rgba(201,168,112,0.7)");
-  haloGrad.addColorStop(1, "rgba(201,168,112,0)");
+  // halo lumière douce ivoire (pas doré)
+  ctx.globalAlpha = vsAppear * 0.6;
+  const haloGrad = ctx.createRadialGradient(vsCx, vsCy, 20, vsCx, vsCy, 220);
+  haloGrad.addColorStop(0, "rgba(255,250,240,0.45)");
+  haloGrad.addColorStop(1, "rgba(255,250,240,0)");
   ctx.fillStyle = haloGrad;
   ctx.beginPath();
-  ctx.arc(vsCx, vsCy, 250, 0, Math.PI * 2);
+  ctx.arc(vsCx, vsCy, 220, 0, Math.PI * 2);
   ctx.fill();
 
-  // VS disc
+  ctx.globalAlpha = vsAppear;
   ctx.save();
   ctx.translate(vsCx, vsCy);
   ctx.scale(vsScale, vsScale);
+  // disque noir profond
   ctx.fillStyle = NOIR;
   ctx.beginPath();
-  ctx.arc(0, 0, 130, 0, Math.PI * 2);
+  ctx.arc(0, 0, 110, 0, Math.PI * 2);
   ctx.fill();
+  // anneau or ultra-fin (signature)
   ctx.strokeStyle = GOLD;
-  ctx.lineWidth = 6;
+  ctx.lineWidth = 1;
   ctx.beginPath();
-  ctx.arc(0, 0, 130, 0, Math.PI * 2);
+  ctx.arc(0, 0, 118, 0, Math.PI * 2);
   ctx.stroke();
-  ctx.fillStyle = GOLD;
-  ctx.font = "900 110px 'Inter',sans-serif";
+  // VS en serif italique ivoire (raffiné, éditorial)
+  ctx.fillStyle = IVOIRE;
+  ctx.font = "italic 300 92px Georgia, serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText("VS", 0, 4);
+  ctx.fillText("vs", 0, 4);
   ctx.restore();
 
   ctx.globalAlpha = 1;
