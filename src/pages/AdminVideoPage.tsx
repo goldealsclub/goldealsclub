@@ -624,8 +624,8 @@ export default function AdminVideoPage() {
 
       {!loading && (!brief || brief.deals.length === 0) && (
         <div className="border rounded-lg p-6 text-center">
-          <p className="mb-4">Aucune sélection disponible aujourd'hui (pas assez de deals hype).</p>
-          <Button onClick={regenerate}>Régénérer</Button>
+          <p className="mb-4">Aucune sélection au nouveau format pour aujourd'hui. Clique sur « Régénérer » pour créer le top 5 par catégorie.</p>
+          <Button onClick={regenerate}>Régénérer maintenant</Button>
         </div>
       )}
 
