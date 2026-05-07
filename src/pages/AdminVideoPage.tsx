@@ -503,11 +503,81 @@ export default function AdminVideoPage() {
       const [imgA, imgB] = await Promise.all([loadImage(battle.a.image_url), loadImage(battle.b.image_url)]);
 
       const totalFrames = TOTAL_SEC * FPS;
-      const stream = (canvas as any).captureStream(FPS) as MediaStream;
-      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9")
-        ? "video/webm;codecs=vp9"
+      const videoStream = (canvas as any).captureStream(FPS) as MediaStream;
+
+      // ===== Musique chill lo-fi générée procéduralement =====
+      const AC = (window.AudioContext || (window as any).webkitAudioContext);
+      const audioCtx: AudioContext = new AC();
+      const dest = audioCtx.createMediaStreamDestination();
+      const masterGain = audioCtx.createGain();
+      masterGain.gain.value = 0.25;
+      // Filtre passe-bas pour vibe lo-fi
+      const lp = audioCtx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 2200;
+      lp.Q.value = 0.7;
+      masterGain.connect(lp);
+      lp.connect(dest);
+
+      const now0 = audioCtx.currentTime;
+      // Accord chill: Cmaj7 -> Am7 -> Fmaj7 -> G7 (boucle douce)
+      // Notes en Hz
+      const chords: number[][] = [
+        [261.63, 329.63, 392.0, 493.88], // Cmaj7
+        [220.0, 261.63, 329.63, 392.0],  // Am7
+        [174.61, 220.0, 261.63, 329.63], // Fmaj7
+        [196.0, 246.94, 293.66, 349.23], // G7
+      ];
+      const chordDur = TOTAL_SEC / chords.length; // ~3.75s par accord
+      chords.forEach((notes, ci) => {
+        const startT = now0 + ci * chordDur;
+        const endT = startT + chordDur;
+        notes.forEach((freq, ni) => {
+          // Pad sinusoïdal doux
+          const osc = audioCtx.createOscillator();
+          osc.type = ni === 0 ? "triangle" : "sine";
+          osc.frequency.value = freq;
+          const g = audioCtx.createGain();
+          g.gain.setValueAtTime(0, startT);
+          g.gain.linearRampToValueAtTime(0.18, startT + 0.6);
+          g.gain.linearRampToValueAtTime(0.14, endT - 0.4);
+          g.gain.linearRampToValueAtTime(0, endT);
+          osc.connect(g);
+          g.connect(masterGain);
+          osc.start(startT);
+          osc.stop(endT + 0.05);
+        });
+        // Basse douce (octave en dessous de la fondamentale)
+        const bass = audioCtx.createOscillator();
+        bass.type = "sine";
+        bass.frequency.value = notes[0] / 2;
+        const bg = audioCtx.createGain();
+        bg.gain.setValueAtTime(0, startT);
+        bg.gain.linearRampToValueAtTime(0.22, startT + 0.3);
+        bg.gain.linearRampToValueAtTime(0.18, endT - 0.3);
+        bg.gain.linearRampToValueAtTime(0, endT);
+        bass.connect(bg);
+        bg.connect(masterGain);
+        bass.start(startT);
+        bass.stop(endT + 0.05);
+      });
+
+      // Fade out global sur la dernière seconde
+      masterGain.gain.setValueAtTime(0.25, now0 + TOTAL_SEC - 1);
+      masterGain.gain.linearRampToValueAtTime(0, now0 + TOTAL_SEC);
+
+      // Combine audio + video
+      const stream = new MediaStream([
+        ...videoStream.getVideoTracks(),
+        ...dest.stream.getAudioTracks(),
+      ]);
+
+      const mime = MediaRecorder.isTypeSupported("video/webm;codecs=vp9,opus")
+        ? "video/webm;codecs=vp9,opus"
+        : MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
+        ? "video/webm;codecs=vp8,opus"
         : "video/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 16_000_000 });
+      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 16_000_000, audioBitsPerSecond: 128_000 });
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise<Blob>((resolve) => {
