@@ -104,6 +104,7 @@ Deno.serve(async (req) => {
         }
       }
       perCatResults.push({ cat, deals: all });
+      console.log(`[${cat.slug}] fetched=${all.length} sample_brands=`, [...new Set(all.slice(0, 20).map((d) => d.brand))]);
     }
 
     const battles: any[] = [];
