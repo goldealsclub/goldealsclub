@@ -9,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Hype brands — sneakers premium + streetwear hype
+// Hype brands — sneakers premium + streetwear hype + marques streetwear partenaires
 const HYPE_BRANDS = [
   // sneakers premium
   "nike", "jordan", "air jordan", "yeezy", "adidas", "new balance", "asics",
@@ -18,6 +18,9 @@ const HYPE_BRANDS = [
   "trapstar", "corteiz", "stussy", "stüssy", "carhartt", "carhartt wip",
   "palace", "supreme", "essentials", "fear of god", "represent",
   "kappa", "the north face", "patta", "aimé leon dore", "ami",
+  // marques streetwear bien représentées dans le catalogue
+  "karl kani", "new era", "hummel", "urban classics", "project x paris",
+  "mister tee", "ellesse", "puma", "fila", "champion",
 ];
 
 // Categories targeted — pushed as SQL filter via category column (indexed)
@@ -50,6 +53,11 @@ const isHype = (brand: string) => {
 const validImage = (u: string | null) =>
   !!u && /^https?:\/\//i.test(u) && !/placeholder|no.?image|default/i.test(u);
 
+// Marchands à exclure : sportspar.de bloque le hotlinking (403) ET a des prix d'origine
+// artificiellement gonflés (-94% non crédibles). On les retire des battles vidéo.
+const BLACKLIST_MERCHANTS = new Set(["sport outlet fr"]);
+const isAllowedMerchant = (m: string | null) => !BLACKLIST_MERCHANTS.has(norm(m));
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
@@ -63,20 +71,25 @@ Deno.serve(async (req) => {
     // Séquentiel pour éviter de saturer le pool DB et déclencher des statement timeouts.
     const perCatResults: { cat: typeof BATTLE_CATEGORIES[number]; deals: any[] }[] = [];
     for (const cat of BATTLE_CATEGORIES) {
-      const { data, error } = await supabase
-        .from("deals")
-        .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
-        .in("category", cat.categories)
-        .gte("discount_percent", 20)
-        .lte("discount_percent", 70)
-        .order("discount_percent", { ascending: false })
-        .limit(cat.slug === "vetements" ? 2500 : 600);
-      if (error) {
-        console.error(`query ${cat.slug} failed`, error);
-        perCatResults.push({ cat, deals: [] });
-      } else {
-        perCatResults.push({ cat, deals: data ?? [] });
+      // Stratégie : utiliser l'index (category, discount_percent DESC) en filtrant
+      // par catégorie une à une. neq merchant fait sauter l'index → on filtre en JS.
+      const all: any[] = [];
+      for (const c of cat.categories) {
+        const { data, error } = await supabase
+          .from("deals")
+          .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
+          .eq("category", c)
+          .gte("discount_percent", cat.slug === "vetements" ? 50 : 25)
+          .lte("discount_percent", 75)
+          .order("discount_percent", { ascending: false })
+          .limit(200);
+        if (error) {
+          console.error(`query ${cat.slug}/${c} failed`, error);
+        } else if (data) {
+          all.push(...data);
+        }
       }
+      perCatResults.push({ cat, deals: all });
     }
 
     const battles: any[] = [];
@@ -85,8 +98,10 @@ Deno.serve(async (req) => {
         (d) =>
           isHype(d.brand) &&
           validImage(d.image_url) &&
-          d.original_price != null &&
-          Number(d.sale_price) > 5,
+          isAllowedMerchant(d.merchant) &&
+          Number(d.sale_price) > 5 &&
+          Number(d.discount_percent) >= 25 &&
+          Number(d.discount_percent) <= 75,
       );
       const seenBrands = new Set<string>();
       const picks: any[] = [];
@@ -97,7 +112,7 @@ Deno.serve(async (req) => {
         picks.push(d);
         if (picks.length === 2) break;
       }
-      // Fallback: si on n'a qu'une marque hype, compléter avec les meilleurs candidats restants
+      // Fallback 1 : si on n'a qu'une marque hype, compléter avec les autres hype
       if (picks.length < 2) {
         for (const d of candidates) {
           if (picks.find((p) => p.id === d.id)) continue;
@@ -105,19 +120,45 @@ Deno.serve(async (req) => {
           if (picks.length === 2) break;
         }
       }
+      // Fallback 2 : pas assez de hype → fallback sur top deals (toutes marques) du catalogue
+      if (picks.length < 2) {
+        const generic = deals.filter(
+          (d) =>
+            validImage(d.image_url) &&
+            isAllowedMerchant(d.merchant) &&
+            Number(d.sale_price) > 5,
+        );
+        const seen = new Set(picks.map((p) => norm(p.brand)));
+        for (const d of generic) {
+          const b = norm(d.brand);
+          if (seen.has(b)) continue;
+          seen.add(b);
+          picks.push(d);
+          if (picks.length === 2) break;
+        }
+      }
       if (picks.length === 2) {
-        const map = (d: any) => ({
-          id: d.id,
-          title: d.title,
-          brand: d.brand,
-          merchant: d.merchant,
-          sale_price: d.sale_price,
-          original_price: d.original_price,
-          discount_percent: d.discount_percent,
-          currency: d.currency || "EUR",
-          image_url: d.image_url,
-          url: d.affiliate_url || d.product_url,
-        });
+        const map = (d: any) => {
+          const sale = Number(d.sale_price) || 0;
+          const disc = Number(d.discount_percent) || 0;
+          const orig = d.original_price != null
+            ? Number(d.original_price)
+            : disc > 0 && sale > 0
+              ? Math.round((sale / (1 - disc / 100)) * 100) / 100
+              : sale;
+          return {
+            id: d.id,
+            title: d.title,
+            brand: d.brand,
+            merchant: d.merchant,
+            sale_price: sale,
+            original_price: orig,
+            discount_percent: disc,
+            currency: d.currency || "EUR",
+            image_url: d.image_url,
+            url: d.affiliate_url || d.product_url,
+          };
+        };
         battles.push({
           type: "battle",
           category: cat.slug,
