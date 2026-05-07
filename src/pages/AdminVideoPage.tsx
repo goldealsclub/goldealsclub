@@ -41,8 +41,16 @@ const W = 1080;
 const H = 1920;
 const FPS = 30;
 const TOTAL_SEC = 15;
-const INTRO = 1.5;
-const OUTRO = 2;
+const INTRO = 1.8;
+const OUTRO = 2.2;
+
+// Palette premium GOLDEALS
+const NOIR = "#111111";
+const IVOIRE = "#f6f0e9";
+const PHOTO_BG = "#eaecf0";
+const TAUPE = "#45403a";
+const GOLD = "#c9a870";
+const FLAME = "#FF6B35";
 
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -55,6 +63,181 @@ async function loadImage(src: string): Promise<HTMLImageElement | null> {
 }
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
+function drawFlame(ctx: CanvasRenderingContext2D, x: number, y: number, size: number) {
+  const s = size / 24;
+  ctx.save();
+  ctx.translate(x, y);
+  ctx.scale(s, s);
+  ctx.fillStyle = FLAME;
+  ctx.beginPath();
+  ctx.moveTo(12, 23);
+  ctx.bezierCurveTo(16.5, 23, 20, 19.5, 20, 15);
+  ctx.bezierCurveTo(20, 11, 17, 8.5, 15.5, 7.5);
+  ctx.bezierCurveTo(15.5, 9, 14.5, 11, 13, 12);
+  ctx.bezierCurveTo(13, 10, 12.5, 7.5, 10, 5);
+  ctx.bezierCurveTo(9.5, 7.5, 8, 9, 6.5, 11);
+  ctx.bezierCurveTo(5.5, 12.5, 4, 14, 4, 16);
+  ctx.bezierCurveTo(4, 19.5, 7.5, 23, 12, 23);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawCoverImage(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  x: number, y: number, w: number, h: number,
+  scale = 1,
+) {
+  const ratio = Math.min(w / img.width, h / img.height) * scale;
+  const iw = img.width * ratio;
+  const ih = img.height * ratio;
+  ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
+}
+
+function drawTopBar(ctx: CanvasRenderingContext2D, label: string) {
+  const barH = 110;
+  ctx.fillStyle = NOIR;
+  ctx.fillRect(0, 0, W, barH);
+  // Logo G
+  ctx.fillStyle = IVOIRE;
+  roundRect(ctx, 36, (barH - 50) / 2, 50, 50, 10);
+  ctx.fill();
+  ctx.fillStyle = NOIR;
+  ctx.font = "700 34px Georgia, serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText("G", 36 + 25, barH / 2 + 1);
+  // Wordmark
+  ctx.fillStyle = IVOIRE;
+  ctx.font = "800 22px 'Inter','Helvetica',sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  (ctx as any).letterSpacing = "3px";
+  ctx.fillText("GOLDEALS CLUB", 100, barH / 2 + 1);
+  // Battle label
+  ctx.fillStyle = GOLD;
+  ctx.font = "800 22px 'Inter',sans-serif";
+  ctx.textAlign = "right";
+  ctx.fillText(label.toUpperCase(), W - 36, barH / 2 + 1);
+  ctx.textBaseline = "alphabetic";
+}
+
+function drawDealHalf(
+  ctx: CanvasRenderingContext2D,
+  deal: Deal,
+  img: HTMLImageElement | null,
+  yTop: number,
+  height: number,
+  reveal: number, // 0..1
+  isTop: boolean,
+) {
+  // Background ivoire/photo
+  ctx.fillStyle = PHOTO_BG;
+  ctx.fillRect(0, yTop, W, height);
+
+  // Photo full-bleed (haut de la moitié)
+  const photoH = height * 0.62;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, yTop, W, photoH);
+  ctx.clip();
+  if (img) {
+    const floatY = Math.sin(reveal * Math.PI) * 6;
+    const enterY = (1 - reveal) * (isTop ? -40 : 40);
+    drawCoverImage(ctx, img, 40, yTop + 20 + enterY + floatY, W - 80, photoH - 40, 1);
+  }
+  ctx.restore();
+
+  // Bas : bloc info ivoire
+  const infoY = yTop + photoH;
+  const infoH = height - photoH;
+  ctx.fillStyle = IVOIRE;
+  ctx.fillRect(0, infoY, W, infoH);
+
+  const alpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.2) / 0.6)));
+  ctx.globalAlpha = alpha;
+
+  // Brand
+  ctx.fillStyle = NOIR;
+  ctx.font = "900 64px 'Inter','Helvetica',sans-serif";
+  ctx.textAlign = "left";
+  ctx.fillText(deal.brand.toUpperCase(), 50, infoY + 80);
+
+  // Catégorie · merchant
+  ctx.fillStyle = TAUPE;
+  ctx.font = "600 22px 'Inter',sans-serif";
+  ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 50, infoY + 115);
+
+  // Prix XXL
+  const priceStr = deal.sale_price != null ? `${Math.round(Number(deal.sale_price))}€` : "—";
+  ctx.fillStyle = NOIR;
+  ctx.font = "900 130px 'Inter',sans-serif";
+  ctx.fillText(priceStr, 50, infoY + 245);
+
+  // Prix barré
+  if (deal.original_price && deal.sale_price && Number(deal.original_price) > Number(deal.sale_price)) {
+    ctx.fillStyle = TAUPE;
+    ctx.globalAlpha = alpha * 0.5;
+    ctx.font = "500 38px 'Inter',sans-serif";
+    const op = `${Math.round(Number(deal.original_price))}€`;
+    const x = 50;
+    const y = infoY + 285;
+    ctx.fillText(op, x, y);
+    const w = ctx.measureText(op).width;
+    ctx.strokeStyle = TAUPE;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y - 12);
+    ctx.lineTo(x + w, y - 12);
+    ctx.stroke();
+    ctx.globalAlpha = alpha;
+  }
+
+  // Discount pill
+  const disc = Math.round(Number(deal.discount_percent || 0));
+  if (disc > 0) {
+    ctx.font = "900 42px 'Inter',sans-serif";
+    const t = `-${disc}%`;
+    const tw = ctx.measureText(t).width;
+    const padX = 32;
+    const pillH = 78;
+    const pillW = tw + padX * 2;
+    const pillX = W - pillW - 50;
+    const pillY = infoY + 175;
+    ctx.fillStyle = NOIR;
+    roundRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+    ctx.fill();
+    ctx.fillStyle = IVOIRE;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(t, pillX + pillW / 2, pillY + pillH / 2 + 2);
+    ctx.textBaseline = "alphabetic";
+    ctx.textAlign = "left";
+
+    // Flames
+    const flameCount = disc >= 50 ? 3 : disc >= 30 ? 2 : 1;
+    const flameSize = 44;
+    const flameY = pillY + pillH + 18;
+    for (let i = 0; i < flameCount; i++) {
+      drawFlame(ctx, W - 50 - flameSize - i * (flameSize + 6), flameY, flameSize);
+    }
+  }
+
+  ctx.globalAlpha = 1;
+}
 
 function drawBattleFrame(
   ctx: CanvasRenderingContext2D,
@@ -63,140 +246,157 @@ function drawBattleFrame(
   imgA: HTMLImageElement | null,
   imgB: HTMLImageElement | null,
 ) {
-  // Background gradient
-  const g = ctx.createLinearGradient(0, 0, 0, H);
-  g.addColorStop(0, "#1a1a1a");
-  g.addColorStop(1, "#000");
-  ctx.fillStyle = g;
-  ctx.fillRect(0, 0, W, H);
-
-  // INTRO — VS reveal
+  // ─── INTRO ───
   if (t < INTRO) {
     const k = easeOut(t / INTRO);
+    ctx.fillStyle = NOIR;
+    ctx.fillRect(0, 0, W, H);
+
+    // Halo doré
+    const grad = ctx.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, W);
+    grad.addColorStop(0, "rgba(201,168,112,0.25)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
     ctx.globalAlpha = k;
-    ctx.fillStyle = "#c9a870";
-    ctx.font = "900 200px 'Inter','Helvetica',sans-serif";
+    // G logo
+    ctx.fillStyle = IVOIRE;
+    roundRect(ctx, W / 2 - 90, H / 2 - 280, 180, 180, 28);
+    ctx.fill();
+    ctx.fillStyle = NOIR;
+    ctx.font = "700 130px Georgia, serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("VS", W / 2, H / 2);
-    ctx.fillStyle = "#f5f1ea";
-    ctx.font = "700 64px 'Inter',sans-serif";
-    ctx.fillText(battle.label, W / 2, H / 2 + 180);
+    ctx.fillText("G", W / 2, H / 2 - 185);
+
+    ctx.fillStyle = IVOIRE;
+    ctx.font = "800 56px 'Inter',sans-serif";
+    ctx.fillText("GOLDEALS CLUB", W / 2, H / 2 - 40);
+
+    ctx.fillStyle = GOLD;
+    ctx.font = "900 180px 'Inter',sans-serif";
+    const scale = 0.7 + 0.3 * k;
+    ctx.save();
+    ctx.translate(W / 2, H / 2 + 130);
+    ctx.scale(scale, scale);
+    ctx.fillText("BATTLE", 0, 0);
+    ctx.restore();
+
+    ctx.fillStyle = IVOIRE;
+    ctx.font = "700 48px 'Inter',sans-serif";
+    ctx.fillText(battle.label.toUpperCase(), W / 2, H / 2 + 260);
+
     ctx.globalAlpha = 1;
     ctx.textBaseline = "alphabetic";
     return;
   }
 
-  // OUTRO
+  // ─── OUTRO ───
   if (t > TOTAL_SEC - OUTRO) {
     const k = easeOut((t - (TOTAL_SEC - OUTRO)) / OUTRO);
+    ctx.fillStyle = NOIR;
+    ctx.fillRect(0, 0, W, H);
+
+    const grad = ctx.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, W);
+    grad.addColorStop(0, "rgba(201,168,112,0.3)");
+    grad.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, H);
+
     ctx.globalAlpha = k;
-    ctx.fillStyle = "#f5f1ea";
-    ctx.font = "900 88px 'Inter',sans-serif";
+    ctx.fillStyle = IVOIRE;
+    ctx.font = "900 110px 'Inter',sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("Tu choisis qui ?", W / 2, H / 2 - 40);
-    ctx.fillStyle = "#c9a870";
-    ctx.font = "900 76px 'Inter',sans-serif";
-    ctx.fillText("goldealsclub.com", W / 2, H / 2 + 60);
+    ctx.textBaseline = "middle";
+    ctx.fillText("TU CHOISIS", W / 2, H / 2 - 120);
+    ctx.fillText("QUI ?", W / 2, H / 2 + 10);
+
+    // CTA pill
+    const pillW = 760;
+    const pillH = 130;
+    const pillX = (W - pillW) / 2;
+    const pillY = H / 2 + 180;
+    ctx.fillStyle = GOLD;
+    roundRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
+    ctx.fill();
+    ctx.fillStyle = NOIR;
+    ctx.font = "900 52px 'Inter',sans-serif";
+    ctx.fillText("GOLDEALSCLUB.COM", W / 2, pillY + pillH / 2 + 4);
+
     ctx.globalAlpha = 1;
+    ctx.textBaseline = "alphabetic";
     return;
   }
 
-  // BATTLE — split screen
+  // ─── BATTLE ───
   const battleT = t - INTRO;
-  const slide = easeOut(Math.min(1, battleT / 0.4));
-  ctx.globalAlpha = slide;
+  const battleDur = TOTAL_SEC - INTRO - OUTRO;
+  const reveal = Math.min(1, battleT / 0.7);
 
-  // Diagonal split background
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(0, 0);
-  ctx.lineTo(W, 0);
-  ctx.lineTo(W, H * 0.45);
-  ctx.lineTo(0, H * 0.55);
-  ctx.closePath();
-  ctx.clip();
-  ctx.fillStyle = "#0d0d0d";
+  // Background
+  ctx.fillStyle = PHOTO_BG;
   ctx.fillRect(0, 0, W, H);
+
+  drawTopBar(ctx, battle.label);
+
+  const barH = 110;
+  const halfH = (H - barH) / 2;
+
+  // Slide A from top, B from bottom
+  const slideA = easeOut(Math.min(1, battleT / 0.45));
+  const slideB = easeOut(Math.min(1, (battleT - 0.15) / 0.45));
+
+  ctx.save();
+  ctx.translate(0, (1 - slideA) * -halfH);
+  drawDealHalf(ctx, battle.a, imgA, barH, halfH, slideA, true);
   ctx.restore();
 
   ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(0, H * 0.55);
-  ctx.lineTo(W, H * 0.45);
-  ctx.lineTo(W, H);
-  ctx.lineTo(0, H);
-  ctx.closePath();
-  ctx.clip();
-  ctx.fillStyle = "#1a1a1a";
-  ctx.fillRect(0, 0, W, H);
+  ctx.translate(0, (1 - slideB) * halfH);
+  drawDealHalf(ctx, battle.b, imgB, barH + halfH, halfH, slideB, false);
   ctx.restore();
 
-  // Diagonal divider line
-  ctx.strokeStyle = "#c9a870";
+  // ─── VS BADGE central ───
+  const vsAppear = easeOut(Math.min(1, (battleT - 0.5) / 0.4));
+  const pulse = 1 + Math.sin(battleT * 6) * 0.06;
+  const vsScale = vsAppear * pulse;
+  const vsCx = W / 2;
+  const vsCy = barH + halfH;
+
+  // halo
+  ctx.globalAlpha = vsAppear;
+  const haloGrad = ctx.createRadialGradient(vsCx, vsCy, 20, vsCx, vsCy, 250);
+  haloGrad.addColorStop(0, "rgba(201,168,112,0.7)");
+  haloGrad.addColorStop(1, "rgba(201,168,112,0)");
+  ctx.fillStyle = haloGrad;
+  ctx.beginPath();
+  ctx.arc(vsCx, vsCy, 250, 0, Math.PI * 2);
+  ctx.fill();
+
+  // VS disc
+  ctx.save();
+  ctx.translate(vsCx, vsCy);
+  ctx.scale(vsScale, vsScale);
+  ctx.fillStyle = NOIR;
+  ctx.beginPath();
+  ctx.arc(0, 0, 130, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = GOLD;
   ctx.lineWidth = 6;
   ctx.beginPath();
-  ctx.moveTo(0, H * 0.55);
-  ctx.lineTo(W, H * 0.45);
+  ctx.arc(0, 0, 130, 0, Math.PI * 2);
   ctx.stroke();
-
-  // Helper to draw one side
-  const drawSide = (deal: Deal, img: HTMLImageElement | null, top: boolean) => {
-    const cx = W / 2;
-    const cy = top ? H * 0.22 : H * 0.78;
-    const offset = top ? -W * (1 - slide) : W * (1 - slide);
-    ctx.save();
-    ctx.translate(offset, 0);
-
-    // Image
-    if (img) {
-      const maxW = 700;
-      const maxH = 540;
-      const ratio = Math.min(maxW / img.width, maxH / img.height);
-      const iw = img.width * ratio;
-      const ih = img.height * ratio;
-      ctx.drawImage(img, cx - iw / 2, cy - ih / 2 - 40, iw, ih);
-    }
-
-    // Brand
-    ctx.fillStyle = "#f5f1ea";
-    ctx.font = "900 88px 'Inter',sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(deal.brand.toUpperCase(), cx, cy + 290);
-
-    // Discount
-    ctx.fillStyle = "#c9a870";
-    ctx.font = "900 110px 'Inter',sans-serif";
-    ctx.fillText(`-${Math.round(Number(deal.discount_percent || 0))}%`, cx, cy + 410);
-
-    // Price
-    if (deal.sale_price) {
-      ctx.fillStyle = "#fff";
-      ctx.font = "700 56px 'Inter',sans-serif";
-      const cur = deal.currency === "EUR" ? "€" : deal.currency;
-      ctx.fillText(`${Number(deal.sale_price).toFixed(2)} ${cur}`, cx, cy + 480);
-    }
-    ctx.restore();
-  };
-
-  drawSide(battle.a, imgA, true);
-  drawSide(battle.b, imgB, false);
-
-  // VS centered
-  ctx.fillStyle = "#c9a870";
-  ctx.font = "900 130px 'Inter',sans-serif";
+  ctx.fillStyle = GOLD;
+  ctx.font = "900 110px 'Inter',sans-serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  // Pulse
-  const pulse = 1 + Math.sin(battleT * 8) * 0.05;
-  ctx.save();
-  ctx.translate(W / 2, H / 2);
-  ctx.scale(pulse, pulse);
-  ctx.fillText("VS", 0, 0);
+  ctx.fillText("VS", 0, 4);
   ctx.restore();
-  ctx.textBaseline = "alphabetic";
 
   ctx.globalAlpha = 1;
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
 }
 
 export default function AdminVideoPage() {
