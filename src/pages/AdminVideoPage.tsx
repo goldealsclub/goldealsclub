@@ -847,11 +847,14 @@ export default function AdminVideoPage() {
                 (h: any) => h.brief_date === brief?.brief_date && h.category === cat,
               );
               const count = todayVideos.length;
+              const missingPhotos = todayVideos.filter((v: any) => (v.images_loaded ?? 2) < 2).length;
               const status = !inBrief
                 ? { label: "Vide / timeout", color: "text-amber-600", dot: "bg-amber-500" }
                 : count === 0
                 ? { label: "Brief OK · vidéo non générée", color: "text-foreground/70", dot: "bg-foreground/40" }
-                : { label: `${count} vidéo${count > 1 ? "s" : ""}`, color: "text-emerald-600", dot: "bg-emerald-500" };
+                : missingPhotos > 0
+                ? { label: `${count} vidéo${count > 1 ? "s" : ""} · ${missingPhotos} sans photo`, color: "text-amber-600", dot: "bg-amber-500" }
+                : { label: `${count} vidéo${count > 1 ? "s" : ""} · photos OK`, color: "text-emerald-600", dot: "bg-emerald-500" };
               return (
                 <div key={cat} className="border rounded p-3">
                   <div className="flex items-center gap-2 mb-1">
