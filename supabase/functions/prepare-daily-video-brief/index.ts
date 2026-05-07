@@ -72,10 +72,11 @@ Deno.serve(async (req) => {
         .from("deals")
         .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
         .in("category", cat.categories)
-        .gte("discount_percent", 20)
-        .lte("discount_percent", 70)
+        .gte("discount_percent", 25)
+        .lte("discount_percent", 75)
+        .neq("merchant", "Sport Outlet FR")
         .order("discount_percent", { ascending: false })
-        .limit(cat.slug === "vetements" ? 2500 : 600);
+        .limit(3000);
       if (error) {
         console.error(`query ${cat.slug} failed`, error);
         perCatResults.push({ cat, deals: [] });
