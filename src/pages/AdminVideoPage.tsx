@@ -71,6 +71,13 @@ async function loadImage(src: string): Promise<HTMLImageElement | null> {
 }
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
+const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
+// Spring approximation 0..1 (overshoots ~1.05 then settles)
+const springEase = (t: number) => {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  return 1 - Math.exp(-6 * t) * Math.cos(t * Math.PI * 1.6);
+};
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
