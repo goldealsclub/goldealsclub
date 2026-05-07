@@ -426,8 +426,8 @@ function drawSelectionFrame(
   const slideT = t - INTRO;
   const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
   const localT = slideT - idx * PER_DEAL_SEC;
-  const reveal = Math.min(1, localT / 0.5);
-  const exit = idx < n - 1 ? Math.max(0, Math.min(1, (localT - (PER_DEAL_SEC - 0.4)) / 0.4)) : 0;
+  const reveal = Math.min(1, localT / 0.7);
+  const exit = idx < n - 1 ? Math.max(0, Math.min(1, (localT - (PER_DEAL_SEC - 0.55)) / 0.55)) : 0;
 
   drawTopBar(ctx, selection.label, idx + 1, n);
   drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, exit, idx + 1);
