@@ -52,11 +52,11 @@ const TAUPE = "#45403a";
 const GOLD = "#c9a870";
 const FLAME = "#FF6B35";
 
-// Proxy CORS pour récupérer les images marchands sans tainter le canvas
+// Proxy CORS via edge function (bypass anti-hotlink productserve, etc.)
+const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 function proxify(src: string): string {
   if (!src) return src;
-  // wsrv.nl accepte l'URL complète encodée
-  return `https://wsrv.nl/?url=${encodeURIComponent(src)}&w=1400&output=jpg&we&n=-1`;
+  return `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
 }
 
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
@@ -68,10 +68,10 @@ async function loadImage(src: string): Promise<HTMLImageElement | null> {
       img.onerror = () => resolve(null);
       img.src = url;
     });
-  // 1) proxy wsrv.nl en premier — bypass hotlink protection (productserve, etc.) + CORS garanti
+  // 1) edge proxy en premier (bypass hotlink + CORS garanti)
   const viaProxy = await tryLoad(proxify(src));
   if (viaProxy) return viaProxy;
-  // 2) fallback direct (au cas où le proxy serait down)
+  // 2) fallback direct
   return tryLoad(src);
 }
 
