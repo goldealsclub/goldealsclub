@@ -167,6 +167,14 @@ export default function VideoHistory({ limit, compact }: Props) {
                 <span className="text-xs font-bold uppercase">{item.category}</span>
                 <span className="text-xs text-muted-foreground">{item.brief_date}</span>
               </div>
+              {(item.images_loaded ?? 2) < 2 && (
+                <span
+                  className="inline-flex items-center gap-1 self-start mb-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300"
+                  title="Au moins une photo produit n'a pas chargé — placeholder éditorial utilisé"
+                >
+                  ⚠ {item.images_loaded === 0 ? "Aucune photo" : "1 photo manquante"}
+                </span>
+              )}
               <p className="text-sm font-medium mb-2 line-clamp-1">{item.label}</p>
               <div className="flex gap-2 mt-auto">
                 <Button asChild size="sm" variant="outline" className="flex-1">
