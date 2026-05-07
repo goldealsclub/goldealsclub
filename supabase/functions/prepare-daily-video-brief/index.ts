@@ -9,18 +9,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Hype brands — sneakers premium + streetwear hype + marques streetwear partenaires
+// Hype brands STRICT — uniquement vraies marques hype/premium streetwear & sneakers
 const HYPE_BRANDS = [
   // sneakers premium
   "nike", "jordan", "air jordan", "yeezy", "adidas", "new balance", "asics",
+  "puma", "converse", "vans",
   "travis scott", "off-white", "off white", "dunk", "sb dunk",
   // streetwear hype
   "trapstar", "corteiz", "stussy", "stüssy", "carhartt", "carhartt wip",
   "palace", "supreme", "essentials", "fear of god", "represent",
-  "kappa", "the north face", "patta", "aimé leon dore", "ami",
-  // marques streetwear bien représentées dans le catalogue
-  "karl kani", "new era", "hummel", "urban classics", "project x paris",
-  "mister tee", "ellesse", "puma", "fila", "champion",
+  "the north face", "patta", "aimé leon dore", "ami",
+  // streetwear partenaires bien représentés
+  "kappa", "karl kani", "new era", "champion", "fila", "ellesse",
 ];
 
 // Categories targeted — pushed as SQL filter via category column (indexed)
