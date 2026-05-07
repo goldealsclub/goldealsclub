@@ -378,83 +378,100 @@ function drawBattleFrame(
   imgA: HTMLImageElement | null,
   imgB: HTMLImageElement | null,
 ) {
-  // ─── INTRO ───
+  // ─── INTRO ─── (noir profond, ivoire, accent or filaire)
   if (t < INTRO) {
     const k = easeOut(t / INTRO);
     ctx.fillStyle = NOIR;
     ctx.fillRect(0, 0, W, H);
 
-    // Halo doré
-    const grad = ctx.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, W);
-    grad.addColorStop(0, "rgba(201,168,112,0.25)");
+    // Vignette douce taupe (pas de halo doré agressif)
+    const grad = ctx.createRadialGradient(W / 2, H / 2, 80, W / 2, H / 2, W);
+    grad.addColorStop(0, "rgba(246,240,233,0.06)");
     grad.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
     ctx.globalAlpha = k;
-    // G logo
+
+    // Wordmark sobre, espacement large
     ctx.fillStyle = IVOIRE;
-    roundRect(ctx, W / 2 - 90, H / 2 - 280, 180, 180, 28);
-    ctx.fill();
-    ctx.fillStyle = NOIR;
-    ctx.font = "700 130px Georgia, serif";
+    ctx.font = "600 38px 'Inter',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("G", W / 2, H / 2 - 185);
+    (ctx as any).letterSpacing = "12px";
+    ctx.fillText("GOLDEALS CLUB", W / 2, H / 2 - 200);
+    (ctx as any).letterSpacing = "0px";
 
-    ctx.fillStyle = IVOIRE;
-    ctx.font = "800 56px 'Inter',sans-serif";
-    ctx.fillText("GOLDEALS CLUB", W / 2, H / 2 - 40);
-
+    // Filet doré ultra fin (signature)
     ctx.fillStyle = GOLD;
-    ctx.font = "900 180px 'Inter',sans-serif";
-    const scale = 0.7 + 0.3 * k;
+    ctx.fillRect(W / 2 - 28, H / 2 - 150, 56, 1);
+
+    // BATTLE en display ivoire, pas en gold
+    ctx.fillStyle = IVOIRE;
+    ctx.font = "300 200px Georgia, serif";
+    const scale = 0.85 + 0.15 * k;
     ctx.save();
-    ctx.translate(W / 2, H / 2 + 130);
+    ctx.translate(W / 2, H / 2 + 40);
     ctx.scale(scale, scale);
-    ctx.fillText("BATTLE", 0, 0);
+    ctx.fillText("Battle", 0, 0);
     ctx.restore();
 
-    ctx.fillStyle = IVOIRE;
-    ctx.font = "700 48px 'Inter',sans-serif";
-    ctx.fillText(battle.label.toUpperCase(), W / 2, H / 2 + 260);
+    // Catégorie en petites caps taupe clair
+    ctx.fillStyle = "rgba(246,240,233,0.55)";
+    ctx.font = "500 26px 'Inter',sans-serif";
+    (ctx as any).letterSpacing = "10px";
+    ctx.fillText(battle.label.toUpperCase(), W / 2, H / 2 + 200);
+    (ctx as any).letterSpacing = "0px";
 
     ctx.globalAlpha = 1;
     ctx.textBaseline = "alphabetic";
     return;
   }
 
-  // ─── OUTRO ───
+  // ─── OUTRO ─── (noir, ivoire, CTA filaire or)
   if (t > TOTAL_SEC - OUTRO) {
     const k = easeOut((t - (TOTAL_SEC - OUTRO)) / OUTRO);
     ctx.fillStyle = NOIR;
     ctx.fillRect(0, 0, W, H);
 
-    const grad = ctx.createRadialGradient(W / 2, H / 2, 50, W / 2, H / 2, W);
-    grad.addColorStop(0, "rgba(201,168,112,0.3)");
+    const grad = ctx.createRadialGradient(W / 2, H / 2, 80, W / 2, H / 2, W);
+    grad.addColorStop(0, "rgba(246,240,233,0.05)");
     grad.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, W, H);
 
     ctx.globalAlpha = k;
-    ctx.fillStyle = IVOIRE;
-    ctx.font = "900 110px 'Inter',sans-serif";
+    // Petit eyebrow
+    ctx.fillStyle = "rgba(246,240,233,0.5)";
+    ctx.font = "500 24px 'Inter',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("TU CHOISIS", W / 2, H / 2 - 120);
-    ctx.fillText("QUI ?", W / 2, H / 2 + 10);
+    (ctx as any).letterSpacing = "8px";
+    ctx.fillText("ALORS —", W / 2, H / 2 - 220);
+    (ctx as any).letterSpacing = "0px";
 
-    // CTA pill
-    const pillW = 760;
-    const pillH = 130;
-    const pillX = (W - pillW) / 2;
-    const pillY = H / 2 + 180;
+    ctx.fillStyle = IVOIRE;
+    ctx.font = "300 150px Georgia, serif";
+    ctx.fillText("Tu choisis qui ?", W / 2, H / 2 - 60);
+
+    // Filet or signature
     ctx.fillStyle = GOLD;
-    roundRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
-    ctx.fill();
-    ctx.fillStyle = NOIR;
-    ctx.font = "900 52px 'Inter',sans-serif";
-    ctx.fillText("GOLDEALSCLUB.COM", W / 2, pillY + pillH / 2 + 4);
+    ctx.fillRect(W / 2 - 28, H / 2 + 30, 56, 1);
+
+    // CTA filaire (pas plein doré) — noir + bordure ivoire fine
+    const pillW = 720;
+    const pillH = 120;
+    const pillX = (W - pillW) / 2;
+    const pillY = H / 2 + 130;
+    ctx.strokeStyle = IVOIRE;
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, pillX, pillY, pillW, pillH, 4);
+    ctx.stroke();
+    ctx.fillStyle = IVOIRE;
+    ctx.font = "500 38px 'Inter',sans-serif";
+    (ctx as any).letterSpacing = "6px";
+    ctx.fillText("GOLDEALSCLUB.COM", W / 2, pillY + pillH / 2 + 2);
+    (ctx as any).letterSpacing = "0px";
 
     ctx.globalAlpha = 1;
     ctx.textBaseline = "alphabetic";
