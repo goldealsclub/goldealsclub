@@ -114,9 +114,13 @@ function drawCoverImage(
   x: number, y: number, w: number, h: number,
   scale = 1,
 ) {
+  // CONTAIN — aucun découpage. La photo entière est visible dans le cadre.
   const ratio = Math.min(w / img.width, h / img.height) * scale;
   const iw = img.width * ratio;
   const ih = img.height * ratio;
+  // Qualité max
+  (ctx as any).imageSmoothingEnabled = true;
+  (ctx as any).imageSmoothingQuality = "high";
   ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
 }
 
