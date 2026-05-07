@@ -154,12 +154,20 @@ function drawPremiumPlaceholder(
   category: string,
   x: number, y: number, w: number, h: number,
   reveal: number,
+  time = 0, // secondes — pour animation continue (halo + parallax)
 ) {
   // Hash deterministe pour varier les teintes par deal
   let hash = 0;
   const seed = (deal.id || deal.brand || "x") + category;
   for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   const hue = hash % 360;
+
+  // Phase d'animation propre à ce deal
+  const phase = (hash % 1000) / 1000;
+  const breathe = (Math.sin((time * 1.4 + phase) * Math.PI * 2) + 1) / 2; // 0..1
+  const drift = Math.sin((time * 0.6 + phase) * Math.PI * 2);             // -1..1
+  const parallaxX = drift * 14;
+  const parallaxY = Math.cos((time * 0.55 + phase) * Math.PI * 2) * 10;
 
   // Fond éditorial : dégradé diagonal sombre teinté or
   const grad = ctx.createLinearGradient(x, y, x + w, y + h);
@@ -169,45 +177,61 @@ function drawPremiumPlaceholder(
   ctx.fillStyle = grad;
   ctx.fillRect(x, y, w, h);
 
-  // Halo doré centré
+  // Halo doré qui respire — plus large et plus chaud au pic
   const cx = x + w / 2;
   const cy = y + h / 2;
-  const radial = ctx.createRadialGradient(cx, cy, 20, cx, cy, Math.max(w, h) * 0.7);
-  radial.addColorStop(0, "rgba(201,168,112,0.35)");
+  const haloR = Math.max(w, h) * (0.55 + breathe * 0.25);
+  const haloAlpha = 0.28 + breathe * 0.22;
+  const haloCx = cx + parallaxX * 0.6;
+  const haloCy = cy + parallaxY * 0.6;
+  const radial = ctx.createRadialGradient(haloCx, haloCy, 20, haloCx, haloCy, haloR);
+  radial.addColorStop(0, `rgba(212,180,124,${haloAlpha.toFixed(3)})`);
+  radial.addColorStop(0.55, "rgba(201,168,112,0.10)");
   radial.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = radial;
   ctx.fillRect(x, y, w, h);
 
-  // Grain subtil via lignes diagonales
+  // Second halo froid pour la profondeur
+  const cool = ctx.createRadialGradient(
+    cx - parallaxX * 0.8, cy - parallaxY * 0.8, 10,
+    cx - parallaxX * 0.8, cy - parallaxY * 0.8, haloR * 0.7,
+  );
+  cool.addColorStop(0, `rgba(80,90,110,${(0.18 - breathe * 0.08).toFixed(3)})`);
+  cool.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = cool;
+  ctx.fillRect(x, y, w, h);
+
+  // Grain subtil via lignes diagonales (offset pour parallax)
   ctx.save();
   ctx.globalAlpha = 0.06;
   ctx.strokeStyle = "#ffffff";
   ctx.lineWidth = 1;
+  const off = (drift * 6) | 0;
   for (let i = -h; i < w; i += 14) {
     ctx.beginPath();
-    ctx.moveTo(x + i, y);
-    ctx.lineTo(x + i + h, y + h);
+    ctx.moveTo(x + i + off, y);
+    ctx.lineTo(x + i + h + off, y + h);
     ctx.stroke();
   }
   ctx.restore();
 
-  // Cadre intérieur fin doré
-  ctx.strokeStyle = "rgba(201,168,112,0.55)";
+  // Cadre intérieur fin doré (légèrement plus brillant au pic du halo)
+  ctx.strokeStyle = `rgba(201,168,112,${(0.45 + breathe * 0.25).toFixed(3)})`;
   ctx.lineWidth = 2;
   ctx.strokeRect(x + 24, y + 24, w - 48, h - 48);
 
-  // Monogramme géant filigrane (initiale marque)
+  // Monogramme géant filigrane (initiale marque) — parallax inverse pour effet de profondeur
   const initial = (deal.brand || "G").trim().charAt(0).toUpperCase();
   ctx.save();
-  ctx.globalAlpha = 0.18 * easeOut(reveal);
+  ctx.globalAlpha = (0.16 + breathe * 0.08) * easeOut(reveal);
   ctx.fillStyle = "#c9a870";
   ctx.font = "900 540px Georgia, serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(initial, cx, cy + 20);
+  ctx.fillText(initial, cx - parallaxX * 1.4, cy + 20 - parallaxY * 1.2);
   ctx.restore();
 
-  // Étiquette catégorie en haut
+  // Étiquette catégorie en haut — léger parallax positif
   ctx.save();
   ctx.globalAlpha = easeOut(reveal);
   ctx.fillStyle = "#c9a870";
@@ -216,17 +240,21 @@ function drawPremiumPlaceholder(
   ctx.textBaseline = "alphabetic";
   (ctx as any).letterSpacing = "6px";
   const catLabel = (category || "EXCLUSIVE").toUpperCase();
-  // ligne or
-  const lineY = y + 70;
+  const lineY = y + 70 + parallaxY * 0.25;
   const tw = ctx.measureText(catLabel).width;
-  ctx.fillRect(cx - tw / 2 - 60, lineY - 12, 40, 2);
-  ctx.fillRect(cx + tw / 2 + 20, lineY - 12, 40, 2);
-  ctx.fillText(catLabel, cx, lineY);
+  const labelCx = cx + parallaxX * 0.3;
+  ctx.fillRect(labelCx - tw / 2 - 60, lineY - 12, 40, 2);
+  ctx.fillRect(labelCx + tw / 2 + 20, lineY - 12, 40, 2);
+  ctx.fillText(catLabel, labelCx, lineY);
 
-  // Marque centrale
+  // Marque centrale — parallax plus marqué (plan avant)
   ctx.fillStyle = "#f5f1e8";
   ctx.font = "900 96px 'Inter',sans-serif";
-  ctx.fillText((deal.brand || "GOLDEALS").toUpperCase(), cx, cy + h * 0.28);
+  ctx.fillText(
+    (deal.brand || "GOLDEALS").toUpperCase(),
+    cx + parallaxX * 0.7,
+    cy + h * 0.28 + parallaxY * 0.6,
+  );
 
   // Mention bas
   ctx.fillStyle = "rgba(245,241,232,0.55)";
