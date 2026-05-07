@@ -92,7 +92,7 @@ Deno.serve(async (req) => {
           .from("deals")
           .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
           .eq("category", c)
-          .gte("discount_percent", cat.slug === "vetements" ? 50 : 25)
+          .gte("discount_percent", 25)
           .lte("discount_percent", 75)
           .not("merchant", "in", `(${[...BLACKLIST_MERCHANTS].map((m) => `"${m}"`).join(",")})`)
           .order("discount_percent", { ascending: false })
