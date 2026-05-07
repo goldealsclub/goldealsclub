@@ -152,23 +152,8 @@ Deno.serve(async (req) => {
           if (picks.length === 2) break;
         }
       }
-      if (picks.length < 2) {
-        const generic = deals.filter(
-          (d) =>
-            validImage(d.image_url) &&
-            isAllowedMerchant(d.merchant) &&
-            matchesCategory(d) &&
-            Number(d.sale_price) > 5,
-        );
-        const seen = new Set(picks.map((p) => norm(p.brand)));
-        for (const d of generic) {
-          const b = norm(d.brand);
-          if (seen.has(b)) continue;
-          seen.add(b);
-          picks.push(d);
-          if (picks.length === 2) break;
-        }
-      }
+      // Pas de fallback générique : on n'autorise QUE les marques hype.
+      // Mieux vaut une catégorie vide qu'une battle avec une marque random.
       if (picks.length === 2) {
         const map = (d: any) => {
           const sale = Number(d.sale_price) || 0;
