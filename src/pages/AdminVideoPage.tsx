@@ -52,14 +52,32 @@ const TAUPE = "#45403a";
 const GOLD = "#c9a870";
 const FLAME = "#FF6B35";
 
+// Proxy CORS pour récupérer les images marchands sans tainter le canvas
+function proxify(src: string): string {
+  if (!src) return src;
+  try {
+    const u = new URL(src);
+    // wsrv.nl ajoute les bons headers CORS et ré-encode en JPG
+    return `https://wsrv.nl/?url=${encodeURIComponent(u.host + u.pathname + u.search)}&w=1200&output=jpg`;
+  } catch {
+    return src;
+  }
+}
+
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
-  return new Promise((resolve) => {
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null);
-    img.src = src;
-  });
+  const tryLoad = (url: string) =>
+    new Promise<HTMLImageElement | null>((resolve) => {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => resolve(img);
+      img.onerror = () => resolve(null);
+      img.src = url;
+    });
+  // 1) tentative via proxy (CORS garanti)
+  const viaProxy = await tryLoad(proxify(src));
+  if (viaProxy) return viaProxy;
+  // 2) fallback direct
+  return tryLoad(src);
 }
 
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
