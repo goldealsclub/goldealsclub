@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_deals_category_discount ON public.deals (category, discount_percent DESC);

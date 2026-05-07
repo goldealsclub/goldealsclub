@@ -20,28 +20,35 @@ const HYPE_BRANDS = [
   "kappa", "the north face", "patta", "aimé leon dore", "ami",
 ];
 
-// Categories targeted (slug -> display label + matching keywords in DB category/title)
-const BATTLE_CATEGORIES: { slug: string; label: string; match: (c: string, t: string) => boolean }[] = [
+// Categories targeted — pushed as SQL filter via category column (indexed)
+const BATTLE_CATEGORIES: { slug: string; label: string; categories: string[]; titleHints: RegExp }[] = [
   {
     slug: "sneakers",
     label: "SNEAKERS",
-    match: (c, t) => /sneaker|chaussure|basket|shoe/i.test(c) || /sneaker|jordan|dunk|air max|yeezy|550|990/i.test(t),
+    categories: ["sneakers", "chaussures"],
+    titleHints: /sneaker|jordan|dunk|air max|yeezy|550|990|nike|adidas/i,
   },
   {
     slug: "vetements",
     label: "VÊTEMENTS",
-    match: (c, t) =>
-      /v[eê]tement|hoodie|sweat|tshirt|t-shirt|pull|veste|jacket|pant|jean|short/i.test(c) ||
-      /hoodie|sweat|t-shirt|tshirt|veste|jacket|pant|jean|short|cargo/i.test(t),
+    categories: ["hoodies", "t-shirts", "vestes", "pantalons", "vetements", "vêtements"],
+    titleHints: /hoodie|sweat|t-shirt|tshirt|veste|jacket|pant|jean|short|cargo/i,
   },
   {
     slug: "accessoires",
     label: "ACCESSOIRES",
-    match: (c, t) =>
-      /accessoir|sac|bag|cap|bonnet|chaussette|sock|ceinture|belt/i.test(c) ||
-      /sac\b|bag|casquette|cap\b|bonnet|chaussette|sock|ceinture|belt/i.test(t),
+    categories: ["accessoires"],
+    titleHints: /sac\b|bag|casquette|cap\b|bonnet|chaussette|sock|ceinture|belt/i,
   },
 ];
+
+const norm = (s: string | null) => (s ?? "").toLowerCase().trim();
+const isHype = (brand: string) => {
+  const b = norm(brand);
+  return HYPE_BRANDS.some((h) => b === h || b.includes(h));
+};
+const validImage = (u: string | null) =>
+  !!u && /^https?:\/\//i.test(u) && !/placeholder|no.?image|default/i.test(u);
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -52,37 +59,35 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    const { data: pool, error } = await supabase
-      .from("deals")
-      .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
-      .gte("discount_percent", 20)
-      .lte("discount_percent", 70) // au-delà de 70% = prix barré quasi systématiquement gonflé
-      .not("image_url", "is", null)
-      .neq("image_url", "")
-      .not("sale_price", "is", null)
-      .not("original_price", "is", null)
-      .gt("sale_price", 0)
-      .order("discount_percent", { ascending: false })
-      .limit(600);
-
-    if (error) throw error;
-
-    const norm = (s: string | null) => (s ?? "").toLowerCase().trim();
-    const isHype = (brand: string) => {
-      const b = norm(brand);
-      return HYPE_BRANDS.some((h) => b === h || b.includes(h));
-    };
-
-    // Garde-fou supplémentaire : image valide (http) + ratio prix sain
-    const validImage = (u: string | null) => !!u && /^https?:\/\//i.test(u) && !/placeholder|no.?image|default/i.test(u);
-    const hypeDeals = (pool ?? []).filter(
-      (d) => isHype(d.brand) && validImage(d.image_url) && Number(d.sale_price) > 5,
-    );
+    // Stratégie : requête SQL minimale (idx_deals_category_discount) puis filtre marque/image en JS.
+    // Séquentiel pour éviter de saturer le pool DB et déclencher des statement timeouts.
+    const perCatResults: { cat: typeof BATTLE_CATEGORIES[number]; deals: any[] }[] = [];
+    for (const cat of BATTLE_CATEGORIES) {
+      const { data, error } = await supabase
+        .from("deals")
+        .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
+        .in("category", cat.categories)
+        .gte("discount_percent", 20)
+        .lte("discount_percent", 70)
+        .order("discount_percent", { ascending: false })
+        .limit(cat.slug === "vetements" ? 2500 : 600);
+      if (error) {
+        console.error(`query ${cat.slug} failed`, error);
+        perCatResults.push({ cat, deals: [] });
+      } else {
+        perCatResults.push({ cat, deals: data ?? [] });
+      }
+    }
 
     const battles: any[] = [];
-    for (const cat of BATTLE_CATEGORIES) {
-      const candidates = hypeDeals.filter((d) => cat.match(norm(d.category), norm(d.title)));
-      // Try to pick 2 from different brands
+    for (const { cat, deals } of perCatResults) {
+      const candidates = deals.filter(
+        (d) =>
+          isHype(d.brand) &&
+          validImage(d.image_url) &&
+          d.original_price != null &&
+          Number(d.sale_price) > 5,
+      );
       const seenBrands = new Set<string>();
       const picks: any[] = [];
       for (const d of candidates) {
@@ -91,6 +96,14 @@ Deno.serve(async (req) => {
         seenBrands.add(b);
         picks.push(d);
         if (picks.length === 2) break;
+      }
+      // Fallback: si on n'a qu'une marque hype, compléter avec les meilleurs candidats restants
+      if (picks.length < 2) {
+        for (const d of candidates) {
+          if (picks.find((p) => p.id === d.id)) continue;
+          picks.push(d);
+          if (picks.length === 2) break;
+        }
       }
       if (picks.length === 2) {
         const map = (d: any) => ({
@@ -112,6 +125,8 @@ Deno.serve(async (req) => {
           a: map(picks[0]),
           b: map(picks[1]),
         });
+      } else {
+        console.warn(`Pas assez de candidats hype pour ${cat.slug} (${candidates.length})`);
       }
     }
 
@@ -144,7 +159,12 @@ Deno.serve(async (req) => {
     if (upErr) throw upErr;
 
     return new Response(
-      JSON.stringify({ ok: true, brief_date: briefDate, battles: battles.length, categories: battles.map((b) => b.category) }),
+      JSON.stringify({
+        ok: true,
+        brief_date: briefDate,
+        battles: battles.length,
+        categories: battles.map((b) => b.category),
+      }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err: any) {
