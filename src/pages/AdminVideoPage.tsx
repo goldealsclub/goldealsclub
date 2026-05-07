@@ -824,6 +824,43 @@ export default function AdminVideoPage() {
         Une vidéo VS par catégorie · 9:16 · 15s · marques hype
       </p>
 
+      {/* AUDIT GÉNÉRATION — vue par catégorie */}
+      {!loading && (
+        <div className="border rounded-lg p-4 mb-6 bg-muted/20">
+          <h2 className="text-sm font-semibold uppercase tracking-widest mb-3 text-muted-foreground">
+            Audit génération du jour
+          </h2>
+          <div className="grid grid-cols-3 gap-3">
+            {(["sneakers", "vetements", "accessoires"] as const).map((cat) => {
+              const inBrief = brief?.deals.find((b) => b.category === cat);
+              const todayVideos = history.filter(
+                (h: any) => h.brief_date === brief?.brief_date && h.category === cat,
+              );
+              const count = todayVideos.length;
+              const status = !inBrief
+                ? { label: "Vide / timeout", color: "text-amber-600", dot: "bg-amber-500" }
+                : count === 0
+                ? { label: "Brief OK · vidéo non générée", color: "text-foreground/70", dot: "bg-foreground/40" }
+                : { label: `${count} vidéo${count > 1 ? "s" : ""}`, color: "text-emerald-600", dot: "bg-emerald-500" };
+              return (
+                <div key={cat} className="border rounded p-3">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`h-2 w-2 rounded-full ${status.dot}`} />
+                    <span className="text-xs uppercase tracking-wider font-medium">{cat}</span>
+                  </div>
+                  <p className={`text-sm ${status.color}`}>{status.label}</p>
+                  {inBrief && (
+                    <p className="text-[10px] text-muted-foreground mt-1 truncate">
+                      {inBrief.a.brand} vs {inBrief.b.brand}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {loading && <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin" /></div>}
 
       {!loading && (!brief || brief.deals.length === 0) && (
