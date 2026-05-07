@@ -59,7 +59,10 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Une requête par catégorie, parallèle, avec limite modeste pour éviter les timeouts.
+    // Filtre marque côté SQL pour limiter drastiquement le scan (sinon timeout statement).
+    const brandOr = HYPE_BRANDS.map((b) => `brand.ilike.%${b}%`).join(",");
+
+    // Une requête par catégorie, parallèle.
     const perCatResults = await Promise.all(
       BATTLE_CATEGORIES.map(async (cat) => {
         const { data, error } = await supabase
@@ -71,8 +74,9 @@ Deno.serve(async (req) => {
           .gt("sale_price", 5)
           .not("image_url", "is", null)
           .not("original_price", "is", null)
+          .or(brandOr)
           .order("discount_percent", { ascending: false })
-          .limit(250);
+          .limit(120);
         if (error) {
           console.error(`query ${cat.slug} failed`, error);
           return { cat, deals: [] as any[] };
