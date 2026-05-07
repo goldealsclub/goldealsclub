@@ -121,30 +121,31 @@ function drawCoverImage(
 }
 
 function drawTopBar(ctx: CanvasRenderingContext2D, label: string) {
-  const barH = 110;
+  const barH = 96;
   ctx.fillStyle = NOIR;
   ctx.fillRect(0, 0, W, barH);
-  // Logo G
+
+  // Wordmark à gauche, lettrage espacé (Zara-like)
   ctx.fillStyle = IVOIRE;
-  roundRect(ctx, 36, (barH - 50) / 2, 50, 50, 10);
-  ctx.fill();
-  ctx.fillStyle = NOIR;
-  ctx.font = "700 34px Georgia, serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText("G", 36 + 25, barH / 2 + 1);
-  // Wordmark
-  ctx.fillStyle = IVOIRE;
-  ctx.font = "800 22px 'Inter','Helvetica',sans-serif";
+  ctx.font = "600 22px 'Inter','Helvetica',sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
-  (ctx as any).letterSpacing = "3px";
-  ctx.fillText("GOLDEALS CLUB", 100, barH / 2 + 1);
-  // Battle label
-  ctx.fillStyle = GOLD;
-  ctx.font = "800 22px 'Inter',sans-serif";
+  (ctx as any).letterSpacing = "8px";
+  ctx.fillText("GOLDEALS CLUB", 48, barH / 2 + 1);
+  (ctx as any).letterSpacing = "0px";
+
+  // Catégorie à droite, taupe clair, fine
+  ctx.fillStyle = "rgba(246,240,233,0.55)";
+  ctx.font = "500 18px 'Inter',sans-serif";
   ctx.textAlign = "right";
-  ctx.fillText(label.toUpperCase(), W - 36, barH / 2 + 1);
+  (ctx as any).letterSpacing = "6px";
+  ctx.fillText(label.toUpperCase(), W - 48, barH / 2 + 1);
+  (ctx as any).letterSpacing = "0px";
+
+  // Filet doré ultra-fin (signature unique de la marque)
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(0, barH - 1, W, 1);
+
   ctx.textBaseline = "alphabetic";
 }
 
