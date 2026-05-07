@@ -90,8 +90,10 @@ Deno.serve(async (req) => {
         (d) =>
           isHype(d.brand) &&
           validImage(d.image_url) &&
-          d.original_price != null &&
-          Number(d.sale_price) > 5,
+          isAllowedMerchant(d.merchant) &&
+          Number(d.sale_price) > 5 &&
+          Number(d.discount_percent) >= 25 &&
+          Number(d.discount_percent) <= 75,
       );
       const seenBrands = new Set<string>();
       const picks: any[] = [];
