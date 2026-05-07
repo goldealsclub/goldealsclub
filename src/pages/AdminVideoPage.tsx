@@ -405,8 +405,19 @@ export default function AdminVideoPage() {
       .maybeSingle();
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
     if (data) {
-      setBrief(data as unknown as Brief);
-      setEditableCaption(`${data.caption}\n\n${data.hashtags}`);
+      const raw = (data as any).deals;
+      const isNewFormat =
+        Array.isArray(raw) &&
+        raw.length > 0 &&
+        raw.every((s: any) => s && s.type === "selection" && Array.isArray(s.deals));
+      if (isNewFormat) {
+        setBrief(data as unknown as Brief);
+        setEditableCaption(`${data.caption}\n\n${data.hashtags}`);
+      } else {
+        // Vieux format (battle) — on l'ignore, le user devra régénérer
+        setBrief(null);
+        setEditableCaption("");
+      }
     } else {
       setBrief(null);
     }
