@@ -1,0 +1,1 @@
+ALTER TABLE public.generated_videos ADD COLUMN IF NOT EXISTS images_loaded smallint NOT NULL DEFAULT 2;

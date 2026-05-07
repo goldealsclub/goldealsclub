@@ -245,6 +245,7 @@ export type Database = {
           duration_sec: number | null
           hashtags: string | null
           id: string
+          images_loaded: number
           label: string
           public_url: string
           size_bytes: number | null
@@ -258,6 +259,7 @@ export type Database = {
           duration_sec?: number | null
           hashtags?: string | null
           id?: string
+          images_loaded?: number
           label?: string
           public_url: string
           size_bytes?: number | null
@@ -271,6 +273,7 @@ export type Database = {
           duration_sec?: number | null
           hashtags?: string | null
           id?: string
+          images_loaded?: number
           label?: string
           public_url?: string
           size_bytes?: number | null

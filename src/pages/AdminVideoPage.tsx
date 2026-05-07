@@ -656,6 +656,15 @@ export default function AdminVideoPage() {
       const ctx = canvas.getContext("2d")!;
 
       const [imgA, imgB] = await Promise.all([loadImage(battle.a.image_url), loadImage(battle.b.image_url)]);
+      const imagesLoaded = (imgA ? 1 : 0) + (imgB ? 1 : 0);
+      if (imagesLoaded < 2) {
+        const missing = [!imgA && battle.a.brand, !imgB && battle.b.brand].filter(Boolean).join(", ");
+        toast({
+          title: imagesLoaded === 0 ? "⚠️ Aucune photo chargée" : "⚠️ Photo manquante",
+          description: `Placeholder éditorial utilisé pour : ${missing}`,
+          variant: "destructive",
+        });
+      }
 
       const totalFrames = TOTAL_SEC * FPS;
       const videoStream = (canvas as any).captureStream(FPS) as MediaStream;
@@ -778,6 +787,7 @@ export default function AdminVideoPage() {
           hashtags: brief!.hashtags,
           size_bytes: blob.size,
           duration_sec: TOTAL_SEC,
+          images_loaded: imagesLoaded,
         });
         if (insErr) throw insErr;
         toast({ title: "Sauvegardée dans le cloud ☁️" });
@@ -837,11 +847,14 @@ export default function AdminVideoPage() {
                 (h: any) => h.brief_date === brief?.brief_date && h.category === cat,
               );
               const count = todayVideos.length;
+              const missingPhotos = todayVideos.filter((v: any) => (v.images_loaded ?? 2) < 2).length;
               const status = !inBrief
                 ? { label: "Vide / timeout", color: "text-amber-600", dot: "bg-amber-500" }
                 : count === 0
                 ? { label: "Brief OK · vidéo non générée", color: "text-foreground/70", dot: "bg-foreground/40" }
-                : { label: `${count} vidéo${count > 1 ? "s" : ""}`, color: "text-emerald-600", dot: "bg-emerald-500" };
+                : missingPhotos > 0
+                ? { label: `${count} vidéo${count > 1 ? "s" : ""} · ${missingPhotos} sans photo`, color: "text-amber-600", dot: "bg-amber-500" }
+                : { label: `${count} vidéo${count > 1 ? "s" : ""} · photos OK`, color: "text-emerald-600", dot: "bg-emerald-500" };
               return (
                 <div key={cat} className="border rounded p-3">
                   <div className="flex items-center gap-2 mb-1">
