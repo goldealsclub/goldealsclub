@@ -50,6 +50,11 @@ const isHype = (brand: string) => {
 const validImage = (u: string | null) =>
   !!u && /^https?:\/\//i.test(u) && !/placeholder|no.?image|default/i.test(u);
 
+// Marchands à exclure : sportspar.de bloque le hotlinking (403) ET a des prix d'origine
+// artificiellement gonflés (-94% non crédibles). On les retire des battles vidéo.
+const BLACKLIST_MERCHANTS = new Set(["sport outlet fr"]);
+const isAllowedMerchant = (m: string | null) => !BLACKLIST_MERCHANTS.has(norm(m));
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
