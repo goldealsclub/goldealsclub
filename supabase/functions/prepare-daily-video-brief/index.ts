@@ -9,7 +9,7 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Hype brands — sneakers premium + streetwear hype
+// Hype brands — sneakers premium + streetwear hype + marques streetwear partenaires
 const HYPE_BRANDS = [
   // sneakers premium
   "nike", "jordan", "air jordan", "yeezy", "adidas", "new balance", "asics",
@@ -18,6 +18,9 @@ const HYPE_BRANDS = [
   "trapstar", "corteiz", "stussy", "stüssy", "carhartt", "carhartt wip",
   "palace", "supreme", "essentials", "fear of god", "represent",
   "kappa", "the north face", "patta", "aimé leon dore", "ami",
+  // marques streetwear bien représentées dans le catalogue
+  "karl kani", "new era", "hummel", "urban classics", "project x paris",
+  "mister tee", "ellesse", "puma", "fila", "champion",
 ];
 
 // Categories targeted — pushed as SQL filter via category column (indexed)
