@@ -1,7 +1,7 @@
-// Generates the daily HYPE BATTLE briefs: one Versus video per category
-// (sneakers, vêtements, accessoires). For each category, picks 2 deals from
-// hype brands with strong discounts. Stored in public.daily_video_briefs.deals
-// as an array of battles: [{type:'battle', category, label, a, b}, ...]
+// Generates daily SELECTION briefs: one selection of TOP 5 deals per category
+// (sneakers, vêtements, accessoires). Hype brands, biggest discounts, dedup
+// by brand. Stored in public.daily_video_briefs.deals as:
+// [{type:'selection', category, label, deals: Deal[5]}, ...]
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
 
 const corsHeaders = {
@@ -9,27 +9,21 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Hype brands STRICT — uniquement vraies marques hype/premium streetwear & sneakers
 const HYPE_BRANDS = [
-  // sneakers premium
   "nike", "jordan", "air jordan", "yeezy", "adidas", "new balance", "asics",
   "puma", "converse", "vans",
   "travis scott", "off-white", "off white", "dunk", "sb dunk",
-  // streetwear hype
   "trapstar", "corteiz", "stussy", "stüssy", "carhartt", "carhartt wip",
   "palace", "supreme", "essentials", "fear of god", "represent",
   "the north face", "patta", "aimé leon dore", "ami",
-  // streetwear partenaires bien représentés
   "kappa", "karl kani", "new era", "champion", "fila", "ellesse",
 ];
 
-// Categories targeted — pushed as SQL filter via category column (indexed)
-const BATTLE_CATEGORIES: { slug: string; label: string; categories: string[]; titleHints: RegExp; titleExclude: RegExp }[] = [
+const SELECTION_CATEGORIES: { slug: string; label: string; categories: string[]; titleHints: RegExp; titleExclude: RegExp }[] = [
   {
     slug: "sneakers",
     label: "SNEAKERS",
     categories: ["sneakers", "chaussures"],
-    // doit ressembler à une chaussure
     titleHints: /sneaker|basket|chaussure|shoe|trainer|jordan|dunk|air\s?max|air\s?force|yeezy|\b550\b|\b990\b|\b327\b|\b574\b|gel[-\s]?|samba|gazelle|stan\s?smith|superstar|forum|campus|huarache|cortez|blazer|tongs?|adilette|slide|sandal|mule/i,
     titleExclude: /hoodie|sweat|t-?shirt|tee\b|trikot|jersey|maillot|veste|jacket|pantalon|pant\b|jean|short|cargo|sac\b|bag\b|hip\s?bag|casquette|cap\b|hat\b|bonnet|chaussette|sock|ceinture|belt|ballon|football/i,
   },
@@ -55,25 +49,17 @@ const isHype = (brand: string) => {
   return HYPE_BRANDS.some((h) => b === h || b.includes(h));
 };
 const validImage = (u: string | null) =>
-  !!u &&
-  /^https?:\/\//i.test(u) &&
-  !/placeholder|no.?image|default/i.test(u) &&
-  // sportspar.de = hotlink réellement bloqué (Snipes via productserve charge bien donc on ne bloque pas productserve.com en général)
-  !/sportspar\.de/i.test(u);
+  !!u && /^https?:\/\//i.test(u) && !/placeholder|no.?image|default/i.test(u) && !/sportspar\.de/i.test(u);
 
-// Marchands à exclure : sportspar.de bloque le hotlinking (403) ET a des prix d'origine
-// artificiellement gonflés (-94% non crédibles). On les retire des battles vidéo.
 const BLACKLIST_MERCHANTS = new Set([
-  "sport outlet fr",
-  "sport is good fr",   // même feed productserve / hotlink bloqué
-  "training fit fr",    // même feed productserve / hotlink bloqué
-  "sneakin fr",         // même feed productserve / hotlink bloqué
+  "sport outlet fr", "sport is good fr", "training fit fr", "sneakin fr",
 ]);
 const isAllowedMerchant = (m: string | null) => !BLACKLIST_MERCHANTS.has(norm(m));
 
-// Marchands premium dont les images chargent et les prix sont fiables
 const PREMIUM_MERCHANTS = new Set(["snipes eu", "kappa fr", "jd sports fr", "nike fr"]);
 const isPremium = (m: string | null) => PREMIUM_MERCHANTS.has(norm(m));
+
+const TOP_N = 5;
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -84,12 +70,8 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Stratégie : requête SQL minimale (idx_deals_category_discount) puis filtre marque/image en JS.
-    // Séquentiel pour éviter de saturer le pool DB et déclencher des statement timeouts.
-    const perCatResults: { cat: typeof BATTLE_CATEGORIES[number]; deals: any[] }[] = [];
-    for (const cat of BATTLE_CATEGORIES) {
-      // Stratégie : utiliser l'index (category, discount_percent DESC) en filtrant
-      // par catégorie une à une. neq merchant fait sauter l'index → on filtre en JS.
+    const perCatResults: { cat: typeof SELECTION_CATEGORIES[number]; deals: any[] }[] = [];
+    for (const cat of SELECTION_CATEGORIES) {
       const all: any[] = [];
       for (const c of cat.categories) {
         const { data, error } = await supabase
@@ -100,21 +82,14 @@ Deno.serve(async (req) => {
           .lte("discount_percent", 75)
           .order("discount_percent", { ascending: false })
           .limit(2000);
-        if (error) {
-          console.error(`query ${cat.slug}/${c} failed`, error);
-        } else if (data) {
-          // Filtre marchands blacklist en JS (PostgREST .not.in casse avec espaces dans valeurs)
-          all.push(...data.filter((d) => isAllowedMerchant(d.merchant)));
-        }
+        if (error) console.error(`query ${cat.slug}/${c} failed`, error);
+        else if (data) all.push(...data.filter((d) => isAllowedMerchant(d.merchant)));
       }
       perCatResults.push({ cat, deals: all });
-      console.log(`[${cat.slug}] kept=${all.length} sample_brands=`, [...new Set(all.slice(0, 20).map((d) => d.brand))]);
     }
 
-    const battles: any[] = [];
+    const selections: any[] = [];
     for (const { cat, deals } of perCatResults) {
-      // La catégorie en base est parfois fausse (ex: short Kappa tagué "sneakers").
-      // On force le titre à matcher la catégorie cible et à NE PAS matcher une catégorie voisine.
       const matchesCategory = (d: any) => {
         const t = `${d.title || ""}`;
         return cat.titleHints.test(t) && !cat.titleExclude.test(t);
@@ -129,13 +104,14 @@ Deno.serve(async (req) => {
           Number(d.discount_percent) >= 25 &&
           Number(d.discount_percent) <= 75,
       );
-      console.log(`[${cat.slug}] candidates_after_title=${candidates.length} sample=`, candidates.slice(0, 5).map((d: any) => `${d.brand}|${d.title}`));
       candidates.sort((a, b) => {
         const pa = isPremium(a.merchant) ? 0 : 1;
         const pb = isPremium(b.merchant) ? 0 : 1;
         if (pa !== pb) return pa - pb;
         return Number(b.discount_percent) - Number(a.discount_percent);
       });
+
+      // Dédup par marque pour avoir une vraie diversité dans le top 5
       const seenBrands = new Set<string>();
       const picks: any[] = [];
       for (const d of candidates) {
@@ -143,18 +119,19 @@ Deno.serve(async (req) => {
         if (seenBrands.has(b)) continue;
         seenBrands.add(b);
         picks.push(d);
-        if (picks.length === 2) break;
+        if (picks.length === TOP_N) break;
       }
-      if (picks.length < 2) {
+      // Si on n'a pas TOP_N marques différentes, complète sans contrainte de dédup
+      if (picks.length < TOP_N) {
         for (const d of candidates) {
           if (picks.find((p) => p.id === d.id)) continue;
           picks.push(d);
-          if (picks.length === 2) break;
+          if (picks.length === TOP_N) break;
         }
       }
-      // Pas de fallback générique : on n'autorise QUE les marques hype.
-      // Mieux vaut une catégorie vide qu'une battle avec une marque random.
-      if (picks.length === 2) {
+
+      console.log(`[${cat.slug}] picks=${picks.length}`);
+      if (picks.length >= 3) {
         const map = (d: any) => {
           const sale = Number(d.sale_price) || 0;
           const disc = Number(d.discount_percent) || 0;
@@ -176,12 +153,11 @@ Deno.serve(async (req) => {
             url: d.affiliate_url || d.product_url,
           };
         };
-        battles.push({
-          type: "battle",
+        selections.push({
+          type: "selection",
           category: cat.slug,
           label: cat.label,
-          a: map(picks[0]),
-          b: map(picks[1]),
+          deals: picks.map(map),
         });
       } else {
         console.warn(`Pas assez de candidats hype pour ${cat.slug} (${candidates.length})`);
@@ -193,9 +169,9 @@ Deno.serve(async (req) => {
     const briefDate = today.toISOString().slice(0, 10);
 
     const caption =
-      `⚔️ HYPE BATTLE — ${dateStr}\n\n` +
-      battles.map((b) => `${b.label} : ${b.a.brand} VS ${b.b.brand}`).join("\n") +
-      `\n\n👉 Quel camp tu choisis ? Tous les deals sur goldealsclub.com\n#GOLDEALSCLUB`;
+      `✨ TOP DEALS — ${dateStr}\n\n` +
+      selections.map((s) => `${s.label} : top ${s.deals.length} (${s.deals.map((d: any) => d.brand).join(" · ")})`).join("\n") +
+      `\n\n👉 Tous les deals sur goldealsclub.com\n#GOLDEALSCLUB`;
 
     const hashtags =
       "#sneakers #streetwear #hype #jordan #yeezy #trapstar #corteiz #stussy " +
@@ -207,8 +183,8 @@ Deno.serve(async (req) => {
       .upsert(
         {
           brief_date: briefDate,
-          focus_brand: "HYPE_BATTLE",
-          deals: battles,
+          focus_brand: "TOP_SELECTION",
+          deals: selections,
           caption,
           hashtags,
         },
@@ -220,8 +196,8 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         brief_date: briefDate,
-        battles: battles.length,
-        categories: battles.map((b) => b.category),
+        selections: selections.length,
+        categories: selections.map((s) => `${s.category}(${s.deals.length})`),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
