@@ -114,9 +114,13 @@ function drawCoverImage(
   x: number, y: number, w: number, h: number,
   scale = 1,
 ) {
+  // CONTAIN — aucun découpage. La photo entière est visible dans le cadre.
   const ratio = Math.min(w / img.width, h / img.height) * scale;
   const iw = img.width * ratio;
   const ih = img.height * ratio;
+  // Qualité max
+  (ctx as any).imageSmoothingEnabled = true;
+  (ctx as any).imageSmoothingQuality = "high";
   ctx.drawImage(img, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
 }
 
@@ -283,8 +287,8 @@ function drawDealHalf(
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, yTop, W, height);
 
-  // Photo full-bleed (haut de la moitié) — plus généreuse (68%)
-  const photoH = height * 0.68;
+  // Photo full-bleed (haut de la moitié) — généreuse (72%) pour photo entière
+  const photoH = height * 0.72;
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, yTop, W, photoH);
@@ -315,8 +319,8 @@ function drawDealHalf(
     ctx.fill();
     ctx.restore();
 
-    // Le produit lui-même, plus grand et mieux intégré
-    drawCoverImage(ctx, img, 30, yTop + 20 + enterY + floatY, W - 60, photoH - 60, 1.05);
+    // Le produit lui-même — CONTAIN strict, pas de découpage, photo entièrement visible
+    drawCoverImage(ctx, img, 0, yTop + enterY + floatY, W, photoH, 1.0);
   } else {
     drawPremiumPlaceholder(ctx, deal, category, 0, yTop, W, photoH, reveal, time);
   }
@@ -772,7 +776,7 @@ export default function AdminVideoPage() {
         : MediaRecorder.isTypeSupported("video/webm;codecs=vp8,opus")
         ? "video/webm;codecs=vp8,opus"
         : "video/webm";
-      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 16_000_000, audioBitsPerSecond: 128_000 });
+      const recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 28_000_000, audioBitsPerSecond: 192_000 });
       const chunks: Blob[] = [];
       recorder.ondataavailable = (e) => e.data.size && chunks.push(e.data);
       const done = new Promise<Blob>((resolve) => {

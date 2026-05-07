@@ -9,18 +9,18 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Hype brands — sneakers premium + streetwear hype + marques streetwear partenaires
+// Hype brands STRICT — uniquement vraies marques hype/premium streetwear & sneakers
 const HYPE_BRANDS = [
   // sneakers premium
   "nike", "jordan", "air jordan", "yeezy", "adidas", "new balance", "asics",
+  "puma", "converse", "vans",
   "travis scott", "off-white", "off white", "dunk", "sb dunk",
   // streetwear hype
   "trapstar", "corteiz", "stussy", "stüssy", "carhartt", "carhartt wip",
   "palace", "supreme", "essentials", "fear of god", "represent",
-  "kappa", "the north face", "patta", "aimé leon dore", "ami",
-  // marques streetwear bien représentées dans le catalogue
-  "karl kani", "new era", "hummel", "urban classics", "project x paris",
-  "mister tee", "ellesse", "puma", "fila", "champion",
+  "the north face", "patta", "aimé leon dore", "ami",
+  // streetwear partenaires bien représentés
+  "kappa", "karl kani", "new era", "champion", "fila", "ellesse",
 ];
 
 // Categories targeted — pushed as SQL filter via category column (indexed)
@@ -152,23 +152,8 @@ Deno.serve(async (req) => {
           if (picks.length === 2) break;
         }
       }
-      if (picks.length < 2) {
-        const generic = deals.filter(
-          (d) =>
-            validImage(d.image_url) &&
-            isAllowedMerchant(d.merchant) &&
-            matchesCategory(d) &&
-            Number(d.sale_price) > 5,
-        );
-        const seen = new Set(picks.map((p) => norm(p.brand)));
-        for (const d of generic) {
-          const b = norm(d.brand);
-          if (seen.has(b)) continue;
-          seen.add(b);
-          picks.push(d);
-          if (picks.length === 2) break;
-        }
-      }
+      // Pas de fallback générique : on n'autorise QUE les marques hype.
+      // Mieux vaut une catégorie vide qu'une battle avec une marque random.
       if (picks.length === 2) {
         const map = (d: any) => {
           const sale = Number(d.sale_price) || 0;
