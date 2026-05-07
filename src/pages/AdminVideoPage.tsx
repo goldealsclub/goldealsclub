@@ -949,7 +949,7 @@ export default function AdminVideoPage() {
                 <div className="grid grid-cols-2 gap-2 mb-3">
                   {[battle.a, battle.b].map((d, i) => (
                     <div key={i} className="text-center">
-                      <img src={d.image_url} alt="" className="w-full aspect-square object-cover rounded mb-1" />
+                      <img src={d.image_url} alt="" className="w-full aspect-square object-contain bg-muted/30 rounded mb-1" />
                       <div className="text-xs font-bold uppercase">{d.brand}</div>
                       <div className="text-xs text-muted-foreground">-{Math.round(Number(d.discount_percent))}%</div>
                     </div>
