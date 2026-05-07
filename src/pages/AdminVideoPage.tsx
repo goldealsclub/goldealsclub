@@ -272,6 +272,7 @@ function drawDealHalf(
   reveal: number, // 0..1
   isTop: boolean,
   category = "",
+  time = 0,
 ) {
   // Background ivoire/photo
   ctx.fillStyle = PHOTO_BG;
@@ -288,7 +289,7 @@ function drawDealHalf(
     const enterY = (1 - reveal) * (isTop ? -40 : 40);
     drawCoverImage(ctx, img, 40, yTop + 20 + enterY + floatY, W - 80, photoH - 40, 1);
   } else {
-    drawPremiumPlaceholder(ctx, deal, category, 0, yTop, W, photoH, reveal);
+    drawPremiumPlaceholder(ctx, deal, category, 0, yTop, W, photoH, reveal, time);
   }
   ctx.restore();
 
