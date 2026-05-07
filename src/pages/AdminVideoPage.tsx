@@ -207,7 +207,34 @@ export default function AdminVideoPage() {
   const [progress, setProgress] = useState(0);
   const [videoUrls, setVideoUrls] = useState<Record<number, string>>({});
   const [editableCaption, setEditableCaption] = useState("");
+  const [history, setHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const loadHistory = async () => {
+    setHistoryLoading(true);
+    const { data, error } = await supabase
+      .from("generated_videos" as any)
+      .select("*")
+      .order("brief_date", { ascending: false })
+      .order("created_at", { ascending: false })
+      .limit(100);
+    if (error) toast({ title: "Erreur historique", description: error.message, variant: "destructive" });
+    setHistory((data as any[]) || []);
+    setHistoryLoading(false);
+  };
+
+  const deleteHistoryItem = async (item: any) => {
+    if (!confirm(`Supprimer "${item.label}" du ${item.brief_date} ?`)) return;
+    await supabase.storage.from("tiktok-videos").remove([item.storage_path]);
+    const { error } = await supabase.from("generated_videos" as any).delete().eq("id", item.id);
+    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    else {
+      toast({ title: "Vidéo supprimée" });
+      loadHistory();
+    }
+  };
 
   useEffect(() => {
     document.title = "Vidéos Hype Battle — Admin";
