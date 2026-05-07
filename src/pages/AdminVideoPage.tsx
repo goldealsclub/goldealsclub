@@ -598,6 +598,7 @@ export default function AdminVideoPage() {
       recorder.stop();
 
       const blob = await done;
+      try { await audioCtx.close(); } catch {}
       const url = URL.createObjectURL(blob);
       setVideoUrls((prev) => ({ ...prev, [idx]: url }));
       setProgress(100);
