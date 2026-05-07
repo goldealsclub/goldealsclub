@@ -148,6 +148,93 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string) {
   ctx.textBaseline = "alphabetic";
 }
 
+function drawPremiumPlaceholder(
+  ctx: CanvasRenderingContext2D,
+  deal: Deal,
+  category: string,
+  x: number, y: number, w: number, h: number,
+  reveal: number,
+) {
+  // Hash deterministe pour varier les teintes par deal
+  let hash = 0;
+  const seed = (deal.id || deal.brand || "x") + category;
+  for (let i = 0; i < seed.length; i++) hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
+  const hue = hash % 360;
+
+  // Fond éditorial : dégradé diagonal sombre teinté or
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  grad.addColorStop(0, `hsl(${hue}, 14%, 12%)`);
+  grad.addColorStop(0.55, `hsl(${(hue + 20) % 360}, 18%, 18%)`);
+  grad.addColorStop(1, "#0d0d0d");
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, w, h);
+
+  // Halo doré centré
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const radial = ctx.createRadialGradient(cx, cy, 20, cx, cy, Math.max(w, h) * 0.7);
+  radial.addColorStop(0, "rgba(201,168,112,0.35)");
+  radial.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = radial;
+  ctx.fillRect(x, y, w, h);
+
+  // Grain subtil via lignes diagonales
+  ctx.save();
+  ctx.globalAlpha = 0.06;
+  ctx.strokeStyle = "#ffffff";
+  ctx.lineWidth = 1;
+  for (let i = -h; i < w; i += 14) {
+    ctx.beginPath();
+    ctx.moveTo(x + i, y);
+    ctx.lineTo(x + i + h, y + h);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Cadre intérieur fin doré
+  ctx.strokeStyle = "rgba(201,168,112,0.55)";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 24, y + 24, w - 48, h - 48);
+
+  // Monogramme géant filigrane (initiale marque)
+  const initial = (deal.brand || "G").trim().charAt(0).toUpperCase();
+  ctx.save();
+  ctx.globalAlpha = 0.18 * easeOut(reveal);
+  ctx.fillStyle = "#c9a870";
+  ctx.font = "900 540px Georgia, serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillText(initial, cx, cy + 20);
+  ctx.restore();
+
+  // Étiquette catégorie en haut
+  ctx.save();
+  ctx.globalAlpha = easeOut(reveal);
+  ctx.fillStyle = "#c9a870";
+  ctx.font = "800 26px 'Inter',sans-serif";
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  (ctx as any).letterSpacing = "6px";
+  const catLabel = (category || "EXCLUSIVE").toUpperCase();
+  // ligne or
+  const lineY = y + 70;
+  const tw = ctx.measureText(catLabel).width;
+  ctx.fillRect(cx - tw / 2 - 60, lineY - 12, 40, 2);
+  ctx.fillRect(cx + tw / 2 + 20, lineY - 12, 40, 2);
+  ctx.fillText(catLabel, cx, lineY);
+
+  // Marque centrale
+  ctx.fillStyle = "#f5f1e8";
+  ctx.font = "900 96px 'Inter',sans-serif";
+  ctx.fillText((deal.brand || "GOLDEALS").toUpperCase(), cx, cy + h * 0.28);
+
+  // Mention bas
+  ctx.fillStyle = "rgba(245,241,232,0.55)";
+  ctx.font = "500 20px 'Inter',sans-serif";
+  ctx.fillText("VISUAL COMING SOON", cx, y + h - 50);
+  ctx.restore();
+}
+
 function drawDealHalf(
   ctx: CanvasRenderingContext2D,
   deal: Deal,
@@ -156,6 +243,7 @@ function drawDealHalf(
   height: number,
   reveal: number, // 0..1
   isTop: boolean,
+  category = "",
 ) {
   // Background ivoire/photo
   ctx.fillStyle = PHOTO_BG;
