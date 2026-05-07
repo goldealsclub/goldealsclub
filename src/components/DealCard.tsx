@@ -71,7 +71,8 @@ const DealCard = ({ deal, featured = false }: DealCardProps) => {
   const buildSrc = (w: number) => {
     if (!enhancedImageUrl) return "";
     const stripped = enhancedImageUrl.replace(/^https?:\/\//, "");
-    return `https://wsrv.nl/?url=${encodeURIComponent(stripped)}&w=${w}&h=${w}&fit=cover&a=attention&output=webp&q=85`;
+    // trim=10 → retire les marges blanches du visuel source pour que le produit remplisse vraiment le cadre
+    return `https://wsrv.nl/?url=${encodeURIComponent(stripped)}&w=${w}&h=${w}&fit=cover&a=attention&trim=10&output=webp&q=90`;
   };
   const srcSet = `${buildSrc(400)} 400w, ${buildSrc(600)} 600w, ${buildSrc(900)} 900w, ${buildSrc(1200)} 1200w`;
   const sizes = featured
