@@ -54,8 +54,8 @@ const validImage = (u: string | null) =>
   !!u &&
   /^https?:\/\//i.test(u) &&
   !/placeholder|no.?image|default/i.test(u) &&
-  // sportspar/productserve = hotlink bloqué (images cassées dans les vidéos)
-  !/productserve\.com|sportspar\.de/i.test(u);
+  // sportspar.de = hotlink réellement bloqué (Snipes via productserve charge bien donc on ne bloque pas productserve.com en général)
+  !/sportspar\.de/i.test(u);
 
 // Marchands à exclure : sportspar.de bloque le hotlinking (403) ET a des prix d'origine
 // artificiellement gonflés (-94% non crédibles). On les retire des battles vidéo.
