@@ -287,8 +287,8 @@ function drawDealHalf(
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, yTop, W, height);
 
-  // Photo full-bleed (haut de la moitié) — plus généreuse (68%)
-  const photoH = height * 0.68;
+  // Photo full-bleed (haut de la moitié) — généreuse (72%) pour photo entière
+  const photoH = height * 0.72;
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, yTop, W, photoH);
@@ -319,8 +319,8 @@ function drawDealHalf(
     ctx.fill();
     ctx.restore();
 
-    // Le produit lui-même, plus grand et mieux intégré
-    drawCoverImage(ctx, img, 30, yTop + 20 + enterY + floatY, W - 60, photoH - 60, 1.05);
+    // Le produit lui-même — CONTAIN strict, pas de découpage, photo entièrement visible
+    drawCoverImage(ctx, img, 0, yTop + enterY + floatY, W, photoH, 1.0);
   } else {
     drawPremiumPlaceholder(ctx, deal, category, 0, yTop, W, photoH, reveal, time);
   }
