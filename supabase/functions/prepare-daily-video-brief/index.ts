@@ -59,25 +59,25 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
-    // Stratégie : on garde la requête SQL minimale (idx_deals_category + filtres simples)
-    // puis on filtre marque/image/original_price côté JS pour éviter les statement timeouts.
-    const perCatResults = await Promise.all(
-      BATTLE_CATEGORIES.map(async (cat) => {
-        const { data, error } = await supabase
-          .from("deals")
-          .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
-          .in("category", cat.categories)
-          .gte("discount_percent", 20)
-          .lte("discount_percent", 70)
-          .order("discount_percent", { ascending: false })
-          .limit(1500);
-        if (error) {
-          console.error(`query ${cat.slug} failed`, error);
-          return { cat, deals: [] as any[] };
-        }
-        return { cat, deals: data ?? [] };
-      }),
-    );
+    // Stratégie : requête SQL minimale (idx_deals_category_discount) puis filtre marque/image en JS.
+    // Séquentiel pour éviter de saturer le pool DB et déclencher des statement timeouts.
+    const perCatResults: { cat: typeof BATTLE_CATEGORIES[number]; deals: any[] }[] = [];
+    for (const cat of BATTLE_CATEGORIES) {
+      const { data, error } = await supabase
+        .from("deals")
+        .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
+        .in("category", cat.categories)
+        .gte("discount_percent", 20)
+        .lte("discount_percent", 70)
+        .order("discount_percent", { ascending: false })
+        .limit(500);
+      if (error) {
+        console.error(`query ${cat.slug} failed`, error);
+        perCatResults.push({ cat, deals: [] });
+      } else {
+        perCatResults.push({ cat, deals: data ?? [] });
+      }
+    }
 
     const battles: any[] = [];
     for (const { cat, deals } of perCatResults) {
