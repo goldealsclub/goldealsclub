@@ -312,8 +312,8 @@ function drawDealFullScreen(
   // Header dessiné par drawSelectionFrame (avec le bon label)
 
   // === Bloc info en bas, éditorial ===
-  const infoAlpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.3) / 0.55))) * (1 - exitE);
-  const infoSlide = (1 - infoAlpha) * 36;
+  const infoAlpha = easeOutExpo(clamp01((reveal - 0.25) / 0.6)) * (1 - exitE);
+  const infoSlide = (1 - infoAlpha) * 28 + slideOut * 0.6;
   ctx.save();
   ctx.translate(0, infoSlide);
   ctx.globalAlpha = infoAlpha;
