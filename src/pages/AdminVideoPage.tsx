@@ -71,14 +71,16 @@ async function loadImage(src: string): Promise<HTMLImageElement | null> {
   return tryLoad(src);
 }
 
+const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-// Spring approximation 0..1 (overshoots ~1.05 then settles)
-const springEase = (t: number) => {
-  if (t <= 0) return 0;
-  if (t >= 1) return 1;
-  return 1 - Math.exp(-6 * t) * Math.cos(t * Math.PI * 1.6);
-};
+// Courbes cinéma — sans rebond, ultra fluides
+const easeOutExpo = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
+const easeInOutQuint = (t: number) =>
+  t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+// "Spring" sans overshoot (rendu cinéma, plus chic qu'un rebond)
+const springEase = (t: number) => easeOutQuint(clamp01(t));
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
@@ -215,8 +217,9 @@ function drawDealFullScreen(
   exit: number,
   rank: number,
   hold: number, // 0..1 progression à l'intérieur du hold (pour ken-burns)
+  drawBg: boolean = true,
 ) {
-  drawCharcoalBg(ctx, hold);
+  if (drawBg) drawCharcoalBg(ctx, hold);
 
   const stageY = 180;
   const stageH = Math.round(H * 0.58);
@@ -224,13 +227,17 @@ function drawDealFullScreen(
   const cxC = W / 2;
   const cyC = stageY + stageH * 0.5;
 
-  // Springs entrée/sortie
-  const springR = springEase(reveal);
-  const exitE = easeInOut(exit);
-  const slideIn = (1 - springR) * 70;
-  // Sortie : fade + léger zoom out, pas de slide horizontal (plus chic)
-  const exitScale = 1 - exitE * 0.06;
-  const alphaK = (1 - exitE) * Math.min(1, reveal * 1.4);
+  // Courbes cinéma : entrée easeOutExpo (snap doux), sortie easeInOutQuint (glisse)
+  const revealE = easeOutExpo(clamp01(reveal));
+  const exitE = easeInOutQuint(clamp01(exit));
+  // Entrée : drift vertical depuis le bas + scale très légère
+  const slideIn = (1 - revealE) * 50;
+  // Sortie : drift vers le haut + zoom in subtil (le produit "passe devant")
+  const slideOut = exitE * -45;
+  const exitScale = 1 + exitE * 0.04;
+  // Garder springR pour les éléments décoratifs (filigrane, halo, ombre)
+  const springR = revealE;
+  const alphaK = (1 - exitE) * revealE;
 
   // Rang en filigrane (chiffre serif énorme, derrière le produit)
   ctx.save();
@@ -270,7 +277,7 @@ function drawDealFullScreen(
     const drawW = baseW * kbScale;
     const drawH = baseH * kbScale;
     const ix = (W - drawW) / 2 + drift;
-    const iy = stageY + (stageH - drawH) / 2 + float - 10 + slideIn;
+    const iy = stageY + (stageH - drawH) / 2 + float - 10 + slideIn + slideOut;
 
     const cut = getCutout(img);
 
@@ -305,8 +312,8 @@ function drawDealFullScreen(
   // Header dessiné par drawSelectionFrame (avec le bon label)
 
   // === Bloc info en bas, éditorial ===
-  const infoAlpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.3) / 0.55))) * (1 - exitE);
-  const infoSlide = (1 - infoAlpha) * 36;
+  const infoAlpha = easeOutExpo(clamp01((reveal - 0.25) / 0.6)) * (1 - exitE);
+  const infoSlide = (1 - infoAlpha) * 28 + slideOut * 0.6;
   ctx.save();
   ctx.translate(0, infoSlide);
   ctx.globalAlpha = infoAlpha;
@@ -471,13 +478,56 @@ function drawSelectionFrame(
   const slideT = t - INTRO;
   const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
   const localT = slideT - idx * PER_DEAL_SEC;
-  const reveal = Math.min(1, localT / 0.85);
-  const exit = idx < n - 1 ? Math.max(0, Math.min(1, (localT - (PER_DEAL_SEC - 0.7)) / 0.7)) : 0;
-  const hold = Math.min(1, Math.max(0, localT / PER_DEAL_SEC));
 
-  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, exit, idx + 1, hold);
-  // Header par dessus avec le bon label
-  const headerAlpha = (1 - easeInOut(exit)) * Math.min(1, reveal * 1.4);
+  // Fenêtres : entrée 0.9s, transition crossfade 0.8s entre deals
+  const REVEAL_DUR = 0.9;
+  const TRANS_DUR = 0.8;
+
+  // Fond une seule fois — les deals sont composités par dessus
+  drawCharcoalBg(ctx, clamp01(localT / PER_DEAL_SEC));
+
+  // Crossfade : si on est dans la dernière fenêtre du deal courant ET pas le dernier,
+  // on dessine d'abord le SUIVANT en train de monter, puis on superpose le COURANT en train de partir.
+  const inTransition = idx < n - 1 && localT > PER_DEAL_SEC - TRANS_DUR;
+  if (inTransition) {
+    const tt = clamp01((localT - (PER_DEAL_SEC - TRANS_DUR)) / TRANS_DUR);
+    // Suivant : reveal de 0 → 1 sur la fenêtre, exit=0
+    const nextReveal = tt;
+    const nextHold = tt * 0.3; // ken-burns démarre doucement
+    drawDealFullScreen(
+      ctx,
+      selection.deals[idx + 1],
+      imgs[idx + 1],
+      nextReveal,
+      0,
+      idx + 2,
+      nextHold,
+      false,
+    );
+    // Courant : reveal=1, exit=tt
+    const curHold = clamp01(localT / PER_DEAL_SEC);
+    drawDealFullScreen(
+      ctx,
+      selection.deals[idx],
+      imgs[idx],
+      1,
+      tt,
+      idx + 1,
+      curHold,
+      false,
+    );
+    // Header crossfade
+    const curHeader = (1 - easeInOutQuint(tt));
+    const nextHeader = easeOutExpo(tt);
+    drawTopBar(ctx, selection.label, idx + 1, n, curHeader);
+    drawTopBar(ctx, selection.label, idx + 2, n, nextHeader);
+    return;
+  }
+
+  const reveal = clamp01(localT / REVEAL_DUR);
+  const hold = clamp01(localT / PER_DEAL_SEC);
+  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false);
+  const headerAlpha = easeOutExpo(reveal);
   drawTopBar(ctx, selection.label, idx + 1, n, headerAlpha);
 }
 
