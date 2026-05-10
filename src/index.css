@@ -111,6 +111,8 @@
   html, body {
     @apply overflow-x-hidden;
     overscroll-behavior-y: contain;
+    min-height: 100%;
+    -webkit-overflow-scrolling: touch;
   }
 
   html {
@@ -119,6 +121,7 @@
 
   body {
     @apply bg-background text-foreground font-body antialiased;
+    overflow-y: auto;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -129,6 +132,11 @@
 @layer utilities {
   .text-balance {
     text-wrap: balance;
+  }
+
+  .admin-video-scroll {
+    overscroll-behavior-y: contain;
+    -webkit-overflow-scrolling: touch;
   }
 }
 

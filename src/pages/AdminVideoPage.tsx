@@ -543,6 +543,7 @@ export default function AdminVideoPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const captionRef = useRef<HTMLTextAreaElement>(null);
 
   const loadHistory = async () => {
     const { data } = await supabase
@@ -557,6 +558,13 @@ export default function AdminVideoPage() {
   useEffect(() => {
     document.title = "Vidéos Top Sélection — Admin";
   }, []);
+
+  useEffect(() => {
+    const textarea = captionRef.current;
+    if (!textarea) return;
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  }, [editableCaption]);
 
   useEffect(() => {
     (async () => {
@@ -785,7 +793,7 @@ export default function AdminVideoPage() {
   }
 
   return (
-    <main className="min-h-[100dvh] bg-background text-foreground px-4 pt-4 pb-28 md:p-8 md:pb-12 max-w-6xl mx-auto overflow-visible touch-pan-y">
+    <main className="admin-video-scroll min-h-[100svh] bg-background text-foreground px-4 pt-4 pb-28 md:p-8 md:pb-12 max-w-6xl mx-auto touch-pan-y">
       <div className="mb-6 flex items-center justify-between">
         <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour Admin
@@ -819,10 +827,11 @@ export default function AdminVideoPage() {
               <Button size="sm" variant="ghost" onClick={copyCaption}><Copy className="h-4 w-4" /> Copier</Button>
             </div>
             <Textarea
+              ref={captionRef}
               value={editableCaption}
               onChange={(e) => setEditableCaption(e.target.value)}
-              rows={3}
-              className="text-sm font-mono md:min-h-[140px]"
+              rows={1}
+              className="resize-none overflow-hidden text-sm font-mono leading-relaxed md:min-h-[140px]"
             />
           </div>
 
