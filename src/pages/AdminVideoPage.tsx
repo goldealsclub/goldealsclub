@@ -39,19 +39,20 @@ type Brief = {
 const W = 1080;
 const H = 1920;
 const FPS = 30;
-const PER_DEAL_SEC = 2.8;          // chaque produit reste à l'écran 2.8s
-const INTRO = 1.8;
-const OUTRO = 2.2;
+const PER_DEAL_SEC = 3.2;          // chaque produit reste à l'écran 3.2s — respiration cinéma
+const INTRO = 2.2;
+const OUTRO = 2.6;
 
-// Palette — gris chic premium
-const NOIR = "#101012";
+// Palette — éditorial nuit (charcoal & or)
+const NOIR = "#0a0a0c";
+const NOIR_SOFT = "#141416";
+const CHARCOAL_TOP = "#1a1a1d";
+const CHARCOAL_MID = "#121214";
+const CHARCOAL_BOT = "#070708";
 const IVOIRE = "#f5f1ea";
-const GREY_BG_TOP = "#d6d4cf";
-const GREY_BG_MID = "#c5c2bb";
-const GREY_BG_BOT = "#b3afa6";
-const CARD_BG = "#ecebe6";
-const TAUPE = "#3a3733";
-const GOLD = "#b8956a";
+const TAUPE = "#8a8278";
+const GOLD = "#c9a876";
+const GOLD_DEEP = "#9d7d4f";
 
 const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
