@@ -110,7 +110,10 @@
 
   html, body {
     @apply overflow-x-hidden;
-    overscroll-behavior-y: none;
+  }
+
+  html {
+    overscroll-behavior-y: contain;
   }
 
   body {
