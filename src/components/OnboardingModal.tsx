@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "react-router-dom";
 import { deals as allDeals, Category } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { X, Sparkles, ArrowRight } from "lucide-react";
@@ -23,10 +24,12 @@ export function getUserPrefs(): UserPrefs | null {
 
 const OnboardingModal = () => {
   const { t } = useI18n();
+  const location = useLocation();
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState<"brands" | "categories">("brands");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
+  const isAdminRoute = location.pathname.startsWith("/admin");
 
   const allBrands = [...new Set(allDeals.map((d) => d.brand).filter((brand) => brand && !EXCLUDED_ONBOARDING_BRANDS.has(brand)))].sort();
   const allCategories = [...new Set(allDeals.map((d) => d.category))].sort() as Category[];
@@ -39,12 +42,17 @@ const OnboardingModal = () => {
   };
 
   useEffect(() => {
+    if (isAdminRoute) {
+      setVisible(false);
+      return;
+    }
+
     const done = localStorage.getItem(STORAGE_KEY);
     if (!done) {
       const timer = setTimeout(() => setVisible(true), 2000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [isAdminRoute]);
 
   const finish = () => {
     const prefs: UserPrefs = { brands: selectedBrands, categories: selectedCategories };
@@ -64,7 +72,7 @@ const OnboardingModal = () => {
   const toggleCategory = (c: Category) =>
     setSelectedCategories((prev) => (prev.includes(c) ? prev.filter((x) => x !== c) : [...prev, c]));
 
-  if (!visible) return null;
+  if (!visible || isAdminRoute) return null;
 
   return (
     <div className="fixed inset-0 z-[70] bg-foreground/50 backdrop-blur-sm flex items-center justify-center animate-in fade-in duration-300">
