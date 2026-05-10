@@ -785,7 +785,7 @@ export default function AdminVideoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 max-w-6xl mx-auto">
+    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 pb-32 md:pb-12 max-w-6xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour Admin
