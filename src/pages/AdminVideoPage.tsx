@@ -227,13 +227,17 @@ function drawDealFullScreen(
   const cxC = W / 2;
   const cyC = stageY + stageH * 0.5;
 
-  // Springs entrée/sortie
-  const springR = springEase(reveal);
-  const exitE = easeInOut(exit);
-  const slideIn = (1 - springR) * 70;
-  // Sortie : fade + léger zoom out, pas de slide horizontal (plus chic)
-  const exitScale = 1 - exitE * 0.06;
-  const alphaK = (1 - exitE) * Math.min(1, reveal * 1.4);
+  // Courbes cinéma : entrée easeOutExpo (snap doux), sortie easeInOutQuint (glisse)
+  const revealE = easeOutExpo(clamp01(reveal));
+  const exitE = easeInOutQuint(clamp01(exit));
+  // Entrée : drift vertical depuis le bas + scale très légère
+  const slideIn = (1 - revealE) * 50;
+  // Sortie : drift vers le haut + zoom in subtil (le produit "passe devant")
+  const slideOut = exitE * -45;
+  const exitScale = 1 + exitE * 0.04;
+  // Garder springR pour les éléments décoratifs (filigrane, halo, ombre)
+  const springR = revealE;
+  const alphaK = (1 - exitE) * revealE;
 
   // Rang en filigrane (chiffre serif énorme, derrière le produit)
   ctx.save();
