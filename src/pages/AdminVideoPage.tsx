@@ -821,8 +821,8 @@ export default function AdminVideoPage() {
             <Textarea
               value={editableCaption}
               onChange={(e) => setEditableCaption(e.target.value)}
-              rows={6}
-              className="text-sm font-mono"
+              rows={3}
+              className="text-sm font-mono md:min-h-[140px]"
             />
           </div>
 
