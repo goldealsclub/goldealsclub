@@ -575,6 +575,17 @@ export default function AdminVideoPage() {
       canvas.height = H;
       const ctx = canvas.getContext("2d")!;
 
+      // Préchargement des polices utilisées dans le canvas
+      try {
+        await Promise.all([
+          (document as any).fonts?.load("200 200px 'Playfair Display'"),
+          (document as any).fonts?.load("300 96px 'Playfair Display'"),
+          (document as any).fonts?.load("500 22px 'Inter'"),
+          (document as any).fonts?.load("600 22px 'Inter'"),
+        ]);
+        await (document as any).fonts?.ready;
+      } catch {}
+
       const imgs = await Promise.all(selection.deals.map((d) => loadImage(d.image_url)));
       const imagesLoaded = imgs.filter(Boolean).length;
       if (imagesLoaded < selection.deals.length) {
