@@ -37,6 +37,7 @@ import PromoCodesPage from "./pages/PromoCodesPage";
 import WorldCup2026Page from "./pages/WorldCup2026Page";
 import InstallBanner from "./components/InstallBanner";
 import UpdateBanner from "./components/UpdateBanner";
+import HardRefreshButton from "./components/HardRefreshButton";
 
 const queryClient = new QueryClient();
 
