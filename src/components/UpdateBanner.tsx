@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { hardRefresh } from "@/lib/hard-refresh";
 
-const CHECK_INTERVAL = 60_000; // check every 60s
+const CHECK_INTERVAL = 20_000; // check every 20s
 const BUILD_META_URL = "/build-meta.json";
 
 const UpdateBanner = () => {
@@ -32,16 +33,22 @@ const UpdateBanner = () => {
   }, [currentVersion]);
 
   useEffect(() => {
-    // Initial check
     checkForUpdate();
     const interval = setInterval(checkForUpdate, CHECK_INTERVAL);
-    return () => clearInterval(interval);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") checkForUpdate();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", checkForUpdate);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", checkForUpdate);
+    };
   }, [checkForUpdate]);
 
   const handleUpdate = () => {
-    // Drop the cached deals so the new build fetches fresh data on reload.
-    import("@/lib/data").then((m) => m.clearDealsCache?.()).catch(() => {});
-    window.location.reload();
+    void hardRefresh();
   };
 
   if (!updateAvailable || dismissed) return null;
