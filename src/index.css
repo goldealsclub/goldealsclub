@@ -110,18 +110,20 @@
 
   html, body {
     @apply overflow-x-hidden;
-    overscroll-behavior-y: contain;
     min-height: 100%;
+    height: auto;
+    overflow-y: auto;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 
   html {
-    overscroll-behavior-y: contain;
+    scroll-behavior: auto;
   }
 
   body {
     @apply bg-background text-foreground font-body antialiased;
-    overflow-y: auto;
+    position: relative;
   }
 
   h1, h2, h3, h4, h5, h6 {
@@ -135,8 +137,8 @@
   }
 
   .admin-video-scroll {
-    overscroll-behavior-y: contain;
     -webkit-overflow-scrolling: touch;
+    touch-action: pan-y;
   }
 }
 
