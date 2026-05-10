@@ -785,7 +785,7 @@ export default function AdminVideoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground p-4 md:p-8 pb-32 md:pb-12 max-w-6xl mx-auto">
+    <main className="min-h-[100dvh] bg-background text-foreground px-4 pt-4 pb-28 md:p-8 md:pb-12 max-w-6xl mx-auto overflow-visible touch-pan-y">
       <div className="mb-6 flex items-center justify-between">
         <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour Admin
@@ -934,7 +934,7 @@ export default function AdminVideoPage() {
         </>
       )}
 
-      <div className="mt-12 border-t pt-8">
+      <div className="mt-12 border-t pt-8 hidden md:block">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <History className="h-6 w-6" /> Historique
@@ -948,6 +948,6 @@ export default function AdminVideoPage() {
         </div>
         <VideoHistory limit={12} compact />
       </div>
-    </div>
+    </main>
   );
 }

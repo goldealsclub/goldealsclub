@@ -47,10 +47,14 @@ const GlobalOverlays = () => {
   return (
     <>
       <NewDealNotifier />
-      {!isAdminRoute && <OnboardingModal />}
-      {!isAdminRoute && <InstallBanner />}
-      {!isAdminRoute && <UpdateBanner />}
-      {!isAdminRoute && <CookieBanner />}
+      {!isAdminRoute ? (
+        <>
+          <OnboardingModal />
+          <InstallBanner />
+          <UpdateBanner />
+          <CookieBanner />
+        </>
+      ) : null}
     </>
   );
 };
