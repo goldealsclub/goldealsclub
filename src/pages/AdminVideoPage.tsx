@@ -115,16 +115,18 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
   try {
     const id = cx.getImageData(0, 0, c.width, c.height);
     const d = id.data;
-    const HI = 242;
-    const LO = 215;
+    // Sur fond charcoal très sombre : on est plus agressif sur le blanc
+    // pour ne laisser AUCUN halo lumineux autour du produit.
+    const HI = 232;
+    const LO = 195;
     for (let i = 0; i < d.length; i += 4) {
       const r = d[i], g = d[i + 1], b = d[i + 2];
       const mn = Math.min(r, g, b);
       const mx = Math.max(r, g, b);
       const sat = mx - mn;
-      if (sat < 12 && mn > HI) {
+      if (sat < 16 && mn > HI) {
         d[i + 3] = 0;
-      } else if (sat < 14 && mn > LO) {
+      } else if (sat < 20 && mn > LO) {
         const t = (mn - LO) / (HI - LO);
         d[i + 3] = Math.round(d[i + 3] * (1 - t));
       }
