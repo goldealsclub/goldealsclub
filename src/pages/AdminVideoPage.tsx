@@ -71,14 +71,16 @@ async function loadImage(src: string): Promise<HTMLImageElement | null> {
   return tryLoad(src);
 }
 
+const clamp01 = (t: number) => Math.max(0, Math.min(1, t));
 const easeOut = (t: number) => 1 - Math.pow(1 - t, 3);
 const easeInOut = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2);
-// Spring approximation 0..1 (overshoots ~1.05 then settles)
-const springEase = (t: number) => {
-  if (t <= 0) return 0;
-  if (t >= 1) return 1;
-  return 1 - Math.exp(-6 * t) * Math.cos(t * Math.PI * 1.6);
-};
+// Courbes cinéma — sans rebond, ultra fluides
+const easeOutExpo = (t: number) => (t >= 1 ? 1 : 1 - Math.pow(2, -10 * t));
+const easeOutQuint = (t: number) => 1 - Math.pow(1 - t, 5);
+const easeInOutQuint = (t: number) =>
+  t < 0.5 ? 16 * t * t * t * t * t : 1 - Math.pow(-2 * t + 2, 5) / 2;
+// "Spring" sans overshoot (rendu cinéma, plus chic qu'un rebond)
+const springEase = (t: number) => easeOutQuint(clamp01(t));
 
 function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
   ctx.beginPath();
