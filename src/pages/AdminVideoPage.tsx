@@ -302,8 +302,7 @@ function drawDealFullScreen(
   }
   ctx.restore();
 
-  // Header au-dessus du produit, avec fade in
-  drawTopBar(ctx, "DEAL", rank, 5, alphaK); // label sera réécrit par caller via param? non — laisse pour fallback
+  // Header dessiné par drawSelectionFrame (avec le bon label)
 
   // === Bloc info en bas, éditorial ===
   const infoAlpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.3) / 0.55))) * (1 - exitE);
