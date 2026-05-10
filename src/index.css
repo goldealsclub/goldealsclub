@@ -114,7 +114,6 @@
     height: auto;
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
   }
 
   html {
@@ -138,7 +137,6 @@
 
   .admin-video-scroll {
     -webkit-overflow-scrolling: touch;
-    touch-action: pan-y;
   }
 }
 
