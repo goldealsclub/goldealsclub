@@ -217,8 +217,9 @@ function drawDealFullScreen(
   exit: number,
   rank: number,
   hold: number, // 0..1 progression à l'intérieur du hold (pour ken-burns)
+  drawBg: boolean = true,
 ) {
-  drawCharcoalBg(ctx, hold);
+  if (drawBg) drawCharcoalBg(ctx, hold);
 
   const stageY = 180;
   const stageH = Math.round(H * 0.58);
