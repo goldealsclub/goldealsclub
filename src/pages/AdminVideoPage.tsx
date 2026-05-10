@@ -478,13 +478,56 @@ function drawSelectionFrame(
   const slideT = t - INTRO;
   const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
   const localT = slideT - idx * PER_DEAL_SEC;
-  const reveal = Math.min(1, localT / 0.85);
-  const exit = idx < n - 1 ? Math.max(0, Math.min(1, (localT - (PER_DEAL_SEC - 0.7)) / 0.7)) : 0;
-  const hold = Math.min(1, Math.max(0, localT / PER_DEAL_SEC));
 
-  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, exit, idx + 1, hold);
-  // Header par dessus avec le bon label
-  const headerAlpha = (1 - easeInOut(exit)) * Math.min(1, reveal * 1.4);
+  // Fenêtres : entrée 0.9s, transition crossfade 0.8s entre deals
+  const REVEAL_DUR = 0.9;
+  const TRANS_DUR = 0.8;
+
+  // Fond une seule fois — les deals sont composités par dessus
+  drawCharcoalBg(ctx, clamp01(localT / PER_DEAL_SEC));
+
+  // Crossfade : si on est dans la dernière fenêtre du deal courant ET pas le dernier,
+  // on dessine d'abord le SUIVANT en train de monter, puis on superpose le COURANT en train de partir.
+  const inTransition = idx < n - 1 && localT > PER_DEAL_SEC - TRANS_DUR;
+  if (inTransition) {
+    const tt = clamp01((localT - (PER_DEAL_SEC - TRANS_DUR)) / TRANS_DUR);
+    // Suivant : reveal de 0 → 1 sur la fenêtre, exit=0
+    const nextReveal = tt;
+    const nextHold = tt * 0.3; // ken-burns démarre doucement
+    drawDealFullScreen(
+      ctx,
+      selection.deals[idx + 1],
+      imgs[idx + 1],
+      nextReveal,
+      0,
+      idx + 2,
+      nextHold,
+      false,
+    );
+    // Courant : reveal=1, exit=tt
+    const curHold = clamp01(localT / PER_DEAL_SEC);
+    drawDealFullScreen(
+      ctx,
+      selection.deals[idx],
+      imgs[idx],
+      1,
+      tt,
+      idx + 1,
+      curHold,
+      false,
+    );
+    // Header crossfade
+    const curHeader = (1 - easeInOutQuint(tt));
+    const nextHeader = easeOutExpo(tt);
+    drawTopBar(ctx, selection.label, idx + 1, n, curHeader);
+    drawTopBar(ctx, selection.label, idx + 2, n, nextHeader);
+    return;
+  }
+
+  const reveal = clamp01(localT / REVEAL_DUR);
+  const hold = clamp01(localT / PER_DEAL_SEC);
+  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false);
+  const headerAlpha = easeOutExpo(reveal);
   drawTopBar(ctx, selection.label, idx + 1, n, headerAlpha);
 }
 
