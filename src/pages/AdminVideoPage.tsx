@@ -277,7 +277,7 @@ function drawDealFullScreen(
     const drawW = baseW * kbScale;
     const drawH = baseH * kbScale;
     const ix = (W - drawW) / 2 + drift;
-    const iy = stageY + (stageH - drawH) / 2 + float - 10 + slideIn;
+    const iy = stageY + (stageH - drawH) / 2 + float - 10 + slideIn + slideOut;
 
     const cut = getCutout(img);
 
