@@ -1,5 +1,4 @@
 import { useState, useEffect } from "react";
-import { useLocation } from "react-router-dom";
 import { deals as allDeals, Category } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { X, Sparkles, ArrowRight } from "lucide-react";
@@ -24,12 +23,11 @@ export function getUserPrefs(): UserPrefs | null {
 
 const OnboardingModal = () => {
   const { t } = useI18n();
-  const location = useLocation();
   const [visible, setVisible] = useState(false);
   const [step, setStep] = useState<"brands" | "categories">("brands");
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
-  const isAdminRoute = location.pathname.startsWith("/admin");
+  const isAdminRoute = window.location.pathname.startsWith("/admin");
 
   const allBrands = [...new Set(allDeals.map((d) => d.brand).filter((brand) => brand && !EXCLUDED_ONBOARDING_BRANDS.has(brand)))].sort();
   const allCategories = [...new Set(allDeals.map((d) => d.category))].sort() as Category[];
