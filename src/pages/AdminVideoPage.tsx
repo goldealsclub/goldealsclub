@@ -39,19 +39,20 @@ type Brief = {
 const W = 1080;
 const H = 1920;
 const FPS = 30;
-const PER_DEAL_SEC = 2.8;          // chaque produit reste à l'écran 2.8s
-const INTRO = 1.8;
-const OUTRO = 2.2;
+const PER_DEAL_SEC = 3.2;          // chaque produit reste à l'écran 3.2s — respiration cinéma
+const INTRO = 2.2;
+const OUTRO = 2.6;
 
-// Palette — gris chic premium
-const NOIR = "#101012";
+// Palette — éditorial nuit (charcoal & or)
+const NOIR = "#0a0a0c";
+const NOIR_SOFT = "#141416";
+const CHARCOAL_TOP = "#1a1a1d";
+const CHARCOAL_MID = "#121214";
+const CHARCOAL_BOT = "#070708";
 const IVOIRE = "#f5f1ea";
-const GREY_BG_TOP = "#d6d4cf";
-const GREY_BG_MID = "#c5c2bb";
-const GREY_BG_BOT = "#b3afa6";
-const CARD_BG = "#ecebe6";
-const TAUPE = "#3a3733";
-const GOLD = "#b8956a";
+const TAUPE = "#8a8278";
+const GOLD = "#c9a876";
+const GOLD_DEEP = "#9d7d4f";
 
 const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
@@ -114,16 +115,18 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
   try {
     const id = cx.getImageData(0, 0, c.width, c.height);
     const d = id.data;
-    const HI = 242;
-    const LO = 215;
+    // Sur fond charcoal très sombre : on est plus agressif sur le blanc
+    // pour ne laisser AUCUN halo lumineux autour du produit.
+    const HI = 232;
+    const LO = 195;
     for (let i = 0; i < d.length; i += 4) {
       const r = d[i], g = d[i + 1], b = d[i + 2];
       const mn = Math.min(r, g, b);
       const mx = Math.max(r, g, b);
       const sat = mx - mn;
-      if (sat < 12 && mn > HI) {
+      if (sat < 16 && mn > HI) {
         d[i + 3] = 0;
-      } else if (sat < 14 && mn > LO) {
+      } else if (sat < 20 && mn > LO) {
         const t = (mn - LO) / (HI - LO);
         d[i + 3] = Math.round(d[i + 3] * (1 - t));
       }
@@ -136,206 +139,240 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
   }
 }
 
-function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, total: number) {
-  const barH = 96;
-  ctx.fillStyle = NOIR;
-  ctx.fillRect(0, 0, W, barH);
+function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, total: number, alpha = 1) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  // Pas de bandeau plein — juste typographie sur le fond, pour rester aérien
+  const y = 70;
 
   ctx.fillStyle = IVOIRE;
   ctx.font = "600 22px 'Inter','Helvetica',sans-serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   (ctx as any).letterSpacing = "8px";
-  ctx.fillText("GOLDEALS CLUB", 48, barH / 2 + 1);
+  ctx.fillText("GOLDEALS CLUB", 60, y);
 
-  ctx.fillStyle = "rgba(246,240,233,0.55)";
-  ctx.font = "500 18px 'Inter',sans-serif";
+  ctx.fillStyle = "rgba(201,168,118,0.9)";
+  ctx.font = "500 16px 'Inter',sans-serif";
   ctx.textAlign = "right";
   (ctx as any).letterSpacing = "6px";
-  ctx.fillText(`${label} · ${rank}/${total}`, W - 48, barH / 2 + 1);
+  ctx.fillText(`${label} · ${String(rank).padStart(2, "0")} / ${String(total).padStart(2, "0")}`, W - 60, y);
   (ctx as any).letterSpacing = "0px";
 
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(0, barH - 1, W, 1);
+  // Filet or très fin sous le header
+  ctx.fillStyle = "rgba(201,168,118,0.35)";
+  ctx.fillRect(60, y + 26, W - 120, 1);
+
   ctx.textBaseline = "alphabetic";
+  ctx.restore();
 }
 
-function drawDealFullScreen(
-  ctx: CanvasRenderingContext2D,
-  deal: Deal,
-  img: HTMLImageElement | null,
-  reveal: number, // 0..1 entrée
-  exit: number,   // 0..1 sortie
-  rank: number,
-) {
-  // Fond gris dégradé chic (verticale + vignette)
+function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
+  // Dégradé charcoal vertical, légèrement animé (drift de la luminance)
+  const drift = Math.sin(t01 * Math.PI) * 0.04;
+  const top = CHARCOAL_TOP;
+  const mid = CHARCOAL_MID;
+  const bot = CHARCOAL_BOT;
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, GREY_BG_TOP);
-  bgGrad.addColorStop(0.55, GREY_BG_MID);
-  bgGrad.addColorStop(1, GREY_BG_BOT);
+  bgGrad.addColorStop(0, top);
+  bgGrad.addColorStop(0.55 + drift, mid);
+  bgGrad.addColorStop(1, bot);
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // Vignette douce
-  const vign = ctx.createRadialGradient(W / 2, H * 0.45, W * 0.2, W / 2, H * 0.5, W * 0.85);
+  // Halo or doux derrière le produit (centré, large)
+  const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 60, W / 2, H * 0.42, W * 0.7);
+  haloR.addColorStop(0, "rgba(201,168,118,0.18)");
+  haloR.addColorStop(0.4, "rgba(201,168,118,0.06)");
+  haloR.addColorStop(1, "rgba(0,0,0,0)");
+  ctx.fillStyle = haloR;
+  ctx.fillRect(0, 0, W, H);
+
+  // Vignette périphérique
+  const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.25, W / 2, H * 0.5, W * 0.95);
   vign.addColorStop(0, "rgba(0,0,0,0)");
-  vign.addColorStop(1, "rgba(0,0,0,0.22)");
+  vign.addColorStop(1, "rgba(0,0,0,0.55)");
   ctx.fillStyle = vign;
   ctx.fillRect(0, 0, W, H);
 
-  // Grain léger (pseudo, statique)
+  // Grain fin
   ctx.save();
-  ctx.globalAlpha = 0.04;
-  for (let i = 0; i < 80; i++) {
+  ctx.globalAlpha = 0.05;
+  for (let i = 0; i < 140; i++) {
     const gx = (i * 137.13) % W;
     const gy = (i * 241.91) % H;
     ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#000000";
     ctx.fillRect(gx, gy, 2, 2);
   }
   ctx.restore();
+}
 
-  const barH = 96;
-  const stageY = barH + 40;
-  const stageH = Math.round((H - barH) * 0.66);
-  const infoY = stageY + stageH + 40;
+function drawDealFullScreen(
+  ctx: CanvasRenderingContext2D,
+  deal: Deal,
+  img: HTMLImageElement | null,
+  reveal: number,
+  exit: number,
+  rank: number,
+  hold: number, // 0..1 progression à l'intérieur du hold (pour ken-burns)
+) {
+  drawCharcoalBg(ctx, hold);
+
+  const stageY = 180;
+  const stageH = Math.round(H * 0.58);
+  const infoY = stageY + stageH + 20;
   const cxC = W / 2;
   const cyC = stageY + stageH * 0.5;
 
-  // Spring d'entrée + sortie élégante
+  // Springs entrée/sortie
   const springR = springEase(reveal);
   const exitE = easeInOut(exit);
-  const slideIn = (1 - springR) * 60;
-  const slideOut = exitE * -W * 0.5;
-  const scaleK = 0.92 + 0.08 * springR;
-  const alphaK = (1 - exit) * Math.min(1, reveal * 1.6);
+  const slideIn = (1 - springR) * 70;
+  // Sortie : fade + léger zoom out, pas de slide horizontal (plus chic)
+  const exitScale = 1 - exitE * 0.06;
+  const alphaK = (1 - exitE) * Math.min(1, reveal * 1.4);
 
-  // Rang en filigrane derrière (énorme chiffre serif)
+  // Rang en filigrane (chiffre serif énorme, derrière le produit)
   ctx.save();
-  ctx.globalAlpha = 0.07 * springR * (1 - exit);
-  ctx.fillStyle = NOIR;
-  ctx.font = "300 880px Georgia, serif";
+  ctx.globalAlpha = 0.06 * springR * (1 - exitE);
+  ctx.fillStyle = IVOIRE;
+  ctx.font = "200 920px 'Playfair Display','Didot',Georgia,serif";
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
-  ctx.fillText(`${rank}`, cxC, cyC + 20);
+  ctx.fillText(`${rank}`, cxC, cyC + 30);
   ctx.restore();
 
-  // Ombre au sol (ellipse douce, sous le produit)
+  // Ombre au sol
   ctx.save();
-  ctx.globalAlpha = 0.32 * springR * (1 - exit);
-  const groundY = stageY + stageH - 30;
-  const shGrad = ctx.createRadialGradient(cxC + slideOut, groundY, 20, cxC + slideOut, groundY, W * 0.38);
-  shGrad.addColorStop(0, "rgba(20,18,16,0.55)");
-  shGrad.addColorStop(0.5, "rgba(20,18,16,0.18)");
-  shGrad.addColorStop(1, "rgba(20,18,16,0)");
+  ctx.globalAlpha = 0.55 * springR * (1 - exitE);
+  const groundY = stageY + stageH - 20;
+  const shGrad = ctx.createRadialGradient(cxC, groundY, 20, cxC, groundY, W * 0.42);
+  shGrad.addColorStop(0, "rgba(0,0,0,0.85)");
+  shGrad.addColorStop(0.5, "rgba(0,0,0,0.35)");
+  shGrad.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = shGrad;
   ctx.beginPath();
-  ctx.ellipse(cxC + slideOut, groundY, W * 0.32, 38, 0, 0, Math.PI * 2);
+  ctx.ellipse(cxC, groundY, W * 0.34, 32, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
-  // Produit détouré — multiply pour neutraliser un fond blanc/clair
+  // Produit détouré — ken-burns subtil pendant le hold
   ctx.save();
-  ctx.translate(slideOut, slideIn);
   ctx.globalAlpha = alphaK;
-
   if (img) {
-    const t01 = Math.min(1, Math.max(0, reveal));
-    const float = Math.sin(t01 * Math.PI) * 8;
-    const padImg = 80;
-    const baseW = (W - padImg * 2) * scaleK;
-    const baseH = (stageH - padImg) * scaleK;
-    const ix = (W - baseW) / 2;
-    const iy = stageY + (stageH - baseH) / 2 + float - 10;
+    const padImg = 90;
+    const baseW = (W - padImg * 2);
+    const baseH = (stageH - padImg);
+    // Ken burns : drift lent + zoom doux 1.0 → 1.04
+    const kbScale = (0.94 + 0.06 * springR) * (1 + 0.04 * hold) * exitScale;
+    const drift = Math.sin(hold * Math.PI) * 6;
+    const float = Math.sin(reveal * Math.PI) * 10;
+    const drawW = baseW * kbScale;
+    const drawH = baseH * kbScale;
+    const ix = (W - drawW) / 2 + drift;
+    const iy = stageY + (stageH - drawH) / 2 + float - 10 + slideIn;
 
-    // Détourage chroma-key blanc
     const cut = getCutout(img);
 
-    // Ombre portée propre (sous le produit détouré)
+    // Glow chaud derrière le produit (or doux)
     ctx.save();
-    ctx.shadowColor = "rgba(20,18,16,0.45)";
-    ctx.shadowBlur = 50;
-    ctx.shadowOffsetY = 30;
-    drawContainImage(ctx, cut, ix, iy, baseW, baseH);
+    ctx.globalAlpha = 0.32 * springR * (1 - exitE);
+    const glow = ctx.createRadialGradient(cxC, cyC, 30, cxC, cyC, W * 0.45);
+    glow.addColorStop(0, "rgba(201,168,118,0.45)");
+    glow.addColorStop(0.6, "rgba(201,168,118,0.08)");
+    glow.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glow;
+    ctx.beginPath();
+    ctx.ellipse(cxC, cyC, W * 0.42, H * 0.22, 0, 0, Math.PI * 2);
+    ctx.fill();
     ctx.restore();
+
+    // Ombre portée
+    ctx.shadowColor = "rgba(0,0,0,0.65)";
+    ctx.shadowBlur = 70;
+    ctx.shadowOffsetY = 40;
+    drawContainImage(ctx, cut, ix, iy, drawW, drawH);
   } else {
-    ctx.fillStyle = NOIR;
+    ctx.fillStyle = IVOIRE;
     ctx.globalAlpha = 0.10 * alphaK;
-    ctx.font = "300 560px Georgia, serif";
+    ctx.font = "200 560px 'Playfair Display',Georgia,serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText((deal.brand || "G").charAt(0).toUpperCase(), cxC, cyC);
-    ctx.globalAlpha = 1;
   }
-
   ctx.restore();
 
-  // === Bloc info en bas (sur le fond gris, pas de bandeau ivoire) ===
-  const infoAlpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.25) / 0.55))) * (1 - exit);
-  const infoSlide = (1 - infoAlpha) * 30;
+  // Header dessiné par drawSelectionFrame (avec le bon label)
+
+  // === Bloc info en bas, éditorial ===
+  const infoAlpha = easeOut(Math.max(0, Math.min(1, (reveal - 0.3) / 0.55))) * (1 - exitE);
+  const infoSlide = (1 - infoAlpha) * 36;
   ctx.save();
   ctx.translate(0, infoSlide);
   ctx.globalAlpha = infoAlpha;
 
-  // Trait or
+  // Filet or
   ctx.fillStyle = GOLD;
-  ctx.fillRect(70, infoY - 30, 56, 1);
+  ctx.fillRect(70, infoY + 10, 64, 1);
 
-  // Marque
-  ctx.fillStyle = NOIR;
-  ctx.font = "400 84px Georgia, serif";
+  // Marque (Playfair serif, ivoire)
+  ctx.fillStyle = IVOIRE;
+  ctx.font = "300 96px 'Playfair Display','Didot',Georgia,serif";
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  ctx.fillText(deal.brand, 70, infoY + 50);
+  ctx.fillText(deal.brand, 70, infoY + 100);
 
   // Merchant
-  ctx.fillStyle = TAUPE;
+  ctx.fillStyle = "rgba(201,168,118,0.85)";
   ctx.font = "500 18px 'Inter',sans-serif";
-  (ctx as any).letterSpacing = "5px";
-  ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 70, infoY + 90);
+  (ctx as any).letterSpacing = "6px";
+  ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 70, infoY + 142);
   (ctx as any).letterSpacing = "0px";
 
-  // Prix
+  // Prix — gros chiffres serif light
   const priceStr = deal.sale_price != null ? `${Math.round(Number(deal.sale_price))} €` : "—";
-  ctx.fillStyle = NOIR;
-  ctx.font = "500 138px 'Inter',sans-serif";
-  ctx.fillText(priceStr, 70, infoY + 240);
+  ctx.fillStyle = IVOIRE;
+  ctx.font = "200 196px 'Playfair Display','Didot',Georgia,serif";
+  ctx.fillText(priceStr, 70, infoY + 320);
 
   if (deal.original_price && deal.sale_price && Number(deal.original_price) > Number(deal.sale_price)) {
     ctx.save();
     ctx.fillStyle = TAUPE;
-    ctx.globalAlpha = infoAlpha * 0.6;
-    ctx.font = "400 38px 'Inter',sans-serif";
+    ctx.globalAlpha = infoAlpha * 0.75;
+    ctx.font = "400 40px 'Inter',sans-serif";
     const op = `${Math.round(Number(deal.original_price))} €`;
     const x = 70;
-    const y = infoY + 295;
+    const y = infoY + 380;
     ctx.fillText(op, x, y);
     const w = ctx.measureText(op).width;
     ctx.strokeStyle = TAUPE;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
-    ctx.moveTo(x, y - 13);
-    ctx.lineTo(x + w, y - 13);
+    ctx.moveTo(x, y - 14);
+    ctx.lineTo(x + w, y - 14);
     ctx.stroke();
     ctx.restore();
   }
 
-  // Discount capsule (à droite, alignée à la marque)
+  // Discount — capsule or contour, élégante
   const disc = Math.round(Number(deal.discount_percent || 0));
   if (disc > 0) {
     ctx.save();
-    ctx.font = "500 32px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "3px";
+    ctx.font = "500 34px 'Inter',sans-serif";
+    (ctx as any).letterSpacing = "4px";
     const t = `−${disc}%`;
     const tw = ctx.measureText(t).width;
-    const padX = 32;
-    const pillH = 64;
+    const padX = 36;
+    const pillH = 72;
     const pillW = tw + padX * 2;
     const pillX = W - pillW - 70;
-    const pillY = infoY + 5;
-    ctx.fillStyle = NOIR;
+    const pillY = infoY + 70;
+    // Bordure or fine
+    ctx.strokeStyle = GOLD;
+    ctx.lineWidth = 1.5;
     roundRect(ctx, pillX, pillY, pillW, pillH, 2);
-    ctx.fill();
-    ctx.fillStyle = IVOIRE;
+    ctx.stroke();
+    ctx.fillStyle = GOLD;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText(t, pillX + pillW / 2, pillY + pillH / 2 + 2);
@@ -356,42 +393,36 @@ function drawSelectionFrame(
 ) {
   const n = selection.deals.length;
 
-  // INTRO
+  // INTRO — éditorial nuit
   if (t < INTRO) {
     const k = easeOut(t / INTRO);
-    ctx.fillStyle = NOIR;
-    ctx.fillRect(0, 0, W, H);
-
-    const grad = ctx.createRadialGradient(W / 2, H / 2, 80, W / 2, H / 2, W);
-    grad.addColorStop(0, "rgba(246,240,233,0.06)");
-    grad.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+    drawCharcoalBg(ctx, t / INTRO);
 
     ctx.globalAlpha = k;
-    ctx.fillStyle = IVOIRE;
-    ctx.font = "600 38px 'Inter',sans-serif";
+    ctx.fillStyle = "rgba(201,168,118,0.9)";
+    ctx.font = "500 26px 'Inter',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    (ctx as any).letterSpacing = "12px";
-    ctx.fillText("GOLDEALS CLUB", W / 2, H / 2 - 240);
+    (ctx as any).letterSpacing = "14px";
+    ctx.fillText("GOLDEALS CLUB", W / 2, H / 2 - 280);
 
     ctx.fillStyle = GOLD;
-    ctx.fillRect(W / 2 - 28, H / 2 - 180, 56, 1);
+    ctx.fillRect(W / 2 - 32, H / 2 - 220, 64, 1);
 
     ctx.fillStyle = IVOIRE;
-    ctx.font = "300 180px Georgia, serif";
-    const scale = 0.85 + 0.15 * k;
+    ctx.font = "200 220px 'Playfair Display','Didot',Georgia,serif";
+    (ctx as any).letterSpacing = "0px";
+    const scale = 0.88 + 0.12 * springEase(k);
     ctx.save();
-    ctx.translate(W / 2, H / 2 + 20);
+    ctx.translate(W / 2, H / 2 - 20);
     ctx.scale(scale, scale);
     ctx.fillText(`Top ${n}`, 0, 0);
     ctx.restore();
 
-    ctx.fillStyle = "rgba(246,240,233,0.55)";
-    ctx.font = "500 28px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "10px";
-    ctx.fillText(selection.label.toUpperCase(), W / 2, H / 2 + 220);
+    ctx.fillStyle = "rgba(245,241,234,0.55)";
+    ctx.font = "300 30px 'Inter',sans-serif";
+    (ctx as any).letterSpacing = "12px";
+    ctx.fillText(selection.label.toUpperCase(), W / 2, H / 2 + 180);
     (ctx as any).letterSpacing = "0px";
     ctx.globalAlpha = 1;
     ctx.textBaseline = "alphabetic";
@@ -401,35 +432,34 @@ function drawSelectionFrame(
   // OUTRO
   if (t > totalSec - OUTRO) {
     const k = easeOut((t - (totalSec - OUTRO)) / OUTRO);
-    ctx.fillStyle = NOIR;
-    ctx.fillRect(0, 0, W, H);
+    drawCharcoalBg(ctx, 1);
     ctx.globalAlpha = k;
 
-    ctx.fillStyle = "rgba(246,240,233,0.5)";
-    ctx.font = "500 24px 'Inter',sans-serif";
+    ctx.fillStyle = "rgba(201,168,118,0.85)";
+    ctx.font = "500 22px 'Inter',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    (ctx as any).letterSpacing = "8px";
-    ctx.fillText("RETROUVE TOUS LES DEALS —", W / 2, H / 2 - 200);
+    (ctx as any).letterSpacing = "10px";
+    ctx.fillText("RETROUVE TOUS LES DEALS", W / 2, H / 2 - 240);
 
     ctx.fillStyle = IVOIRE;
-    ctx.font = "300 130px Georgia, serif";
+    ctx.font = "200 150px 'Playfair Display','Didot',Georgia,serif";
     (ctx as any).letterSpacing = "0px";
-    ctx.fillText("Sur le site", W / 2, H / 2 - 30);
+    ctx.fillText("Sur le site", W / 2, H / 2 - 60);
 
     ctx.fillStyle = GOLD;
-    ctx.fillRect(W / 2 - 28, H / 2 + 50, 56, 1);
+    ctx.fillRect(W / 2 - 32, H / 2 + 30, 64, 1);
 
-    const pillW = 720, pillH = 120;
+    const pillW = 760, pillH = 130;
     const pillX = (W - pillW) / 2;
-    const pillY = H / 2 + 130;
-    ctx.strokeStyle = IVOIRE;
+    const pillY = H / 2 + 110;
+    ctx.strokeStyle = GOLD;
     ctx.lineWidth = 1.5;
-    roundRect(ctx, pillX, pillY, pillW, pillH, 4);
+    roundRect(ctx, pillX, pillY, pillW, pillH, 2);
     ctx.stroke();
     ctx.fillStyle = IVOIRE;
-    ctx.font = "500 38px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "6px";
+    ctx.font = "500 40px 'Inter',sans-serif";
+    (ctx as any).letterSpacing = "8px";
     ctx.fillText("GOLDEALSCLUB.COM", W / 2, pillY + pillH / 2 + 2);
     (ctx as any).letterSpacing = "0px";
     ctx.globalAlpha = 1;
@@ -437,15 +467,18 @@ function drawSelectionFrame(
     return;
   }
 
-  // SLIDESHOW : chaque deal pendant PER_DEAL_SEC
+  // SLIDESHOW
   const slideT = t - INTRO;
   const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
   const localT = slideT - idx * PER_DEAL_SEC;
-  const reveal = Math.min(1, localT / 0.7);
-  const exit = idx < n - 1 ? Math.max(0, Math.min(1, (localT - (PER_DEAL_SEC - 0.55)) / 0.55)) : 0;
+  const reveal = Math.min(1, localT / 0.85);
+  const exit = idx < n - 1 ? Math.max(0, Math.min(1, (localT - (PER_DEAL_SEC - 0.7)) / 0.7)) : 0;
+  const hold = Math.min(1, Math.max(0, localT / PER_DEAL_SEC));
 
-  drawTopBar(ctx, selection.label, idx + 1, n);
-  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, exit, idx + 1);
+  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, exit, idx + 1, hold);
+  // Header par dessus avec le bon label
+  const headerAlpha = (1 - easeInOut(exit)) * Math.min(1, reveal * 1.4);
+  drawTopBar(ctx, selection.label, idx + 1, n, headerAlpha);
 }
 
 export default function AdminVideoPage() {
@@ -541,6 +574,17 @@ export default function AdminVideoPage() {
       canvas.width = W;
       canvas.height = H;
       const ctx = canvas.getContext("2d")!;
+
+      // Préchargement des polices utilisées dans le canvas
+      try {
+        await Promise.all([
+          (document as any).fonts?.load("200 200px 'Playfair Display'"),
+          (document as any).fonts?.load("300 96px 'Playfair Display'"),
+          (document as any).fonts?.load("500 22px 'Inter'"),
+          (document as any).fonts?.load("600 22px 'Inter'"),
+        ]);
+        await (document as any).fonts?.ready;
+      } catch {}
 
       const imgs = await Promise.all(selection.deals.map((d) => loadImage(d.image_url)));
       const imagesLoaded = imgs.filter(Boolean).length;
