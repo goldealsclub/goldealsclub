@@ -21,7 +21,7 @@ const HardRefreshButton = () => {
       onClick={onClick}
       aria-label="Forcer le rechargement"
       title="Forcer le rechargement (vider le cache)"
-      className="fixed bottom-3 left-3 z-[55] w-9 h-9 rounded-full bg-foreground/80 text-background backdrop-blur-sm shadow-lg flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity"
+      className="fixed bottom-3 left-3 z-[55] w-9 h-9 rounded-full bg-foreground/80 text-background shadow-lg flex items-center justify-center opacity-40 hover:opacity-100 transition-opacity touch-manipulation"
     >
       <RotateCw className={`w-4 h-4 ${busy ? "animate-spin" : ""}`} />
     </button>
