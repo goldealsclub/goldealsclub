@@ -33,16 +33,22 @@ const UpdateBanner = () => {
   }, [currentVersion]);
 
   useEffect(() => {
-    // Initial check
     checkForUpdate();
     const interval = setInterval(checkForUpdate, CHECK_INTERVAL);
-    return () => clearInterval(interval);
+    const onVisible = () => {
+      if (document.visibilityState === "visible") checkForUpdate();
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", checkForUpdate);
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", checkForUpdate);
+    };
   }, [checkForUpdate]);
 
   const handleUpdate = () => {
-    // Drop the cached deals so the new build fetches fresh data on reload.
-    import("@/lib/data").then((m) => m.clearDealsCache?.()).catch(() => {});
-    window.location.reload();
+    void hardRefresh();
   };
 
   if (!updateAvailable || dismissed) return null;
