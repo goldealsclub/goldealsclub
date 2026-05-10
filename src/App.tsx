@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -40,6 +40,21 @@ import UpdateBanner from "./components/UpdateBanner";
 
 const queryClient = new QueryClient();
 
+const GlobalOverlays = () => {
+  const { pathname } = useLocation();
+  const isAdminRoute = pathname.startsWith("/admin");
+
+  return (
+    <>
+      <NewDealNotifier />
+      {!isAdminRoute && <OnboardingModal />}
+      {!isAdminRoute && <InstallBanner />}
+      {!isAdminRoute && <UpdateBanner />}
+      {!isAdminRoute && <CookieBanner />}
+    </>
+  );
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
@@ -52,10 +67,8 @@ const App = () => (
           <TooltipProvider>
             <Toaster />
             <Sonner />
-            <OnboardingModal />
             <BrowserRouter>
               <ScrollToTop />
-              <NewDealNotifier />
               <Routes>
                 <Route path="/" element={<Index />} />
                 <Route path="/category/:slug" element={<CategoryPage />} />
@@ -79,9 +92,7 @@ const App = () => (
                 <Route path="/coupe-du-monde-2026" element={<WorldCup2026Page />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
-              <InstallBanner />
-              <UpdateBanner />
-              <CookieBanner />
+              <GlobalOverlays />
             </BrowserRouter>
           </TooltipProvider>
           </ConsentProvider>
