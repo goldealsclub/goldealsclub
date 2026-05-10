@@ -48,6 +48,7 @@ const GlobalOverlays = () => {
   return (
     <>
       <NewDealNotifier />
+      <HardRefreshButton />
       {!isAdminRoute ? (
         <>
           <OnboardingModal />
