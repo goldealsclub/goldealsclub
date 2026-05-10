@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { hardRefresh } from "@/lib/hard-refresh";
 
-const CHECK_INTERVAL = 60_000; // check every 60s
+const CHECK_INTERVAL = 20_000; // check every 20s
 const BUILD_META_URL = "/build-meta.json";
 
 const UpdateBanner = () => {
