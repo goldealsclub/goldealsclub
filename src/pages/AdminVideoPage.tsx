@@ -110,7 +110,8 @@ function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement |
   ctx.drawImage(img as any, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
 }
 
-// Cache de détourage chroma-key blanc → canvas avec fond transparent
+// Cache de détourage adaptatif : détecte la couleur de fond aux 4 coins
+// (blanc, gris clair, beige…) et la rend transparente avec feathering doux.
 const cutoutCache = new WeakMap<HTMLImageElement, HTMLCanvasElement>();
 function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
   const cached = cutoutCache.get(img);
@@ -124,20 +125,59 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
   try {
     const id = cx.getImageData(0, 0, c.width, c.height);
     const d = id.data;
-    // Sur fond charcoal très sombre : on est plus agressif sur le blanc
-    // pour ne laisser AUCUN halo lumineux autour du produit.
-    const HI = 232;
-    const LO = 195;
+    const W0 = c.width, H0 = c.height;
+
+    // Échantillonne les 4 coins (16x16 px) pour détecter la couleur de fond
+    const sampleCorner = (x0: number, y0: number) => {
+      let r = 0, g = 0, b = 0, n = 0;
+      const sz = 16;
+      for (let y = y0; y < y0 + sz && y < H0; y++) {
+        for (let x = x0; x < x0 + sz && x < W0; x++) {
+          const i = (y * W0 + x) * 4;
+          r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+        }
+      }
+      return n > 0 ? [r / n, g / n, b / n] : [255, 255, 255];
+    };
+    const corners = [
+      sampleCorner(0, 0),
+      sampleCorner(W0 - 16, 0),
+      sampleCorner(0, H0 - 16),
+      sampleCorner(W0 - 16, H0 - 16),
+    ];
+    // Couleur de fond moyenne
+    let br = 0, bg = 0, bb = 0;
+    for (const [r, g, b] of corners) { br += r; bg += g; bb += b; }
+    br /= 4; bg /= 4; bb /= 4;
+    // Variance entre coins → si trop élevée, on annule (probablement une lifestyle photo)
+    let variance = 0;
+    for (const [r, g, b] of corners) {
+      variance += Math.abs(r - br) + Math.abs(g - bg) + Math.abs(b - bb);
+    }
+    if (variance > 80) {
+      // Pas de fond uniforme → on garde l'image brute
+      cutoutCache.set(img, c);
+      return c;
+    }
+    // Si fond très sombre (lifestyle dark) : on n'enlève rien
+    const bgLum = (br + bg + bb) / 3;
+    if (bgLum < 140) {
+      cutoutCache.set(img, c);
+      return c;
+    }
+
+    const TOL_HARD = 18; // distance euclidienne max pour transparence totale
+    const TOL_SOFT = 42; // feathering jusqu'ici
     for (let i = 0; i < d.length; i += 4) {
-      const r = d[i], g = d[i + 1], b = d[i + 2];
-      const mn = Math.min(r, g, b);
-      const mx = Math.max(r, g, b);
-      const sat = mx - mn;
-      if (sat < 16 && mn > HI) {
+      const dr = d[i] - br;
+      const dg = d[i + 1] - bg;
+      const db = d[i + 2] - bb;
+      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+      if (dist < TOL_HARD) {
         d[i + 3] = 0;
-      } else if (sat < 20 && mn > LO) {
-        const t = (mn - LO) / (HI - LO);
-        d[i + 3] = Math.round(d[i + 3] * (1 - t));
+      } else if (dist < TOL_SOFT) {
+        const t = (dist - TOL_HARD) / (TOL_SOFT - TOL_HARD);
+        d[i + 3] = Math.round(d[i + 3] * t);
       }
     }
     cx.putImageData(id, 0, 0);
