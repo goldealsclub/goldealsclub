@@ -57,12 +57,19 @@ const GOLD_DEEP = "#9d7d4f";
 const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
 
+// Filtre qualité : rejette les images trop petites (thumbnails moches)
+const MIN_IMG_DIM = 500;
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
   const tryLoad = (url: string) =>
     new Promise<HTMLImageElement | null>((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img.naturalWidth > 0 ? img : null);
+      img.onload = () => {
+        if (img.naturalWidth <= 0) return resolve(null);
+        const minDim = Math.min(img.naturalWidth, img.naturalHeight);
+        if (minDim < MIN_IMG_DIM) return resolve(null); // image trop basse définition
+        resolve(img);
+      };
       img.onerror = () => resolve(null);
       img.src = url;
     });
