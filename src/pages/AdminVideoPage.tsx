@@ -57,12 +57,19 @@ const GOLD_DEEP = "#9d7d4f";
 const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
 
+// Filtre qualité : rejette les images trop petites (thumbnails moches)
+const MIN_IMG_DIM = 500;
 async function loadImage(src: string): Promise<HTMLImageElement | null> {
   const tryLoad = (url: string) =>
     new Promise<HTMLImageElement | null>((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = () => resolve(img.naturalWidth > 0 ? img : null);
+      img.onload = () => {
+        if (img.naturalWidth <= 0) return resolve(null);
+        const minDim = Math.min(img.naturalWidth, img.naturalHeight);
+        if (minDim < MIN_IMG_DIM) return resolve(null); // image trop basse définition
+        resolve(img);
+      };
       img.onerror = () => resolve(null);
       img.src = url;
     });
@@ -103,7 +110,8 @@ function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement |
   ctx.drawImage(img as any, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
 }
 
-// Cache de détourage chroma-key blanc → canvas avec fond transparent
+// Cache de détourage adaptatif : détecte la couleur de fond aux 4 coins
+// (blanc, gris clair, beige…) et la rend transparente avec feathering doux.
 const cutoutCache = new WeakMap<HTMLImageElement, HTMLCanvasElement>();
 function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
   const cached = cutoutCache.get(img);
@@ -117,20 +125,59 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
   try {
     const id = cx.getImageData(0, 0, c.width, c.height);
     const d = id.data;
-    // Sur fond charcoal très sombre : on est plus agressif sur le blanc
-    // pour ne laisser AUCUN halo lumineux autour du produit.
-    const HI = 232;
-    const LO = 195;
+    const W0 = c.width, H0 = c.height;
+
+    // Échantillonne les 4 coins (16x16 px) pour détecter la couleur de fond
+    const sampleCorner = (x0: number, y0: number) => {
+      let r = 0, g = 0, b = 0, n = 0;
+      const sz = 16;
+      for (let y = y0; y < y0 + sz && y < H0; y++) {
+        for (let x = x0; x < x0 + sz && x < W0; x++) {
+          const i = (y * W0 + x) * 4;
+          r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
+        }
+      }
+      return n > 0 ? [r / n, g / n, b / n] : [255, 255, 255];
+    };
+    const corners = [
+      sampleCorner(0, 0),
+      sampleCorner(W0 - 16, 0),
+      sampleCorner(0, H0 - 16),
+      sampleCorner(W0 - 16, H0 - 16),
+    ];
+    // Couleur de fond moyenne
+    let br = 0, bg = 0, bb = 0;
+    for (const [r, g, b] of corners) { br += r; bg += g; bb += b; }
+    br /= 4; bg /= 4; bb /= 4;
+    // Variance entre coins → si trop élevée, on annule (probablement une lifestyle photo)
+    let variance = 0;
+    for (const [r, g, b] of corners) {
+      variance += Math.abs(r - br) + Math.abs(g - bg) + Math.abs(b - bb);
+    }
+    if (variance > 80) {
+      // Pas de fond uniforme → on garde l'image brute
+      cutoutCache.set(img, c);
+      return c;
+    }
+    // Si fond très sombre (lifestyle dark) : on n'enlève rien
+    const bgLum = (br + bg + bb) / 3;
+    if (bgLum < 140) {
+      cutoutCache.set(img, c);
+      return c;
+    }
+
+    const TOL_HARD = 18; // distance euclidienne max pour transparence totale
+    const TOL_SOFT = 42; // feathering jusqu'ici
     for (let i = 0; i < d.length; i += 4) {
-      const r = d[i], g = d[i + 1], b = d[i + 2];
-      const mn = Math.min(r, g, b);
-      const mx = Math.max(r, g, b);
-      const sat = mx - mn;
-      if (sat < 16 && mn > HI) {
+      const dr = d[i] - br;
+      const dg = d[i + 1] - bg;
+      const db = d[i + 2] - bb;
+      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+      if (dist < TOL_HARD) {
         d[i + 3] = 0;
-      } else if (sat < 20 && mn > LO) {
-        const t = (mn - LO) / (HI - LO);
-        d[i + 3] = Math.round(d[i + 3] * (1 - t));
+      } else if (dist < TOL_SOFT) {
+        const t = (dist - TOL_HARD) / (TOL_SOFT - TOL_HARD);
+        d[i + 3] = Math.round(d[i + 3] * t);
       }
     }
     cx.putImageData(id, 0, 0);
@@ -656,58 +703,69 @@ export default function AdminVideoPage() {
       const totalFrames = Math.round(totalSec * FPS);
       const videoStream = (canvas as any).captureStream(FPS) as MediaStream;
 
-      // Audio chill lo-fi (boucle accords)
+      // Audio ambient lofi : pad doux, lent, filtré → ne fait pas peur.
+      // Une seule note pad qui glisse en accord majeur 7, attaques très longues.
       const AC = (window.AudioContext || (window as any).webkitAudioContext);
       const audioCtx: AudioContext = new AC();
       const dest = audioCtx.createMediaStreamDestination();
       const masterGain = audioCtx.createGain();
-      masterGain.gain.value = 0.25;
+      masterGain.gain.value = 0.0;
+      // Filtre passe-bas très bas pour un rendu sourd, lointain (lofi)
       const lp = audioCtx.createBiquadFilter();
       lp.type = "lowpass";
-      lp.frequency.value = 2200;
+      lp.frequency.value = 900;
+      lp.Q.value = 0.4;
+      // Petit delay pour donner du "souffle"
+      const delay = audioCtx.createDelay(0.6);
+      delay.delayTime.value = 0.32;
+      const delayGain = audioCtx.createGain();
+      delayGain.gain.value = 0.18;
       masterGain.connect(lp);
       lp.connect(dest);
+      lp.connect(delay);
+      delay.connect(delayGain);
+      delayGain.connect(lp);
 
       const now0 = audioCtx.currentTime;
+      // Fade-in global très lent (3s) → pas de pic de démarrage
+      masterGain.gain.setValueAtTime(0.0, now0);
+      masterGain.gain.linearRampToValueAtTime(0.14, now0 + 3.0);
+      masterGain.gain.setValueAtTime(0.14, now0 + totalSec - 2.5);
+      masterGain.gain.linearRampToValueAtTime(0, now0 + totalSec);
+
+      // Progression d'accords majeurs 7, doux, lents (8s chacun environ)
       const chords: number[][] = [
-        [261.63, 329.63, 392.0, 493.88],
-        [220.0, 261.63, 329.63, 392.0],
-        [174.61, 220.0, 261.63, 329.63],
-        [196.0, 246.94, 293.66, 349.23],
+        // Fmaj7 : F A C E (octave grave)
+        [87.31, 110.0, 130.81, 164.81],
+        // Cmaj7 : C E G B
+        [65.41, 82.41, 98.0, 123.47],
+        // Am7 : A C E G
+        [55.0, 65.41, 82.41, 98.0],
+        // Dm7 : D F A C
+        [73.42, 87.31, 110.0, 130.81],
       ];
       const chordDur = totalSec / chords.length;
       chords.forEach((notes, ci) => {
         const startT = now0 + ci * chordDur;
         const endT = startT + chordDur;
-        notes.forEach((freq, ni) => {
+        notes.forEach((freq) => {
           const osc = audioCtx.createOscillator();
-          osc.type = ni === 0 ? "triangle" : "sine";
+          osc.type = "sine"; // sine pure → pas d'harmoniques agressives
           osc.frequency.value = freq;
+          // Léger detune pour épaisseur (chorus naturel)
+          osc.detune.value = (Math.random() - 0.5) * 6;
           const g = audioCtx.createGain();
+          // Attaque très lente (1.5s) pour qu'aucune note ne "tape"
           g.gain.setValueAtTime(0, startT);
-          g.gain.linearRampToValueAtTime(0.18, startT + 0.6);
-          g.gain.linearRampToValueAtTime(0.14, endT - 0.4);
+          g.gain.linearRampToValueAtTime(0.06, startT + 1.5);
+          g.gain.linearRampToValueAtTime(0.06, endT - 1.5);
           g.gain.linearRampToValueAtTime(0, endT);
           osc.connect(g);
           g.connect(masterGain);
           osc.start(startT);
           osc.stop(endT + 0.05);
         });
-        const bass = audioCtx.createOscillator();
-        bass.type = "sine";
-        bass.frequency.value = notes[0] / 2;
-        const bg = audioCtx.createGain();
-        bg.gain.setValueAtTime(0, startT);
-        bg.gain.linearRampToValueAtTime(0.22, startT + 0.3);
-        bg.gain.linearRampToValueAtTime(0.18, endT - 0.3);
-        bg.gain.linearRampToValueAtTime(0, endT);
-        bass.connect(bg);
-        bg.connect(masterGain);
-        bass.start(startT);
-        bass.stop(endT + 0.05);
       });
-      masterGain.gain.setValueAtTime(0.25, now0 + totalSec - 1);
-      masterGain.gain.linearRampToValueAtTime(0, now0 + totalSec);
 
       const stream = new MediaStream([
         ...videoStream.getVideoTracks(),
