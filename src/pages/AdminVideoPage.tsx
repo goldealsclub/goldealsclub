@@ -703,69 +703,61 @@ export default function AdminVideoPage() {
       const totalFrames = Math.round(totalSec * FPS);
       const videoStream = (canvas as any).captureStream(FPS) as MediaStream;
 
-      // Audio ambient lofi : pad doux, lent, filtré → ne fait pas peur.
-      // Une seule note pad qui glisse en accord majeur 7, attaques très longues.
+      // ─── Vraie musique lofi via ElevenLabs Music API ───
       const AC = (window.AudioContext || (window as any).webkitAudioContext);
-      const audioCtx: AudioContext = new AC();
+      const audioCtx: AudioContext = new AC({ sampleRate: 48000 });
+      if (audioCtx.state === "suspended") {
+        try { await audioCtx.resume(); } catch {}
+      }
       const dest = audioCtx.createMediaStreamDestination();
       const masterGain = audioCtx.createGain();
       masterGain.gain.value = 0.0;
-      // Filtre passe-bas très bas pour un rendu sourd, lointain (lofi)
-      const lp = audioCtx.createBiquadFilter();
-      lp.type = "lowpass";
-      lp.frequency.value = 900;
-      lp.Q.value = 0.4;
-      // Petit delay pour donner du "souffle"
-      const delay = audioCtx.createDelay(0.6);
-      delay.delayTime.value = 0.32;
-      const delayGain = audioCtx.createGain();
-      delayGain.gain.value = 0.18;
-      masterGain.connect(lp);
-      lp.connect(dest);
-      lp.connect(delay);
-      delay.connect(delayGain);
-      delayGain.connect(lp);
+      masterGain.connect(dest);
+
+      let musicEl: HTMLAudioElement | null = null;
+      let musicBlobUrl: string | null = null;
+      try {
+        toast({ title: "🎵 Génération musique lofi…", description: "Quelques secondes…" });
+        const musicRes = await supabase.functions.invoke("generate-lofi-music", {
+          body: { duration_ms: Math.max(10_000, Math.round(totalSec * 1000)) },
+        });
+        if (musicRes.error) throw musicRes.error;
+        const blob: Blob =
+          musicRes.data instanceof Blob
+            ? musicRes.data
+            : new Blob([musicRes.data as ArrayBuffer], { type: "audio/mpeg" });
+        musicBlobUrl = URL.createObjectURL(blob);
+        musicEl = new Audio(musicBlobUrl);
+        musicEl.crossOrigin = "anonymous";
+        musicEl.loop = true;
+        musicEl.preload = "auto";
+        await new Promise<void>((res) => {
+          if (!musicEl) return res();
+          musicEl.oncanplaythrough = () => res();
+          musicEl.onerror = () => res();
+          setTimeout(() => res(), 4000);
+        });
+        const musicSource = audioCtx.createMediaElementSource(musicEl);
+        const lp = audioCtx.createBiquadFilter();
+        lp.type = "lowpass";
+        lp.frequency.value = 8000;
+        lp.Q.value = 0.4;
+        musicSource.connect(lp);
+        lp.connect(masterGain);
+      } catch (musicErr) {
+        console.error("Music fetch failed", musicErr);
+        toast({
+          title: "⚠️ Musique indisponible",
+          description: "Vidéo générée sans son.",
+          variant: "destructive",
+        });
+      }
 
       const now0 = audioCtx.currentTime;
-      // Fade-in global très lent (3s) → pas de pic de démarrage
       masterGain.gain.setValueAtTime(0.0, now0);
-      masterGain.gain.linearRampToValueAtTime(0.14, now0 + 3.0);
-      masterGain.gain.setValueAtTime(0.14, now0 + totalSec - 2.5);
+      masterGain.gain.linearRampToValueAtTime(0.55, now0 + 1.5);
+      masterGain.gain.setValueAtTime(0.55, now0 + Math.max(1.5, totalSec - 1.5));
       masterGain.gain.linearRampToValueAtTime(0, now0 + totalSec);
-
-      // Progression d'accords majeurs 7, doux, lents (8s chacun environ)
-      const chords: number[][] = [
-        // Fmaj7 : F A C E (octave grave)
-        [87.31, 110.0, 130.81, 164.81],
-        // Cmaj7 : C E G B
-        [65.41, 82.41, 98.0, 123.47],
-        // Am7 : A C E G
-        [55.0, 65.41, 82.41, 98.0],
-        // Dm7 : D F A C
-        [73.42, 87.31, 110.0, 130.81],
-      ];
-      const chordDur = totalSec / chords.length;
-      chords.forEach((notes, ci) => {
-        const startT = now0 + ci * chordDur;
-        const endT = startT + chordDur;
-        notes.forEach((freq) => {
-          const osc = audioCtx.createOscillator();
-          osc.type = "sine"; // sine pure → pas d'harmoniques agressives
-          osc.frequency.value = freq;
-          // Léger detune pour épaisseur (chorus naturel)
-          osc.detune.value = (Math.random() - 0.5) * 6;
-          const g = audioCtx.createGain();
-          // Attaque très lente (1.5s) pour qu'aucune note ne "tape"
-          g.gain.setValueAtTime(0, startT);
-          g.gain.linearRampToValueAtTime(0.06, startT + 1.5);
-          g.gain.linearRampToValueAtTime(0.06, endT - 1.5);
-          g.gain.linearRampToValueAtTime(0, endT);
-          osc.connect(g);
-          g.connect(masterGain);
-          osc.start(startT);
-          osc.stop(endT + 0.05);
-        });
-      });
 
       const stream = new MediaStream([
         ...videoStream.getVideoTracks(),
@@ -785,6 +777,9 @@ export default function AdminVideoPage() {
       });
 
       recorder.start();
+      if (musicEl) {
+        try { musicEl.currentTime = 0; await musicEl.play(); } catch (e) { console.warn("audio play failed", e); }
+      }
       const start = performance.now();
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
@@ -798,6 +793,8 @@ export default function AdminVideoPage() {
       recorder.stop();
 
       const blob = await done;
+      try { musicEl?.pause(); } catch {}
+      if (musicBlobUrl) URL.revokeObjectURL(musicBlobUrl);
       try { await audioCtx.close(); } catch {}
       const url = URL.createObjectURL(blob);
       setVideoUrls((prev) => ({ ...prev, [idx]: url }));
