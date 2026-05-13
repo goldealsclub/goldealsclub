@@ -166,8 +166,8 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
       return c;
     }
 
-    const TOL_HARD = 18; // distance euclidienne max pour transparence totale
-    const TOL_SOFT = 42; // feathering jusqu'ici
+    const TOL_HARD = 14;  // distance euclidienne max pour transparence totale
+    const TOL_SOFT = 56;  // feathering plus large → bord plus doux, pas de "halo"
     for (let i = 0; i < d.length; i += 4) {
       const dr = d[i] - br;
       const dg = d[i + 1] - bg;
@@ -177,7 +177,9 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
         d[i + 3] = 0;
       } else if (dist < TOL_SOFT) {
         const t = (dist - TOL_HARD) / (TOL_SOFT - TOL_HARD);
-        d[i + 3] = Math.round(d[i + 3] * t);
+        // courbe smoothstep pour transition plus naturelle
+        const sm = t * t * (3 - 2 * t);
+        d[i + 3] = Math.round(d[i + 3] * sm);
       }
     }
     cx.putImageData(id, 0, 0);
