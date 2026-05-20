@@ -733,6 +733,18 @@ function drawSelectionFrame(
     const curHold = clamp01(localT / PER_DEAL_SEC);
     drawDealFullScreen(
       ctx,
+      selection.deals[idx + 1],
+      imgs[idx + 1],
+      nextReveal,
+      0,
+      idx + 2,
+      nextHold,
+      false,
+    );
+    // Courant : reveal=1, exit=tt
+    const curHold = clamp01(localT / PER_DEAL_SEC);
+    drawDealFullScreen(
+      ctx,
       selection.deals[idx],
       imgs[idx],
       1,
@@ -741,19 +753,12 @@ function drawSelectionFrame(
       curHold,
       false,
     );
-    // Header crossfade
-    const curHeader = (1 - easeInOutQuint(tt));
-    const nextHeader = easeOutExpo(tt);
-    drawTopBar(ctx, selection.label, idx + 1, n, curHeader);
-    drawTopBar(ctx, selection.label, idx + 2, n, nextHeader);
     return;
   }
 
   const reveal = clamp01(localT / REVEAL_DUR);
   const hold = clamp01(localT / PER_DEAL_SEC);
   drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false);
-  const headerAlpha = easeOutExpo(reveal);
-  drawTopBar(ctx, selection.label, idx + 1, n, headerAlpha);
 }
 
 export default function AdminVideoPage() {
