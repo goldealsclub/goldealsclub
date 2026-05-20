@@ -9,6 +9,41 @@ import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Sparkles, Share2, Cloud,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import VideoHistory from "@/components/admin/VideoHistory";
+import brandNikeUrl from "@/assets/brand-nike.svg";
+import brandAdidasUrl from "@/assets/brand-adidas.svg";
+import brandJdUrl from "@/assets/brand-jdsports.png";
+// Logos partenaires servis depuis /public — URLs absolues.
+const snipesLogoUrl = "/partners/snipes-logo.png";
+const kappaLogoUrl = "/partners/kappa-logo.png";
+
+// Map marque normalisée → URL logo. Si non trouvé : fallback texte uppercase bold.
+const BRAND_LOGO_URLS: Record<string, string> = {
+  nike: brandNikeUrl,
+  adidas: brandAdidasUrl,
+  "jd sports": brandJdUrl,
+  jdsports: brandJdUrl,
+  snipes: snipesLogoUrl,
+  kappa: kappaLogoUrl,
+};
+
+const brandLogoCache = new Map<string, HTMLImageElement | null>();
+async function getBrandLogo(brand: string): Promise<HTMLImageElement | null> {
+  const key = (brand || "").trim().toLowerCase();
+  if (!key) return null;
+  if (brandLogoCache.has(key)) return brandLogoCache.get(key)!;
+  const url = BRAND_LOGO_URLS[key];
+  if (!url) {
+    brandLogoCache.set(key, null);
+    return null;
+  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { brandLogoCache.set(key, img); resolve(img); };
+    img.onerror = () => { brandLogoCache.set(key, null); resolve(null); };
+    img.src = url;
+  });
+}
 
 type Deal = {
   id: string;
@@ -41,7 +76,7 @@ type Brief = {
 const W = 1080;
 const H = 1920;
 const FPS = 30;
-const PER_DEAL_SEC = 3.2;          // chaque produit reste à l'écran 3.2s — respiration cinéma
+const PER_DEAL_SEC = 4.2;          // produit affiché 4.2s — laisse respirer + crossfade ample
 const INTRO = 2.2;
 const OUTRO = 2.6;
 
@@ -349,6 +384,7 @@ function drawAdHeader(
   deal: Deal,
   reveal: number,
   exit: number,
+  logo: HTMLImageElement | null,
 ) {
   const alpha = reveal * (1 - exit);
   const slide = (1 - reveal) * 30;
@@ -356,17 +392,31 @@ function drawAdHeader(
   ctx.globalAlpha = alpha;
   ctx.translate(0, -slide);
 
-  // ── Bloc gauche : marque + titre ──
-  ctx.fillStyle = INK_BLACK;
-  ctx.font = "900 78px 'Inter','Helvetica',sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  (ctx as any).letterSpacing = "-2px";
-  ctx.fillText((deal.brand || "").toUpperCase(), 60, 200);
-  (ctx as any).letterSpacing = "0px";
+  // ── Bloc gauche : logo (si dispo) sinon nom marque + titre produit ──
+  if (logo && logo.naturalWidth > 0) {
+    // Affiche le logo officiel — hauteur fixe 110px, largeur auto, alignée à gauche
+    const targetH = 110;
+    const ratio = logo.naturalWidth / logo.naturalHeight;
+    const targetW = targetH * ratio;
+    const maxW = 380;
+    const finalW = Math.min(targetW, maxW);
+    const finalH = finalW / ratio;
+    ctx.drawImage(logo, 60, 130, finalW, finalH);
+  } else {
+    ctx.fillStyle = INK_BLACK;
+    ctx.font = "900 78px 'Inter','Helvetica',sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    (ctx as any).letterSpacing = "-2px";
+    ctx.fillText((deal.brand || "").toUpperCase(), 60, 220);
+    (ctx as any).letterSpacing = "0px";
+  }
 
   // Titre produit — wrap sur 2 lignes max
+  ctx.fillStyle = INK_BLACK;
   ctx.font = "800 38px 'Inter','Helvetica',sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
   (ctx as any).letterSpacing = "0.5px";
   const titleMax = 620;
   const words = (deal.title || "").toUpperCase().split(/\s+/);
@@ -389,7 +439,8 @@ function drawAdHeader(
     }
     lines[1] = lines[1] + "…";
   }
-  lines.forEach((ln, i) => ctx.fillText(ln, 60, 270 + i * 48));
+  const titleStartY = logo ? 290 : 290;
+  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 48));
   (ctx as any).letterSpacing = "0px";
 
   ctx.restore();
@@ -543,6 +594,7 @@ function drawDealFullScreen(
   rank: number,
   hold: number, // 0..1 progression à l'intérieur du hold (pour ken-burns)
   drawBg: boolean = true,
+  logo: HTMLImageElement | null = null,
 ) {
   if (drawBg) drawCharcoalBg(ctx, hold);
 
@@ -603,7 +655,7 @@ function drawDealFullScreen(
   ctx.restore();
 
   // Header marque + titre (gauche) — entrée légère
-  drawAdHeader(ctx, deal, revealE, exitE);
+  drawAdHeader(ctx, deal, revealE, exitE, logo);
 
   // Bloc prix rouge (droite)
   drawAdPriceBlock(ctx, deal, revealE, exitE);
@@ -622,6 +674,7 @@ function drawSelectionFrame(
   selection: Selection,
   imgs: (HTMLImageElement | null)[],
   totalSec: number,
+  logos: (HTMLImageElement | null)[] = [],
 ) {
   const n = selection.deals.length;
 
@@ -704,22 +757,21 @@ function drawSelectionFrame(
   const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
   const localT = slideT - idx * PER_DEAL_SEC;
 
-  // Fenêtres : entrée 0.9s, transition crossfade 0.8s entre deals
+  // Fenêtres : entrée 0.9s, transition crossfade 1.5s entre deals (plus doux)
   const REVEAL_DUR = 0.9;
-  const TRANS_DUR = 0.8;
+  const TRANS_DUR = 1.5;
 
   // Fond une seule fois — les deals sont composités par dessus
   drawCharcoalBg(ctx, clamp01(localT / PER_DEAL_SEC));
 
-  // Crossfade : si on est dans la dernière fenêtre du deal courant ET pas le dernier,
-  // on dessine d'abord le SUIVANT en train de monter, puis on superpose le COURANT en train de partir.
+  // Crossfade : on dessine le suivant qui monte, puis le courant qui s'efface par-dessus.
   const inTransition = idx < n - 1 && localT > PER_DEAL_SEC - TRANS_DUR;
   if (inTransition) {
-    const tt = clamp01((localT - (PER_DEAL_SEC - TRANS_DUR)) / TRANS_DUR);
-    // Suivant : reveal de 0 → 1 sur la fenêtre, exit=0
+    const ttRaw = clamp01((localT - (PER_DEAL_SEC - TRANS_DUR)) / TRANS_DUR);
+    // Courbe ease-in-out plus douce → pas de jump perceptible
+    const tt = easeInOutQuint(ttRaw);
     const nextReveal = tt;
-    const nextHold = tt * 0.3; // ken-burns démarre doucement
-    // (duplicate block removed)
+    const nextHold = tt * 0.3;
     drawDealFullScreen(
       ctx,
       selection.deals[idx + 1],
@@ -729,8 +781,8 @@ function drawSelectionFrame(
       idx + 2,
       nextHold,
       false,
+      logos[idx + 1] ?? null,
     );
-    // Courant : reveal=1, exit=tt
     const curHold = clamp01(localT / PER_DEAL_SEC);
     drawDealFullScreen(
       ctx,
@@ -741,13 +793,14 @@ function drawSelectionFrame(
       idx + 1,
       curHold,
       false,
+      logos[idx] ?? null,
     );
     return;
   }
 
   const reveal = clamp01(localT / REVEAL_DUR);
   const hold = clamp01(localT / PER_DEAL_SEC);
-  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false);
+  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false, logos[idx] ?? null);
 }
 
 export default function AdminVideoPage() {
@@ -942,7 +995,10 @@ export default function AdminVideoPage() {
         await (document as any).fonts?.ready;
       } catch {}
 
-      const imgs = await Promise.all(selection.deals.map((d) => loadImage(d.image_url)));
+      const [imgs, logos] = await Promise.all([
+        Promise.all(selection.deals.map((d) => loadImage(d.image_url))),
+        Promise.all(selection.deals.map((d) => getBrandLogo(d.brand))),
+      ]);
       const imagesLoaded = imgs.filter(Boolean).length;
       if (imagesLoaded < selection.deals.length) {
         toast({
@@ -1034,7 +1090,7 @@ export default function AdminVideoPage() {
       const start = performance.now();
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
-        drawSelectionFrame(ctx, t, selection, imgs, totalSec);
+        drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos);
         setProgress(Math.round((f / totalFrames) * 100));
         const target = start + (f / FPS) * 1000;
         const now = performance.now();
