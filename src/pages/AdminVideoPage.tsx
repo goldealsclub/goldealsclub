@@ -719,18 +719,7 @@ function drawSelectionFrame(
     // Suivant : reveal de 0 → 1 sur la fenêtre, exit=0
     const nextReveal = tt;
     const nextHold = tt * 0.3; // ken-burns démarre doucement
-    drawDealFullScreen(
-      ctx,
-      selection.deals[idx + 1],
-      imgs[idx + 1],
-      nextReveal,
-      0,
-      idx + 2,
-      nextHold,
-      false,
-    );
-    // Courant : reveal=1, exit=tt
-    const curHold = clamp01(localT / PER_DEAL_SEC);
+    // (duplicate block removed)
     drawDealFullScreen(
       ctx,
       selection.deals[idx + 1],
