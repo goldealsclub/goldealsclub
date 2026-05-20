@@ -974,7 +974,27 @@ export default function AdminVideoPage() {
             />
           </div>
 
+          <div className="border rounded-lg p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1">
+              <h2 className="font-semibold text-sm">Fond de la vidéo</h2>
+              <p className="text-xs text-muted-foreground">
+                Choisis l'ambiance avant de générer.
+              </p>
+            </div>
+            <Select value={bgPreset} onValueChange={(v) => setBgPreset(v as BgPreset)} disabled={renderingIdx !== null}>
+              <SelectTrigger className="w-full sm:w-[260px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="zara">Zara — studio gris clair</SelectItem>
+                <SelectItem value="charcoal">Charcoal — nuit éditoriale</SelectItem>
+                <SelectItem value="ivoire">Ivoire — premium crème</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <canvas ref={canvasRef} className="hidden" />
+
 
           <div className="grid md:grid-cols-3 gap-4">
             {brief.deals.map((selection, idx) => (
