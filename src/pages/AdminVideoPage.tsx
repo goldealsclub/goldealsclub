@@ -746,14 +746,17 @@ export default function AdminVideoPage() {
     }
   }, [isAdmin]);
 
-  const regenerate = async () => {
+  const regenerate = async (shuffle = false) => {
     setLoading(true);
     setVideoUrls({});
-    const { error } = await supabase.functions.invoke("prepare-daily-video-brief");
+    const { error } = await supabase.functions.invoke("prepare-daily-video-brief", {
+      body: { shuffle },
+    });
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else toast({ title: "Brief régénéré" });
+    else toast({ title: shuffle ? "Deals rafraîchis 🎲" : "Brief régénéré" });
     await loadBrief();
   };
+
 
   const renderSelection = async (idx: number) => {
     if (!brief) return;
