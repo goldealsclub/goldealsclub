@@ -1089,7 +1089,7 @@ export default function AdminVideoPage() {
       const start = performance.now();
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
-        drawSelectionFrame(ctx, t, selection, imgs, totalSec);
+        drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos);
         setProgress(Math.round((f / totalFrames) * 100));
         const target = start + (f / FPS) * 1000;
         const now = performance.now();
