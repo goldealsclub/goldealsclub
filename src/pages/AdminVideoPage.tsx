@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
 import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Sparkles, Share2, Cloud, History } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import VideoHistory from "@/components/admin/VideoHistory";
 
 type Deal = {
@@ -43,19 +44,90 @@ const PER_DEAL_SEC = 3.2;          // chaque produit reste à l'écran 3.2s — 
 const INTRO = 2.2;
 const OUTRO = 2.6;
 
-// Palette — éditorial ZARA (gris clair minimaliste, encre noire)
-const NOIR = "#0a0a0a";
-const NOIR_SOFT = "#1a1a1a";
-// Fond gris clair, légèrement chaud (style studio Zara)
-const CHARCOAL_TOP = "#e6e3de";
-const CHARCOAL_MID = "#d8d4cd";
-const CHARCOAL_BOT = "#c7c2ba";
-// IVOIRE conservé comme « couleur texte principale » → maintenant noir d'encre (lisible sur fond clair)
-const IVOIRE = "#0a0a0a";
-const TAUPE = "#5a5650";
-// GOLD remplacé par un noir d'encre subtil — Zara n'utilise pas d'or
-const GOLD = "#1a1a1a";
-const GOLD_DEEP = "#000000";
+// ─── PRESETS DE FOND ───
+type BgPreset = "zara" | "charcoal" | "ivoire";
+
+type Palette = {
+  bgTop: string;
+  bgMid: string;
+  bgBot: string;
+  ink: string;        // texte principal (anciennement IVOIRE)
+  inkSoft: string;    // texte secondaire (rgba string)
+  accent: string;     // accent / filets (anciennement GOLD)
+  taupe: string;      // gris neutre intermédiaire
+  haloInner: string;  // halo lumineux derrière le produit (rgba)
+  haloMid: string;
+  vignette: string;   // teinte de la vignette périphérique (rgba)
+  grainOnDark: boolean; // true → grain blanc dominant, false → grain noir dominant
+};
+
+const BG_PRESETS: Record<BgPreset, Palette> = {
+  // Studio gris clair façon ZARA — minimal, lumineux
+  zara: {
+    bgTop: "#e6e3de",
+    bgMid: "#d8d4cd",
+    bgBot: "#c7c2ba",
+    ink: "#0a0a0a",
+    inkSoft: "rgba(20,20,20,0.5)",
+    accent: "#1a1a1a",
+    taupe: "#5a5650",
+    haloInner: "rgba(255,255,255,0.35)",
+    haloMid: "rgba(255,255,255,0.08)",
+    vignette: "rgba(0,0,0,0.12)",
+    grainOnDark: false,
+  },
+  // Charcoal nuit — éditorial sombre avec or chaud
+  charcoal: {
+    bgTop: "#1a1a1d",
+    bgMid: "#121214",
+    bgBot: "#070708",
+    ink: "#f5f1ea",
+    inkSoft: "rgba(245,241,234,0.55)",
+    accent: "#c9a876",
+    taupe: "#8a8278",
+    haloInner: "rgba(201,168,118,0.18)",
+    haloMid: "rgba(201,168,118,0.06)",
+    vignette: "rgba(0,0,0,0.55)",
+    grainOnDark: true,
+  },
+  // Ivoire premium — fond crème chaud, accents bronze
+  ivoire: {
+    bgTop: "#f3ece1",
+    bgMid: "#ece2d2",
+    bgBot: "#d9ccb6",
+    ink: "#1d1a14",
+    inkSoft: "rgba(29,26,20,0.55)",
+    accent: "#8a6a3c",
+    taupe: "#7a6f5a",
+    haloInner: "rgba(255,250,240,0.4)",
+    haloMid: "rgba(255,250,240,0.08)",
+    vignette: "rgba(60,40,15,0.18)",
+    grainOnDark: false,
+  },
+};
+
+// Theme actif — réassigné via applyBgPreset() avant chaque rendu
+let activePalette: Palette = BG_PRESETS.zara;
+let NOIR = "#0a0a0a";
+let NOIR_SOFT = "#1a1a1a";
+let CHARCOAL_TOP = activePalette.bgTop;
+let CHARCOAL_MID = activePalette.bgMid;
+let CHARCOAL_BOT = activePalette.bgBot;
+let IVOIRE = activePalette.ink;
+let TAUPE = activePalette.taupe;
+let GOLD = activePalette.accent;
+let GOLD_DEEP = activePalette.accent;
+
+function applyBgPreset(preset: BgPreset) {
+  activePalette = BG_PRESETS[preset];
+  CHARCOAL_TOP = activePalette.bgTop;
+  CHARCOAL_MID = activePalette.bgMid;
+  CHARCOAL_BOT = activePalette.bgBot;
+  IVOIRE = activePalette.ink;
+  TAUPE = activePalette.taupe;
+  GOLD = activePalette.accent;
+  GOLD_DEEP = activePalette.accent;
+}
 
 const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
@@ -231,28 +303,31 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // Halo très subtil derrière le produit (lumière studio centrée)
+  // Halo lumineux centré (couleur dépendante du preset)
   const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 80, W / 2, H * 0.42, W * 0.75);
-  haloR.addColorStop(0, "rgba(255,255,255,0.35)");
-  haloR.addColorStop(0.5, "rgba(255,255,255,0.08)");
+  haloR.addColorStop(0, activePalette.haloInner);
+  haloR.addColorStop(0.5, activePalette.haloMid);
   haloR.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = haloR;
   ctx.fillRect(0, 0, W, H);
 
-  // Vignette périphérique très légère (assombrit à peine les bords)
+  // Vignette périphérique (intensité dépendante du preset)
   const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.35, W / 2, H * 0.5, W * 0.95);
   vign.addColorStop(0, "rgba(0,0,0,0)");
-  vign.addColorStop(1, "rgba(0,0,0,0.12)");
+  vign.addColorStop(1, activePalette.vignette);
   ctx.fillStyle = vign;
   ctx.fillRect(0, 0, W, H);
 
   // Grain très fin (texture papier mat)
   ctx.save();
-  ctx.globalAlpha = 0.035;
-  for (let i = 0; i < 120; i++) {
+  ctx.globalAlpha = activePalette.grainOnDark ? 0.05 : 0.035;
+  for (let i = 0; i < 130; i++) {
     const gx = (i * 137.13) % W;
     const gy = (i * 241.91) % H;
-    ctx.fillStyle = i % 2 === 0 ? "#000000" : "#ffffff";
+    const dark = i % 2 === 0;
+    ctx.fillStyle = activePalette.grainOnDark
+      ? (dark ? "#ffffff" : "#000000")
+      : (dark ? "#000000" : "#ffffff");
     ctx.fillRect(gx, gy, 2, 2);
   }
   ctx.restore();
@@ -334,8 +409,8 @@ function drawDealFullScreen(
     ctx.save();
     ctx.globalAlpha = 0.32 * springR * (1 - exitE);
     const glow = ctx.createRadialGradient(cxC, cyC, 30, cxC, cyC, W * 0.45);
-    glow.addColorStop(0, "rgba(255,255,255,0.5)");
-    glow.addColorStop(0.6, "rgba(255,255,255,0.05)");
+    glow.addColorStop(0, activePalette.haloInner);
+    glow.addColorStop(0.6, activePalette.haloMid);
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
@@ -591,6 +666,7 @@ export default function AdminVideoPage() {
   const [editableCaption, setEditableCaption] = useState("");
   const [history, setHistory] = useState<any[]>([]);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [bgPreset, setBgPreset] = useState<BgPreset>("zara");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const captionRef = useRef<HTMLTextAreaElement>(null);
 
@@ -672,6 +748,7 @@ export default function AdminVideoPage() {
     if (!brief) return;
     const selection = brief.deals[idx];
     const totalSec = INTRO + selection.deals.length * PER_DEAL_SEC + OUTRO;
+    applyBgPreset(bgPreset);
     setRenderingIdx(idx);
     setProgress(0);
     setVideoUrls((prev) => { const n = { ...prev }; delete n[idx]; return n; });
@@ -897,7 +974,27 @@ export default function AdminVideoPage() {
             />
           </div>
 
+          <div className="border rounded-lg p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex-1">
+              <h2 className="font-semibold text-sm">Fond de la vidéo</h2>
+              <p className="text-xs text-muted-foreground">
+                Choisis l'ambiance avant de générer.
+              </p>
+            </div>
+            <Select value={bgPreset} onValueChange={(v) => setBgPreset(v as BgPreset)} disabled={renderingIdx !== null}>
+              <SelectTrigger className="w-full sm:w-[260px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="zara">Zara — studio gris clair</SelectItem>
+                <SelectItem value="charcoal">Charcoal — nuit éditoriale</SelectItem>
+                <SelectItem value="ivoire">Ivoire — premium crème</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <canvas ref={canvasRef} className="hidden" />
+
 
           <div className="grid md:grid-cols-3 gap-4">
             {brief.deals.map((selection, idx) => (
