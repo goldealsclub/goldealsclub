@@ -68,7 +68,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
   // Link
   const linkOpacity = interpolate(frame, [34, 44], [0, 1], { extrapolateRight: "clamp" });
 
-  const floatY = Math.sin(frame * 0.04) * 3;
+  // pas de wiggle — il cause un micro-jitter lors des cross-fades
   const brandLogo = brandLogos[deal.brand];
   const flameCount = getFlameCount(deal.discountPercent);
   const flameLabel = getFlameLabel(deal.discountPercent);
