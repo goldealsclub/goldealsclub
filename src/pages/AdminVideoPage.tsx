@@ -383,6 +383,7 @@ function drawAdHeader(
   deal: Deal,
   reveal: number,
   exit: number,
+  logo: HTMLImageElement | null,
 ) {
   const alpha = reveal * (1 - exit);
   const slide = (1 - reveal) * 30;
@@ -390,17 +391,31 @@ function drawAdHeader(
   ctx.globalAlpha = alpha;
   ctx.translate(0, -slide);
 
-  // ── Bloc gauche : marque + titre ──
-  ctx.fillStyle = INK_BLACK;
-  ctx.font = "900 78px 'Inter','Helvetica',sans-serif";
-  ctx.textAlign = "left";
-  ctx.textBaseline = "alphabetic";
-  (ctx as any).letterSpacing = "-2px";
-  ctx.fillText((deal.brand || "").toUpperCase(), 60, 200);
-  (ctx as any).letterSpacing = "0px";
+  // ── Bloc gauche : logo (si dispo) sinon nom marque + titre produit ──
+  if (logo && logo.naturalWidth > 0) {
+    // Affiche le logo officiel — hauteur fixe 110px, largeur auto, alignée à gauche
+    const targetH = 110;
+    const ratio = logo.naturalWidth / logo.naturalHeight;
+    const targetW = targetH * ratio;
+    const maxW = 380;
+    const finalW = Math.min(targetW, maxW);
+    const finalH = finalW / ratio;
+    ctx.drawImage(logo, 60, 130, finalW, finalH);
+  } else {
+    ctx.fillStyle = INK_BLACK;
+    ctx.font = "900 78px 'Inter','Helvetica',sans-serif";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    (ctx as any).letterSpacing = "-2px";
+    ctx.fillText((deal.brand || "").toUpperCase(), 60, 220);
+    (ctx as any).letterSpacing = "0px";
+  }
 
   // Titre produit — wrap sur 2 lignes max
+  ctx.fillStyle = INK_BLACK;
   ctx.font = "800 38px 'Inter','Helvetica',sans-serif";
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
   (ctx as any).letterSpacing = "0.5px";
   const titleMax = 620;
   const words = (deal.title || "").toUpperCase().split(/\s+/);
@@ -423,7 +438,8 @@ function drawAdHeader(
     }
     lines[1] = lines[1] + "…";
   }
-  lines.forEach((ln, i) => ctx.fillText(ln, 60, 270 + i * 48));
+  const titleStartY = logo ? 290 : 290;
+  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 48));
   (ctx as any).letterSpacing = "0px";
 
   ctx.restore();
