@@ -654,7 +654,7 @@ function drawDealFullScreen(
   ctx.restore();
 
   // Header marque + titre (gauche) — entrée légère
-  drawAdHeader(ctx, deal, revealE, exitE);
+  drawAdHeader(ctx, deal, revealE, exitE, logo);
 
   // Bloc prix rouge (droite)
   drawAdPriceBlock(ctx, deal, revealE, exitE);
