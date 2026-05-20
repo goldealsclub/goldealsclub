@@ -756,22 +756,21 @@ function drawSelectionFrame(
   const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
   const localT = slideT - idx * PER_DEAL_SEC;
 
-  // Fenêtres : entrée 0.9s, transition crossfade 0.8s entre deals
+  // Fenêtres : entrée 0.9s, transition crossfade 1.5s entre deals (plus doux)
   const REVEAL_DUR = 0.9;
-  const TRANS_DUR = 0.8;
+  const TRANS_DUR = 1.5;
 
   // Fond une seule fois — les deals sont composités par dessus
   drawCharcoalBg(ctx, clamp01(localT / PER_DEAL_SEC));
 
-  // Crossfade : si on est dans la dernière fenêtre du deal courant ET pas le dernier,
-  // on dessine d'abord le SUIVANT en train de monter, puis on superpose le COURANT en train de partir.
+  // Crossfade : on dessine le suivant qui monte, puis le courant qui s'efface par-dessus.
   const inTransition = idx < n - 1 && localT > PER_DEAL_SEC - TRANS_DUR;
   if (inTransition) {
-    const tt = clamp01((localT - (PER_DEAL_SEC - TRANS_DUR)) / TRANS_DUR);
-    // Suivant : reveal de 0 → 1 sur la fenêtre, exit=0
+    const ttRaw = clamp01((localT - (PER_DEAL_SEC - TRANS_DUR)) / TRANS_DUR);
+    // Courbe ease-in-out plus douce → pas de jump perceptible
+    const tt = easeInOutQuint(ttRaw);
     const nextReveal = tt;
-    const nextHold = tt * 0.3; // ken-burns démarre doucement
-    // (duplicate block removed)
+    const nextHold = tt * 0.3;
     drawDealFullScreen(
       ctx,
       selection.deals[idx + 1],
@@ -781,8 +780,8 @@ function drawSelectionFrame(
       idx + 2,
       nextHold,
       false,
+      logos[idx + 1] ?? null,
     );
-    // Courant : reveal=1, exit=tt
     const curHold = clamp01(localT / PER_DEAL_SEC);
     drawDealFullScreen(
       ctx,
@@ -793,13 +792,14 @@ function drawSelectionFrame(
       idx + 1,
       curHold,
       false,
+      logos[idx] ?? null,
     );
     return;
   }
 
   const reveal = clamp01(localT / REVEAL_DUR);
   const hold = clamp01(localT / PER_DEAL_SEC);
-  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false);
+  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false, logos[idx] ?? null);
 }
 
 export default function AdminVideoPage() {
