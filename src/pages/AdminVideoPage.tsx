@@ -43,19 +43,90 @@ const PER_DEAL_SEC = 3.2;          // chaque produit reste à l'écran 3.2s — 
 const INTRO = 2.2;
 const OUTRO = 2.6;
 
-// Palette — éditorial ZARA (gris clair minimaliste, encre noire)
-const NOIR = "#0a0a0a";
-const NOIR_SOFT = "#1a1a1a";
-// Fond gris clair, légèrement chaud (style studio Zara)
-const CHARCOAL_TOP = "#e6e3de";
-const CHARCOAL_MID = "#d8d4cd";
-const CHARCOAL_BOT = "#c7c2ba";
-// IVOIRE conservé comme « couleur texte principale » → maintenant noir d'encre (lisible sur fond clair)
-const IVOIRE = "#0a0a0a";
-const TAUPE = "#5a5650";
-// GOLD remplacé par un noir d'encre subtil — Zara n'utilise pas d'or
-const GOLD = "#1a1a1a";
-const GOLD_DEEP = "#000000";
+// ─── PRESETS DE FOND ───
+type BgPreset = "zara" | "charcoal" | "ivoire";
+
+type Palette = {
+  bgTop: string;
+  bgMid: string;
+  bgBot: string;
+  ink: string;        // texte principal (anciennement IVOIRE)
+  inkSoft: string;    // texte secondaire (rgba string)
+  accent: string;     // accent / filets (anciennement GOLD)
+  taupe: string;      // gris neutre intermédiaire
+  haloInner: string;  // halo lumineux derrière le produit (rgba)
+  haloMid: string;
+  vignette: string;   // teinte de la vignette périphérique (rgba)
+  grainOnDark: boolean; // true → grain blanc dominant, false → grain noir dominant
+};
+
+const BG_PRESETS: Record<BgPreset, Palette> = {
+  // Studio gris clair façon ZARA — minimal, lumineux
+  zara: {
+    bgTop: "#e6e3de",
+    bgMid: "#d8d4cd",
+    bgBot: "#c7c2ba",
+    ink: "#0a0a0a",
+    inkSoft: "rgba(20,20,20,0.5)",
+    accent: "#1a1a1a",
+    taupe: "#5a5650",
+    haloInner: "rgba(255,255,255,0.35)",
+    haloMid: "rgba(255,255,255,0.08)",
+    vignette: "rgba(0,0,0,0.12)",
+    grainOnDark: false,
+  },
+  // Charcoal nuit — éditorial sombre avec or chaud
+  charcoal: {
+    bgTop: "#1a1a1d",
+    bgMid: "#121214",
+    bgBot: "#070708",
+    ink: "#f5f1ea",
+    inkSoft: "rgba(245,241,234,0.55)",
+    accent: "#c9a876",
+    taupe: "#8a8278",
+    haloInner: "rgba(201,168,118,0.18)",
+    haloMid: "rgba(201,168,118,0.06)",
+    vignette: "rgba(0,0,0,0.55)",
+    grainOnDark: true,
+  },
+  // Ivoire premium — fond crème chaud, accents bronze
+  ivoire: {
+    bgTop: "#f3ece1",
+    bgMid: "#ece2d2",
+    bgBot: "#d9ccb6",
+    ink: "#1d1a14",
+    inkSoft: "rgba(29,26,20,0.55)",
+    accent: "#8a6a3c",
+    taupe: "#7a6f5a",
+    haloInner: "rgba(255,250,240,0.4)",
+    haloMid: "rgba(255,250,240,0.08)",
+    vignette: "rgba(60,40,15,0.18)",
+    grainOnDark: false,
+  },
+};
+
+// Theme actif — réassigné via applyBgPreset() avant chaque rendu
+let activePalette: Palette = BG_PRESETS.zara;
+let NOIR = "#0a0a0a";
+let NOIR_SOFT = "#1a1a1a";
+let CHARCOAL_TOP = activePalette.bgTop;
+let CHARCOAL_MID = activePalette.bgMid;
+let CHARCOAL_BOT = activePalette.bgBot;
+let IVOIRE = activePalette.ink;
+let TAUPE = activePalette.taupe;
+let GOLD = activePalette.accent;
+let GOLD_DEEP = activePalette.accent;
+
+function applyBgPreset(preset: BgPreset) {
+  activePalette = BG_PRESETS[preset];
+  CHARCOAL_TOP = activePalette.bgTop;
+  CHARCOAL_MID = activePalette.bgMid;
+  CHARCOAL_BOT = activePalette.bgBot;
+  IVOIRE = activePalette.ink;
+  TAUPE = activePalette.taupe;
+  GOLD = activePalette.accent;
+  GOLD_DEEP = activePalette.accent;
+}
 
 const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
