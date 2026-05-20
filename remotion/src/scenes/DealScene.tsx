@@ -86,19 +86,16 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         }}>
           <div style={{
             backgroundColor: RED,
-            border: `3px solid ${RED}`,
             color: "#fff",
-            padding: "14px 28px",
+            padding: "18px 34px",
             fontFamily: "sans-serif",
-            fontSize: 52,
+            fontSize: 58,
             fontWeight: 800,
             letterSpacing: -1,
             lineHeight: 1,
-            boxShadow: "0 0 0 4px #fff inset",
+            boxShadow: `0 0 0 4px #fff, 0 0 0 7px ${RED}`,
           }}>
-            <span style={{ color: RED, background: "#fff", padding: "8px 18px", display: "inline-block" }}>
-              {Number.isInteger(deal.salePrice) ? `${deal.salePrice}.00` : deal.salePrice.toFixed(2)} €
-            </span>
+            {Number.isInteger(deal.salePrice) ? `${deal.salePrice}.00` : deal.salePrice.toFixed(2)} €
           </div>
           <div style={{
             fontFamily: "sans-serif",
