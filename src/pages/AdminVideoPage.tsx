@@ -9,6 +9,40 @@ import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Sparkles, Share2, Cloud,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import VideoHistory from "@/components/admin/VideoHistory";
+import brandNikeUrl from "@/assets/brand-nike.svg";
+import brandAdidasUrl from "@/assets/brand-adidas.svg";
+import brandJdUrl from "@/assets/brand-jdsports.png";
+import snipesLogoUrl from "/partners/snipes-logo.png?url";
+import kappaLogoUrl from "/partners/kappa-logo.png?url";
+
+// Map marque normalisée → URL logo. Si non trouvé : fallback texte uppercase bold.
+const BRAND_LOGO_URLS: Record<string, string> = {
+  nike: brandNikeUrl,
+  adidas: brandAdidasUrl,
+  "jd sports": brandJdUrl,
+  jdsports: brandJdUrl,
+  snipes: snipesLogoUrl,
+  kappa: kappaLogoUrl,
+};
+
+const brandLogoCache = new Map<string, HTMLImageElement | null>();
+async function getBrandLogo(brand: string): Promise<HTMLImageElement | null> {
+  const key = (brand || "").trim().toLowerCase();
+  if (!key) return null;
+  if (brandLogoCache.has(key)) return brandLogoCache.get(key)!;
+  const url = BRAND_LOGO_URLS[key];
+  if (!url) {
+    brandLogoCache.set(key, null);
+    return null;
+  }
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { brandLogoCache.set(key, img); resolve(img); };
+    img.onerror = () => { brandLogoCache.set(key, null); resolve(null); };
+    img.src = url;
+  });
+}
 
 type Deal = {
   id: string;
