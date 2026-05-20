@@ -746,16 +746,31 @@ export default function AdminVideoPage() {
     }
   }, [isAdmin]);
 
-  const regenerate = async (shuffle = false) => {
-    setLoading(true);
-    setVideoUrls({});
+  const [refreshingCat, setRefreshingCat] = useState<string | null>(null);
+
+  const regenerate = async (shuffle = false, category?: string) => {
+    if (category) {
+      setRefreshingCat(category);
+    } else {
+      setLoading(true);
+      setVideoUrls({});
+    }
     const { error } = await supabase.functions.invoke("prepare-daily-video-brief", {
-      body: { shuffle },
+      body: { shuffle, ...(category ? { category } : {}) },
     });
-    if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else toast({ title: shuffle ? "Deals rafraîchis 🎲" : "Brief régénéré" });
+    if (error) {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    } else {
+      toast({
+        title: category
+          ? `Catégorie ${category} rafraîchie 🎲`
+          : shuffle ? "Deals rafraîchis 🎲" : "Brief régénéré",
+      });
+    }
     await loadBrief();
+    setRefreshingCat(null);
   };
+
 
 
   const renderSelection = async (idx: number) => {
