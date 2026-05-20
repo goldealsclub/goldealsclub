@@ -134,25 +134,44 @@ Deno.serve(async (req) => {
       // pour varier les sélections sans sacrifier la qualité.
       const pool = shuffle ? candidates.slice(0, 30).sort(() => Math.random() - 0.5) : candidates;
 
-      // Dédup par marque pour avoir une vraie diversité dans le top 5
+      // Clé de "produit visuel" : titre normalisé (sans variantes couleur)
+      // pour éviter d'avoir 5x les mêmes chaussettes en couleurs différentes.
+      const productKey = (d: any) => {
+        const t = norm(d.title)
+          .replace(/\b(noir|blanc|rouge|bleu|vert|jaune|rose|gris|beige|kaki|marine|navy|black|white|red|blue|green|yellow|pink|grey|gray|brown|marron|violet|orange|or|gold|silver|argent)\b/g, "")
+          .replace(/\s+/g, " ")
+          .trim()
+          .slice(0, 60);
+        return `${norm(d.brand)}|${t}`;
+      };
+
+      // Dédup par marque + variante produit pour une vraie diversité
       const seenBrands = new Set<string>();
+      const seenProducts = new Set<string>();
       const picks: any[] = [];
       for (const d of pool) {
         const b = norm(d.brand);
+        const pk = productKey(d);
         if (seenBrands.has(b)) continue;
+        if (seenProducts.has(pk)) continue;
         seenBrands.add(b);
+        seenProducts.add(pk);
         picks.push(d);
         if (picks.length === TOP_N) break;
       }
 
-      // Si on n'a pas TOP_N marques différentes, complète sans contrainte de dédup
+      // Si pas assez de marques, on complète mais on garde la dédup produit
       if (picks.length < TOP_N) {
         for (const d of candidates) {
           if (picks.find((p) => p.id === d.id)) continue;
+          const pk = productKey(d);
+          if (seenProducts.has(pk)) continue;
+          seenProducts.add(pk);
           picks.push(d);
           if (picks.length === TOP_N) break;
         }
       }
+
 
       console.log(`[${cat.slug}] picks=${picks.length}`);
       if (picks.length >= 3) {
