@@ -35,16 +35,17 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
   const { fps } = useVideoConfig();
   const rankNum = index + 1;
 
-  // Product image — dramatic entrance
-  const imgScale = interpolate(
-    spring({ frame, fps, config: { damping: 12, stiffness: 100 } }),
-    [0, 1], [1.08, 1]
-  );
-  const imgY = interpolate(
-    spring({ frame, fps, config: { damping: 16, stiffness: 160 } }),
-    [0, 1], [60, 0]
-  );
-  const imgOpacity = interpolate(frame, [0, 10], [0, 1], { extrapolateRight: "clamp" });
+  // Product image — soft entrance + slow Ken Burns (zoom + pan)
+  const imgEnter = spring({ frame, fps, config: { damping: 200, mass: 1.2 }, durationInFrames: 30 });
+  const imgScaleEnter = interpolate(imgEnter, [0, 1], [1.04, 1]);
+  const imgY = interpolate(imgEnter, [0, 1], [24, 0]);
+  const imgOpacity = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: "clamp" });
+
+  // Ken Burns: slow zoom 1 → 1.06 + subtle horizontal pan, alternating direction per index
+  const kenZoom = interpolate(frame, [0, 130], [1, 1.06], { extrapolateRight: "clamp" });
+  const panDir = index % 2 === 0 ? 1 : -1;
+  const kenPanX = interpolate(frame, [0, 130], [0, 14 * panDir], { extrapolateRight: "clamp" });
+  const kenPanY = interpolate(frame, [0, 130], [0, -8], { extrapolateRight: "clamp" });
 
   // Brand logo
   const logoOpacity = interpolate(frame, [6, 16], [0, 1], { extrapolateRight: "clamp" });
@@ -131,6 +132,9 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
             height: "100%",
             objectFit: "contain",
             padding: 20,
+            transform: `scale(${kenZoom * imgScaleEnter}) translate(${kenPanX}px, ${kenPanY}px)`,
+            transformOrigin: "center center",
+            willChange: "transform",
           }}
         />
       </div>
