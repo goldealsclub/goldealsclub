@@ -64,6 +64,16 @@ const TOP_N = 5;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  let shuffle = false;
+  try {
+    if (req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      shuffle = Boolean(body?.shuffle);
+    }
+  } catch { /* ignore */ }
+
+
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
