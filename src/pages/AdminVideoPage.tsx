@@ -43,16 +43,19 @@ const PER_DEAL_SEC = 3.2;          // chaque produit reste à l'écran 3.2s — 
 const INTRO = 2.2;
 const OUTRO = 2.6;
 
-// Palette — éditorial nuit (charcoal & or)
-const NOIR = "#0a0a0c";
-const NOIR_SOFT = "#141416";
-const CHARCOAL_TOP = "#1a1a1d";
-const CHARCOAL_MID = "#121214";
-const CHARCOAL_BOT = "#070708";
-const IVOIRE = "#f5f1ea";
-const TAUPE = "#8a8278";
-const GOLD = "#c9a876";
-const GOLD_DEEP = "#9d7d4f";
+// Palette — éditorial ZARA (gris clair minimaliste, encre noire)
+const NOIR = "#0a0a0a";
+const NOIR_SOFT = "#1a1a1a";
+// Fond gris clair, légèrement chaud (style studio Zara)
+const CHARCOAL_TOP = "#e6e3de";
+const CHARCOAL_MID = "#d8d4cd";
+const CHARCOAL_BOT = "#c7c2ba";
+// IVOIRE conservé comme « couleur texte principale » → maintenant noir d'encre (lisible sur fond clair)
+const IVOIRE = "#0a0a0a";
+const TAUPE = "#5a5650";
+// GOLD remplacé par un noir d'encre subtil — Zara n'utilise pas d'or
+const GOLD = "#1a1a1a";
+const GOLD_DEEP = "#000000";
 
 const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
