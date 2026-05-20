@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const category = String(body?.category || "").trim();
-    const limit = Math.min(300, Math.max(20, Number(body?.limit) || 150));
+    const limit = Math.min(400, Math.max(20, Number(body?.limit) || 250));
     const cat = SELECTION_CATEGORIES[category];
     if (!cat) {
       return new Response(JSON.stringify({ error: "Unknown category" }), {
@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
         .from("deals")
         .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
         .eq("category", c)
-        .gte("discount_percent", 15)
+        .gte("discount_percent", 10)
         .order("discount_percent", { ascending: false })
         .limit(3000);
       if (!error && data) all.push(...data);
@@ -82,7 +82,10 @@ Deno.serve(async (req) => {
 
     const matchesCategory = (d: any) => {
       const t = `${d.title || ""}`;
-      return cat.titleHints.test(t) && !cat.titleExclude.test(t);
+      if (cat.titleExclude.test(t)) return false;
+      // Match si la catégorie DB est valide OU si le titre contient un mot-clé pertinent
+      const dbOk = cat.categories.includes(String(d.category || "").toLowerCase());
+      return dbOk || cat.titleHints.test(t);
     };
     // Plus permissif: on garde toutes les marques, on rank simplement les hype en premier
     const filtered = all.filter(

@@ -35,17 +35,14 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
   const { fps } = useVideoConfig();
   const rankNum = index + 1;
 
-  // Product image — soft entrance + slow Ken Burns (zoom + pan)
-  const imgEnter = spring({ frame, fps, config: { damping: 200, mass: 1.2 }, durationInFrames: 30 });
-  const imgScaleEnter = interpolate(imgEnter, [0, 1], [1.04, 1]);
-  const imgY = interpolate(imgEnter, [0, 1], [24, 0]);
-  const imgOpacity = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: "clamp" });
+  // Product image — pure opacity fade (le cross-fade gère la continuité visuelle)
+  const imgOpacity = interpolate(frame, [0, 22], [0, 1], { extrapolateRight: "clamp" });
 
-  // Ken Burns: slow zoom 1 → 1.06 + subtle horizontal pan, alternating direction per index
-  const kenZoom = interpolate(frame, [0, 130], [1, 1.06], { extrapolateRight: "clamp" });
+  // Ken Burns continu et lent sur toute la scène — pas de snap au changement
+  const kenZoom = interpolate(frame, [0, 140], [1.02, 1.07], { extrapolateRight: "clamp" });
   const panDir = index % 2 === 0 ? 1 : -1;
-  const kenPanX = interpolate(frame, [0, 130], [0, 14 * panDir], { extrapolateRight: "clamp" });
-  const kenPanY = interpolate(frame, [0, 130], [0, -8], { extrapolateRight: "clamp" });
+  const kenPanX = interpolate(frame, [0, 140], [-6 * panDir, 8 * panDir], { extrapolateRight: "clamp" });
+  const kenPanY = interpolate(frame, [0, 140], [4, -6], { extrapolateRight: "clamp" });
 
   // Brand logo
   const logoOpacity = interpolate(frame, [6, 16], [0, 1], { extrapolateRight: "clamp" });
@@ -71,7 +68,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
   // Link
   const linkOpacity = interpolate(frame, [34, 44], [0, 1], { extrapolateRight: "clamp" });
 
-  const floatY = Math.sin(frame * 0.04) * 3;
+  // pas de wiggle — il cause un micro-jitter lors des cross-fades
   const brandLogo = brandLogos[deal.brand];
   const flameCount = getFlameCount(deal.discountPercent);
   const flameLabel = getFlameLabel(deal.discountPercent);
@@ -119,7 +116,6 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         bottom: "50%",
         backgroundColor: PHOTO_BG,
         overflow: "hidden",
-        transform: `translateY(${imgY + floatY}px)`,
         opacity: imgOpacity,
         display: "flex",
         alignItems: "center",
@@ -132,7 +128,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
             height: "100%",
             objectFit: "contain",
             padding: 20,
-            transform: `scale(${kenZoom * imgScaleEnter}) translate(${kenPanX}px, ${kenPanY}px)`,
+            transform: `scale(${kenZoom}) translate(${kenPanX}px, ${kenPanY}px)`,
             transformOrigin: "center center",
             willChange: "transform",
           }}
