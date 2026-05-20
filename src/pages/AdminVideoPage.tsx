@@ -666,6 +666,7 @@ export default function AdminVideoPage() {
   const [editableCaption, setEditableCaption] = useState("");
   const [history, setHistory] = useState<any[]>([]);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
+  const [bgPreset, setBgPreset] = useState<BgPreset>("zara");
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const captionRef = useRef<HTMLTextAreaElement>(null);
 
