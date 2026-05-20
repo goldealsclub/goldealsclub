@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const category = String(body?.category || "").trim();
-    const limit = Math.min(300, Math.max(20, Number(body?.limit) || 150));
+    const limit = Math.min(400, Math.max(20, Number(body?.limit) || 250));
     const cat = SELECTION_CATEGORIES[category];
     if (!cat) {
       return new Response(JSON.stringify({ error: "Unknown category" }), {
