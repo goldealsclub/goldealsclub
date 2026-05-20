@@ -1230,6 +1230,75 @@ export default function AdminVideoPage() {
         </div>
         <VideoHistory limit={12} compact />
       </div>
+
+      <Dialog open={!!pickerCat} onOpenChange={(o) => !o && !savingPicks && setPickerCat(null)}>
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Choisir les produits — {pickerCat?.label}
+              <span className="ml-3 text-sm font-normal text-muted-foreground">
+                {pickedIds.length}/5 sélectionnés
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto -mx-6 px-6">
+            {candLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : candidates.length === 0 ? (
+              <p className="text-center text-muted-foreground py-12">Aucun candidat disponible.</p>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                {candidates.map((d) => {
+                  const idx = pickedIds.indexOf(d.id);
+                  const picked = idx !== -1;
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => togglePick(d.id)}
+                      className={`relative text-left border rounded-lg overflow-hidden transition-all ${
+                        picked
+                          ? "border-primary ring-2 ring-primary"
+                          : "border-border hover:border-foreground/30"
+                      }`}
+                    >
+                      <div className="aspect-square bg-muted/30 relative">
+                        <img src={d.image_url} alt={d.title} className="w-full h-full object-contain" loading="lazy" />
+                        {picked && (
+                          <div className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                            {idx + 1}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-2">
+                        <div className="text-[10px] font-bold uppercase truncate">{d.brand}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{d.title}</div>
+                        <div className="flex justify-between text-[10px] mt-1">
+                          <span className="font-semibold">{Math.round(Number(d.sale_price))} €</span>
+                          <span className="text-muted-foreground">-{Math.round(Number(d.discount_percent))}%</span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPickerCat(null)} disabled={savingPicks}>
+              Annuler
+            </Button>
+            <Button onClick={savePicks} disabled={savingPicks || pickedIds.length < 3}>
+              {savingPicks ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+              Enregistrer ({pickedIds.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
