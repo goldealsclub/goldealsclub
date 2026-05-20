@@ -302,28 +302,31 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // Halo très subtil derrière le produit (lumière studio centrée)
+  // Halo lumineux centré (couleur dépendante du preset)
   const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 80, W / 2, H * 0.42, W * 0.75);
-  haloR.addColorStop(0, "rgba(255,255,255,0.35)");
-  haloR.addColorStop(0.5, "rgba(255,255,255,0.08)");
+  haloR.addColorStop(0, activePalette.haloInner);
+  haloR.addColorStop(0.5, activePalette.haloMid);
   haloR.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = haloR;
   ctx.fillRect(0, 0, W, H);
 
-  // Vignette périphérique très légère (assombrit à peine les bords)
+  // Vignette périphérique (intensité dépendante du preset)
   const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.35, W / 2, H * 0.5, W * 0.95);
   vign.addColorStop(0, "rgba(0,0,0,0)");
-  vign.addColorStop(1, "rgba(0,0,0,0.12)");
+  vign.addColorStop(1, activePalette.vignette);
   ctx.fillStyle = vign;
   ctx.fillRect(0, 0, W, H);
 
   // Grain très fin (texture papier mat)
   ctx.save();
-  ctx.globalAlpha = 0.035;
-  for (let i = 0; i < 120; i++) {
+  ctx.globalAlpha = activePalette.grainOnDark ? 0.05 : 0.035;
+  for (let i = 0; i < 130; i++) {
     const gx = (i * 137.13) % W;
     const gy = (i * 241.91) % H;
-    ctx.fillStyle = i % 2 === 0 ? "#000000" : "#ffffff";
+    const dark = i % 2 === 0;
+    ctx.fillStyle = activePalette.grainOnDark
+      ? (dark ? "#ffffff" : "#000000")
+      : (dark ? "#000000" : "#ffffff");
     ctx.fillRect(gx, gy, 2, 2);
   }
   ctx.restore();
