@@ -82,7 +82,10 @@ Deno.serve(async (req) => {
 
     const matchesCategory = (d: any) => {
       const t = `${d.title || ""}`;
-      return cat.titleHints.test(t) && !cat.titleExclude.test(t);
+      if (cat.titleExclude.test(t)) return false;
+      // Match si la catégorie DB est valide OU si le titre contient un mot-clé pertinent
+      const dbOk = cat.categories.includes(String(d.category || "").toLowerCase());
+      return dbOk || cat.titleHints.test(t);
     };
     // Plus permissif: on garde toutes les marques, on rank simplement les hype en premier
     const filtered = all.filter(
