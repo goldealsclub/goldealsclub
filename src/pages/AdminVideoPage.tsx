@@ -951,9 +951,15 @@ export default function AdminVideoPage() {
         <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour Admin
         </Link>
-        <Button variant="outline" size="sm" onClick={regenerate} disabled={loading || renderingIdx !== null}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Régénérer briefs
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => regenerate(true)} disabled={loading || renderingIdx !== null}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Rafraîchir deals
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => regenerate(false)} disabled={loading || renderingIdx !== null}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Régénérer briefs
+          </Button>
+        </div>
+
       </div>
 
       <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
