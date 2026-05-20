@@ -74,7 +74,7 @@ Deno.serve(async (req) => {
         .from("deals")
         .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
         .eq("category", c)
-        .gte("discount_percent", 15)
+        .gte("discount_percent", 10)
         .order("discount_percent", { ascending: false })
         .limit(3000);
       if (!error && data) all.push(...data);
