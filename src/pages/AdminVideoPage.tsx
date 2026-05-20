@@ -1038,7 +1038,21 @@ export default function AdminVideoPage() {
                   <Sparkles className="h-4 w-4" />
                   <h3 className="font-semibold">{selection.label}</h3>
                   <span className="text-xs text-muted-foreground ml-auto">Top {selection.deals.length}</span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0"
+                    title="Rafraîchir cette catégorie"
+                    onClick={() => {
+                      setVideoUrls((prev) => { const n = { ...prev }; delete n[idx]; return n; });
+                      regenerate(true, selection.category);
+                    }}
+                    disabled={loading || renderingIdx !== null || refreshingCat !== null}
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${refreshingCat === selection.category ? "animate-spin" : ""}`} />
+                  </Button>
                 </div>
+
 
                 <div className="grid grid-cols-5 gap-1 mb-3">
                   {selection.deals.map((d, i) => (
