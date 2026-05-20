@@ -41,7 +41,7 @@ type Brief = {
 const W = 1080;
 const H = 1920;
 const FPS = 30;
-const PER_DEAL_SEC = 3.2;          // chaque produit reste à l'écran 3.2s — respiration cinéma
+const PER_DEAL_SEC = 4.2;          // produit affiché 4.2s — laisse respirer + crossfade ample
 const INTRO = 2.2;
 const OUTRO = 2.6;
 
