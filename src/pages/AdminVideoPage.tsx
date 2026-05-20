@@ -5,8 +5,9 @@ import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "@/hooks/use-toast";
-import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Sparkles, Share2, Cloud, History } from "lucide-react";
+import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Sparkles, Share2, Cloud, History, Pencil, Check } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import VideoHistory from "@/components/admin/VideoHistory";
 
 type Deal = {
@@ -747,6 +748,60 @@ export default function AdminVideoPage() {
   }, [isAdmin]);
 
   const [refreshingCat, setRefreshingCat] = useState<string | null>(null);
+  const [pickerCat, setPickerCat] = useState<{ category: string; label: string; idx: number } | null>(null);
+  const [candidates, setCandidates] = useState<Deal[]>([]);
+  const [candLoading, setCandLoading] = useState(false);
+  const [pickedIds, setPickedIds] = useState<string[]>([]);
+  const [savingPicks, setSavingPicks] = useState(false);
+
+  const openPicker = async (idx: number, selection: Selection) => {
+    setPickerCat({ category: selection.category, label: selection.label, idx });
+    setPickedIds(selection.deals.map((d) => d.id));
+    setCandidates([]);
+    setCandLoading(true);
+    const { data, error } = await supabase.functions.invoke("video-candidates", {
+      body: { category: selection.category, limit: 80 },
+    });
+    if (error) {
+      toast({ title: "Erreur chargement candidats", description: error.message, variant: "destructive" });
+    } else {
+      setCandidates(((data as any)?.candidates as Deal[]) || []);
+    }
+    setCandLoading(false);
+  };
+
+  const togglePick = (id: string) => {
+    setPickedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 5) {
+        toast({ title: "Max 5 produits", description: "Décoches-en un d'abord." });
+        return prev;
+      }
+      return [...prev, id];
+    });
+  };
+
+  const savePicks = async () => {
+    if (!pickerCat) return;
+    if (pickedIds.length < 3) {
+      toast({ title: "Sélectionne au moins 3 produits", variant: "destructive" });
+      return;
+    }
+    setSavingPicks(true);
+    const { error } = await supabase.functions.invoke("save-video-selection", {
+      body: { category: pickerCat.category, dealIds: pickedIds },
+    });
+    if (error) {
+      toast({ title: "Erreur sauvegarde", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Sélection enregistrée ✓" });
+      setVideoUrls((prev) => { const n = { ...prev }; delete n[pickerCat.idx]; return n; });
+      await loadBrief();
+      setPickerCat(null);
+    }
+    setSavingPicks(false);
+  };
+
 
   const regenerate = async (shuffle = false, category?: string) => {
     if (category) {
@@ -1051,6 +1106,16 @@ export default function AdminVideoPage() {
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${refreshingCat === selection.category ? "animate-spin" : ""}`} />
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0"
+                    title="Choisir manuellement les 5 produits"
+                    onClick={() => openPicker(idx, selection)}
+                    disabled={loading || renderingIdx !== null || refreshingCat !== null}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
 
 
@@ -1165,6 +1230,75 @@ export default function AdminVideoPage() {
         </div>
         <VideoHistory limit={12} compact />
       </div>
+
+      <Dialog open={!!pickerCat} onOpenChange={(o) => !o && !savingPicks && setPickerCat(null)}>
+        <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>
+              Choisir les produits — {pickerCat?.label}
+              <span className="ml-3 text-sm font-normal text-muted-foreground">
+                {pickedIds.length}/5 sélectionnés
+              </span>
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-y-auto -mx-6 px-6">
+            {candLoading ? (
+              <div className="flex justify-center py-12">
+                <Loader2 className="h-6 w-6 animate-spin" />
+              </div>
+            ) : candidates.length === 0 ? (
+              <p className="text-center text-muted-foreground py-12">Aucun candidat disponible.</p>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                {candidates.map((d) => {
+                  const idx = pickedIds.indexOf(d.id);
+                  const picked = idx !== -1;
+                  return (
+                    <button
+                      key={d.id}
+                      type="button"
+                      onClick={() => togglePick(d.id)}
+                      className={`relative text-left border rounded-lg overflow-hidden transition-all ${
+                        picked
+                          ? "border-primary ring-2 ring-primary"
+                          : "border-border hover:border-foreground/30"
+                      }`}
+                    >
+                      <div className="aspect-square bg-muted/30 relative">
+                        <img src={d.image_url} alt={d.title} className="w-full h-full object-contain" loading="lazy" />
+                        {picked && (
+                          <div className="absolute top-1.5 right-1.5 h-6 w-6 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold">
+                            {idx + 1}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-2">
+                        <div className="text-[10px] font-bold uppercase truncate">{d.brand}</div>
+                        <div className="text-[10px] text-muted-foreground truncate">{d.title}</div>
+                        <div className="flex justify-between text-[10px] mt-1">
+                          <span className="font-semibold">{Math.round(Number(d.sale_price))} €</span>
+                          <span className="text-muted-foreground">-{Math.round(Number(d.discount_percent))}%</span>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPickerCat(null)} disabled={savingPicks}>
+              Annuler
+            </Button>
+            <Button onClick={savePicks} disabled={savingPicks || pickedIds.length < 3}>
+              {savingPicks ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+              Enregistrer ({pickedIds.length})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
