@@ -12,8 +12,9 @@ import VideoHistory from "@/components/admin/VideoHistory";
 import brandNikeUrl from "@/assets/brand-nike.svg";
 import brandAdidasUrl from "@/assets/brand-adidas.svg";
 import brandJdUrl from "@/assets/brand-jdsports.png";
-import snipesLogoUrl from "/partners/snipes-logo.png?url";
-import kappaLogoUrl from "/partners/kappa-logo.png?url";
+// Logos partenaires servis depuis /public — URLs absolues.
+const snipesLogoUrl = "/partners/snipes-logo.png";
+const kappaLogoUrl = "/partners/kappa-logo.png";
 
 // Map marque normalisée → URL logo. Si non trouvé : fallback texte uppercase bold.
 const BRAND_LOGO_URLS: Record<string, string> = {
