@@ -43,16 +43,19 @@ const PER_DEAL_SEC = 3.2;          // chaque produit reste à l'écran 3.2s — 
 const INTRO = 2.2;
 const OUTRO = 2.6;
 
-// Palette — éditorial nuit (charcoal & or)
-const NOIR = "#0a0a0c";
-const NOIR_SOFT = "#141416";
-const CHARCOAL_TOP = "#1a1a1d";
-const CHARCOAL_MID = "#121214";
-const CHARCOAL_BOT = "#070708";
-const IVOIRE = "#f5f1ea";
-const TAUPE = "#8a8278";
-const GOLD = "#c9a876";
-const GOLD_DEEP = "#9d7d4f";
+// Palette — éditorial ZARA (gris clair minimaliste, encre noire)
+const NOIR = "#0a0a0a";
+const NOIR_SOFT = "#1a1a1a";
+// Fond gris clair, légèrement chaud (style studio Zara)
+const CHARCOAL_TOP = "#e6e3de";
+const CHARCOAL_MID = "#d8d4cd";
+const CHARCOAL_BOT = "#c7c2ba";
+// IVOIRE conservé comme « couleur texte principale » → maintenant noir d'encre (lisible sur fond clair)
+const IVOIRE = "#0a0a0a";
+const TAUPE = "#5a5650";
+// GOLD remplacé par un noir d'encre subtil — Zara n'utilise pas d'or
+const GOLD = "#1a1a1a";
+const GOLD_DEEP = "#000000";
 
 const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
@@ -203,7 +206,7 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, 
   (ctx as any).letterSpacing = "8px";
   ctx.fillText("GOLDEALS CLUB", 60, y);
 
-  ctx.fillStyle = "rgba(201,168,118,0.9)";
+  ctx.fillStyle = "rgba(20,20,20,0.7)";
   ctx.font = "500 16px 'Inter',sans-serif";
   ctx.textAlign = "right";
   (ctx as any).letterSpacing = "6px";
@@ -211,7 +214,7 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, 
   (ctx as any).letterSpacing = "0px";
 
   // Filet or très fin sous le header
-  ctx.fillStyle = "rgba(201,168,118,0.35)";
+  ctx.fillStyle = "rgba(20,20,20,0.25)";
   ctx.fillRect(60, y + 26, W - 120, 1);
 
   ctx.textBaseline = "alphabetic";
@@ -219,40 +222,37 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, 
 }
 
 function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
-  // Dégradé charcoal vertical, légèrement animé (drift de la luminance)
-  const drift = Math.sin(t01 * Math.PI) * 0.04;
-  const top = CHARCOAL_TOP;
-  const mid = CHARCOAL_MID;
-  const bot = CHARCOAL_BOT;
+  // Fond studio gris clair, style ZARA — dégradé vertical doux, presque uniforme
+  const drift = Math.sin(t01 * Math.PI) * 0.03;
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, top);
-  bgGrad.addColorStop(0.55 + drift, mid);
-  bgGrad.addColorStop(1, bot);
+  bgGrad.addColorStop(0, CHARCOAL_TOP);
+  bgGrad.addColorStop(0.6 + drift, CHARCOAL_MID);
+  bgGrad.addColorStop(1, CHARCOAL_BOT);
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // Halo or doux derrière le produit (centré, large)
-  const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 60, W / 2, H * 0.42, W * 0.7);
-  haloR.addColorStop(0, "rgba(201,168,118,0.18)");
-  haloR.addColorStop(0.4, "rgba(201,168,118,0.06)");
+  // Halo très subtil derrière le produit (lumière studio centrée)
+  const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 80, W / 2, H * 0.42, W * 0.75);
+  haloR.addColorStop(0, "rgba(255,255,255,0.35)");
+  haloR.addColorStop(0.5, "rgba(255,255,255,0.08)");
   haloR.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = haloR;
   ctx.fillRect(0, 0, W, H);
 
-  // Vignette périphérique
-  const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.25, W / 2, H * 0.5, W * 0.95);
+  // Vignette périphérique très légère (assombrit à peine les bords)
+  const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.35, W / 2, H * 0.5, W * 0.95);
   vign.addColorStop(0, "rgba(0,0,0,0)");
-  vign.addColorStop(1, "rgba(0,0,0,0.55)");
+  vign.addColorStop(1, "rgba(0,0,0,0.12)");
   ctx.fillStyle = vign;
   ctx.fillRect(0, 0, W, H);
 
-  // Grain fin
+  // Grain très fin (texture papier mat)
   ctx.save();
-  ctx.globalAlpha = 0.05;
-  for (let i = 0; i < 140; i++) {
+  ctx.globalAlpha = 0.035;
+  for (let i = 0; i < 120; i++) {
     const gx = (i * 137.13) % W;
     const gy = (i * 241.91) % H;
-    ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#000000";
+    ctx.fillStyle = i % 2 === 0 ? "#000000" : "#ffffff";
     ctx.fillRect(gx, gy, 2, 2);
   }
   ctx.restore();
@@ -334,8 +334,8 @@ function drawDealFullScreen(
     ctx.save();
     ctx.globalAlpha = 0.32 * springR * (1 - exitE);
     const glow = ctx.createRadialGradient(cxC, cyC, 30, cxC, cyC, W * 0.45);
-    glow.addColorStop(0, "rgba(201,168,118,0.45)");
-    glow.addColorStop(0.6, "rgba(201,168,118,0.08)");
+    glow.addColorStop(0, "rgba(255,255,255,0.5)");
+    glow.addColorStop(0.6, "rgba(255,255,255,0.05)");
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
@@ -379,7 +379,7 @@ function drawDealFullScreen(
   ctx.fillText(deal.brand, 70, infoY + 100);
 
   // Merchant
-  ctx.fillStyle = "rgba(201,168,118,0.85)";
+  ctx.fillStyle = "rgba(20,20,20,0.65)";
   ctx.font = "500 18px 'Inter',sans-serif";
   (ctx as any).letterSpacing = "6px";
   ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 70, infoY + 142);
@@ -455,7 +455,7 @@ function drawSelectionFrame(
     drawCharcoalBg(ctx, t / INTRO);
 
     ctx.globalAlpha = k;
-    ctx.fillStyle = "rgba(201,168,118,0.9)";
+    ctx.fillStyle = "rgba(20,20,20,0.7)";
     ctx.font = "500 26px 'Inter',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -475,7 +475,7 @@ function drawSelectionFrame(
     ctx.fillText(`Top ${n}`, 0, 0);
     ctx.restore();
 
-    ctx.fillStyle = "rgba(245,241,234,0.55)";
+    ctx.fillStyle = "rgba(20,20,20,0.5)";
     ctx.font = "300 30px 'Inter',sans-serif";
     (ctx as any).letterSpacing = "12px";
     ctx.fillText(selection.label.toUpperCase(), W / 2, H / 2 + 180);
@@ -491,7 +491,7 @@ function drawSelectionFrame(
     drawCharcoalBg(ctx, 1);
     ctx.globalAlpha = k;
 
-    ctx.fillStyle = "rgba(201,168,118,0.85)";
+    ctx.fillStyle = "rgba(20,20,20,0.65)";
     ctx.font = "500 22px 'Inter',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
