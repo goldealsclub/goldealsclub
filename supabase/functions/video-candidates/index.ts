@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
   try {
     const body = await req.json().catch(() => ({}));
     const category = String(body?.category || "").trim();
-    const limit = Math.min(120, Math.max(20, Number(body?.limit) || 60));
+    const limit = Math.min(300, Math.max(20, Number(body?.limit) || 150));
     const cat = SELECTION_CATEGORIES[category];
     if (!cat) {
       return new Response(JSON.stringify({ error: "Unknown category" }), {
@@ -74,10 +74,9 @@ Deno.serve(async (req) => {
         .from("deals")
         .select("id,title,brand,merchant,sale_price,original_price,discount_percent,currency,image_url,affiliate_url,product_url,category")
         .eq("category", c)
-        .gte("discount_percent", 25)
-        .lte("discount_percent", 75)
+        .gte("discount_percent", 15)
         .order("discount_percent", { ascending: false })
-        .limit(2000);
+        .limit(3000);
       if (!error && data) all.push(...data);
     }
 
@@ -85,9 +84,9 @@ Deno.serve(async (req) => {
       const t = `${d.title || ""}`;
       return cat.titleHints.test(t) && !cat.titleExclude.test(t);
     };
+    // Plus permissif: on garde toutes les marques, on rank simplement les hype en premier
     const filtered = all.filter(
       (d) =>
-        isHype(d.brand) &&
         validImage(d.image_url) &&
         isAllowedMerchant(d.merchant) &&
         matchesCategory(d) &&
@@ -97,6 +96,9 @@ Deno.serve(async (req) => {
       const pa = isPremium(a.merchant) ? 0 : 1;
       const pb = isPremium(b.merchant) ? 0 : 1;
       if (pa !== pb) return pa - pb;
+      const ha = isHype(a.brand) ? 0 : 1;
+      const hb = isHype(b.brand) ? 0 : 1;
+      if (ha !== hb) return ha - hb;
       return Number(b.discount_percent) - Number(a.discount_percent);
     });
 
