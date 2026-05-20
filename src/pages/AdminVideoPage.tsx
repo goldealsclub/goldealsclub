@@ -206,7 +206,7 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, 
   (ctx as any).letterSpacing = "8px";
   ctx.fillText("GOLDEALS CLUB", 60, y);
 
-  ctx.fillStyle = "rgba(201,168,118,0.9)";
+  ctx.fillStyle = "rgba(20,20,20,0.7)";
   ctx.font = "500 16px 'Inter',sans-serif";
   ctx.textAlign = "right";
   (ctx as any).letterSpacing = "6px";
@@ -214,7 +214,7 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, 
   (ctx as any).letterSpacing = "0px";
 
   // Filet or très fin sous le header
-  ctx.fillStyle = "rgba(201,168,118,0.35)";
+  ctx.fillStyle = "rgba(20,20,20,0.25)";
   ctx.fillRect(60, y + 26, W - 120, 1);
 
   ctx.textBaseline = "alphabetic";
@@ -334,8 +334,8 @@ function drawDealFullScreen(
     ctx.save();
     ctx.globalAlpha = 0.32 * springR * (1 - exitE);
     const glow = ctx.createRadialGradient(cxC, cyC, 30, cxC, cyC, W * 0.45);
-    glow.addColorStop(0, "rgba(201,168,118,0.45)");
-    glow.addColorStop(0.6, "rgba(201,168,118,0.08)");
+    glow.addColorStop(0, "rgba(255,255,255,0.5)");
+    glow.addColorStop(0.6, "rgba(255,255,255,0.05)");
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
@@ -379,7 +379,7 @@ function drawDealFullScreen(
   ctx.fillText(deal.brand, 70, infoY + 100);
 
   // Merchant
-  ctx.fillStyle = "rgba(201,168,118,0.85)";
+  ctx.fillStyle = "rgba(20,20,20,0.65)";
   ctx.font = "500 18px 'Inter',sans-serif";
   (ctx as any).letterSpacing = "6px";
   ctx.fillText(`${deal.merchant || ""}`.toUpperCase(), 70, infoY + 142);
@@ -455,7 +455,7 @@ function drawSelectionFrame(
     drawCharcoalBg(ctx, t / INTRO);
 
     ctx.globalAlpha = k;
-    ctx.fillStyle = "rgba(201,168,118,0.9)";
+    ctx.fillStyle = "rgba(20,20,20,0.7)";
     ctx.font = "500 26px 'Inter',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
@@ -475,7 +475,7 @@ function drawSelectionFrame(
     ctx.fillText(`Top ${n}`, 0, 0);
     ctx.restore();
 
-    ctx.fillStyle = "rgba(245,241,234,0.55)";
+    ctx.fillStyle = "rgba(20,20,20,0.5)";
     ctx.font = "300 30px 'Inter',sans-serif";
     (ctx as any).letterSpacing = "12px";
     ctx.fillText(selection.label.toUpperCase(), W / 2, H / 2 + 180);
@@ -491,7 +491,7 @@ function drawSelectionFrame(
     drawCharcoalBg(ctx, 1);
     ctx.globalAlpha = k;
 
-    ctx.fillStyle = "rgba(201,168,118,0.85)";
+    ctx.fillStyle = "rgba(20,20,20,0.65)";
     ctx.font = "500 22px 'Inter',sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
