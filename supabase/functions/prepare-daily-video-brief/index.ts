@@ -192,9 +192,26 @@ Deno.serve(async (req) => {
     const dateStr = today.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
     const briefDate = today.toISOString().slice(0, 10);
 
+    // En mode partiel (1 catégorie), on merge avec le brief existant
+    // pour ne pas écraser les autres sélections.
+    let finalSelections = selections;
+    if (onlyCategory) {
+      const { data: existing } = await supabase
+        .from("daily_video_briefs")
+        .select("deals")
+        .eq("brief_date", briefDate)
+        .maybeSingle();
+      const prev: any[] = Array.isArray(existing?.deals) ? (existing!.deals as any[]) : [];
+      const updated = prev.filter((s: any) => s?.category !== onlyCategory);
+      finalSelections = [...updated, ...selections];
+      // Re-trie selon l'ordre canonique
+      const order = SELECTION_CATEGORIES.map((c) => c.slug);
+      finalSelections.sort((a: any, b: any) => order.indexOf(a.category) - order.indexOf(b.category));
+    }
+
     const caption =
       `✨ TOP DEALS — ${dateStr}\n\n` +
-      selections.map((s) => `${s.label} : top ${s.deals.length} (${s.deals.map((d: any) => d.brand).join(" · ")})`).join("\n") +
+      finalSelections.map((s: any) => `${s.label} : top ${s.deals.length} (${s.deals.map((d: any) => d.brand).join(" · ")})`).join("\n") +
       `\n\n👉 Tous les deals sur goldealsclub.com\n#GOLDEALSCLUB`;
 
     const hashtags =
@@ -208,7 +225,7 @@ Deno.serve(async (req) => {
         {
           brief_date: briefDate,
           focus_brand: "TOP_SELECTION",
-          deals: selections,
+          deals: finalSelections,
           caption,
           hashtags,
         },
@@ -220,8 +237,9 @@ Deno.serve(async (req) => {
       JSON.stringify({
         ok: true,
         brief_date: briefDate,
-        selections: selections.length,
-        categories: selections.map((s) => `${s.category}(${s.deals.length})`),
+        selections: finalSelections.length,
+        updated: onlyCategory || "all",
+        categories: finalSelections.map((s: any) => `${s.category}(${s.deals.length})`),
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
