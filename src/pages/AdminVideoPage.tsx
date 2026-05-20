@@ -748,6 +748,60 @@ export default function AdminVideoPage() {
   }, [isAdmin]);
 
   const [refreshingCat, setRefreshingCat] = useState<string | null>(null);
+  const [pickerCat, setPickerCat] = useState<{ category: string; label: string; idx: number } | null>(null);
+  const [candidates, setCandidates] = useState<Deal[]>([]);
+  const [candLoading, setCandLoading] = useState(false);
+  const [pickedIds, setPickedIds] = useState<string[]>([]);
+  const [savingPicks, setSavingPicks] = useState(false);
+
+  const openPicker = async (idx: number, selection: Selection) => {
+    setPickerCat({ category: selection.category, label: selection.label, idx });
+    setPickedIds(selection.deals.map((d) => d.id));
+    setCandidates([]);
+    setCandLoading(true);
+    const { data, error } = await supabase.functions.invoke("video-candidates", {
+      body: { category: selection.category, limit: 80 },
+    });
+    if (error) {
+      toast({ title: "Erreur chargement candidats", description: error.message, variant: "destructive" });
+    } else {
+      setCandidates(((data as any)?.candidates as Deal[]) || []);
+    }
+    setCandLoading(false);
+  };
+
+  const togglePick = (id: string) => {
+    setPickedIds((prev) => {
+      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.length >= 5) {
+        toast({ title: "Max 5 produits", description: "Décoches-en un d'abord." });
+        return prev;
+      }
+      return [...prev, id];
+    });
+  };
+
+  const savePicks = async () => {
+    if (!pickerCat) return;
+    if (pickedIds.length < 3) {
+      toast({ title: "Sélectionne au moins 3 produits", variant: "destructive" });
+      return;
+    }
+    setSavingPicks(true);
+    const { error } = await supabase.functions.invoke("save-video-selection", {
+      body: { category: pickerCat.category, dealIds: pickedIds },
+    });
+    if (error) {
+      toast({ title: "Erreur sauvegarde", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Sélection enregistrée ✓" });
+      setVideoUrls((prev) => { const n = { ...prev }; delete n[pickerCat.idx]; return n; });
+      await loadBrief();
+      setPickerCat(null);
+    }
+    setSavingPicks(false);
+  };
+
 
   const regenerate = async (shuffle = false, category?: string) => {
     if (category) {
