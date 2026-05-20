@@ -82,8 +82,15 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
+    const targetCats = onlyCategory
+      ? SELECTION_CATEGORIES.filter((c) => c.slug === onlyCategory)
+      : SELECTION_CATEGORIES;
+    if (onlyCategory && targetCats.length === 0) {
+      throw new Error(`Unknown category: ${onlyCategory}`);
+    }
+
     const perCatResults: { cat: typeof SELECTION_CATEGORIES[number]; deals: any[] }[] = [];
-    for (const cat of SELECTION_CATEGORIES) {
+    for (const cat of targetCats) {
       const all: any[] = [];
       for (const c of cat.categories) {
         const { data, error } = await supabase
