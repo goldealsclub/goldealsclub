@@ -673,6 +673,7 @@ function drawSelectionFrame(
   selection: Selection,
   imgs: (HTMLImageElement | null)[],
   totalSec: number,
+  logos: (HTMLImageElement | null)[] = [],
 ) {
   const n = selection.deals.length;
 
