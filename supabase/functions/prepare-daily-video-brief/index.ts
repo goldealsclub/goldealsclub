@@ -65,14 +65,16 @@ Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
   let shuffle = false;
+  let onlyCategory: string | null = null;
   try {
     if (req.method === "POST") {
       const body = await req.json().catch(() => ({}));
       shuffle = Boolean(body?.shuffle);
+      if (typeof body?.category === "string" && body.category.trim()) {
+        onlyCategory = body.category.trim();
+      }
     }
   } catch { /* ignore */ }
-
-
 
   try {
     const supabase = createClient(
