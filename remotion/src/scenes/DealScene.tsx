@@ -49,47 +49,63 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         background: "radial-gradient(ellipse at 50% 45%, #f4f5f7 0%, #e2e4e8 70%, #d6d8dc 100%)",
       }} />
 
-      {/* ═══ HEADER : logo marque + prix ═══ */}
+      {/* ═══ HEADER : logo marque ═══ */}
       <div style={{
         position: "absolute",
-        top: 110,
+        top: 90,
         left: 56,
         right: 56,
         display: "flex",
         justifyContent: "space-between",
         alignItems: "flex-start",
+        gap: 30,
       }}>
-        {/* Logo marque */}
-        <div style={{ display: "flex", alignItems: "center", height: 80 }}>
-          {brandLogo ? (
-            <Img src={brandLogo} style={{ height: 70, width: "auto", objectFit: "contain" }} />
-          ) : (
-            <span style={{
-              fontFamily: "sans-serif",
-              fontSize: 36,
-              fontWeight: 900,
-              color: INK,
-              letterSpacing: -1,
-              textTransform: "uppercase",
-            }}>{deal.brand}</span>
-          )}
+        {/* Bloc gauche : logo + titre (comme la capture Instagram) */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 28, flex: 1, minWidth: 0 }}>
+          <div style={{ display: "flex", alignItems: "center", height: 90 }}>
+            {brandLogo ? (
+              <Img src={brandLogo} style={{ height: 80, width: "auto", objectFit: "contain" }} />
+            ) : (
+              <span style={{
+                fontFamily: "sans-serif",
+                fontSize: 42,
+                fontWeight: 900,
+                color: INK,
+                letterSpacing: -1,
+                textTransform: "uppercase",
+              }}>{deal.brand}</span>
+            )}
+          </div>
+          <div style={{
+            fontFamily: "sans-serif",
+            fontSize: 32,
+            fontWeight: 800,
+            color: INK,
+            textTransform: "uppercase",
+            letterSpacing: 0.3,
+            lineHeight: 1.15,
+            maxWidth: 560,
+          }}>
+            {deal.title}
+          </div>
         </div>
 
-        {/* Bloc prix */}
+        {/* Bloc prix à droite */}
         <div style={{
           display: "flex",
           flexDirection: "column",
           alignItems: "flex-end",
-          gap: 10,
+          gap: 12,
           transform: `scale(${priceScale})`,
           transformOrigin: "top right",
+          flexShrink: 0,
         }}>
           <div style={{
             backgroundColor: RED,
             color: "#fff",
-            padding: "18px 34px",
+            padding: "16px 30px",
             fontFamily: "sans-serif",
-            fontSize: 58,
+            fontSize: 50,
             fontWeight: 800,
             letterSpacing: -1,
             lineHeight: 1,
@@ -99,7 +115,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
           </div>
           <div style={{
             fontFamily: "sans-serif",
-            fontSize: 32,
+            fontSize: 30,
             fontWeight: 500,
             color: INK,
             textDecoration: "line-through",
@@ -111,27 +127,10 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         </div>
       </div>
 
-      {/* ═══ Titre produit ═══ */}
+      {/* ═══ Produit détouré, centré ═══ */}
       <div style={{
         position: "absolute",
-        top: 230,
-        left: 56,
-        right: 56,
-        fontFamily: "sans-serif",
-        fontSize: 36,
-        fontWeight: 800,
-        color: INK,
-        textTransform: "uppercase",
-        letterSpacing: 0.5,
-        lineHeight: 1.15,
-      }}>
-        {deal.title}
-      </div>
-
-      {/* ═══ Produit détouré, centré, plein cadre ═══ */}
-      <div style={{
-        position: "absolute",
-        top: 360,
+        top: 420,
         left: 0,
         right: 0,
         bottom: 280,
@@ -140,23 +139,35 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         justifyContent: "center",
         overflow: "hidden",
       }}>
-        <Img
-          src={deal.imageUrl}
-          style={{
-            maxWidth: "88%",
-            maxHeight: "100%",
-            width: "auto",
-            height: "auto",
-            objectFit: "contain",
-            transform: `scale(${kenZoom}) translate(${kenPanX}px, ${kenPanY}px)`,
-            transformOrigin: "center center",
-            filter: "drop-shadow(0 30px 40px rgba(0,0,0,0.18))",
-            willChange: "transform",
-          }}
-        />
+        {/* Wrapper avec drop-shadow appliqué APRÈS le blend (sur le silhouette) */}
+        <div style={{
+          width: "88%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          filter: "drop-shadow(0 25px 30px rgba(0,0,0,0.22))",
+          transform: `scale(${kenZoom}) translate(${kenPanX}px, ${kenPanY}px)`,
+          transformOrigin: "center center",
+          willChange: "transform",
+        }}>
+          <Img
+            src={deal.imageUrl}
+            style={{
+              maxWidth: "100%",
+              maxHeight: "100%",
+              width: "auto",
+              height: "auto",
+              objectFit: "contain",
+              // mix-blend multiply supprime les fonds blancs des photos produit
+              // → vrai effet "détouré" sur fond gris studio
+              mixBlendMode: "multiply",
+            }}
+          />
+        </div>
       </div>
 
-      {/* ═══ CTA "Acheter" ═══ */}
+      {/* ═══ CTA "🔗 Acheter" (pilule blanche) ═══ */}
       <div style={{
         position: "absolute",
         bottom: 110,
@@ -169,16 +180,16 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         <div style={{
           backgroundColor: "#fff",
           borderRadius: 80,
-          padding: "26px 70px",
+          padding: "26px 80px",
           display: "flex",
           alignItems: "center",
-          gap: 22,
-          boxShadow: "0 8px 24px rgba(0,0,0,0.10)",
+          gap: 24,
+          boxShadow: "0 10px 28px rgba(0,0,0,0.12)",
         }}>
-          <LinkIcon size={36} />
+          <LinkIcon size={38} />
           <span style={{
             fontFamily: "sans-serif",
-            fontSize: 52,
+            fontSize: 54,
             fontWeight: 500,
             color: INK,
             letterSpacing: -0.5,
@@ -188,15 +199,29 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         </div>
       </div>
 
-      {/* Barre noire bas (sponsorisé) — clin d'œil aux ads IG */}
+      {/* Barre noire bas (sponsorisé) */}
       <div style={{
         position: "absolute",
         bottom: 0,
         left: 0,
         right: 0,
-        height: 60,
+        height: 64,
         backgroundColor: "#000",
-      }} />
+        display: "flex",
+        alignItems: "center",
+        paddingLeft: 36,
+      }}>
+        <span style={{
+          fontFamily: "sans-serif",
+          fontSize: 22,
+          fontWeight: 400,
+          color: "#fff",
+          opacity: 0.95,
+        }}>
+          Sponsorisé
+        </span>
+      </div>
     </AbsoluteFill>
   );
 };
+
