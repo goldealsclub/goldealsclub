@@ -408,8 +408,8 @@ function drawDealFullScreen(
     ctx.save();
     ctx.globalAlpha = 0.32 * springR * (1 - exitE);
     const glow = ctx.createRadialGradient(cxC, cyC, 30, cxC, cyC, W * 0.45);
-    glow.addColorStop(0, "rgba(255,255,255,0.5)");
-    glow.addColorStop(0.6, "rgba(255,255,255,0.05)");
+    glow.addColorStop(0, activePalette.haloInner);
+    glow.addColorStop(0.6, activePalette.haloMid);
     glow.addColorStop(1, "rgba(0,0,0,0)");
     ctx.fillStyle = glow;
     ctx.beginPath();
