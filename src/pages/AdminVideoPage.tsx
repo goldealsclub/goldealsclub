@@ -746,14 +746,17 @@ export default function AdminVideoPage() {
     }
   }, [isAdmin]);
 
-  const regenerate = async () => {
+  const regenerate = async (shuffle = false) => {
     setLoading(true);
     setVideoUrls({});
-    const { error } = await supabase.functions.invoke("prepare-daily-video-brief");
+    const { error } = await supabase.functions.invoke("prepare-daily-video-brief", {
+      body: { shuffle },
+    });
     if (error) toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    else toast({ title: "Brief régénéré" });
+    else toast({ title: shuffle ? "Deals rafraîchis 🎲" : "Brief régénéré" });
     await loadBrief();
   };
+
 
   const renderSelection = async (idx: number) => {
     if (!brief) return;
@@ -948,9 +951,15 @@ export default function AdminVideoPage() {
         <Link to="/admin" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour Admin
         </Link>
-        <Button variant="outline" size="sm" onClick={regenerate} disabled={loading || renderingIdx !== null}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Régénérer briefs
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={() => regenerate(true)} disabled={loading || renderingIdx !== null}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Rafraîchir deals
+          </Button>
+          <Button variant="outline" size="sm" onClick={() => regenerate(false)} disabled={loading || renderingIdx !== null}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Régénérer briefs
+          </Button>
+        </div>
+
       </div>
 
       <h1 className="text-3xl font-bold mb-2 flex items-center gap-2">
@@ -965,7 +974,7 @@ export default function AdminVideoPage() {
       {!loading && (!brief || brief.deals.length === 0) && (
         <div className="border rounded-lg p-6 text-center">
           <p className="mb-4">Aucune sélection au nouveau format pour aujourd'hui. Clique sur « Régénérer » pour créer le top 5 par catégorie.</p>
-          <Button onClick={regenerate}>Régénérer maintenant</Button>
+          <Button onClick={() => regenerate(false)}>Régénérer maintenant</Button>
         </div>
       )}
 

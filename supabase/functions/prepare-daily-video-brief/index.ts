@@ -64,6 +64,16 @@ const TOP_N = 5;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  let shuffle = false;
+  try {
+    if (req.method === "POST") {
+      const body = await req.json().catch(() => ({}));
+      shuffle = Boolean(body?.shuffle);
+    }
+  } catch { /* ignore */ }
+
+
+
   try {
     const supabase = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -111,16 +121,21 @@ Deno.serve(async (req) => {
         return Number(b.discount_percent) - Number(a.discount_percent);
       });
 
+      // Si shuffle, on prend un pool large (top 30) puis on mélange
+      // pour varier les sélections sans sacrifier la qualité.
+      const pool = shuffle ? candidates.slice(0, 30).sort(() => Math.random() - 0.5) : candidates;
+
       // Dédup par marque pour avoir une vraie diversité dans le top 5
       const seenBrands = new Set<string>();
       const picks: any[] = [];
-      for (const d of candidates) {
+      for (const d of pool) {
         const b = norm(d.brand);
         if (seenBrands.has(b)) continue;
         seenBrands.add(b);
         picks.push(d);
         if (picks.length === TOP_N) break;
       }
+
       // Si on n'a pas TOP_N marques différentes, complète sans contrainte de dédup
       if (picks.length < TOP_N) {
         for (const d of candidates) {
