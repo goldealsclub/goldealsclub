@@ -241,8 +241,11 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
       return c;
     }
 
-    const TOL_HARD = 14;  // distance euclidienne max pour transparence totale
-    const TOL_SOFT = 56;  // feathering plus large → bord plus doux, pas de "halo"
+    // Tolérance adaptative : fonds très clairs (JPEG e-commerce typiques)
+    // nécessitent une plage plus large pour éliminer le halo résiduel.
+    const veryLight = bgLum > 220;
+    const TOL_HARD = veryLight ? 26 : 14;   // distance euclidienne max pour transparence totale
+    const TOL_SOFT = veryLight ? 88 : 56;   // feathering plus large → bord plus doux, pas de "halo"
     for (let i = 0; i < d.length; i += 4) {
       const dr = d[i] - br;
       const dg = d[i + 1] - bg;
@@ -363,27 +366,24 @@ function drawDealFullScreen(
   const springR = revealE;
   const alphaK = (1 - exitE) * revealE;
 
-  // Rang en filigrane (chiffre serif énorme, derrière le produit)
-  ctx.save();
-  ctx.globalAlpha = 0.06 * springR * (1 - exitE);
-  ctx.fillStyle = IVOIRE;
-  ctx.font = "200 920px 'Playfair Display','Didot',Georgia,serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(`${rank}`, cxC, cyC + 30);
-  ctx.restore();
+  // Helper : sur fonds clairs, on adoucit ombres et glow (sinon ça vire "smudge")
+  const onLightBg = !activePalette.grainOnDark;
 
-  // Ombre au sol
+  // Plus de rang en filigrane géant — trop "template cheap".
+  // On garde juste une petite marque #N discrète près du header (dessinée plus bas).
+
+  // Ombre au sol — fine, douce, réaliste (façon studio packshot)
   ctx.save();
-  ctx.globalAlpha = 0.55 * springR * (1 - exitE);
+  const shadowAlpha = (onLightBg ? 0.22 : 0.55) * springR * (1 - exitE);
+  ctx.globalAlpha = shadowAlpha;
   const groundY = stageY + stageH - 20;
-  const shGrad = ctx.createRadialGradient(cxC, groundY, 20, cxC, groundY, W * 0.42);
-  shGrad.addColorStop(0, "rgba(0,0,0,0.85)");
-  shGrad.addColorStop(0.5, "rgba(0,0,0,0.35)");
+  const shGrad = ctx.createRadialGradient(cxC, groundY, 20, cxC, groundY, W * 0.36);
+  shGrad.addColorStop(0, onLightBg ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.85)");
+  shGrad.addColorStop(0.5, onLightBg ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.35)");
   shGrad.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = shGrad;
   ctx.beginPath();
-  ctx.ellipse(cxC, groundY, W * 0.34, 32, 0, 0, Math.PI * 2);
+  ctx.ellipse(cxC, groundY, W * (onLightBg ? 0.26 : 0.34), onLightBg ? 22 : 32, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
@@ -418,10 +418,10 @@ function drawDealFullScreen(
     ctx.fill();
     ctx.restore();
 
-    // Ombre portée
-    ctx.shadowColor = "rgba(0,0,0,0.65)";
-    ctx.shadowBlur = 70;
-    ctx.shadowOffsetY = 40;
+    // Ombre portée (douce sur fond clair, plus dramatique sur fond sombre)
+    ctx.shadowColor = onLightBg ? "rgba(0,0,0,0.32)" : "rgba(0,0,0,0.65)";
+    ctx.shadowBlur = onLightBg ? 50 : 70;
+    ctx.shadowOffsetY = onLightBg ? 28 : 40;
     drawContainImage(ctx, cut, ix, iy, drawW, drawH);
   } else {
     ctx.fillStyle = IVOIRE;
@@ -485,31 +485,42 @@ function drawDealFullScreen(
     ctx.restore();
   }
 
-  // Discount — capsule or contour, élégante
+  // Discount — bloc rectangulaire plein, façon étiquette Zara
   const disc = Math.round(Number(deal.discount_percent || 0));
   if (disc > 0) {
     ctx.save();
-    ctx.font = "500 34px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "4px";
+    ctx.font = "600 32px 'Inter','Helvetica',sans-serif";
+    (ctx as any).letterSpacing = "2px";
     const t = `−${disc}%`;
     const tw = ctx.measureText(t).width;
-    const padX = 36;
-    const pillH = 72;
+    const padX = 28;
+    const pillH = 64;
     const pillW = tw + padX * 2;
     const pillX = W - pillW - 70;
     const pillY = infoY + 70;
-    // Bordure or fine
-    ctx.strokeStyle = GOLD;
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, pillX, pillY, pillW, pillH, 2);
-    ctx.stroke();
-    ctx.fillStyle = GOLD;
+    // Bloc plein (encre noire) — pas de bordure, pas d'or
+    ctx.fillStyle = activePalette.ink;
+    ctx.fillRect(pillX, pillY, pillW, pillH);
+    // Texte dans la couleur de fond du preset, pour lisibilité maximale
+    ctx.fillStyle = activePalette.bgTop;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(t, pillX + pillW / 2, pillY + pillH / 2 + 2);
+    ctx.fillText(t, pillX + pillW / 2, pillY + pillH / 2 + 1);
     (ctx as any).letterSpacing = "0px";
     ctx.restore();
   }
+
+  // Petit numéro de rang discret en haut à droite (remplace le watermark géant)
+  ctx.save();
+  ctx.globalAlpha = infoAlpha * 0.6;
+  ctx.fillStyle = activePalette.ink;
+  ctx.font = "500 22px 'Inter',sans-serif";
+  (ctx as any).letterSpacing = "3px";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(`N° ${String(rank).padStart(2, "0")}`, W - 70, infoY + 30);
+  (ctx as any).letterSpacing = "0px";
+  ctx.restore();
 
   ctx.restore();
   ctx.globalAlpha = 1;
