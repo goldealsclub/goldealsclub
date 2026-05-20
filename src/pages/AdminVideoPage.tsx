@@ -366,27 +366,24 @@ function drawDealFullScreen(
   const springR = revealE;
   const alphaK = (1 - exitE) * revealE;
 
-  // Rang en filigrane (chiffre serif énorme, derrière le produit)
-  ctx.save();
-  ctx.globalAlpha = 0.06 * springR * (1 - exitE);
-  ctx.fillStyle = IVOIRE;
-  ctx.font = "200 920px 'Playfair Display','Didot',Georgia,serif";
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(`${rank}`, cxC, cyC + 30);
-  ctx.restore();
+  // Helper : sur fonds clairs, on adoucit ombres et glow (sinon ça vire "smudge")
+  const onLightBg = !activePalette.grainOnDark;
 
-  // Ombre au sol
+  // Plus de rang en filigrane géant — trop "template cheap".
+  // On garde juste une petite marque #N discrète près du header (dessinée plus bas).
+
+  // Ombre au sol — fine, douce, réaliste (façon studio packshot)
   ctx.save();
-  ctx.globalAlpha = 0.55 * springR * (1 - exitE);
+  const shadowAlpha = (onLightBg ? 0.22 : 0.55) * springR * (1 - exitE);
+  ctx.globalAlpha = shadowAlpha;
   const groundY = stageY + stageH - 20;
-  const shGrad = ctx.createRadialGradient(cxC, groundY, 20, cxC, groundY, W * 0.42);
-  shGrad.addColorStop(0, "rgba(0,0,0,0.85)");
-  shGrad.addColorStop(0.5, "rgba(0,0,0,0.35)");
+  const shGrad = ctx.createRadialGradient(cxC, groundY, 20, cxC, groundY, W * 0.36);
+  shGrad.addColorStop(0, onLightBg ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.85)");
+  shGrad.addColorStop(0.5, onLightBg ? "rgba(0,0,0,0.18)" : "rgba(0,0,0,0.35)");
   shGrad.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = shGrad;
   ctx.beginPath();
-  ctx.ellipse(cxC, groundY, W * 0.34, 32, 0, 0, Math.PI * 2);
+  ctx.ellipse(cxC, groundY, W * (onLightBg ? 0.26 : 0.34), onLightBg ? 22 : 32, 0, 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
 
