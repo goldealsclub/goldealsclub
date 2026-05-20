@@ -116,7 +116,6 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
         bottom: "50%",
         backgroundColor: PHOTO_BG,
         overflow: "hidden",
-        transform: `translateY(${imgY + floatY}px)`,
         opacity: imgOpacity,
         display: "flex",
         alignItems: "center",
