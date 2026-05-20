@@ -748,6 +748,7 @@ export default function AdminVideoPage() {
     if (!brief) return;
     const selection = brief.deals[idx];
     const totalSec = INTRO + selection.deals.length * PER_DEAL_SEC + OUTRO;
+    applyBgPreset(bgPreset);
     setRenderingIdx(idx);
     setProgress(0);
     setVideoUrls((prev) => { const n = { ...prev }; delete n[idx]; return n; });
