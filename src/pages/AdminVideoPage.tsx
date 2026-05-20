@@ -418,10 +418,10 @@ function drawDealFullScreen(
     ctx.fill();
     ctx.restore();
 
-    // Ombre portée
-    ctx.shadowColor = "rgba(0,0,0,0.65)";
-    ctx.shadowBlur = 70;
-    ctx.shadowOffsetY = 40;
+    // Ombre portée (douce sur fond clair, plus dramatique sur fond sombre)
+    ctx.shadowColor = onLightBg ? "rgba(0,0,0,0.32)" : "rgba(0,0,0,0.65)";
+    ctx.shadowBlur = onLightBg ? 50 : 70;
+    ctx.shadowOffsetY = onLightBg ? 28 : 40;
     drawContainImage(ctx, cut, ix, iy, drawW, drawH);
   } else {
     ctx.fillStyle = IVOIRE;
