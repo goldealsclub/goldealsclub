@@ -222,40 +222,37 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, 
 }
 
 function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
-  // Dégradé charcoal vertical, légèrement animé (drift de la luminance)
-  const drift = Math.sin(t01 * Math.PI) * 0.04;
-  const top = CHARCOAL_TOP;
-  const mid = CHARCOAL_MID;
-  const bot = CHARCOAL_BOT;
+  // Fond studio gris clair, style ZARA — dégradé vertical doux, presque uniforme
+  const drift = Math.sin(t01 * Math.PI) * 0.03;
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
-  bgGrad.addColorStop(0, top);
-  bgGrad.addColorStop(0.55 + drift, mid);
-  bgGrad.addColorStop(1, bot);
+  bgGrad.addColorStop(0, CHARCOAL_TOP);
+  bgGrad.addColorStop(0.6 + drift, CHARCOAL_MID);
+  bgGrad.addColorStop(1, CHARCOAL_BOT);
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // Halo or doux derrière le produit (centré, large)
-  const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 60, W / 2, H * 0.42, W * 0.7);
-  haloR.addColorStop(0, "rgba(201,168,118,0.18)");
-  haloR.addColorStop(0.4, "rgba(201,168,118,0.06)");
+  // Halo très subtil derrière le produit (lumière studio centrée)
+  const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 80, W / 2, H * 0.42, W * 0.75);
+  haloR.addColorStop(0, "rgba(255,255,255,0.35)");
+  haloR.addColorStop(0.5, "rgba(255,255,255,0.08)");
   haloR.addColorStop(1, "rgba(0,0,0,0)");
   ctx.fillStyle = haloR;
   ctx.fillRect(0, 0, W, H);
 
-  // Vignette périphérique
-  const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.25, W / 2, H * 0.5, W * 0.95);
+  // Vignette périphérique très légère (assombrit à peine les bords)
+  const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.35, W / 2, H * 0.5, W * 0.95);
   vign.addColorStop(0, "rgba(0,0,0,0)");
-  vign.addColorStop(1, "rgba(0,0,0,0.55)");
+  vign.addColorStop(1, "rgba(0,0,0,0.12)");
   ctx.fillStyle = vign;
   ctx.fillRect(0, 0, W, H);
 
-  // Grain fin
+  // Grain très fin (texture papier mat)
   ctx.save();
-  ctx.globalAlpha = 0.05;
-  for (let i = 0; i < 140; i++) {
+  ctx.globalAlpha = 0.035;
+  for (let i = 0; i < 120; i++) {
     const gx = (i * 137.13) % W;
     const gy = (i * 241.91) % H;
-    ctx.fillStyle = i % 2 === 0 ? "#ffffff" : "#000000";
+    ctx.fillStyle = i % 2 === 0 ? "#000000" : "#ffffff";
     ctx.fillRect(gx, gy, 2, 2);
   }
   ctx.restore();
