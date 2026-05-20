@@ -1106,6 +1106,16 @@ export default function AdminVideoPage() {
                   >
                     <RefreshCw className={`h-3.5 w-3.5 ${refreshingCat === selection.category ? "animate-spin" : ""}`} />
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 w-7 p-0"
+                    title="Choisir manuellement les 5 produits"
+                    onClick={() => openPicker(idx, selection)}
+                    disabled={loading || renderingIdx !== null || refreshingCat !== null}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
                 </div>
 
 
