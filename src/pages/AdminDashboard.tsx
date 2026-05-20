@@ -334,9 +334,10 @@ const AdminDashboard = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-3 sm:px-4 py-6 sm:py-12">
-        <div className="flex items-center justify-between gap-3 mb-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-2">
           <h1 className="font-display text-xl sm:text-3xl tracking-wider">ADMINISTRATION</h1>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 -mx-3 sm:mx-0 px-3 sm:px-0 overflow-x-auto scrollbar-none">
+
             <button
               onClick={handleImportAwin}
               disabled={importingAwin}
