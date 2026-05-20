@@ -241,8 +241,11 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
       return c;
     }
 
-    const TOL_HARD = 14;  // distance euclidienne max pour transparence totale
-    const TOL_SOFT = 56;  // feathering plus large → bord plus doux, pas de "halo"
+    // Tolérance adaptative : fonds très clairs (JPEG e-commerce typiques)
+    // nécessitent une plage plus large pour éliminer le halo résiduel.
+    const veryLight = bgLum > 220;
+    const TOL_HARD = veryLight ? 26 : 14;   // distance euclidienne max pour transparence totale
+    const TOL_SOFT = veryLight ? 88 : 56;   // feathering plus large → bord plus doux, pas de "halo"
     for (let i = 0; i < d.length; i += 4) {
       const dr = d[i] - br;
       const dg = d[i + 1] - bg;
