@@ -128,7 +128,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
             height: "100%",
             objectFit: "contain",
             padding: 20,
-            transform: `scale(${kenZoom * imgScaleEnter}) translate(${kenPanX}px, ${kenPanY}px)`,
+            transform: `scale(${kenZoom}) translate(${kenPanX}px, ${kenPanY}px)`,
             transformOrigin: "center center",
             willChange: "transform",
           }}
