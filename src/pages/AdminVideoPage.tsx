@@ -994,7 +994,10 @@ export default function AdminVideoPage() {
         await (document as any).fonts?.ready;
       } catch {}
 
-      const imgs = await Promise.all(selection.deals.map((d) => loadImage(d.image_url)));
+      const [imgs, logos] = await Promise.all([
+        Promise.all(selection.deals.map((d) => loadImage(d.image_url))),
+        Promise.all(selection.deals.map((d) => getBrandLogo(d.brand))),
+      ]);
       const imagesLoaded = imgs.filter(Boolean).length;
       if (imagesLoaded < selection.deals.length) {
         toast({
