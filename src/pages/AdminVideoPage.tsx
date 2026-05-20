@@ -485,31 +485,42 @@ function drawDealFullScreen(
     ctx.restore();
   }
 
-  // Discount — capsule or contour, élégante
+  // Discount — bloc rectangulaire plein, façon étiquette Zara
   const disc = Math.round(Number(deal.discount_percent || 0));
   if (disc > 0) {
     ctx.save();
-    ctx.font = "500 34px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "4px";
+    ctx.font = "600 32px 'Inter','Helvetica',sans-serif";
+    (ctx as any).letterSpacing = "2px";
     const t = `−${disc}%`;
     const tw = ctx.measureText(t).width;
-    const padX = 36;
-    const pillH = 72;
+    const padX = 28;
+    const pillH = 64;
     const pillW = tw + padX * 2;
     const pillX = W - pillW - 70;
     const pillY = infoY + 70;
-    // Bordure or fine
-    ctx.strokeStyle = GOLD;
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, pillX, pillY, pillW, pillH, 2);
-    ctx.stroke();
-    ctx.fillStyle = GOLD;
+    // Bloc plein (encre noire) — pas de bordure, pas d'or
+    ctx.fillStyle = activePalette.ink;
+    ctx.fillRect(pillX, pillY, pillW, pillH);
+    // Texte dans la couleur de fond du preset, pour lisibilité maximale
+    ctx.fillStyle = activePalette.bgTop;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(t, pillX + pillW / 2, pillY + pillH / 2 + 2);
+    ctx.fillText(t, pillX + pillW / 2, pillY + pillH / 2 + 1);
     (ctx as any).letterSpacing = "0px";
     ctx.restore();
   }
+
+  // Petit numéro de rang discret en haut à droite (remplace le watermark géant)
+  ctx.save();
+  ctx.globalAlpha = infoAlpha * 0.6;
+  ctx.fillStyle = activePalette.ink;
+  ctx.font = "500 22px 'Inter',sans-serif";
+  (ctx as any).letterSpacing = "3px";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText(`N° ${String(rank).padStart(2, "0")}`, W - 70, infoY + 30);
+  (ctx as any).letterSpacing = "0px";
+  ctx.restore();
 
   ctx.restore();
   ctx.globalAlpha = 1;
