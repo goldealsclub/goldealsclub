@@ -877,7 +877,32 @@ function drawDealFullScreen(
     ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
+
+    // ── Contour fin via silhouette (anti-contour blanc) ──
+    // Trace la silhouette dans 8 directions à ±1.2 px → liseré sombre net
+    // qui détache parfaitement les produits clairs du fond.
+    const sil = (cut as any).__silhouette as HTMLCanvasElement | undefined;
+    if (sil) {
+      ctx.save();
+      ctx.globalAlpha = alphaK * (avgLum > 195 ? 0.85 : 0.55);
+      const off = avgLum > 195 ? 1.4 : 1.0;
+      const dirs: Array<[number, number]> = [
+        [off, 0], [-off, 0], [0, off], [0, -off],
+        [off, off], [-off, off], [off, -off], [-off, -off],
+      ];
+      for (const [dx, dy] of dirs) {
+        drawContainImage(ctx, sil, ix + dx, iy + dy, drawW, drawH);
+      }
+      ctx.restore();
+      // Redessine le produit par-dessus pour conserver tous les détails
+      ctx.save();
+      ctx.globalAlpha = alphaK;
+      drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+      ctx.restore();
+    }
+
     if (avgLum > 195) ctx.restore();
+
 
 
   } else {
