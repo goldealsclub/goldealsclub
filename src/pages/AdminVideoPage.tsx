@@ -120,7 +120,8 @@ function brandInitials(brand: string): string {
   return words.slice(0, 3).map((w) => w[0]).join("").toUpperCase();
 }
 
-const brandLogoCache = new Map<string, HTMLImageElement | null>();
+// Cache de logos déjà rendus en silhouette noire (look monochrome / intemporel)
+const brandLogoCache = new Map<string, HTMLCanvasElement | null>();
 
 function loadLogoImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -137,7 +138,26 @@ function loadLogoImage(url: string): Promise<HTMLImageElement | null> {
   });
 }
 
-async function getBrandLogo(brand: string): Promise<HTMLImageElement | null> {
+// Repeint un logo couleur en silhouette 100% noire en utilisant son alpha
+// → tous les logos affichés à l'écran ont le MÊME look minimal noir,
+//   peu importe leur âge / palette d'origine.
+function blackifyLogo(img: HTMLImageElement): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  const cx = c.getContext("2d");
+  if (!cx) return c;
+  // 1) Dessine l'image normalement
+  cx.drawImage(img, 0, 0);
+  // 2) Repeint en noir uniquement les pixels opaques (source-in conserve l'alpha)
+  cx.globalCompositeOperation = "source-in";
+  cx.fillStyle = "#000000";
+  cx.fillRect(0, 0, c.width, c.height);
+  cx.globalCompositeOperation = "source-over";
+  return c;
+}
+
+async function getBrandLogo(brand: string): Promise<HTMLCanvasElement | null> {
   const key = normalizeBrandKey(brand);
   if (!key) return null;
   if (brandLogoCache.has(key)) return brandLogoCache.get(key)!;
@@ -146,17 +166,22 @@ async function getBrandLogo(brand: string): Promise<HTMLImageElement | null> {
   const local = LOCAL_BRAND_LOGOS[key];
   if (local) {
     const img = await loadLogoImage(local);
-    brandLogoCache.set(key, img);
-    if (img) return img;
+    if (img) {
+      const silhouette = blackifyLogo(img);
+      brandLogoCache.set(key, silhouette);
+      return silhouette;
+    }
   }
 
   // 2) Clearbit CDN — domaine connu OU deviné (key + .com)
   const domain = BRAND_DOMAINS[key] || `${key}.com`;
   const cdn = `https://logo.clearbit.com/${domain}?size=512`;
   const cdnImg = await loadLogoImage(cdn);
-  brandLogoCache.set(key, cdnImg); // mémorise null aussi → pas de re-tentative
-  return cdnImg;
+  const result = cdnImg ? blackifyLogo(cdnImg) : null;
+  brandLogoCache.set(key, result); // mémorise null aussi → pas de re-tentative
+  return result;
 }
+
 
 
 type Deal = {
@@ -501,7 +526,7 @@ function drawAdHeader(
   deal: Deal,
   reveal: number,
   exit: number,
-  logo: HTMLImageElement | null,
+  logo: HTMLCanvasElement | null,
 ) {
   const alpha = reveal * (1 - exit);
   const slide = (1 - reveal) * 30;
@@ -509,16 +534,21 @@ function drawAdHeader(
   ctx.globalAlpha = alpha;
   ctx.translate(0, -slide);
 
+  // Hauteur effective du bloc marque (utilisée pour positionner le titre dessous,
+  // → plus aucun chevauchement quel que soit le ratio du logo)
+  let brandBlockBottom = 240;
+
   // ── Bloc gauche : logo (si dispo) sinon nom marque + titre produit ──
-  if (logo && logo.naturalWidth > 0) {
-    // Affiche le logo officiel — hauteur fixe 110px, largeur auto, alignée à gauche
-    const targetH = 110;
-    const ratio = logo.naturalWidth / logo.naturalHeight;
-    const targetW = targetH * ratio;
-    const maxW = 380;
-    const finalW = Math.min(targetW, maxW);
-    const finalH = finalW / ratio;
-    ctx.drawImage(logo, 60, 130, finalW, finalH);
+  if (logo && logo.width > 0) {
+    // Logos rendus en silhouette noire → même hauteur quelle que soit la marque
+    const targetH = 100;
+    const ratio = logo.width / logo.height;
+    const maxW = 360;
+    const finalH = targetH;
+    const finalW = Math.min(targetH * ratio, maxW);
+    const finalHAdj = finalW / ratio;
+    ctx.drawImage(logo, 60, 130, finalW, finalHAdj);
+    brandBlockBottom = 130 + finalHAdj;
   } else {
     // Fallback monogramme : pastille noire arrondie + initiales blanches + nom marque dessous.
     // Visuellement proche d'un vrai logo → maintient la cohérence éditoriale.
@@ -581,7 +611,8 @@ function drawAdHeader(
     }
     lines[1] = lines[1] + "…";
   }
-  const titleStartY = logo ? 290 : 290;
+  // Titre démarre 40px sous le bas réel du bloc marque → zéro chevauchement
+  const titleStartY = Math.max(290, brandBlockBottom + 50);
   lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 48));
   (ctx as any).letterSpacing = "0px";
 
@@ -736,7 +767,7 @@ function drawDealFullScreen(
   rank: number,
   hold: number, // 0..1 progression à l'intérieur du hold (pour ken-burns)
   drawBg: boolean = true,
-  logo: HTMLImageElement | null = null,
+  logo: HTMLCanvasElement | null = null,
 ) {
   if (drawBg) drawCharcoalBg(ctx, hold);
 
@@ -782,9 +813,25 @@ function drawDealFullScreen(
     const iy = stageY + (stageH - drawH) / 2 + slideIn + slideOut;
 
     const cut = getCutout(img);
-    ctx.shadowColor = "rgba(0,0,0,0.28)";
-    ctx.shadowBlur = 45;
-    ctx.shadowOffsetY = 24;
+
+    // ── Halo sombre derrière le produit ──
+    // Sans ça, un article BLANC sur fond gris clair (preset zara) disparaît.
+    // On dessine le cutout 3x en noir avec un blur progressif → contour visible
+    // sans dénaturer le produit (le produit est ensuite peint par-dessus).
+    ctx.save();
+    ctx.globalAlpha = 0.55 * alphaK;
+    ctx.shadowColor = "rgba(0,0,0,0.85)";
+    ctx.shadowBlur = 22;
+    ctx.shadowOffsetY = 0;
+    drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+    ctx.shadowBlur = 38;
+    drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+    ctx.restore();
+
+    // Ombre portée principale + image nette
+    ctx.shadowColor = "rgba(0,0,0,0.32)";
+    ctx.shadowBlur = 50;
+    ctx.shadowOffsetY = 28;
     drawContainImage(ctx, cut, ix, iy, drawW, drawH);
   } else {
     ctx.fillStyle = INK_BLACK;
@@ -816,7 +863,7 @@ function drawSelectionFrame(
   selection: Selection,
   imgs: (HTMLImageElement | null)[],
   totalSec: number,
-  logos: (HTMLImageElement | null)[] = [],
+  logos: (HTMLCanvasElement | null)[] = [],
 ) {
   const n = selection.deals.length;
 
