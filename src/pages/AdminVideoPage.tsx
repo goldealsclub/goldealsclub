@@ -439,12 +439,22 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
       }
     }
     cx.putImageData(id, 0, 0);
+    // Mesure la luminance moyenne des pixels opaques pour adapter le fond
+    let lumSum = 0, lumN = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] > 200) {
+        lumSum += (d[i] + d[i + 1] + d[i + 2]) / 3;
+        lumN++;
+      }
+    }
+    (c as any).__avgLum = lumN > 0 ? lumSum / lumN : 128;
     cutoutCache.set(img, c);
     return c;
   } catch {
     return img;
   }
 }
+
 
 function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, total: number, alpha = 1) {
   ctx.save();
@@ -811,15 +821,42 @@ function drawDealFullScreen(
 
     const cut = getCutout(img);
 
+    // Détection produit clair → on pose un disque sombre derrière pour
+    // garantir la lisibilité (sneaker blanche, t-shirt blanc, etc.).
+    const avgLum = (cut as any).__avgLum ?? 128;
+    if (avgLum > 195) {
+      ctx.save();
+      ctx.globalAlpha = alphaK * 0.92;
+      const plateCx = ix + drawW / 2;
+      const plateCy = iy + drawH / 2;
+      const plateR = Math.min(drawW, drawH) * 0.58;
+      const plate = ctx.createRadialGradient(
+        plateCx, plateCy, plateR * 0.15,
+        plateCx, plateCy, plateR,
+      );
+      plate.addColorStop(0, "rgba(28,28,30,0.78)");
+      plate.addColorStop(0.55, "rgba(28,28,30,0.45)");
+      plate.addColorStop(1, "rgba(28,28,30,0)");
+      ctx.fillStyle = plate;
+      ctx.beginPath();
+      ctx.ellipse(plateCx, plateCy, plateR * 1.05, plateR * 0.95, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+      ctx.save();
+      ctx.globalAlpha = alphaK;
+    }
+
     // Ombre portée unique, douce et propre (pas de halo dupliqué qui crée
     // un effet "fantôme" sur les produits clairs).
-    ctx.shadowColor = "rgba(0,0,0,0.28)";
+    ctx.shadowColor = avgLum > 195 ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)";
     ctx.shadowBlur = 42;
     ctx.shadowOffsetY = 24;
     drawContainImage(ctx, cut, ix, iy, drawW, drawH);
     ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
+    if (avgLum > 195) ctx.restore();
+
 
   } else {
     ctx.fillStyle = INK_BLACK;
