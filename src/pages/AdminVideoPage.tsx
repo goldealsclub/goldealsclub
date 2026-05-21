@@ -439,12 +439,22 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
       }
     }
     cx.putImageData(id, 0, 0);
+    // Mesure la luminance moyenne des pixels opaques pour adapter le fond
+    let lumSum = 0, lumN = 0;
+    for (let i = 0; i < d.length; i += 4) {
+      if (d[i + 3] > 200) {
+        lumSum += (d[i] + d[i + 1] + d[i + 2]) / 3;
+        lumN++;
+      }
+    }
+    (c as any).__avgLum = lumN > 0 ? lumSum / lumN : 128;
     cutoutCache.set(img, c);
     return c;
   } catch {
     return img;
   }
 }
+
 
 function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, total: number, alpha = 1) {
   ctx.save();
