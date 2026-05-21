@@ -733,7 +733,7 @@ function drawAdCTA(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.globalAlpha = alpha;
 
   const label = "Acheter";
-  ctx.font = "500 56px 'Inter','Helvetica',sans-serif";
+  ctx.font = VIDEO_TYPO.cta;
   const tw = ctx.measureText(label).width;
   const iconSize = 42;
   const gap = 22;
