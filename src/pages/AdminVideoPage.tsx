@@ -184,7 +184,7 @@ async function getBrandLogo(brand: string): Promise<HTMLCanvasElement | null> {
 
 
 
-type Deal = {
+export type Deal = {
   id: string;
   title: string;
   brand: string;
@@ -196,6 +196,7 @@ type Deal = {
   image_url: string;
   url: string;
 };
+
 
 type Selection = {
   type: "selection";
