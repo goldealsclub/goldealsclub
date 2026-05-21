@@ -608,7 +608,7 @@ function drawAdHeader(
     const boxW = Math.max(boxH, tw + 56);
     // Pastille
     ctx.fillStyle = INK_BLACK;
-    roundRect(ctx, padX, padY, boxW, boxH, 14);
+    roundRect(ctx, padX, padY, boxW, boxH, VIDEO_RADII.md);
     ctx.fill();
     // Initiales
     ctx.fillStyle = "#ffffff";
