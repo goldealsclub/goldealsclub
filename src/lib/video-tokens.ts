@@ -105,3 +105,84 @@ export const VIDEO_FONT_PRELOAD = [
   font(200, 150, SERIF),
   font(200, 220, SERIF),
 ] as const;
+
+// ──────────────────────────  BADGE PRIX  ───────────────────────────────
+/**
+ * Réglages adaptatifs du badge prix. L'algorithme échantillonne la zone
+ * sous le badge AVANT de le dessiner et choisit automatiquement une
+ * variante claire ou sombre, avec un voile d'opacité + un anneau fin
+ * pour garantir la lisibilité sur fond beige, ivoire, gris ou photo
+ * texturée.
+ */
+export const VIDEO_BADGE = {
+  /** Couleur de fond du badge en mode "sur fond clair" (par défaut). */
+  darkBg: VIDEO_COLORS.ink,
+  darkFg: "#ffffff",
+  /** Couleur de fond du badge en mode "sur fond sombre". */
+  lightBg: "#ffffff",
+  lightFg: VIDEO_COLORS.ink,
+  /** Opacité minimale du fond du badge — assure un contraste constant. */
+  fillOpacity: 0.96,
+  /** Anneau de contour fin (toujours appliqué pour décoller du fond). */
+  ringWidth: 1.5,
+  ringDarkBg: VIDEO_COLORS.alphaWhite(0.18),
+  ringLightBg: VIDEO_COLORS.alphaBlack(0.18),
+  /** Seuil de luminance (0-255) au-dessus duquel le fond est jugé "clair". */
+  luminanceThreshold: 150,
+  /** Voile additionnel quand le contraste mesuré est insuffisant. */
+  scrimOpacity: 0.12,
+  /** Contraste minimal (ratio simple bg/fg sur 0-255) sous lequel on renforce. */
+  minContrast: 90,
+} as const;
+
+/**
+ * Échantillonne la luminance moyenne d'une zone canvas.
+ * Retourne 0 (noir) → 255 (blanc).
+ */
+export function sampleAreaLuminance(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+): number {
+  try {
+    const data = ctx.getImageData(Math.max(0, x), Math.max(0, y), Math.max(1, w), Math.max(1, h)).data;
+    let sum = 0;
+    const step = 16; // sous-échantillonnage (perf)
+    let count = 0;
+    for (let i = 0; i < data.length; i += 4 * step) {
+      // Rec. 601
+      sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+      count++;
+    }
+    return count ? sum / count : 128;
+  } catch {
+    return 128;
+  }
+}
+
+/**
+ * Sélectionne les couleurs du badge prix en fonction de la luminance
+ * mesurée derrière sa zone. Renvoie aussi un voile d'appoint si le
+ * contraste reste trop faible.
+ */
+export function pickBadgeContrast(bgLuminance: number) {
+  const isLightBg = bgLuminance > VIDEO_BADGE.luminanceThreshold;
+  const fill = isLightBg ? VIDEO_BADGE.darkBg : VIDEO_BADGE.lightBg;
+  const fg = isLightBg ? VIDEO_BADGE.darkFg : VIDEO_BADGE.lightFg;
+  const ring = isLightBg ? VIDEO_BADGE.ringLightBg : VIDEO_BADGE.ringDarkBg;
+  // Estime le contraste fill vs bg (proche du seuil → scrim).
+  const fillLum = isLightBg ? 10 : 245;
+  const contrast = Math.abs(fillLum - bgLuminance);
+  const needsScrim = contrast < VIDEO_BADGE.minContrast;
+  return {
+    fill,
+    fg,
+    ring,
+    fillOpacity: VIDEO_BADGE.fillOpacity,
+    ringWidth: VIDEO_BADGE.ringWidth,
+    scrim: needsScrim ? VIDEO_BADGE.scrimOpacity : 0,
+    isLightBg,
+  };
+}
