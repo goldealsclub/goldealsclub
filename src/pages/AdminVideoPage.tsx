@@ -75,7 +75,7 @@ type Brief = {
 
 const W = 1080;
 const H = 1920;
-const FPS = 30;
+const FPS = 60;                     // 60 fps → mouvement perçu parfaitement fluide (mobile)
 const PER_DEAL_SEC = 4.2;          // produit affiché 4.2s — laisse respirer + crossfade ample
 const INTRO = 2.2;
 const OUTRO = 2.6;
@@ -175,10 +175,13 @@ async function loadImage(src: string): Promise<HTMLImageElement | null> {
     new Promise<HTMLImageElement | null>((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = () => {
+      img.decoding = "async";
+      img.onload = async () => {
         if (img.naturalWidth <= 0) return resolve(null);
         const minDim = Math.min(img.naturalWidth, img.naturalHeight);
-        if (minDim < MIN_IMG_DIM) return resolve(null); // image trop basse définition
+        if (minDim < MIN_IMG_DIM) return resolve(null);
+        // Décode explicitement → évite le coût au 1er draw (= saccade au début du deal)
+        try { await img.decode(); } catch {}
         resolve(img);
       };
       img.onerror = () => resolve(null);
@@ -757,9 +760,9 @@ function drawSelectionFrame(
   const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
   const localT = slideT - idx * PER_DEAL_SEC;
 
-  // Fenêtres : entrée 0.9s, transition crossfade 1.5s entre deals (plus doux)
-  const REVEAL_DUR = 0.9;
-  const TRANS_DUR = 1.5;
+  // Fenêtres : entrée 1.0s, transition crossfade 1.8s entre deals (ultra doux à 60fps)
+  const REVEAL_DUR = 1.0;
+  const TRANS_DUR = 1.8;
 
   // Fond une seule fois — les deals sont composités par dessus
   drawCharcoalBg(ctx, clamp01(localT / PER_DEAL_SEC));
@@ -1008,7 +1011,11 @@ export default function AdminVideoPage() {
       }
 
       const totalFrames = Math.round(totalSec * FPS);
-      const videoStream = (canvas as any).captureStream(FPS) as MediaStream;
+      // captureStream(0) → on pilote nous-mêmes chaque frame avec requestFrame()
+      // → AUCUNE frame dupliquée/perdue → zéro saccade à la lecture (mobile inclus)
+      const videoStream = (canvas as any).captureStream(0) as MediaStream;
+      const videoTrack = videoStream.getVideoTracks()[0] as any;
+      const canRequestFrame = typeof videoTrack?.requestFrame === "function";
 
       // ─── Vraie musique lofi via ElevenLabs Music API ───
       const AC = (window.AudioContext || (window as any).webkitAudioContext);
@@ -1088,10 +1095,15 @@ export default function AdminVideoPage() {
         try { musicEl.currentTime = 0; await musicEl.play(); } catch (e) { console.warn("audio play failed", e); }
       }
       const start = performance.now();
+      const nextRaf = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
         drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos);
-        setProgress(Math.round((f / totalFrames) * 100));
+        // Pousse EXACTEMENT une frame dans le MediaRecorder pour ce timestamp
+        if (canRequestFrame) videoTrack.requestFrame();
+        if ((f & 7) === 0) setProgress(Math.round((f / totalFrames) * 100));
+        // Cale sur le prochain repaint puis attend si on est en avance
+        await nextRaf();
         const target = start + (f / FPS) * 1000;
         const now = performance.now();
         if (target > now) await new Promise((r) => setTimeout(r, target - now));
