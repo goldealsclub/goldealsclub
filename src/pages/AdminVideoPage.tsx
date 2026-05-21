@@ -9,6 +9,16 @@ import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Sparkles, Share2, Cloud,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import VideoHistory from "@/components/admin/VideoHistory";
+import {
+  VIDEO_COLORS,
+  VIDEO_SHADOWS,
+  VIDEO_RADII,
+  VIDEO_TYPO,
+  VIDEO_FONT_PRELOAD,
+  applyShadow,
+  clearShadow,
+} from "@/lib/video-tokens";
+
 import brandNikeUrl from "@/assets/brand-nike.svg";
 import brandAdidasUrl from "@/assets/brand-adidas.svg";
 import brandJdUrl from "@/assets/brand-jdsports.png";
