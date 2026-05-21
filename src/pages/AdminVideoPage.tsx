@@ -650,12 +650,8 @@ function drawAdPriceBlock(
   ctx.scale(scale, scale);
   ctx.translate(-(W - 60), -boxY);
 
-  // Boîte rouge avec double bordure : blanc puis rouge à l'extérieur
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(boxX - 7, boxY - 7, boxW + 14, boxH + 14);
-  ctx.fillStyle = RED_ACCENT;
-  ctx.fillRect(boxX - 4, boxY - 4, boxW + 8, boxH + 8);
-  ctx.fillStyle = RED_ACCENT;
+  // Boîte prix noire (luxe minimal — fini le rouge "promo discount")
+  ctx.fillStyle = INK_BLACK;
   ctx.fillRect(boxX, boxY, boxW, boxH);
 
   // Texte prix
@@ -664,6 +660,7 @@ function drawAdPriceBlock(
   ctx.textBaseline = "middle";
   ctx.fillText(priceTxt, boxX + boxW / 2, boxY + boxH / 2 + 2);
   (ctx as any).letterSpacing = "0px";
+
 
   // Prix barré sous la boîte
   if (deal.original_price && Number(deal.original_price) > priceVal) {
