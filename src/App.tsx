@@ -33,6 +33,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminVideoPage from "./pages/AdminVideoPage";
 import AdminVideoHistoryPage from "./pages/AdminVideoHistoryPage";
 import AdminVideoQAPage from "./pages/AdminVideoQAPage";
+import AdminCardsQAPage from "./pages/AdminCardsQAPage";
+
 
 import InstallPage from "./pages/InstallPage";
 import PromoCodesPage from "./pages/PromoCodesPage";
@@ -96,6 +98,8 @@ const App = () => (
                 <Route path="/admin/video" element={<AdminVideoPage />} />
                 <Route path="/admin/video/historique" element={<AdminVideoHistoryPage />} />
                 <Route path="/admin/video-qa" element={<AdminVideoQAPage />} />
+                <Route path="/admin/cards-qa" element={<AdminCardsQAPage />} />
+
 
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/codes-promo" element={<PromoCodesPage />} />
