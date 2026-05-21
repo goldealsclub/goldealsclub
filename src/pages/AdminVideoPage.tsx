@@ -650,12 +650,8 @@ function drawAdPriceBlock(
   ctx.scale(scale, scale);
   ctx.translate(-(W - 60), -boxY);
 
-  // Boîte rouge avec double bordure : blanc puis rouge à l'extérieur
-  ctx.fillStyle = "#ffffff";
-  ctx.fillRect(boxX - 7, boxY - 7, boxW + 14, boxH + 14);
-  ctx.fillStyle = RED_ACCENT;
-  ctx.fillRect(boxX - 4, boxY - 4, boxW + 8, boxH + 8);
-  ctx.fillStyle = RED_ACCENT;
+  // Boîte prix noire (luxe minimal — fini le rouge "promo discount")
+  ctx.fillStyle = INK_BLACK;
   ctx.fillRect(boxX, boxY, boxW, boxH);
 
   // Texte prix
@@ -664,6 +660,7 @@ function drawAdPriceBlock(
   ctx.textBaseline = "middle";
   ctx.fillText(priceTxt, boxX + boxW / 2, boxY + boxH / 2 + 2);
   (ctx as any).letterSpacing = "0px";
+
 
   // Prix barré sous la boîte
   if (deal.original_price && Number(deal.original_price) > priceVal) {
@@ -814,25 +811,16 @@ function drawDealFullScreen(
 
     const cut = getCutout(img);
 
-    // ── Halo sombre derrière le produit ──
-    // Sans ça, un article BLANC sur fond gris clair (preset zara) disparaît.
-    // On dessine le cutout 3x en noir avec un blur progressif → contour visible
-    // sans dénaturer le produit (le produit est ensuite peint par-dessus).
-    ctx.save();
-    ctx.globalAlpha = 0.55 * alphaK;
-    ctx.shadowColor = "rgba(0,0,0,0.85)";
-    ctx.shadowBlur = 22;
+    // Ombre portée unique, douce et propre (pas de halo dupliqué qui crée
+    // un effet "fantôme" sur les produits clairs).
+    ctx.shadowColor = "rgba(0,0,0,0.28)";
+    ctx.shadowBlur = 42;
+    ctx.shadowOffsetY = 24;
+    drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+    ctx.shadowColor = "transparent";
+    ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
-    drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-    ctx.shadowBlur = 38;
-    drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-    ctx.restore();
 
-    // Ombre portée principale + image nette
-    ctx.shadowColor = "rgba(0,0,0,0.32)";
-    ctx.shadowBlur = 50;
-    ctx.shadowOffsetY = 28;
-    drawContainImage(ctx, cut, ix, iy, drawW, drawH);
   } else {
     ctx.fillStyle = INK_BLACK;
     ctx.globalAlpha = 0.08 * alphaK;
