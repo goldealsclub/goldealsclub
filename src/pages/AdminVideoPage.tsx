@@ -619,7 +619,7 @@ function drawAdHeader(
     (ctx as any).letterSpacing = "0px";
     // Nom complet de la marque sous la pastille (petit, élégant)
     ctx.fillStyle = INK_BLACK;
-    ctx.font = "700 22px 'Inter','Helvetica',sans-serif";
+    ctx.font = VIDEO_TYPO.brandLabel;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     (ctx as any).letterSpacing = "3px";
