@@ -33,6 +33,8 @@ import AdminDashboard from "./pages/AdminDashboard";
 import AdminVideoPage from "./pages/AdminVideoPage";
 import AdminVideoHistoryPage from "./pages/AdminVideoHistoryPage";
 import AdminVideoQAPage from "./pages/AdminVideoQAPage";
+import AdminCardsQAPage from "./pages/AdminCardsQAPage";
+
 
 import InstallPage from "./pages/InstallPage";
 import PromoCodesPage from "./pages/PromoCodesPage";
