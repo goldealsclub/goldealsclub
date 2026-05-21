@@ -526,7 +526,7 @@ function drawAdHeader(
   deal: Deal,
   reveal: number,
   exit: number,
-  logo: HTMLImageElement | null,
+  logo: HTMLCanvasElement | null,
 ) {
   const alpha = reveal * (1 - exit);
   const slide = (1 - reveal) * 30;
@@ -534,16 +534,21 @@ function drawAdHeader(
   ctx.globalAlpha = alpha;
   ctx.translate(0, -slide);
 
+  // Hauteur effective du bloc marque (utilisée pour positionner le titre dessous,
+  // → plus aucun chevauchement quel que soit le ratio du logo)
+  let brandBlockBottom = 240;
+
   // ── Bloc gauche : logo (si dispo) sinon nom marque + titre produit ──
-  if (logo && logo.naturalWidth > 0) {
-    // Affiche le logo officiel — hauteur fixe 110px, largeur auto, alignée à gauche
-    const targetH = 110;
-    const ratio = logo.naturalWidth / logo.naturalHeight;
-    const targetW = targetH * ratio;
-    const maxW = 380;
-    const finalW = Math.min(targetW, maxW);
-    const finalH = finalW / ratio;
-    ctx.drawImage(logo, 60, 130, finalW, finalH);
+  if (logo && logo.width > 0) {
+    // Logos rendus en silhouette noire → même hauteur quelle que soit la marque
+    const targetH = 100;
+    const ratio = logo.width / logo.height;
+    const maxW = 360;
+    const finalH = targetH;
+    const finalW = Math.min(targetH * ratio, maxW);
+    const finalHAdj = finalW / ratio;
+    ctx.drawImage(logo, 60, 130, finalW, finalHAdj);
+    brandBlockBottom = 130 + finalHAdj;
   } else {
     // Fallback monogramme : pastille noire arrondie + initiales blanches + nom marque dessous.
     // Visuellement proche d'un vrai logo → maintient la cohérence éditoriale.
