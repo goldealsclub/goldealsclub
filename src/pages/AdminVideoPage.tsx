@@ -760,9 +760,9 @@ function drawSelectionFrame(
   const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
   const localT = slideT - idx * PER_DEAL_SEC;
 
-  // Fenêtres : entrée 0.9s, transition crossfade 1.5s entre deals (plus doux)
-  const REVEAL_DUR = 0.9;
-  const TRANS_DUR = 1.5;
+  // Fenêtres : entrée 1.0s, transition crossfade 1.8s entre deals (ultra doux à 60fps)
+  const REVEAL_DUR = 1.0;
+  const TRANS_DUR = 1.8;
 
   // Fond une seule fois — les deals sont composités par dessus
   drawCharcoalBg(ctx, clamp01(localT / PER_DEAL_SEC));
