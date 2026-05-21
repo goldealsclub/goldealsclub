@@ -9,6 +9,16 @@ import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Sparkles, Share2, Cloud,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import VideoHistory from "@/components/admin/VideoHistory";
+import {
+  VIDEO_COLORS,
+  VIDEO_SHADOWS,
+  VIDEO_RADII,
+  VIDEO_TYPO,
+  VIDEO_FONT_PRELOAD,
+  applyShadow,
+  clearShadow,
+} from "@/lib/video-tokens";
+
 import brandNikeUrl from "@/assets/brand-nike.svg";
 import brandAdidasUrl from "@/assets/brand-adidas.svg";
 import brandJdUrl from "@/assets/brand-jdsports.png";
@@ -550,9 +560,11 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
 // ─── Rendu "Instagram ad" : fond studio gris, header marque + titre,
 //     bloc prix rouge encadré à droite, produit détouré centré,
 //     CTA pilule blanche "Acheter" + barre noire "Sponsorisé".
-const RED_ACCENT = "#e11d2a";
-const INK_BLACK = "#0a0a0a";
-const LINK_BLUE = "#1d8cf0";
+// Legacy aliases — conservés pour minimiser le diff. Source de vérité : VIDEO_COLORS.
+const RED_ACCENT = VIDEO_COLORS.red;
+const INK_BLACK = VIDEO_COLORS.ink;
+const LINK_BLUE = VIDEO_COLORS.link;
+
 
 function drawAdHeader(
   ctx: CanvasRenderingContext2D,
@@ -591,12 +603,12 @@ function drawAdHeader(
     const boxH = 110;
     ctx.save();
     // Mesure pour largeur dynamique de la pastille
-    ctx.font = "900 64px 'Inter','Helvetica',sans-serif";
+    ctx.font = VIDEO_TYPO.priceBig;
     const tw = ctx.measureText(initials).width;
     const boxW = Math.max(boxH, tw + 56);
     // Pastille
     ctx.fillStyle = INK_BLACK;
-    roundRect(ctx, padX, padY, boxW, boxH, 14);
+    roundRect(ctx, padX, padY, boxW, boxH, VIDEO_RADII.md);
     ctx.fill();
     // Initiales
     ctx.fillStyle = "#ffffff";
@@ -607,7 +619,7 @@ function drawAdHeader(
     (ctx as any).letterSpacing = "0px";
     // Nom complet de la marque sous la pastille (petit, élégant)
     ctx.fillStyle = INK_BLACK;
-    ctx.font = "700 22px 'Inter','Helvetica',sans-serif";
+    ctx.font = VIDEO_TYPO.brandLabel;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     (ctx as any).letterSpacing = "3px";
@@ -619,7 +631,7 @@ function drawAdHeader(
 
   // Titre produit — wrap sur 2 lignes max
   ctx.fillStyle = INK_BLACK;
-  ctx.font = "800 38px 'Inter','Helvetica',sans-serif";
+  ctx.font = VIDEO_TYPO.title;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   (ctx as any).letterSpacing = "0.5px";
@@ -668,7 +680,7 @@ function drawAdPriceBlock(
   const priceTxt = `${priceVal.toFixed(2).replace(".00", ".00")} €`;
 
   // Mesure de la boîte
-  ctx.font = "800 64px 'Inter','Helvetica',sans-serif";
+  ctx.font = VIDEO_TYPO.priceBig;
   (ctx as any).letterSpacing = "-1px";
   const tw = ctx.measureText(priceTxt).width;
   const padX = 30;
@@ -698,7 +710,7 @@ function drawAdPriceBlock(
   // Prix barré sous la boîte
   if (deal.original_price && Number(deal.original_price) > priceVal) {
     const op = `${Number(deal.original_price).toFixed(2).replace(".00", ".00")} €`;
-    ctx.font = "500 38px 'Inter','Helvetica',sans-serif";
+    ctx.font = VIDEO_TYPO.priceStrike;
     ctx.fillStyle = INK_BLACK;
     ctx.textAlign = "right";
     ctx.textBaseline = "alphabetic";
@@ -721,7 +733,7 @@ function drawAdCTA(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.globalAlpha = alpha;
 
   const label = "Acheter";
-  ctx.font = "500 56px 'Inter','Helvetica',sans-serif";
+  ctx.font = VIDEO_TYPO.cta;
   const tw = ctx.measureText(label).width;
   const iconSize = 42;
   const gap = 22;
@@ -732,16 +744,13 @@ function drawAdCTA(ctx: CanvasRenderingContext2D, alpha: number) {
   const pillX = (W - pillW) / 2;
   const pillY = H - 110 - pillH;
 
-  // Ombre
-  ctx.shadowColor = "rgba(0,0,0,0.18)";
-  ctx.shadowBlur = 30;
-  ctx.shadowOffsetY = 12;
+  // Ombre pilule
+  applyShadow(ctx, VIDEO_SHADOWS.pill);
   ctx.fillStyle = "#ffffff";
   roundRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
   ctx.fill();
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
+  clearShadow(ctx);
+
 
   // Icône lien (deux maillons stylisés)
   const ix = pillX + padX;
@@ -781,7 +790,7 @@ function drawSponsoBar(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, H - barH, W, barH);
   ctx.fillStyle = "#ffffff";
-  ctx.font = "400 22px 'Inter','Helvetica',sans-serif";
+  ctx.font = VIDEO_TYPO.sponso;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.fillText("Sponsorisé", 40, H - barH / 2);
@@ -871,13 +880,10 @@ export function drawDealFullScreen(
 
     // Ombre portée unique, douce et propre (pas de halo dupliqué qui crée
     // un effet "fantôme" sur les produits clairs).
-    ctx.shadowColor = avgLum > 195 ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)";
-    ctx.shadowBlur = 42;
-    ctx.shadowOffsetY = 24;
+    applyShadow(ctx, avgLum > 195 ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
     drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-    ctx.shadowColor = "transparent";
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
+    clearShadow(ctx);
+
 
     // ── Contour fin via silhouette (anti-contour blanc) ──
     // Trace la silhouette dans 8 directions à ±1.2 px → liseré sombre net
@@ -909,7 +915,7 @@ export function drawDealFullScreen(
   } else {
     ctx.fillStyle = INK_BLACK;
     ctx.globalAlpha = 0.08 * alphaK;
-    ctx.font = "900 480px 'Inter','Helvetica',sans-serif";
+    ctx.font = VIDEO_TYPO.monogram;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText((deal.brand || "G").charAt(0).toUpperCase(), cxC, cyC);
@@ -1241,21 +1247,15 @@ export default function AdminVideoPage() {
       canvas.height = H;
       const ctx = canvas.getContext("2d")!;
 
-      // Préchargement explicite Inter + Playfair (sinon fallback Arial = typo générique)
+      // Préchargement explicite Inter + Playfair via VIDEO_FONT_PRELOAD
+      // (sinon fallback Arial = typo générique).
       try {
-        await Promise.all([
-          (document as any).fonts?.load("200 200px 'Playfair Display'"),
-          (document as any).fonts?.load("300 96px 'Playfair Display'"),
-          (document as any).fonts?.load("400 40px 'Playfair Display'"),
-          (document as any).fonts?.load("300 30px 'Inter'"),
-          (document as any).fonts?.load("400 40px 'Inter'"),
-          (document as any).fonts?.load("500 22px 'Inter'"),
-          (document as any).fonts?.load("500 34px 'Inter'"),
-          (document as any).fonts?.load("600 22px 'Inter'"),
-          (document as any).fonts?.load("700 22px 'Inter'"),
-        ]);
+        await Promise.all(
+          VIDEO_FONT_PRELOAD.map((f) => (document as any).fonts?.load(f)),
+        );
         await (document as any).fonts?.ready;
       } catch {}
+
 
       const [imgs, logos] = await Promise.all([
         Promise.all(selection.deals.map((d) => loadImage(d.image_url))),
