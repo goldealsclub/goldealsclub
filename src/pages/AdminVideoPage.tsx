@@ -221,7 +221,7 @@ const INTRO = 2.2;
 const OUTRO = 2.6;
 
 // ─── PRESETS DE FOND ───
-type BgPreset = "zara" | "charcoal" | "ivoire";
+export type BgPreset = "zara" | "charcoal" | "ivoire";
 
 type Palette = {
   bgTop: string;
