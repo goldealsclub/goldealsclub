@@ -1287,7 +1287,7 @@ export default function AdminVideoPage() {
       recorder.stop();
 
       const blob = await done;
-      try { musicEl?.pause(); } catch {}
+      try { scheduledSources.forEach((s) => { try { s.stop(); } catch {} }); } catch {}
       if (musicBlobUrl) URL.revokeObjectURL(musicBlobUrl);
       try { await audioCtx.close(); } catch {}
       const url = URL.createObjectURL(blob);
