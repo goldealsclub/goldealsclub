@@ -710,7 +710,7 @@ function drawAdPriceBlock(
   // Prix barré sous la boîte
   if (deal.original_price && Number(deal.original_price) > priceVal) {
     const op = `${Number(deal.original_price).toFixed(2).replace(".00", ".00")} €`;
-    ctx.font = "500 38px 'Inter','Helvetica',sans-serif";
+    ctx.font = VIDEO_TYPO.priceStrike;
     ctx.fillStyle = INK_BLACK;
     ctx.textAlign = "right";
     ctx.textBaseline = "alphabetic";
