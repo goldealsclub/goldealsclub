@@ -157,7 +157,7 @@ function blackifyLogo(img: HTMLImageElement): HTMLCanvasElement {
   return c;
 }
 
-async function getBrandLogo(brand: string): Promise<HTMLCanvasElement | null> {
+export async function getBrandLogo(brand: string): Promise<HTMLCanvasElement | null> {
   const key = normalizeBrandKey(brand);
   if (!key) return null;
   if (brandLogoCache.has(key)) return brandLogoCache.get(key)!;
@@ -213,8 +213,8 @@ type Brief = {
   hashtags: string;
 };
 
-const W = 1080;
-const H = 1920;
+export const W = 1080;
+export const H = 1920;
 const FPS = 60;                     // 60 fps → mouvement perçu parfaitement fluide (mobile)
 const PER_DEAL_SEC = 4.2;          // produit affiché 4.2s — laisse respirer + crossfade ample
 const INTRO = 2.2;
@@ -237,7 +237,7 @@ type Palette = {
   grainOnDark: boolean; // true → grain blanc dominant, false → grain noir dominant
 };
 
-const BG_PRESETS: Record<BgPreset, Palette> = {
+export const BG_PRESETS: Record<BgPreset, Palette> = {
   // Studio gris clair façon ZARA — minimal, lumineux
   zara: {
     bgTop: "#e6e3de",
@@ -294,7 +294,7 @@ let TAUPE = activePalette.taupe;
 let GOLD = activePalette.accent;
 let GOLD_DEEP = activePalette.accent;
 
-function applyBgPreset(preset: BgPreset) {
+export function applyBgPreset(preset: BgPreset) {
   activePalette = BG_PRESETS[preset];
   CHARCOAL_TOP = activePalette.bgTop;
   CHARCOAL_MID = activePalette.bgMid;
@@ -310,7 +310,7 @@ const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
 
 // Filtre qualité : rejette les images trop petites (thumbnails moches)
 const MIN_IMG_DIM = 500;
-async function loadImage(src: string): Promise<HTMLImageElement | null> {
+export async function loadImage(src: string): Promise<HTMLImageElement | null> {
   const tryLoad = (url: string) =>
     new Promise<HTMLImageElement | null>((resolve) => {
       const img = new Image();
@@ -788,7 +788,7 @@ function drawSponsoBar(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.restore();
 }
 
-function drawDealFullScreen(
+export function drawDealFullScreen(
   ctx: CanvasRenderingContext2D,
   deal: Deal,
   img: HTMLImageElement | null,
