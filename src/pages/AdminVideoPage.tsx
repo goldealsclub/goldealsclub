@@ -631,7 +631,7 @@ function drawAdHeader(
 
   // Titre produit — wrap sur 2 lignes max
   ctx.fillStyle = INK_BLACK;
-  ctx.font = "800 38px 'Inter','Helvetica',sans-serif";
+  ctx.font = VIDEO_TYPO.title;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
   (ctx as any).letterSpacing = "0.5px";
