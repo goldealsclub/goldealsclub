@@ -1247,21 +1247,15 @@ export default function AdminVideoPage() {
       canvas.height = H;
       const ctx = canvas.getContext("2d")!;
 
-      // Préchargement explicite Inter + Playfair (sinon fallback Arial = typo générique)
+      // Préchargement explicite Inter + Playfair via VIDEO_FONT_PRELOAD
+      // (sinon fallback Arial = typo générique).
       try {
-        await Promise.all([
-          (document as any).fonts?.load("200 200px 'Playfair Display'"),
-          (document as any).fonts?.load("300 96px 'Playfair Display'"),
-          (document as any).fonts?.load("400 40px 'Playfair Display'"),
-          (document as any).fonts?.load("300 30px 'Inter'"),
-          (document as any).fonts?.load("400 40px 'Inter'"),
-          (document as any).fonts?.load("500 22px 'Inter'"),
-          (document as any).fonts?.load("500 34px 'Inter'"),
-          (document as any).fonts?.load("600 22px 'Inter'"),
-          (document as any).fonts?.load("700 22px 'Inter'"),
-        ]);
+        await Promise.all(
+          VIDEO_FONT_PRELOAD.map((f) => (document as any).fonts?.load(f)),
+        );
         await (document as any).fonts?.ready;
       } catch {}
+
 
       const [imgs, logos] = await Promise.all([
         Promise.all(selection.deals.map((d) => loadImage(d.image_url))),
