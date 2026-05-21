@@ -1095,10 +1095,15 @@ export default function AdminVideoPage() {
         try { musicEl.currentTime = 0; await musicEl.play(); } catch (e) { console.warn("audio play failed", e); }
       }
       const start = performance.now();
+      const nextRaf = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
         drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos);
-        setProgress(Math.round((f / totalFrames) * 100));
+        // Pousse EXACTEMENT une frame dans le MediaRecorder pour ce timestamp
+        if (canRequestFrame) videoTrack.requestFrame();
+        if ((f & 7) === 0) setProgress(Math.round((f / totalFrames) * 100));
+        // Cale sur le prochain repaint puis attend si on est en avance
+        await nextRaf();
         const target = start + (f / FPS) * 1000;
         const now = performance.now();
         if (target > now) await new Promise((r) => setTimeout(r, target - now));
