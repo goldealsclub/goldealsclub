@@ -744,16 +744,13 @@ function drawAdCTA(ctx: CanvasRenderingContext2D, alpha: number) {
   const pillX = (W - pillW) / 2;
   const pillY = H - 110 - pillH;
 
-  // Ombre
-  ctx.shadowColor = "rgba(0,0,0,0.18)";
-  ctx.shadowBlur = 30;
-  ctx.shadowOffsetY = 12;
+  // Ombre pilule
+  applyShadow(ctx, VIDEO_SHADOWS.pill);
   ctx.fillStyle = "#ffffff";
   roundRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
   ctx.fill();
-  ctx.shadowColor = "transparent";
-  ctx.shadowBlur = 0;
-  ctx.shadowOffsetY = 0;
+  clearShadow(ctx);
+
 
   // Icône lien (deux maillons stylisés)
   const ix = pillX + padX;
