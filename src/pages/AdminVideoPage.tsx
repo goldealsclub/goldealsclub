@@ -915,7 +915,7 @@ export function drawDealFullScreen(
   } else {
     ctx.fillStyle = INK_BLACK;
     ctx.globalAlpha = 0.08 * alphaK;
-    ctx.font = "900 480px 'Inter','Helvetica',sans-serif";
+    ctx.font = VIDEO_TYPO.monogram;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillText((deal.brand || "G").charAt(0).toUpperCase(), cxC, cyC);
