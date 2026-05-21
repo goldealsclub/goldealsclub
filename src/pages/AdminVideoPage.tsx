@@ -767,7 +767,7 @@ function drawDealFullScreen(
   rank: number,
   hold: number, // 0..1 progression à l'intérieur du hold (pour ken-burns)
   drawBg: boolean = true,
-  logo: HTMLImageElement | null = null,
+  logo: HTMLCanvasElement | null = null,
 ) {
   if (drawBg) drawCharcoalBg(ctx, hold);
 
