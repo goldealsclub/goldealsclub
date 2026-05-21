@@ -1156,7 +1156,7 @@ export default function AdminVideoPage() {
       const videoTrack = videoStream.getVideoTracks()[0] as any;
       const canRequestFrame = typeof videoTrack?.requestFrame === "function";
 
-      // ─── Vraie musique lofi via ElevenLabs Music API ───
+      // ─── Musique lofi : boucle GAPLESS + crossfade + fade-in/out global ───
       const AC = (window.AudioContext || (window as any).webkitAudioContext);
       const audioCtx: AudioContext = new AC({ sampleRate: 48000 });
       if (audioCtx.state === "suspended") {
@@ -1165,10 +1165,18 @@ export default function AdminVideoPage() {
       const dest = audioCtx.createMediaStreamDestination();
       const masterGain = audioCtx.createGain();
       masterGain.gain.value = 0.0;
+      // Léger lowpass pour le grain "lofi"
+      const lp = audioCtx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.value = 8000;
+      lp.Q.value = 0.4;
+      lp.connect(masterGain);
       masterGain.connect(dest);
 
-      let musicEl: HTMLAudioElement | null = null;
+      let musicBuffer: AudioBuffer | null = null;
       let musicBlobUrl: string | null = null;
+      const scheduledSources: AudioBufferSourceNode[] = [];
+
       try {
         toast({ title: "🎵 Génération musique lofi…", description: "Quelques secondes…" });
         const musicRes = await supabase.functions.invoke("generate-lofi-music", {
@@ -1180,23 +1188,11 @@ export default function AdminVideoPage() {
             ? musicRes.data
             : new Blob([musicRes.data as ArrayBuffer], { type: "audio/mpeg" });
         musicBlobUrl = URL.createObjectURL(blob);
-        musicEl = new Audio(musicBlobUrl);
-        musicEl.crossOrigin = "anonymous";
-        musicEl.loop = true;
-        musicEl.preload = "auto";
-        await new Promise<void>((res) => {
-          if (!musicEl) return res();
-          musicEl.oncanplaythrough = () => res();
-          musicEl.onerror = () => res();
-          setTimeout(() => res(), 4000);
+        // Décodage en AudioBuffer → on contrôle 100% du timing échantillon par échantillon
+        const arrayBuf = await blob.arrayBuffer();
+        musicBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
+          audioCtx.decodeAudioData(arrayBuf.slice(0), resolve, reject);
         });
-        const musicSource = audioCtx.createMediaElementSource(musicEl);
-        const lp = audioCtx.createBiquadFilter();
-        lp.type = "lowpass";
-        lp.frequency.value = 8000;
-        lp.Q.value = 0.4;
-        musicSource.connect(lp);
-        lp.connect(masterGain);
       } catch (musicErr) {
         console.error("Music fetch failed", musicErr);
         toast({
@@ -1206,11 +1202,52 @@ export default function AdminVideoPage() {
         });
       }
 
+      // ─── Fade-in (1.5s) / fade-out (1.5s) sur le master ───
       const now0 = audioCtx.currentTime;
+      const TARGET_VOL = 0.55;
+      const FADE = 1.5;
       masterGain.gain.setValueAtTime(0.0, now0);
-      masterGain.gain.linearRampToValueAtTime(0.55, now0 + 1.5);
-      masterGain.gain.setValueAtTime(0.55, now0 + Math.max(1.5, totalSec - 1.5));
+      masterGain.gain.linearRampToValueAtTime(TARGET_VOL, now0 + FADE);
+      masterGain.gain.setValueAtTime(TARGET_VOL, now0 + Math.max(FADE, totalSec - FADE));
       masterGain.gain.linearRampToValueAtTime(0, now0 + totalSec);
+
+      // ─── Boucle GAPLESS : on schedule des sources qui se chevauchent ───
+      // À chaque cycle on lance une nouvelle source CROSSFADE_DUR avant la fin
+      // de la précédente, avec rampes opposées → joint inaudible.
+      const startMusicLoop = () => {
+        if (!musicBuffer) return;
+        const dur = musicBuffer.duration;
+        const CROSSFADE = Math.min(1.2, dur * 0.15);
+        const cycle = Math.max(0.1, dur - CROSSFADE); // espacement entre chaque source
+        let when = now0;
+        // Combien de cycles pour couvrir totalSec (+ marge)
+        const cycles = Math.ceil((totalSec + 1) / cycle) + 1;
+        for (let i = 0; i < cycles; i++) {
+          if (when > now0 + totalSec) break;
+          const src = audioCtx.createBufferSource();
+          src.buffer = musicBuffer;
+          // Petit gain dédié pour le crossfade local de cette source
+          const g = audioCtx.createGain();
+          // Fade-in du joint (sauf 1re source qui démarre déjà à plein régime)
+          if (i === 0) {
+            g.gain.setValueAtTime(1, when);
+          } else {
+            g.gain.setValueAtTime(0, when);
+            g.gain.linearRampToValueAtTime(1, when + CROSSFADE);
+          }
+          // Fade-out à la fin de la source (sauf dernière qui sera coupée par le master)
+          const endAt = when + dur;
+          g.gain.setValueAtTime(1, endAt - CROSSFADE);
+          g.gain.linearRampToValueAtTime(0, endAt);
+          src.connect(g);
+          g.connect(lp);
+          src.start(when);
+          src.stop(endAt + 0.05);
+          scheduledSources.push(src);
+          when += cycle;
+        }
+      };
+
 
       const stream = new MediaStream([
         ...videoStream.getVideoTracks(),
