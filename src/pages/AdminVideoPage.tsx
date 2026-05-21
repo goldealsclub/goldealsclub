@@ -120,7 +120,8 @@ function brandInitials(brand: string): string {
   return words.slice(0, 3).map((w) => w[0]).join("").toUpperCase();
 }
 
-const brandLogoCache = new Map<string, HTMLImageElement | null>();
+// Cache de logos déjà rendus en silhouette noire (look monochrome / intemporel)
+const brandLogoCache = new Map<string, HTMLCanvasElement | null>();
 
 function loadLogoImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
@@ -137,7 +138,26 @@ function loadLogoImage(url: string): Promise<HTMLImageElement | null> {
   });
 }
 
-async function getBrandLogo(brand: string): Promise<HTMLImageElement | null> {
+// Repeint un logo couleur en silhouette 100% noire en utilisant son alpha
+// → tous les logos affichés à l'écran ont le MÊME look minimal noir,
+//   peu importe leur âge / palette d'origine.
+function blackifyLogo(img: HTMLImageElement): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = img.naturalWidth;
+  c.height = img.naturalHeight;
+  const cx = c.getContext("2d");
+  if (!cx) return c;
+  // 1) Dessine l'image normalement
+  cx.drawImage(img, 0, 0);
+  // 2) Repeint en noir uniquement les pixels opaques (source-in conserve l'alpha)
+  cx.globalCompositeOperation = "source-in";
+  cx.fillStyle = "#000000";
+  cx.fillRect(0, 0, c.width, c.height);
+  cx.globalCompositeOperation = "source-over";
+  return c;
+}
+
+async function getBrandLogo(brand: string): Promise<HTMLCanvasElement | null> {
   const key = normalizeBrandKey(brand);
   if (!key) return null;
   if (brandLogoCache.has(key)) return brandLogoCache.get(key)!;
@@ -146,17 +166,22 @@ async function getBrandLogo(brand: string): Promise<HTMLImageElement | null> {
   const local = LOCAL_BRAND_LOGOS[key];
   if (local) {
     const img = await loadLogoImage(local);
-    brandLogoCache.set(key, img);
-    if (img) return img;
+    if (img) {
+      const silhouette = blackifyLogo(img);
+      brandLogoCache.set(key, silhouette);
+      return silhouette;
+    }
   }
 
   // 2) Clearbit CDN — domaine connu OU deviné (key + .com)
   const domain = BRAND_DOMAINS[key] || `${key}.com`;
   const cdn = `https://logo.clearbit.com/${domain}?size=512`;
   const cdnImg = await loadLogoImage(cdn);
-  brandLogoCache.set(key, cdnImg); // mémorise null aussi → pas de re-tentative
-  return cdnImg;
+  const result = cdnImg ? blackifyLogo(cdnImg) : null;
+  brandLogoCache.set(key, result); // mémorise null aussi → pas de re-tentative
+  return result;
 }
+
 
 
 type Deal = {
