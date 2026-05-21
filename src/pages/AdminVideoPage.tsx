@@ -16,34 +16,148 @@ import brandJdUrl from "@/assets/brand-jdsports.png";
 const snipesLogoUrl = "/partners/snipes-logo.png";
 const kappaLogoUrl = "/partners/kappa-logo.png";
 
-// Map marque normalisée → URL logo. Si non trouvé : fallback texte uppercase bold.
-const BRAND_LOGO_URLS: Record<string, string> = {
+// ─── SYSTÈME DE LOGOS DE MARQUE ───────────────────────────────
+// Sources, dans l'ordre :
+//   1) assets locaux (HD, dispos hors-ligne)
+//   2) Clearbit Logo API (CDN, gratuit, sans clé) via domaine connu ou deviné
+//   3) fallback monogramme dessiné sur canvas
+//
+// La clé est normalisée (lowercase, sans accents/ponctuation/suffixes).
+
+const LOCAL_BRAND_LOGOS: Record<string, string> = {
   nike: brandNikeUrl,
   adidas: brandAdidasUrl,
-  "jd sports": brandJdUrl,
   jdsports: brandJdUrl,
   snipes: snipesLogoUrl,
   kappa: kappaLogoUrl,
 };
 
+// Domaines officiels pour Clearbit (https://logo.clearbit.com/<domain>)
+// Couvre les marques streetwear/sport les plus fréquentes dans le catalogue.
+const BRAND_DOMAINS: Record<string, string> = {
+  nike: "nike.com",
+  adidas: "adidas.com",
+  jdsports: "jdsports.fr",
+  snipes: "snipes.com",
+  kappa: "kappa.com",
+  puma: "puma.com",
+  newbalance: "newbalance.com",
+  reebok: "reebok.com",
+  asics: "asics.com",
+  converse: "converse.com",
+  vans: "vans.com",
+  fila: "fila.com",
+  champion: "champion.com",
+  tommyhilfiger: "tommy.com",
+  tommy: "tommy.com",
+  calvinklein: "calvinklein.com",
+  lacoste: "lacoste.com",
+  levis: "levi.com",
+  carhartt: "carhartt.com",
+  carharttwip: "carhartt-wip.com",
+  thenorthface: "thenorthface.com",
+  northface: "thenorthface.com",
+  timberland: "timberland.com",
+  dickies: "dickies.com",
+  ellesse: "ellesse.com",
+  umbro: "umbro.com",
+  diadora: "diadora.com",
+  hummel: "hummel.net",
+  oakley: "oakley.com",
+  rayban: "ray-ban.com",
+  underarmour: "underarmour.com",
+  hokaoneone: "hoka.com",
+  hoka: "hoka.com",
+  oncloud: "on-running.com",
+  on: "on-running.com",
+  saucony: "saucony.com",
+  mizuno: "mizuno.com",
+  salomon: "salomon.com",
+  arcteryx: "arcteryx.com",
+  patagonia: "patagonia.com",
+  columbia: "columbia.com",
+  helly: "hellyhansen.com",
+  hellyhansen: "hellyhansen.com",
+  stussy: "stussy.com",
+  obey: "obeyclothing.com",
+  vanssurf: "vans.com",
+  guess: "guess.eu",
+  hugoboss: "hugoboss.com",
+  hugo: "hugoboss.com",
+  boss: "hugoboss.com",
+  diesel: "diesel.com",
+  napapijri: "napapijri.com",
+  ellessehe: "ellesse.com",
+  fred: "fredperry.com",
+  fredperry: "fredperry.com",
+  stoneisland: "stoneisland.com",
+  cp: "cpcompany.com",
+  cpcompany: "cpcompany.com",
+  moncler: "moncler.com",
+  nb: "newbalance.com",
+};
+
+// Normalise un nom de marque vers une clé canonique :
+// "JD Sports" → "jdsports", "Carhartt WIP" → "carharttwip", "The North Face" → "thenorthface"
+function normalizeBrandKey(brand: string): string {
+  return (brand || "")
+    .toLowerCase()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // accents
+    .replace(/['’`.]/g, "")
+    .replace(/[^a-z0-9]+/g, "")
+    .trim();
+}
+
+// Initiales pour le monogramme : "JD Sports" → "JD", "Nike" → "N", "The North Face" → "TNF"
+function brandInitials(brand: string): string {
+  const words = (brand || "")
+    .replace(/['’`.]/g, "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .filter((w) => !/^(the|le|la|les|of|de|du|des)$/i.test(w));
+  if (words.length === 0) return "?";
+  if (words.length === 1) return words[0].slice(0, 2).toUpperCase();
+  return words.slice(0, 3).map((w) => w[0]).join("").toUpperCase();
+}
+
 const brandLogoCache = new Map<string, HTMLImageElement | null>();
-async function getBrandLogo(brand: string): Promise<HTMLImageElement | null> {
-  const key = (brand || "").trim().toLowerCase();
-  if (!key) return null;
-  if (brandLogoCache.has(key)) return brandLogoCache.get(key)!;
-  const url = BRAND_LOGO_URLS[key];
-  if (!url) {
-    brandLogoCache.set(key, null);
-    return null;
-  }
+
+function loadLogoImage(url: string): Promise<HTMLImageElement | null> {
   return new Promise((resolve) => {
     const img = new Image();
     img.crossOrigin = "anonymous";
-    img.onload = () => { brandLogoCache.set(key, img); resolve(img); };
-    img.onerror = () => { brandLogoCache.set(key, null); resolve(null); };
+    img.decoding = "async";
+    img.onload = async () => {
+      if (img.naturalWidth <= 0) return resolve(null);
+      try { await img.decode(); } catch {}
+      resolve(img);
+    };
+    img.onerror = () => resolve(null);
     img.src = url;
   });
 }
+
+async function getBrandLogo(brand: string): Promise<HTMLImageElement | null> {
+  const key = normalizeBrandKey(brand);
+  if (!key) return null;
+  if (brandLogoCache.has(key)) return brandLogoCache.get(key)!;
+
+  // 1) Asset local HD
+  const local = LOCAL_BRAND_LOGOS[key];
+  if (local) {
+    const img = await loadLogoImage(local);
+    brandLogoCache.set(key, img);
+    if (img) return img;
+  }
+
+  // 2) Clearbit CDN — domaine connu OU deviné (key + .com)
+  const domain = BRAND_DOMAINS[key] || `${key}.com`;
+  const cdn = `https://logo.clearbit.com/${domain}?size=512`;
+  const cdnImg = await loadLogoImage(cdn);
+  brandLogoCache.set(key, cdnImg); // mémorise null aussi → pas de re-tentative
+  return cdnImg;
+}
+
 
 type Deal = {
   id: string;
@@ -406,14 +520,39 @@ function drawAdHeader(
     const finalH = finalW / ratio;
     ctx.drawImage(logo, 60, 130, finalW, finalH);
   } else {
+    // Fallback monogramme : pastille noire arrondie + initiales blanches + nom marque dessous.
+    // Visuellement proche d'un vrai logo → maintient la cohérence éditoriale.
+    const initials = brandInitials(deal.brand);
+    const padX = 60;
+    const padY = 130;
+    const boxH = 110;
+    ctx.save();
+    // Mesure pour largeur dynamique de la pastille
+    ctx.font = "900 64px 'Inter','Helvetica',sans-serif";
+    const tw = ctx.measureText(initials).width;
+    const boxW = Math.max(boxH, tw + 56);
+    // Pastille
     ctx.fillStyle = INK_BLACK;
-    ctx.font = "900 78px 'Inter','Helvetica',sans-serif";
+    roundRect(ctx, padX, padY, boxW, boxH, 14);
+    ctx.fill();
+    // Initiales
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    (ctx as any).letterSpacing = "-1px";
+    ctx.fillText(initials, padX + boxW / 2, padY + boxH / 2 + 2);
+    (ctx as any).letterSpacing = "0px";
+    // Nom complet de la marque sous la pastille (petit, élégant)
+    ctx.fillStyle = INK_BLACK;
+    ctx.font = "700 22px 'Inter','Helvetica',sans-serif";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    (ctx as any).letterSpacing = "-2px";
-    ctx.fillText((deal.brand || "").toUpperCase(), 60, 220);
+    (ctx as any).letterSpacing = "3px";
+    ctx.fillText((deal.brand || "").toUpperCase(), padX, padY + boxH + 28);
     (ctx as any).letterSpacing = "0px";
+    ctx.restore();
   }
+
 
   // Titre produit — wrap sur 2 lignes max
   ctx.fillStyle = INK_BLACK;
