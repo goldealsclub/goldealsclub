@@ -436,6 +436,14 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
         // courbe smoothstep pour transition plus naturelle
         const sm = t * t * (3 - 2 * t);
         d[i + 3] = Math.round(d[i + 3] * sm);
+        // ── Décontamination anti-halo ──
+        // Les pixels en feather ont encore le RGB du fond (blanc) mélangé.
+        // On retire la composante du fond pour révéler la vraie couleur
+        // du produit → plus de liseré blanc autour des sneakers blanches.
+        const k = 1 / Math.max(0.18, sm); // plus on est proche du bord, plus on retire
+        d[i]     = Math.max(0, Math.min(255, br + (d[i]     - br) * k));
+        d[i + 1] = Math.max(0, Math.min(255, bg + (d[i + 1] - bg) * k));
+        d[i + 2] = Math.max(0, Math.min(255, bb + (d[i + 2] - bb) * k));
       }
     }
     cx.putImageData(id, 0, 0);
@@ -448,8 +456,22 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
       }
     }
     (c as any).__avgLum = lumN > 0 ? lumSum / lumN : 128;
+
+    // ── Silhouette pré-calculée pour le contour fin ──
+    // Canvas monochrome (noir doux) là où le produit est opaque.
+    const sil = document.createElement("canvas");
+    sil.width = W0; sil.height = H0;
+    const sx = sil.getContext("2d");
+    if (sx) {
+      sx.drawImage(c, 0, 0);
+      sx.globalCompositeOperation = "source-in";
+      sx.fillStyle = "rgba(15,15,17,1)";
+      sx.fillRect(0, 0, W0, H0);
+    }
+    (c as any).__silhouette = sil;
     cutoutCache.set(img, c);
     return c;
+
   } catch {
     return img;
   }
@@ -855,7 +877,32 @@ function drawDealFullScreen(
     ctx.shadowColor = "transparent";
     ctx.shadowBlur = 0;
     ctx.shadowOffsetY = 0;
+
+    // ── Contour fin via silhouette (anti-contour blanc) ──
+    // Trace la silhouette dans 8 directions à ±1.2 px → liseré sombre net
+    // qui détache parfaitement les produits clairs du fond.
+    const sil = (cut as any).__silhouette as HTMLCanvasElement | undefined;
+    if (sil) {
+      ctx.save();
+      ctx.globalAlpha = alphaK * (avgLum > 195 ? 0.85 : 0.55);
+      const off = avgLum > 195 ? 1.4 : 1.0;
+      const dirs: Array<[number, number]> = [
+        [off, 0], [-off, 0], [0, off], [0, -off],
+        [off, off], [-off, off], [off, -off], [-off, -off],
+      ];
+      for (const [dx, dy] of dirs) {
+        drawContainImage(ctx, sil, ix + dx, iy + dy, drawW, drawH);
+      }
+      ctx.restore();
+      // Redessine le produit par-dessus pour conserver tous les détails
+      ctx.save();
+      ctx.globalAlpha = alphaK;
+      drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+      ctx.restore();
+    }
+
     if (avgLum > 195) ctx.restore();
+
 
 
   } else {
