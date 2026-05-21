@@ -520,14 +520,39 @@ function drawAdHeader(
     const finalH = finalW / ratio;
     ctx.drawImage(logo, 60, 130, finalW, finalH);
   } else {
+    // Fallback monogramme : pastille noire arrondie + initiales blanches + nom marque dessous.
+    // Visuellement proche d'un vrai logo → maintient la cohérence éditoriale.
+    const initials = brandInitials(deal.brand);
+    const padX = 60;
+    const padY = 130;
+    const boxH = 110;
+    ctx.save();
+    // Mesure pour largeur dynamique de la pastille
+    ctx.font = "900 64px 'Inter','Helvetica',sans-serif";
+    const tw = ctx.measureText(initials).width;
+    const boxW = Math.max(boxH, tw + 56);
+    // Pastille
     ctx.fillStyle = INK_BLACK;
-    ctx.font = "900 78px 'Inter','Helvetica',sans-serif";
+    roundRect(ctx, padX, padY, boxW, boxH, 14);
+    ctx.fill();
+    // Initiales
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    (ctx as any).letterSpacing = "-1px";
+    ctx.fillText(initials, padX + boxW / 2, padY + boxH / 2 + 2);
+    (ctx as any).letterSpacing = "0px";
+    // Nom complet de la marque sous la pastille (petit, élégant)
+    ctx.fillStyle = INK_BLACK;
+    ctx.font = "700 22px 'Inter','Helvetica',sans-serif";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    (ctx as any).letterSpacing = "-2px";
-    ctx.fillText((deal.brand || "").toUpperCase(), 60, 220);
+    (ctx as any).letterSpacing = "3px";
+    ctx.fillText((deal.brand || "").toUpperCase(), padX, padY + boxH + 28);
     (ctx as any).letterSpacing = "0px";
+    ctx.restore();
   }
+
 
   // Titre produit — wrap sur 2 lignes max
   ctx.fillStyle = INK_BLACK;
