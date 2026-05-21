@@ -98,6 +98,8 @@ const App = () => (
                 <Route path="/admin/video" element={<AdminVideoPage />} />
                 <Route path="/admin/video/historique" element={<AdminVideoHistoryPage />} />
                 <Route path="/admin/video-qa" element={<AdminVideoQAPage />} />
+                <Route path="/admin/cards-qa" element={<AdminCardsQAPage />} />
+
 
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/codes-promo" element={<PromoCodesPage />} />
