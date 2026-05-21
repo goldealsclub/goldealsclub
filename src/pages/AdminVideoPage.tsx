@@ -560,9 +560,11 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
 // ─── Rendu "Instagram ad" : fond studio gris, header marque + titre,
 //     bloc prix rouge encadré à droite, produit détouré centré,
 //     CTA pilule blanche "Acheter" + barre noire "Sponsorisé".
-const RED_ACCENT = "#e11d2a";
-const INK_BLACK = "#0a0a0a";
-const LINK_BLUE = "#1d8cf0";
+// Legacy aliases — conservés pour minimiser le diff. Source de vérité : VIDEO_COLORS.
+const RED_ACCENT = VIDEO_COLORS.red;
+const INK_BLACK = VIDEO_COLORS.ink;
+const LINK_BLUE = VIDEO_COLORS.link;
+
 
 function drawAdHeader(
   ctx: CanvasRenderingContext2D,
