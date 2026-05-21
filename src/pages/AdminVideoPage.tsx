@@ -611,7 +611,8 @@ function drawAdHeader(
     }
     lines[1] = lines[1] + "…";
   }
-  const titleStartY = logo ? 290 : 290;
+  // Titre démarre 40px sous le bas réel du bloc marque → zéro chevauchement
+  const titleStartY = Math.max(290, brandBlockBottom + 50);
   lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 48));
   (ctx as any).letterSpacing = "0px";
 
