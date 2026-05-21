@@ -41,20 +41,29 @@ type OverflowReport = { count: number; samples: string[] };
 
 function inspectOverflows(root: HTMLElement): OverflowReport {
   const issues: string[] = [];
-  const rootRect = root.getBoundingClientRect();
   root.querySelectorAll<HTMLElement>("*").forEach((el) => {
-    if (el.scrollWidth - el.clientWidth > 1) {
-      issues.push(`overflow-x ${el.tagName.toLowerCase()}.${el.className.split(" ")[0] || "?"} (${el.scrollWidth - el.clientWidth}px)`);
+    const className = typeof el.className === "string" ? el.className : "";
+    // 1) overflow horizontal réel (le contenu déborde de l'élément lui-même)
+    if (el.scrollWidth - el.clientWidth > 2) {
+      const tag = `${el.tagName.toLowerCase()}.${className.split(" ")[0] || "?"}`;
+      issues.push(`overflow-x ${tag} (+${el.scrollWidth - el.clientWidth}px)`);
       el.style.outline = "1px dashed hsl(0 80% 55%)";
     }
-    const r = el.getBoundingClientRect();
-    if (r.right - rootRect.right > 1) {
-      issues.push(`right-bleed ${el.tagName.toLowerCase()} (+${Math.round(r.right - rootRect.right)}px)`);
-      el.style.outline = "1px dashed hsl(30 90% 55%)";
+    // 2) texte tronqué silencieusement (nowrap sans ellipsis)
+    const cs = getComputedStyle(el);
+    if (
+      el.children.length === 0 &&
+      cs.whiteSpace === "nowrap" &&
+      el.scrollWidth > el.clientWidth + 1 &&
+      cs.textOverflow !== "ellipsis"
+    ) {
+      issues.push(`text-clip ${el.tagName.toLowerCase()} "${el.textContent?.slice(0, 24)}…"`);
+      el.style.outline = "1px dashed hsl(45 90% 55%)";
     }
   });
-  return { count: issues.length, samples: issues.slice(0, 5) };
+  return { count: issues.length, samples: issues.slice(0, 8) };
 }
+
 
 export default function AdminCardsQAPage() {
   const [deals, setDeals] = useState<Deal[]>([]);
