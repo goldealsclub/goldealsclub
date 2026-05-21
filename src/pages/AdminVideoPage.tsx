@@ -1011,7 +1011,11 @@ export default function AdminVideoPage() {
       }
 
       const totalFrames = Math.round(totalSec * FPS);
-      const videoStream = (canvas as any).captureStream(FPS) as MediaStream;
+      // captureStream(0) → on pilote nous-mêmes chaque frame avec requestFrame()
+      // → AUCUNE frame dupliquée/perdue → zéro saccade à la lecture (mobile inclus)
+      const videoStream = (canvas as any).captureStream(0) as MediaStream;
+      const videoTrack = videoStream.getVideoTracks()[0] as any;
+      const canRequestFrame = typeof videoTrack?.requestFrame === "function";
 
       // ─── Vraie musique lofi via ElevenLabs Music API ───
       const AC = (window.AudioContext || (window as any).webkitAudioContext);
