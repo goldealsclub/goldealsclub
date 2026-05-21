@@ -790,7 +790,7 @@ function drawSponsoBar(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.fillStyle = "#000000";
   ctx.fillRect(0, H - barH, W, barH);
   ctx.fillStyle = "#ffffff";
-  ctx.font = "400 22px 'Inter','Helvetica',sans-serif";
+  ctx.font = VIDEO_TYPO.sponso;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
   ctx.fillText("Sponsorisé", 40, H - barH / 2);
