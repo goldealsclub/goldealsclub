@@ -680,7 +680,7 @@ function drawAdPriceBlock(
   const priceTxt = `${priceVal.toFixed(2).replace(".00", ".00")} €`;
 
   // Mesure de la boîte
-  ctx.font = "800 64px 'Inter','Helvetica',sans-serif";
+  ctx.font = VIDEO_TYPO.priceBig;
   (ctx as any).letterSpacing = "-1px";
   const tw = ctx.measureText(priceTxt).width;
   const padX = 30;
