@@ -880,13 +880,10 @@ export function drawDealFullScreen(
 
     // Ombre portée unique, douce et propre (pas de halo dupliqué qui crée
     // un effet "fantôme" sur les produits clairs).
-    ctx.shadowColor = avgLum > 195 ? "rgba(0,0,0,0.55)" : "rgba(0,0,0,0.28)";
-    ctx.shadowBlur = 42;
-    ctx.shadowOffsetY = 24;
+    applyShadow(ctx, avgLum > 195 ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
     drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-    ctx.shadowColor = "transparent";
-    ctx.shadowBlur = 0;
-    ctx.shadowOffsetY = 0;
+    clearShadow(ctx);
+
 
     // ── Contour fin via silhouette (anti-contour blanc) ──
     // Trace la silhouette dans 8 directions à ±1.2 px → liseré sombre net
