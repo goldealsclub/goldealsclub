@@ -1267,9 +1267,8 @@ export default function AdminVideoPage() {
       });
 
       recorder.start();
-      if (musicEl) {
-        try { musicEl.currentTime = 0; await musicEl.play(); } catch (e) { console.warn("audio play failed", e); }
-      }
+      // Démarre la boucle gapless (toutes les sources sont planifiées d'un coup)
+      startMusicLoop();
       const start = performance.now();
       const nextRaf = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
       for (let f = 0; f < totalFrames; f++) {
