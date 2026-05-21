@@ -693,34 +693,64 @@ function drawAdPriceBlock(
   const boxX = W - 60 - boxW;
   const boxY = 150;
 
+  // ── Détection adaptative du fond derrière le badge ─────────────────
+  // On échantillonne AVANT toute transformation (le translate/scale
+  // n'affecte pas getImageData qui lit en coordonnées device).
+  const sampleLum = sampleAreaLuminance(ctx, boxX - 8, boxY - 8, boxW + 16, boxH + 16);
+  const badge = pickBadgeContrast(sampleLum);
+
   // Origine top-right pour le scale (comme la capture Instagram)
   ctx.translate(W - 60, boxY);
   ctx.scale(scale, scale);
   ctx.translate(-(W - 60), -boxY);
 
-  // Boîte prix noire (luxe minimal — fini le rouge "promo discount")
-  ctx.fillStyle = INK_BLACK;
-  ctx.fillRect(boxX, boxY, boxW, boxH);
+  // Voile d'appoint (scrim) — seulement si contraste trop faible
+  if (badge.scrim > 0) {
+    ctx.save();
+    ctx.globalAlpha = alpha * badge.scrim;
+    ctx.fillStyle = badge.isLightBg ? "#000000" : "#ffffff";
+    roundRect(ctx, boxX - 10, boxY - 10, boxW + 20, boxH + 20, VIDEO_RADII.lg);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  // Boîte prix adaptative (noire sur fond clair / blanche sur fond sombre)
+  ctx.save();
+  ctx.globalAlpha = alpha * badge.fillOpacity;
+  applyShadow(ctx, VIDEO_SHADOWS.pill);
+  ctx.fillStyle = badge.fill;
+  roundRect(ctx, boxX, boxY, boxW, boxH, VIDEO_RADII.md);
+  ctx.fill();
+  clearShadow(ctx);
+  // Anneau fin pour décoller du fond
+  ctx.globalAlpha = alpha;
+  ctx.strokeStyle = badge.ring;
+  ctx.lineWidth = badge.ringWidth;
+  roundRect(ctx, boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1, VIDEO_RADII.md);
+  ctx.stroke();
+  ctx.restore();
 
   // Texte prix
-  ctx.fillStyle = "#ffffff";
+  ctx.fillStyle = badge.fg;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(priceTxt, boxX + boxW / 2, boxY + boxH / 2 + 2);
   (ctx as any).letterSpacing = "0px";
 
 
-  // Prix barré sous la boîte
+  // Prix barré sous la boîte — couleur synchronisée avec le badge
   if (deal.original_price && Number(deal.original_price) > priceVal) {
     const op = `${Number(deal.original_price).toFixed(2).replace(".00", ".00")} €`;
     ctx.font = VIDEO_TYPO.priceStrike;
-    ctx.fillStyle = INK_BLACK;
+    // Sur fond clair on garde l'encre, sur fond sombre on bascule en blanc
+    const strikeColor = badge.isLightBg ? VIDEO_COLORS.ink : "#ffffff";
+    ctx.fillStyle = strikeColor;
     ctx.textAlign = "right";
     ctx.textBaseline = "alphabetic";
     const opY = boxY + boxH + 56;
     ctx.fillText(op, W - 60, opY);
     const opW = ctx.measureText(op).width;
-    ctx.strokeStyle = INK_BLACK;
+    ctx.strokeStyle = strikeColor;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(W - 60 - opW, opY - 14);
