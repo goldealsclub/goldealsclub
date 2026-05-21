@@ -603,7 +603,7 @@ function drawAdHeader(
     const boxH = 110;
     ctx.save();
     // Mesure pour largeur dynamique de la pastille
-    ctx.font = "900 64px 'Inter','Helvetica',sans-serif";
+    ctx.font = VIDEO_TYPO.priceBig;
     const tw = ctx.measureText(initials).width;
     const boxW = Math.max(boxH, tw + 56);
     // Pastille
