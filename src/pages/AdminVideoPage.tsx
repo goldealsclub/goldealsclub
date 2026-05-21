@@ -175,10 +175,13 @@ async function loadImage(src: string): Promise<HTMLImageElement | null> {
     new Promise<HTMLImageElement | null>((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
-      img.onload = () => {
+      img.decoding = "async";
+      img.onload = async () => {
         if (img.naturalWidth <= 0) return resolve(null);
         const minDim = Math.min(img.naturalWidth, img.naturalHeight);
-        if (minDim < MIN_IMG_DIM) return resolve(null); // image trop basse définition
+        if (minDim < MIN_IMG_DIM) return resolve(null);
+        // Décode explicitement → évite le coût au 1er draw (= saccade au début du deal)
+        try { await img.decode(); } catch {}
         resolve(img);
       };
       img.onerror = () => resolve(null);
