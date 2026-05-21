@@ -1179,28 +1179,47 @@ export default function AdminVideoPage() {
 
       try {
         toast({ title: "🎵 Génération musique lofi…", description: "Quelques secondes…" });
-        const musicRes = await supabase.functions.invoke("generate-lofi-music", {
-          body: { duration_ms: Math.max(10_000, Math.round(totalSec * 1000)) },
+        // fetch() direct : `supabase.functions.invoke()` corrompt les payloads binaires
+        // (essaie de parser en JSON/texte) → décodage MP3 impossible.
+        const fnUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/generate-lofi-music`;
+        const apiKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+        const { data: { session } } = await supabase.auth.getSession();
+        const authToken = session?.access_token ?? apiKey;
+        const musicRes = await fetch(fnUrl, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Accept": "audio/mpeg",
+            "apikey": apiKey,
+            "Authorization": `Bearer ${authToken}`,
+          },
+          body: JSON.stringify({
+            duration_ms: Math.max(10_000, Math.round(totalSec * 1000)),
+          }),
         });
-        if (musicRes.error) throw musicRes.error;
-        const blob: Blob =
-          musicRes.data instanceof Blob
-            ? musicRes.data
-            : new Blob([musicRes.data as ArrayBuffer], { type: "audio/mpeg" });
+        if (!musicRes.ok) {
+          throw new Error(`Music HTTP ${musicRes.status}: ${await musicRes.text().catch(() => "")}`);
+        }
+        const arrayBuf = await musicRes.arrayBuffer();
+        if (arrayBuf.byteLength < 1024) {
+          throw new Error(`Music payload too small (${arrayBuf.byteLength}B) — likely not audio`);
+        }
+        const blob = new Blob([arrayBuf], { type: "audio/mpeg" });
         musicBlobUrl = URL.createObjectURL(blob);
-        // Décodage en AudioBuffer → on contrôle 100% du timing échantillon par échantillon
-        const arrayBuf = await blob.arrayBuffer();
+        // Décodage en AudioBuffer → contrôle au sample près
         musicBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
           audioCtx.decodeAudioData(arrayBuf.slice(0), resolve, reject);
         });
+        console.log(`🎵 Lofi decoded: ${musicBuffer.duration.toFixed(1)}s, ${arrayBuf.byteLength} bytes`);
       } catch (musicErr) {
         console.error("Music fetch failed", musicErr);
         toast({
           title: "⚠️ Musique indisponible",
-          description: "Vidéo générée sans son.",
+          description: (musicErr as Error)?.message?.slice(0, 120) || "Vidéo générée sans son.",
           variant: "destructive",
         });
       }
+
 
       // ─── Fade-in (1.5s) / fade-out (1.5s) sur le master ───
       const now0 = audioCtx.currentTime;
