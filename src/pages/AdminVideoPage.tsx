@@ -15,8 +15,11 @@ import {
   VIDEO_RADII,
   VIDEO_TYPO,
   VIDEO_FONT_PRELOAD,
+  VIDEO_BADGE,
   applyShadow,
   clearShadow,
+  sampleAreaLuminance,
+  pickBadgeContrast,
 } from "@/lib/video-tokens";
 
 import brandNikeUrl from "@/assets/brand-nike.svg";
