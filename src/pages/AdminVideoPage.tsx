@@ -1263,7 +1263,7 @@ export default function AdminVideoPage() {
   const [editableCaption, setEditableCaption] = useState("");
   const [history, setHistory] = useState<any[]>([]);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-  const [bgPreset, setBgPreset] = useState<BgPreset>("zara");
+  const [bgPreset, setBgPreset] = useState<BgPreset>("paper");
   const [debugBadge, setDebugBadge] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -1749,6 +1749,7 @@ export default function AdminVideoPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="paper">Paper &amp; Ink — éditorial papier</SelectItem>
                 <SelectItem value="zara">Zara — studio gris clair</SelectItem>
                 <SelectItem value="charcoal">Charcoal — nuit éditoriale</SelectItem>
                 <SelectItem value="ivoire">Ivoire — premium crème</SelectItem>
