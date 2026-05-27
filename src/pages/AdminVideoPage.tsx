@@ -672,6 +672,7 @@ function drawAdPriceBlock(
   deal: Deal,
   reveal: number,
   exit: number,
+  debugBadge = false,
 ) {
   const alpha = reveal * (1 - exit);
   const scale = 0.9 + 0.1 * reveal;
@@ -694,8 +695,6 @@ function drawAdPriceBlock(
   const boxY = 150;
 
   // ── Détection adaptative du fond derrière le badge ─────────────────
-  // On échantillonne AVANT toute transformation (le translate/scale
-  // n'affecte pas getImageData qui lit en coordonnées device).
   const sampleLum = sampleAreaLuminance(ctx, boxX - 8, boxY - 8, boxW + 16, boxH + 16);
   const badge = pickBadgeContrast(sampleLum);
 
@@ -737,6 +736,40 @@ function drawAdPriceBlock(
   ctx.fillText(priceTxt, boxX + boxW / 2, boxY + boxH / 2 + 2);
   (ctx as any).letterSpacing = "0px";
 
+  // ── Overlay debug ──────────────────────────────────────────────────
+  if (debugBadge) {
+    const dbgH = 110;
+    const dbgW = 280;
+    const dbgX = boxX + boxW - dbgW;
+    const dbgY = boxY + boxH + 18;
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.92;
+    ctx.fillStyle = "#0a0a0a";
+    roundRect(ctx, dbgX, dbgY, dbgW, dbgH, VIDEO_RADII.sm);
+    ctx.fill();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = badge.isLightBg ? "#ffffff" : "#ff6b35";
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, dbgX + 0.5, dbgY + 0.5, dbgW - 1, dbgH - 1, VIDEO_RADII.sm);
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "500 18px 'Inter','Helvetica',sans-serif";
+    const padL = 16;
+    const lineH = 26;
+    let dy = dbgY + 28;
+    ctx.fillText(`Luminance : ${Math.round(sampleLum)}`, dbgX + padL, dy); dy += lineH;
+    ctx.fillText(`Variante  : ${badge.isLightBg ? 'dark (noir)' : 'light (blanc)'}`, dbgX + padL, dy); dy += lineH;
+    ctx.fillText(`Scrim     : ${badge.scrim > 0 ? badge.scrim.toFixed(2) : '—'}`, dbgX + padL, dy); dy += lineH;
+    ctx.fillStyle = badge.scrim > 0 ? "#ff6b35" : "#4ade80";
+    ctx.fillText(
+      badge.scrim > 0 ? "⚠️ Scrim actif (cas limite)" : "✓ Contraste OK",
+      dbgX + padL,
+      dy,
+    );
+    ctx.restore();
+  }
 
   // Prix barré sous la boîte — couleur synchronisée avec le badge
   if (deal.original_price && Number(deal.original_price) > priceVal) {
@@ -760,6 +793,7 @@ function drawAdPriceBlock(
 
   ctx.restore();
 }
+
 
 function drawAdCTA(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.save();
@@ -840,6 +874,7 @@ export function drawDealFullScreen(
   hold: number, // 0..1 progression à l'intérieur du hold (pour ken-burns)
   drawBg: boolean = true,
   logo: HTMLCanvasElement | null = null,
+  debugBadge = false,
 ) {
   if (drawBg) drawCharcoalBg(ctx, hold);
 
@@ -959,7 +994,7 @@ export function drawDealFullScreen(
   drawAdHeader(ctx, deal, revealE, exitE, logo);
 
   // Bloc prix rouge (droite)
-  drawAdPriceBlock(ctx, deal, revealE, exitE);
+  drawAdPriceBlock(ctx, deal, revealE, exitE, debugBadge);
 
   // CTA pilule + barre sponsorisé — fade-in après le produit
   const ctaAlpha = easeOutExpo(clamp01((reveal - 0.25) / 0.6)) * (1 - exitE);
@@ -976,6 +1011,7 @@ function drawSelectionFrame(
   imgs: (HTMLImageElement | null)[],
   totalSec: number,
   logos: (HTMLCanvasElement | null)[] = [],
+  debugBadge = false,
 ) {
   const n = selection.deals.length;
 
@@ -1083,6 +1119,7 @@ function drawSelectionFrame(
       nextHold,
       false,
       logos[idx + 1] ?? null,
+      debugBadge,
     );
     const curHold = clamp01(localT / PER_DEAL_SEC);
     drawDealFullScreen(
@@ -1095,13 +1132,14 @@ function drawSelectionFrame(
       curHold,
       false,
       logos[idx] ?? null,
+      debugBadge,
     );
     return;
   }
 
   const reveal = clamp01(localT / REVEAL_DUR);
   const hold = clamp01(localT / PER_DEAL_SEC);
-  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false, logos[idx] ?? null);
+  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false, logos[idx] ?? null, debugBadge);
 }
 
 export default function AdminVideoPage() {
@@ -1116,7 +1154,9 @@ export default function AdminVideoPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [bgPreset, setBgPreset] = useState<BgPreset>("zara");
+  const [debugBadge, setDebugBadge] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const debugCanvasRef = useRef<HTMLCanvasElement>(null);
   const captionRef = useRef<HTMLTextAreaElement>(null);
 
   const loadHistory = async () => {
@@ -1445,7 +1485,7 @@ export default function AdminVideoPage() {
       const nextRaf = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
-        drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos);
+        drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos, debugBadge);
         // Pousse EXACTEMENT une frame dans le MediaRecorder pour ce timestamp
         if (canRequestFrame) videoTrack.requestFrame();
         if ((f & 7) === 0) setProgress(Math.round((f / totalFrames) * 100));
@@ -1505,6 +1545,26 @@ export default function AdminVideoPage() {
     await navigator.clipboard.writeText(editableCaption);
     toast({ title: "Caption copiée" });
   };
+
+  // ── Preview debug badge (frame statique du 1er deal) ──
+  useEffect(() => {
+    if (!debugBadge || !brief || !debugCanvasRef.current) return;
+    const canvas = debugCanvasRef.current;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d")!;
+    const selection = brief.deals[0];
+    if (!selection) return;
+    const deal = selection.deals[0];
+    if (!deal) return;
+    applyBgPreset(bgPreset);
+    (async () => {
+      const img = await loadImage(deal.image_url);
+      const logo = await getBrandLogo(deal.brand);
+      // Dessine une frame au milieu du 1er deal (t=INTRO+PER_DEAL_SEC/2)
+      drawSelectionFrame(ctx, INTRO + PER_DEAL_SEC * 0.5, selection, [img], INTRO + selection.deals.length * PER_DEAL_SEC + OUTRO, [logo], true);
+    })();
+  }, [debugBadge, brief, bgPreset]);
 
   if (isAdmin === null) {
     return <div className="p-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -1580,6 +1640,40 @@ export default function AdminVideoPage() {
               </SelectContent>
             </Select>
           </div>
+
+          {/* Toggle debug badge */}
+          <div className="border rounded-lg p-4 mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-sm">Mode debug badge</h2>
+              <p className="text-xs text-muted-foreground">
+                Affiche luminance, variante et scrim sur le badge prix.
+              </p>
+            </div>
+            <label className="inline-flex items-center cursor-pointer relative">
+              <input
+                type="checkbox"
+                checked={debugBadge}
+                onChange={(e) => setDebugBadge(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-colors" />
+              <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5" />
+            </label>
+          </div>
+
+          {/* Canvas preview debug */}
+          {debugBadge && (
+            <div className="mb-6 overflow-auto rounded-lg border bg-black/5 p-2">
+              <canvas
+                ref={debugCanvasRef}
+                style={{ width: 360, height: 640 }}
+                className="mx-auto block rounded"
+              />
+              <p className="text-[10px] text-center text-muted-foreground mt-1">
+                Preview frame statique · 1er deal · debug badge ON
+              </p>
+            </div>
+          )}
 
           <canvas ref={canvasRef} className="hidden" />
 
