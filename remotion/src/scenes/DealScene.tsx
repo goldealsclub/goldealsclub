@@ -1,227 +1,236 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Img } from "remotion";
+import { loadFont } from "@remotion/google-fonts/Playfair";
+import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
 import type { Deal } from "../data";
 import { brandLogos } from "../data";
+
+const { fontFamily: playfair } = loadFont("normal", { weights: ["400", "500", "700"], subsets: ["latin"] });
+const { fontFamily: inter } = loadInter("normal", { weights: ["400", "500", "600", "700"], subsets: ["latin"] });
+
+// ── Paper & Ink ───────────────────────────────────────────────────────
+const PAPER = "#f5f3ee";
+const PAPER_MID = "#efece5";
+const INK = "#0d0d0d";
+const INK_SOFT = "rgba(13,13,13,0.55)";
+const RULE = "rgba(13,13,13,0.22)";
 
 interface DealSceneProps {
   deal: Deal;
   index: number;
+  total?: number;
 }
 
-// Palette inspirée des pubs Instagram adidas (fond gris clair, prix rouge)
-const BG = "#eaecf0";
-const INK = "#0a0a0a";
-const RED = "#e11d2a";
-const MUTED = "#6b6b6b";
+const fmtPrice = (n: number) => {
+  const r = Math.round(n * 100) / 100;
+  return Number.isInteger(r) ? `${r}` : r.toFixed(2);
+};
 
-const LinkIcon: React.FC<{ size?: number }> = ({ size = 28 }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="#1d8cf0" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M10 13a5 5 0 0 0 7.07 0l3-3a5 5 0 0 0-7.07-7.07l-1.5 1.5" />
-    <path d="M14 11a5 5 0 0 0-7.07 0l-3 3a5 5 0 0 0 7.07 7.07l1.5-1.5" />
-  </svg>
-);
-
-export const DealScene: React.FC<DealSceneProps> = ({ deal, index }) => {
+export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  // Fade global doux
-  const opacity = interpolate(frame, [0, 18], [0, 1], { extrapolateRight: "clamp" });
+  // Entrée éditoriale séquentielle
+  const railOpacity = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
+  const headerSp = spring({ frame: frame - 4, fps, config: { damping: 22, stiffness: 120 } });
+  const headerOpacity = interpolate(headerSp, [0, 1], [0, 1]);
+  const headerY = interpolate(headerSp, [0, 1], [16, 0]);
 
-  // Ken Burns très subtil et lent sur l'image (pas de jump entre scènes)
-  const kenZoom = interpolate(frame, [0, 140], [1.0, 1.05], { extrapolateRight: "clamp" });
-  const panDir = index % 2 === 0 ? 1 : -1;
-  const kenPanX = interpolate(frame, [0, 140], [-5 * panDir, 6 * panDir], { extrapolateRight: "clamp" });
-  const kenPanY = interpolate(frame, [0, 140], [3, -5], { extrapolateRight: "clamp" });
+  const imgSp = spring({ frame: frame - 12, fps, config: { damping: 24, stiffness: 100 } });
+  const imgOpacity = interpolate(imgSp, [0, 1], [0, 1]);
+  const imgScale = interpolate(imgSp, [0, 1], [0.96, 1]);
 
-  // Prix : entrée légère
-  const priceIn = spring({ frame: frame - 6, fps, config: { damping: 18, stiffness: 180 } });
-  const priceScale = interpolate(priceIn, [0, 1], [0.92, 1]);
+  // Ken Burns
+  const kenZoom = interpolate(frame, [0, 140], [1.0, 1.04], { extrapolateRight: "clamp" });
+  const kenPanX = interpolate(frame, [0, 140], [-3, 3], { extrapolateRight: "clamp" }) * (index % 2 === 0 ? 1 : -1);
+  const kenPanY = interpolate(frame, [0, 140], [2, -2], { extrapolateRight: "clamp" });
 
-  // CTA fade
-  const ctaOpacity = interpolate(frame, [22, 36], [0, 1], { extrapolateRight: "clamp" });
+  const priceSp = spring({ frame: frame - 22, fps, config: { damping: 22, stiffness: 130 } });
+  const priceOpacity = interpolate(priceSp, [0, 1], [0, 1]);
+  const priceY = interpolate(priceSp, [0, 1], [18, 0]);
+
+  const ctaOpacity = interpolate(frame, [38, 52], [0, 1], { extrapolateRight: "clamp" });
 
   const brandLogo = brandLogos[deal.brand];
 
+  const sale = Number(deal.salePrice ?? 0);
+  const orig = Number(deal.originalPrice ?? 0);
+  const hasOrig = orig > sale && sale > 0;
+  const discount = hasOrig ? Math.round((1 - sale / orig) * 100) : 0;
+
+  const dateLabel = (() => {
+    const d = new Date();
+    return `${String(d.getDate()).padStart(2, "0")}.${String(d.getMonth() + 1).padStart(2, "0")}.${String(d.getFullYear()).slice(-2)}`;
+  })();
+
   return (
-    <AbsoluteFill style={{ backgroundColor: BG, opacity }}>
-      {/* Léger dégradé pour donner de la profondeur (studio look) */}
+    <AbsoluteFill style={{ backgroundColor: PAPER }}>
+      {/* Lumière éditoriale */}
       <AbsoluteFill style={{
-        background: "radial-gradient(ellipse at 50% 45%, #f4f5f7 0%, #e2e4e8 70%, #d6d8dc 100%)",
+        background: `radial-gradient(ellipse at 32% 30%, rgba(255,253,247,0.55) 0%, ${PAPER_MID} 55%, #e8e4dd 100%)`,
       }} />
 
-      {/* ═══ HEADER : logo marque ═══ */}
-      <div style={{
-        position: "absolute",
-        top: 90,
-        left: 56,
-        right: 56,
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-        gap: 30,
-      }}>
-        {/* Bloc gauche : logo + titre (comme la capture Instagram) */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 28, flex: 1, minWidth: 0 }}>
-          <div style={{ display: "flex", alignItems: "center", height: 90 }}>
-            {brandLogo ? (
-              <Img src={brandLogo} style={{ height: 80, width: "auto", objectFit: "contain" }} />
-            ) : (
-              <span style={{
-                fontFamily: "sans-serif",
-                fontSize: 42,
-                fontWeight: 900,
-                color: INK,
-                letterSpacing: -1,
-                textTransform: "uppercase",
-              }}>{deal.brand}</span>
-            )}
-          </div>
-          <div style={{
-            fontFamily: "sans-serif",
-            fontSize: 32,
-            fontWeight: 800,
-            color: INK,
-            textTransform: "uppercase",
-            letterSpacing: 0.3,
-            lineHeight: 1.15,
-            maxWidth: 560,
-          }}>
-            {deal.title}
-          </div>
-        </div>
+      {/* Grain */}
+      <AbsoluteFill style={{
+        backgroundImage:
+          "radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
+        backgroundSize: "3px 3px, 5px 5px",
+        backgroundPosition: "0 0, 1px 2px",
+        mixBlendMode: "multiply",
+        opacity: 0.6,
+      }} />
 
-        {/* Bloc prix à droite */}
-        <div style={{
-          display: "flex",
-          flexDirection: "column",
-          alignItems: "flex-end",
-          gap: 12,
-          transform: `scale(${priceScale})`,
-          transformOrigin: "top right",
-          flexShrink: 0,
-        }}>
-          <div style={{
-            backgroundColor: RED,
-            color: "#fff",
-            padding: "16px 30px",
-            fontFamily: "sans-serif",
-            fontSize: 50,
-            fontWeight: 800,
-            letterSpacing: -1,
-            lineHeight: 1,
-            boxShadow: `0 0 0 4px #fff, 0 0 0 7px ${RED}`,
-          }}>
-            {Number.isInteger(deal.salePrice) ? `${deal.salePrice}.00` : deal.salePrice.toFixed(2)} €
-          </div>
-          <div style={{
-            fontFamily: "sans-serif",
-            fontSize: 30,
-            fontWeight: 500,
-            color: INK,
-            textDecoration: "line-through",
-            textDecorationColor: INK,
-            opacity: 0.85,
-          }}>
-            {Number.isInteger(deal.originalPrice) ? `${deal.originalPrice}.00` : deal.originalPrice.toFixed(2)} €
-          </div>
-        </div>
+      {/* Cadre hairline */}
+      <div style={{ position: "absolute", top: 92, left: 60, right: 60, height: 1, backgroundColor: RULE, opacity: railOpacity }} />
+      <div style={{ position: "absolute", bottom: 92, left: 60, right: 60, height: 1, backgroundColor: RULE, opacity: railOpacity }} />
+      {[
+        { top: 80, left: 60 }, { top: 80, right: 60 },
+        { bottom: 80, left: 60 }, { bottom: 80, right: 60 },
+      ].map((s, i) => (
+        <div key={i} style={{
+          position: "absolute", width: 1, height: 24,
+          backgroundColor: RULE, opacity: railOpacity, ...s,
+        }} />
+      ))}
+
+      {/* Rail haut */}
+      <div style={{
+        position: "absolute", top: 64, left: 60,
+        fontFamily: inter, fontSize: 19, fontWeight: 600, color: INK_SOFT, letterSpacing: 6, opacity: railOpacity,
+      }}>GOLDEALS · ÉDITION</div>
+      <div style={{
+        position: "absolute", top: 64, right: 60,
+        fontFamily: inter, fontSize: 18, fontWeight: 500, color: INK_SOFT, letterSpacing: 4, opacity: railOpacity,
+        display: "flex", gap: 16, alignItems: "baseline",
+      }}>
+        <span>{dateLabel}</span>
+        <span style={{ opacity: 0.6 }}>·</span>
+        <span>N° {String(index + 1).padStart(2, "0")}/{String(total).padStart(2, "0")}</span>
       </div>
 
-      {/* ═══ Produit détouré, centré ═══ */}
+      {/* ═══ Header marque + titre ═══ */}
       <div style={{
-        position: "absolute",
-        top: 420,
-        left: 0,
-        right: 0,
-        bottom: 280,
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        overflow: "hidden",
+        position: "absolute", top: 160, left: 60, right: 60,
+        opacity: headerOpacity, transform: `translateY(${headerY}px)`,
       }}>
-        {/* Wrapper avec drop-shadow appliqué APRÈS le blend (sur le silhouette) */}
+        {/* Marque */}
+        <div style={{ height: 100, display: "flex", alignItems: "center" }}>
+          {brandLogo ? (
+            <Img src={brandLogo} style={{ height: 90, width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
+          ) : (
+            <span style={{
+              fontFamily: playfair, fontStyle: "italic", fontWeight: 700,
+              fontSize: 78, color: INK, letterSpacing: -1,
+            }}>{deal.brand}</span>
+          )}
+        </div>
+
+        {/* Hairline + label */}
+        <div style={{ marginTop: 24, height: 1, backgroundColor: RULE }} />
         <div style={{
-          width: "88%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          filter: "drop-shadow(0 25px 30px rgba(0,0,0,0.22))",
+          marginTop: 22,
+          fontFamily: inter, fontSize: 17, fontWeight: 600,
+          color: INK_SOFT, letterSpacing: 5,
+        }}>L'OBJET DU JOUR</div>
+
+        {/* Titre serif italic */}
+        <div style={{
+          marginTop: 28,
+          fontFamily: playfair, fontStyle: "italic", fontWeight: 500,
+          fontSize: 46, color: INK, lineHeight: 1.18, letterSpacing: -0.2,
+          display: "-webkit-box",
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: "vertical",
+          overflow: "hidden",
+        }}>{deal.title}</div>
+      </div>
+
+      {/* ═══ Produit ═══ */}
+      <div style={{
+        position: "absolute", top: 510, left: 0, right: 0, height: 880,
+        display: "flex", alignItems: "center", justifyContent: "center",
+        opacity: imgOpacity, transform: `scale(${imgScale})`,
+      }}>
+        <div style={{
+          width: "88%", height: "100%",
+          display: "flex", alignItems: "center", justifyContent: "center",
+          filter: "drop-shadow(0 30px 28px rgba(0,0,0,0.18))",
           transform: `scale(${kenZoom}) translate(${kenPanX}px, ${kenPanY}px)`,
-          transformOrigin: "center center",
-          willChange: "transform",
+          transformOrigin: "center",
         }}>
-          <Img
-            src={deal.imageUrl}
-            style={{
-              maxWidth: "100%",
-              maxHeight: "100%",
-              width: "auto",
-              height: "auto",
-              objectFit: "contain",
-              // mix-blend multiply supprime les fonds blancs des photos produit
-              // → vrai effet "détouré" sur fond gris studio
-              mixBlendMode: "multiply",
-            }}
-          />
+          <Img src={deal.imageUrl} style={{
+            maxWidth: "100%", maxHeight: "100%",
+            width: "auto", height: "auto", objectFit: "contain",
+            mixBlendMode: "multiply",
+          }} />
         </div>
       </div>
 
-      {/* ═══ CTA "🔗 Acheter" (pilule blanche) ═══ */}
+      {/* ═══ Bande prix ═══ */}
       <div style={{
-        position: "absolute",
-        bottom: 110,
-        left: 0,
-        right: 0,
-        display: "flex",
-        justifyContent: "center",
-        opacity: ctaOpacity,
+        position: "absolute", left: 60, right: 60, top: 1420,
+        opacity: priceOpacity, transform: `translateY(${priceY}px)`,
       }}>
+        {/* Hairline + label + remise */}
+        <div style={{ height: 1, backgroundColor: RULE }} />
         <div style={{
-          backgroundColor: "#fff",
-          borderRadius: 80,
-          padding: "26px 80px",
-          display: "flex",
-          alignItems: "center",
-          gap: 24,
-          boxShadow: "0 10px 28px rgba(0,0,0,0.12)",
+          marginTop: 18, display: "flex", justifyContent: "space-between",
+          fontFamily: inter, fontWeight: 600, letterSpacing: 6, fontSize: 17,
         }}>
-          <LinkIcon size={38} />
+          <span style={{ color: INK_SOFT }}>PRIX</span>
+          {hasOrig && <span style={{ color: INK, letterSpacing: 4, fontSize: 19, fontWeight: 700 }}>-{discount}%</span>}
+        </div>
+
+        {/* Prix principal + barré */}
+        <div style={{
+          marginTop: 12, display: "flex",
+          alignItems: "baseline", justifyContent: "space-between", gap: 30,
+        }}>
+          <div style={{
+            fontFamily: playfair, fontStyle: "italic", fontWeight: 500,
+            fontSize: 138, color: INK, lineHeight: 1, letterSpacing: -2,
+          }}>{fmtPrice(sale)} €</div>
+
+          {hasOrig && (
+            <div style={{
+              fontFamily: inter, fontSize: 34, fontWeight: 500,
+              color: INK_SOFT, textDecoration: "line-through",
+              textDecorationThickness: 1.8,
+            }}>{fmtPrice(orig)} €</div>
+          )}
+        </div>
+
+        {/* Hairline */}
+        <div style={{ marginTop: 30, height: 1, backgroundColor: RULE }} />
+      </div>
+
+      {/* ═══ CTA éditorial ═══ */}
+      <div style={{
+        position: "absolute", bottom: 116, left: 60, right: 60,
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+        opacity: ctaOpacity,
+        fontFamily: inter, fontWeight: 600,
+      }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+          <span style={{ fontSize: 38, color: INK, letterSpacing: 4 }}>VOIR L'OFFRE</span>
           <span style={{
-            fontFamily: "sans-serif",
-            fontSize: 54,
-            fontWeight: 500,
-            color: INK,
-            letterSpacing: -0.5,
+            display: "inline-block", width: 70, height: 2, background: INK,
+            position: "relative",
           }}>
-            Acheter
+            <span style={{
+              position: "absolute", right: -1, top: -7,
+              width: 14, height: 14, borderTop: `2px solid ${INK}`, borderRight: `2px solid ${INK}`,
+              transform: "rotate(45deg)",
+            }} />
           </span>
         </div>
+        <span style={{ fontSize: 20, color: INK, letterSpacing: 5 }}>GOLDEALSCLUB.COM</span>
       </div>
 
-      {/* Barre noire bas (sponsorisé) */}
+      {/* Crédit pied de page */}
       <div style={{
-        position: "absolute",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        height: 64,
-        backgroundColor: "#000",
-        display: "flex",
-        alignItems: "center",
-        paddingLeft: 36,
-      }}>
-        <span style={{
-          fontFamily: "sans-serif",
-          fontSize: 22,
-          fontWeight: 400,
-          color: "#fff",
-          opacity: 0.95,
-        }}>
-          Sponsorisé
-        </span>
-      </div>
+        position: "absolute", bottom: 40, left: 0, right: 0, textAlign: "center",
+        fontFamily: inter, fontSize: 16, fontWeight: 500, color: INK_SOFT, letterSpacing: 6,
+      }}>ÉDITION QUOTIDIENNE · GOLDEALS CLUB</div>
     </AbsoluteFill>
   );
 };
-

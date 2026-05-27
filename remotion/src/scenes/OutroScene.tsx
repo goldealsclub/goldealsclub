@@ -1,100 +1,97 @@
-import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Img, staticFile } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
+import { loadFont } from "@remotion/google-fonts/Playfair";
+import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
 
-const PHOTO_BG = "#eaecf0";
-const NOIR = "#111111";
-const IVOIRE = "#f6f0e9";
-const TAUPE = "#45403a";
+const { fontFamily: playfair } = loadFont("normal", { weights: ["400", "500"], subsets: ["latin"] });
+const { fontFamily: inter } = loadInter("normal", { weights: ["400", "500", "600"], subsets: ["latin"] });
+
+const PAPER = "#f5f3ee";
+const PAPER_MID = "#efece5";
+const INK = "#0d0d0d";
+const INK_SOFT = "rgba(13,13,13,0.55)";
+const RULE = "rgba(13,13,13,0.22)";
 
 export const OutroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const logoScale = spring({ frame, fps, config: { damping: 15, stiffness: 100 } });
-  const logoOpacity = interpolate(frame, [0, 15], [0, 1], { extrapolateRight: "clamp" });
+  const heroSp = spring({ frame, fps, config: { damping: 22, stiffness: 110 } });
+  const heroOpacity = interpolate(heroSp, [0, 1], [0, 1]);
+  const heroY = interpolate(heroSp, [0, 1], [22, 0]);
 
-  const ctaY = interpolate(
-    spring({ frame: frame - 20, fps, config: { damping: 20, stiffness: 200 } }),
-    [0, 1], [40, 0]
+  const urlSp = spring({ frame: frame - 22, fps, config: { damping: 20, stiffness: 130 } });
+  const urlOpacity = interpolate(urlSp, [0, 1], [0, 1]);
+
+  const ruleWidth = interpolate(
+    spring({ frame: frame - 14, fps, config: { damping: 200 } }),
+    [0, 1], [0, 400]
   );
-  const ctaOpacity = interpolate(frame, [20, 33], [0, 1], { extrapolateRight: "clamp" });
 
-  const linkScale = spring({ frame: frame - 38, fps, config: { damping: 12, stiffness: 180 } });
-  const pulse = Math.sin(frame * 0.1) * 0.3 + 1;
-  const floatY = Math.sin(frame * 0.03) * 4;
+  const ctaOpacity = interpolate(frame, [38, 52], [0, 1], { extrapolateRight: "clamp" });
 
   return (
-    <AbsoluteFill>
-      <AbsoluteFill style={{ backgroundColor: PHOTO_BG }} />
+    <AbsoluteFill style={{ backgroundColor: PAPER }}>
+      <AbsoluteFill style={{
+        background: `radial-gradient(ellipse at 50% 35%, rgba(255,253,247,0.55) 0%, ${PAPER_MID} 55%, #e8e4dd 100%)`,
+      }} />
 
       <AbsoluteFill style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        transform: `translateY(${floatY}px)`,
-        padding: "0 40px",
+        backgroundImage:
+          "radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px)",
+        backgroundSize: "3px 3px",
+        opacity: 0.5,
+      }} />
+
+      {/* Cadre */}
+      <div style={{ position: "absolute", top: 92, left: 60, right: 60, height: 1, backgroundColor: RULE }} />
+      <div style={{ position: "absolute", bottom: 92, left: 60, right: 60, height: 1, backgroundColor: RULE }} />
+
+      <div style={{
+        position: "absolute", top: 64, left: 60,
+        fontFamily: inter, fontSize: 19, fontWeight: 600, color: INK_SOFT, letterSpacing: 6,
+      }}>GOLDEALS · ÉDITION</div>
+
+      <AbsoluteFill style={{
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "0 60px", textAlign: "center",
       }}>
-        {/* Logo — full width, dark on light bg */}
+        {/* Eyebrow */}
         <div style={{
-          transform: `scale(${logoScale})`,
-          opacity: logoOpacity,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-        }}>
-          <Img
-            src={staticFile("logo.png")}
-            style={{
-              width: "85%",
-              maxHeight: 400,
-              objectFit: "contain",
-            }}
-          />
-        </div>
+          fontFamily: inter, fontSize: 22, fontWeight: 600,
+          color: INK_SOFT, letterSpacing: 10,
+        }}>MERCI DE VOTRE LECTURE</div>
 
-        {/* Decorative line */}
-        <div style={{
-          marginTop: 40, height: 2, width: 120,
-          backgroundColor: NOIR, opacity: 0.15,
-        }} />
+        <div style={{ marginTop: 24, height: 1, width: 60, backgroundColor: RULE }} />
 
-        {/* CTA */}
+        {/* Hero */}
         <div style={{
-          marginTop: 40,
-          transform: `translateY(${ctaY}px)`,
-          opacity: ctaOpacity,
-          textAlign: "center",
-        }}>
-          <div style={{
-            fontFamily: "sans-serif", fontSize: 36, fontWeight: 600, color: NOIR,
-          }}>Ne rate aucun deal</div>
-          <div style={{
-            fontFamily: "sans-serif", fontSize: 22, fontWeight: 400,
-            color: TAUPE, marginTop: 12, opacity: 0.7,
-          }}>Les meilleures offres streetwear</div>
-        </div>
+          marginTop: 56,
+          fontFamily: playfair, fontStyle: "italic", fontWeight: 400,
+          fontSize: 150, color: INK, lineHeight: 1, letterSpacing: -1.5,
+          opacity: heroOpacity, transform: `translateY(${heroY}px)`,
+        }}>À demain.</div>
 
-        {/* Link button */}
         <div style={{
-          marginTop: 50,
-          transform: `scale(${linkScale})`,
-          backgroundColor: NOIR, borderRadius: 16,
-          padding: "24px 50px",
-          display: "flex", alignItems: "center", justifyContent: "center", gap: 12,
-        }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{
-              width: 10, height: 10, borderRadius: 5,
-              backgroundColor: "#90EE90", transform: `scale(${pulse})`,
-            }} />
-            <span style={{
-              fontFamily: "sans-serif", fontSize: 22, fontWeight: 600,
-              color: IVOIRE, letterSpacing: 2,
-            }}>goldealsclub.com</span>
-          </div>
-        </div>
+          marginTop: 28,
+          fontFamily: inter, fontSize: 30, fontWeight: 400, color: INK_SOFT, letterSpacing: 0.5,
+        }}>Une nouvelle sélection chaque jour.</div>
+
+        <div style={{ marginTop: 60, height: 1, width: ruleWidth, backgroundColor: INK, opacity: 0.6 }} />
+
+        <div style={{
+          marginTop: 56,
+          fontFamily: playfair, fontStyle: "italic", fontWeight: 500,
+          fontSize: 80, color: INK, opacity: urlOpacity,
+        }}>goldealsclub.com</div>
       </AbsoluteFill>
+
+      <div style={{
+        position: "absolute", bottom: 56, left: 0, right: 0,
+        textAlign: "center", opacity: ctaOpacity,
+        fontFamily: inter, fontSize: 20, fontWeight: 600,
+        color: INK_SOFT, letterSpacing: 8,
+      }}>ABONNEZ-VOUS · NE RATEZ AUCUN DEAL</div>
     </AbsoluteFill>
   );
 };

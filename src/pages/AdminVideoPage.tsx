@@ -236,7 +236,7 @@ const INTRO = 2.2;
 const OUTRO = 2.6;
 
 // ─── PRESETS DE FOND ───
-export type BgPreset = "zara" | "charcoal" | "ivoire";
+export type BgPreset = "paper" | "zara" | "charcoal" | "ivoire";
 
 type Palette = {
   bgTop: string;
@@ -253,6 +253,20 @@ type Palette = {
 };
 
 export const BG_PRESETS: Record<BgPreset, Palette> = {
+  // ── Paper & Ink éditorial (par défaut) ── off-white, encre, hairlines
+  paper: {
+    bgTop: "#f5f3ee",
+    bgMid: "#efece5",
+    bgBot: "#e8e4dd",
+    ink: "#0d0d0d",
+    inkSoft: "rgba(13,13,13,0.55)",
+    accent: "#2d2d2d",
+    taupe: "#7a756c",
+    haloInner: "rgba(255,253,247,0.45)",
+    haloMid: "rgba(255,253,247,0.05)",
+    vignette: "rgba(45,45,45,0.08)",
+    grainOnDark: false,
+  },
   // Studio gris clair façon ZARA — minimal, lumineux
   zara: {
     bgTop: "#e6e3de",
@@ -298,7 +312,8 @@ export const BG_PRESETS: Record<BgPreset, Palette> = {
 };
 
 // Theme actif — réassigné via applyBgPreset() avant chaque rendu
-let activePalette: Palette = BG_PRESETS.zara;
+let activePalette: Palette = BG_PRESETS.paper;
+let activePresetName: BgPreset = "paper";
 let NOIR = "#0a0a0a";
 let NOIR_SOFT = "#1a1a1a";
 let CHARCOAL_TOP = activePalette.bgTop;
@@ -311,6 +326,7 @@ let GOLD_DEEP = activePalette.accent;
 
 export function applyBgPreset(preset: BgPreset) {
   activePalette = BG_PRESETS[preset];
+  activePresetName = preset;
   CHARCOAL_TOP = activePalette.bgTop;
   CHARCOAL_MID = activePalette.bgMid;
   CHARCOAL_BOT = activePalette.bgBot;
@@ -557,7 +573,45 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, 
 }
 
 function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
-  // Fond studio gris clair, style ZARA — dégradé vertical doux, presque uniforme
+  // ── Paper & Ink éditorial ─────────────────────────────────────────────
+  if (activePresetName === "paper") {
+    // Fond papier ultra-mat, dégradé chaud à peine perceptible
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#f6f4ef");
+    g.addColorStop(0.55, "#f1eee7");
+    g.addColorStop(1, "#ebe7df");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // Halo très léger, off-center (lumière de fenêtre éditoriale)
+    const halo = ctx.createRadialGradient(W * 0.32, H * 0.30, 60, W * 0.32, H * 0.30, W * 0.95);
+    halo.addColorStop(0, "rgba(255,253,247,0.55)");
+    halo.addColorStop(0.55, "rgba(255,253,247,0.08)");
+    halo.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, W, H);
+
+    // Vignette sourde
+    const vign = ctx.createRadialGradient(W / 2, H * 0.55, W * 0.45, W / 2, H * 0.55, W * 0.95);
+    vign.addColorStop(0, "rgba(0,0,0,0)");
+    vign.addColorStop(1, "rgba(35,32,28,0.10)");
+    ctx.fillStyle = vign;
+    ctx.fillRect(0, 0, W, H);
+
+    // Grain papier (mélange clair/sombre, très discret)
+    ctx.save();
+    ctx.globalAlpha = 0.045;
+    for (let i = 0; i < 320; i++) {
+      const gx = (i * 137.13) % W;
+      const gy = (i * 241.91) % H;
+      ctx.fillStyle = i % 3 === 0 ? "#000" : "#fff";
+      ctx.fillRect(gx, gy, 1.5, 1.5);
+    }
+    ctx.restore();
+    return;
+  }
+
+  // ── Presets historiques (zara / charcoal / ivoire) ──────────────────
   const drift = Math.sin(t01 * Math.PI) * 0.03;
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
   bgGrad.addColorStop(0, CHARCOAL_TOP);
@@ -566,7 +620,6 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // Halo lumineux centré (couleur dépendante du preset)
   const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 80, W / 2, H * 0.42, W * 0.75);
   haloR.addColorStop(0, activePalette.haloInner);
   haloR.addColorStop(0.5, activePalette.haloMid);
@@ -574,14 +627,12 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
   ctx.fillStyle = haloR;
   ctx.fillRect(0, 0, W, H);
 
-  // Vignette périphérique (intensité dépendante du preset)
   const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.35, W / 2, H * 0.5, W * 0.95);
   vign.addColorStop(0, "rgba(0,0,0,0)");
   vign.addColorStop(1, activePalette.vignette);
   ctx.fillStyle = vign;
   ctx.fillRect(0, 0, W, H);
 
-  // Grain très fin (texture papier mat)
   ctx.save();
   ctx.globalAlpha = activePalette.grainOnDark ? 0.05 : 0.035;
   for (let i = 0; i < 130; i++) {
@@ -596,6 +647,23 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
   ctx.restore();
 }
 
+// ── Hairline éditoriale : cadre haut/bas du frame Paper&Ink ───────────
+function drawEditorialFrame(ctx: CanvasRenderingContext2D, alpha = 1) {
+  if (activePresetName !== "paper") return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "rgba(13,13,13,0.22)";
+  // Hairline top + bottom
+  ctx.fillRect(60, 92, W - 120, 1);
+  ctx.fillRect(60, H - 92, W - 120, 1);
+  // Marqueurs de coin discrets
+  ctx.fillRect(60, 80, 1, 24);
+  ctx.fillRect(W - 61, 80, 1, 24);
+  ctx.fillRect(60, H - 104, 1, 24);
+  ctx.fillRect(W - 61, H - 104, 1, 24);
+  ctx.restore();
+}
+
 // ─── Rendu "Instagram ad" : fond studio gris, header marque + titre,
 //     bloc prix rouge encadré à droite, produit détouré centré,
 //     CTA pilule blanche "Acheter" + barre noire "Sponsorisé".
@@ -605,6 +673,33 @@ const INK_BLACK = VIDEO_COLORS.ink;
 const LINK_BLUE = VIDEO_COLORS.link;
 
 
+// ════════════════════════════════════════════════════════════════════
+//  Paper & Ink editorial — header / prix / CTA / crédit
+// ════════════════════════════════════════════════════════════════════
+
+const SERIF_FAMILY = "'Playfair Display','Didot',Georgia,serif";
+const SANS_FAMILY = "'Inter','Helvetica',sans-serif";
+
+/** Petit utilitaire texte avec lettrage espacé (caps editorial). */
+function drawCapsText(
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  opts: { weight?: number; size?: number; tracking?: number; color?: string; align?: CanvasTextAlign } = {},
+) {
+  const { weight = 500, size = 20, tracking = 4, color = IVOIRE, align = "left" } = opts;
+  ctx.save();
+  ctx.font = `${weight} ${size}px ${SANS_FAMILY}`;
+  ctx.fillStyle = color;
+  ctx.textAlign = align;
+  ctx.textBaseline = "alphabetic";
+  (ctx as any).letterSpacing = `${tracking}px`;
+  ctx.fillText(text, x, y);
+  (ctx as any).letterSpacing = "0px";
+  ctx.restore();
+}
+
 function drawAdHeader(
   ctx: CanvasRenderingContext2D,
   deal: Deal,
@@ -613,69 +708,57 @@ function drawAdHeader(
   logo: HTMLCanvasElement | null,
 ) {
   const alpha = reveal * (1 - exit);
-  const slide = (1 - reveal) * 30;
+  const slide = (1 - reveal) * 24;
   ctx.save();
   ctx.globalAlpha = alpha;
   ctx.translate(0, -slide);
 
-  // Hauteur effective du bloc marque (utilisée pour positionner le titre dessous,
-  // → plus aucun chevauchement quel que soit le ratio du logo)
-  let brandBlockBottom = 240;
+  // ── Rail éditorial tout en haut : signature + numéro d'édition ──
+  drawCapsText(ctx, "GOLDEALS · ÉDITION", 60, 80, {
+    weight: 600, size: 19, tracking: 6, color: activePalette.inkSoft,
+  });
+  // Numéro d'édition à droite (date du jour)
+  const now = new Date();
+  const dateLabel = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getFullYear()).slice(-2)}`;
+  drawCapsText(ctx, dateLabel, W - 60, 80, {
+    weight: 500, size: 18, tracking: 4, color: activePalette.inkSoft, align: "right",
+  });
 
-  // ── Bloc gauche : logo (si dispo) sinon nom marque + titre produit ──
+  // ── Bloc marque ──
+  let brandBlockBottom = 220;
   if (logo && logo.width > 0) {
-    // Logos rendus en silhouette noire → même hauteur quelle que soit la marque
-    const targetH = 100;
+    const targetH = 90;
     const ratio = logo.width / logo.height;
-    const maxW = 360;
-    const finalH = targetH;
+    const maxW = 340;
     const finalW = Math.min(targetH * ratio, maxW);
-    const finalHAdj = finalW / ratio;
-    ctx.drawImage(logo, 60, 130, finalW, finalHAdj);
-    brandBlockBottom = 130 + finalHAdj;
+    const finalH = finalW / ratio;
+    ctx.drawImage(logo, 60, 150, finalW, finalH);
+    brandBlockBottom = 150 + finalH;
   } else {
-    // Fallback monogramme : pastille noire arrondie + initiales blanches + nom marque dessous.
-    // Visuellement proche d'un vrai logo → maintient la cohérence éditoriale.
-    const initials = brandInitials(deal.brand);
-    const padX = 60;
-    const padY = 130;
-    const boxH = 110;
-    ctx.save();
-    // Mesure pour largeur dynamique de la pastille
-    ctx.font = VIDEO_TYPO.priceBig;
-    const tw = ctx.measureText(initials).width;
-    const boxW = Math.max(boxH, tw + 56);
-    // Pastille
-    ctx.fillStyle = INK_BLACK;
-    roundRect(ctx, padX, padY, boxW, boxH, VIDEO_RADII.md);
-    ctx.fill();
-    // Initiales
-    ctx.fillStyle = "#ffffff";
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    (ctx as any).letterSpacing = "-1px";
-    ctx.fillText(initials, padX + boxW / 2, padY + boxH / 2 + 2);
-    (ctx as any).letterSpacing = "0px";
-    // Nom complet de la marque sous la pastille (petit, élégant)
-    ctx.fillStyle = INK_BLACK;
-    ctx.font = VIDEO_TYPO.brandLabel;
+    // Fallback : nom marque en serif italic, gros, posé
+    ctx.fillStyle = IVOIRE;
+    ctx.font = `italic 700 78px ${SERIF_FAMILY}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    (ctx as any).letterSpacing = "3px";
-    ctx.fillText((deal.brand || "").toUpperCase(), padX, padY + boxH + 28);
-    (ctx as any).letterSpacing = "0px";
-    ctx.restore();
+    ctx.fillText((deal.brand || "—"), 60, 220);
+    brandBlockBottom = 240;
   }
 
+  // ── Hairline + label "PRODUIT" ──
+  const hairY = brandBlockBottom + 24;
+  ctx.fillStyle = "rgba(13,13,13,0.20)";
+  ctx.fillRect(60, hairY, W - 120, 1);
+  drawCapsText(ctx, "L'OBJET DU JOUR", 60, hairY + 28, {
+    weight: 600, size: 17, tracking: 5, color: activePalette.inkSoft,
+  });
 
-  // Titre produit — wrap sur 2 lignes max
-  ctx.fillStyle = INK_BLACK;
-  ctx.font = VIDEO_TYPO.title;
+  // ── Titre produit : serif italic, wrap 2 lignes max ──
+  ctx.fillStyle = IVOIRE;
+  ctx.font = `italic 500 46px ${SERIF_FAMILY}`;
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  (ctx as any).letterSpacing = "0.5px";
-  const titleMax = 620;
-  const words = (deal.title || "").toUpperCase().split(/\s+/);
+  const titleMax = W - 120;
+  const words = (deal.title || "").split(/\s+/);
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
@@ -684,9 +767,7 @@ function drawAdHeader(
       lines.push(cur);
       cur = w;
       if (lines.length === 2) break;
-    } else {
-      cur = test;
-    }
+    } else cur = test;
   }
   if (cur && lines.length < 2) lines.push(cur);
   if (lines.length === 2 && ctx.measureText(lines[1]).width > titleMax) {
@@ -695,10 +776,8 @@ function drawAdHeader(
     }
     lines[1] = lines[1] + "…";
   }
-  // Titre démarre 40px sous le bas réel du bloc marque → zéro chevauchement
-  const titleStartY = Math.max(290, brandBlockBottom + 50);
-  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 48));
-  (ctx as any).letterSpacing = "0px";
+  const titleStartY = hairY + 76;
+  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 50));
 
   ctx.restore();
 }
@@ -711,180 +790,132 @@ function drawAdPriceBlock(
   debugBadge = false,
 ) {
   const alpha = reveal * (1 - exit);
-  const scale = 0.9 + 0.1 * reveal;
   ctx.save();
   ctx.globalAlpha = alpha;
 
-  // Prix barré (à dessiner sous la boîte rouge mais on calcule la boîte d'abord)
   const priceVal = deal.sale_price != null ? Number(deal.sale_price) : 0;
-  const priceTxt = `${priceVal.toFixed(2).replace(".00", ".00")} €`;
+  const origVal = deal.original_price != null ? Number(deal.original_price) : 0;
+  const hasOrig = origVal > priceVal && priceVal > 0;
+  const discount = hasOrig ? Math.round((1 - priceVal / origVal) * 100) : 0;
 
-  // Mesure de la boîte
-  ctx.font = VIDEO_TYPO.priceBig;
-  (ctx as any).letterSpacing = "-1px";
-  const tw = ctx.measureText(priceTxt).width;
-  const padX = 30;
-  const padY = 18;
-  const boxW = tw + padX * 2;
-  const boxH = 64 + padY * 2 - 28;
-  const boxX = W - 60 - boxW;
-  const boxY = 150;
+  // Format prix : on garde 2 décimales seulement si elles ne sont pas .00
+  const fmt = (n: number) => {
+    const r = Math.round(n * 100) / 100;
+    return Number.isInteger(r) ? `${r}` : r.toFixed(2);
+  };
+  const priceTxt = `${fmt(priceVal)} €`;
 
-  // ── Détection adaptative du fond derrière le badge ─────────────────
-  // On échantillonne UNIQUEMENT la zone interne du badge (inset ~12 %)
-  // pour ignorer l'ombre, l'anneau et les transitions photo voisines.
-  const sampleRect = getBadgeSampleRect(ctx, boxX, boxY, boxW, boxH);
-  const sampleLum = sampleAreaLuminance(ctx, sampleRect.x, sampleRect.y, sampleRect.w, sampleRect.h);
-  const badge = pickBadgeContrast(sampleLum);
+  // ── Bande prix éditoriale en bas du frame (avant le crédit) ────────
+  const bandY = H - 500;
+  const bandH = 170;
 
-  // Origine top-right pour le scale (comme la capture Instagram)
-  ctx.translate(W - 60, boxY);
-  ctx.scale(scale, scale);
-  ctx.translate(-(W - 60), -boxY);
-
-  // Voile d'appoint (scrim) — seulement si contraste trop faible
-  if (badge.scrim > 0) {
-    ctx.save();
-    ctx.globalAlpha = alpha * badge.scrim;
-    ctx.fillStyle = badge.isLightBg ? "#000000" : "#ffffff";
-    roundRect(ctx, boxX - 10, boxY - 10, boxW + 20, boxH + 20, VIDEO_RADII.lg);
-    ctx.fill();
-    ctx.restore();
+  // Hairline supérieure + label "PRIX"
+  ctx.fillStyle = "rgba(13,13,13,0.22)";
+  ctx.fillRect(60, bandY, W - 120, 1);
+  drawCapsText(ctx, "PRIX", 60, bandY + 32, {
+    weight: 600, size: 17, tracking: 6, color: activePalette.inkSoft,
+  });
+  if (hasOrig) {
+    drawCapsText(ctx, `-${discount}%`, W - 60, bandY + 32, {
+      weight: 700, size: 19, tracking: 4, color: IVOIRE, align: "right",
+    });
   }
 
-  // Boîte prix adaptative (noire sur fond clair / blanche sur fond sombre)
-  ctx.save();
-  ctx.globalAlpha = alpha * badge.fillOpacity;
-  applyShadow(ctx, VIDEO_SHADOWS.pill);
-  ctx.fillStyle = badge.fill;
-  roundRect(ctx, boxX, boxY, boxW, boxH, VIDEO_RADII.md);
-  ctx.fill();
-  clearShadow(ctx);
-  // Anneau fin pour décoller du fond
-  ctx.globalAlpha = alpha;
-  ctx.strokeStyle = badge.ring;
-  ctx.lineWidth = badge.ringWidth;
-  roundRect(ctx, boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1, VIDEO_RADII.md);
-  ctx.stroke();
-  ctx.restore();
+  // Prix principal en serif italic massif, baseline alignée à la bande
+  ctx.fillStyle = IVOIRE;
+  ctx.font = `italic 500 138px ${SERIF_FAMILY}`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "alphabetic";
+  const priceY = bandY + bandH;
+  ctx.fillText(priceTxt, 60, priceY);
+  const priceW = ctx.measureText(priceTxt).width;
 
-  // Texte prix
-  ctx.fillStyle = badge.fg;
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillText(priceTxt, boxX + boxW / 2, boxY + boxH / 2 + 2);
-  (ctx as any).letterSpacing = "0px";
+  // Prix barré aligné droite, sur la même baseline du chiffre principal
+  if (hasOrig) {
+    const opTxt = `${fmt(origVal)} €`;
+    ctx.font = `500 34px ${SANS_FAMILY}`;
+    ctx.fillStyle = activePalette.inkSoft;
+    ctx.textAlign = "right";
+    ctx.fillText(opTxt, W - 60, priceY - 14);
+    const opW = ctx.measureText(opTxt).width;
+    ctx.strokeStyle = activePalette.inkSoft;
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(W - 60 - opW - 4, priceY - 24);
+    ctx.lineTo(W - 60 + 4, priceY - 24);
+    ctx.stroke();
+  }
 
-  // ── Overlay debug ──────────────────────────────────────────────────
+  // Hairline sous la bande prix
+  ctx.fillStyle = "rgba(13,13,13,0.22)";
+  ctx.fillRect(60, priceY + 30, W - 120, 1);
+
+  // ── Debug : indicateur de luminance derrière le prix (pour mémoire) ─
   if (debugBadge) {
-    const dbgH = 110;
-    const dbgW = 280;
-    const dbgX = boxX + boxW - dbgW;
-    const dbgY = boxY + boxH + 18;
+    const sampleRect = getBadgeSampleRect(ctx, 60, priceY - 110, priceW, 110);
+    const sampleLum = sampleAreaLuminance(ctx, sampleRect.x, sampleRect.y, sampleRect.w, sampleRect.h);
+    const badge = pickBadgeContrast(sampleLum);
+    const dbgW = 280, dbgH = 96;
+    const dbgX = W - 60 - dbgW;
+    const dbgY = priceY + 50;
     ctx.save();
-    ctx.globalAlpha = alpha * 0.92;
+    ctx.globalAlpha = alpha * 0.9;
     ctx.fillStyle = "#0a0a0a";
     roundRect(ctx, dbgX, dbgY, dbgW, dbgH, VIDEO_RADII.sm);
     ctx.fill();
     ctx.globalAlpha = alpha;
-    ctx.strokeStyle = badge.isLightBg ? "#ffffff" : "#ff6b35";
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, dbgX + 0.5, dbgY + 0.5, dbgW - 1, dbgH - 1, VIDEO_RADII.sm);
-    ctx.stroke();
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "#fff";
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
-    ctx.font = "500 18px 'Inter','Helvetica',sans-serif";
-    const padL = 16;
-    const lineH = 26;
-    let dy = dbgY + 28;
-    ctx.fillText(`Luminance : ${Math.round(sampleLum)}`, dbgX + padL, dy); dy += lineH;
-    ctx.fillText(`Variante  : ${badge.isLightBg ? 'dark (noir)' : 'light (blanc)'}`, dbgX + padL, dy); dy += lineH;
-    ctx.fillText(`Scrim     : ${badge.scrim > 0 ? badge.scrim.toFixed(2) : '—'}`, dbgX + padL, dy); dy += lineH;
-    ctx.fillStyle = badge.scrim > 0 ? "#ff6b35" : "#4ade80";
-    ctx.fillText(
-      badge.scrim > 0 ? "⚠️ Scrim actif (cas limite)" : "✓ Contraste OK",
-      dbgX + padL,
-      dy,
-    );
+    ctx.font = `500 16px ${SANS_FAMILY}`;
+    ctx.fillText(`Lum prix : ${Math.round(sampleLum)}`, dbgX + 14, dbgY + 28);
+    ctx.fillText(`Encre    : ${badge.isLightBg ? "noire" : "blanche"}`, dbgX + 14, dbgY + 52);
+    ctx.fillText(`Scrim    : ${badge.scrim > 0 ? badge.scrim.toFixed(2) : "—"}`, dbgX + 14, dbgY + 76);
     ctx.restore();
-  }
-
-  // Prix barré sous la boîte — couleur synchronisée avec le badge
-  if (deal.original_price && Number(deal.original_price) > priceVal) {
-    const op = `${Number(deal.original_price).toFixed(2).replace(".00", ".00")} €`;
-    ctx.font = VIDEO_TYPO.priceStrike;
-    // Sur fond clair on garde l'encre, sur fond sombre on bascule en blanc
-    const strikeColor = badge.isLightBg ? VIDEO_COLORS.ink : "#ffffff";
-    ctx.fillStyle = strikeColor;
-    ctx.textAlign = "right";
-    ctx.textBaseline = "alphabetic";
-    const opY = boxY + boxH + 56;
-    ctx.fillText(op, W - 60, opY);
-    const opW = ctx.measureText(op).width;
-    ctx.strokeStyle = strikeColor;
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(W - 60 - opW, opY - 14);
-    ctx.lineTo(W - 60, opY - 14);
-    ctx.stroke();
   }
 
   ctx.restore();
 }
 
-
 function drawAdCTA(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.save();
   ctx.globalAlpha = alpha;
 
-  const label = "Acheter";
-  ctx.font = VIDEO_TYPO.cta;
-  const tw = ctx.measureText(label).width;
-  const iconSize = 42;
-  const gap = 22;
-  const padX = 84;
-  const padY = 28;
-  const pillW = tw + iconSize + gap + padX * 2;
-  const pillH = 56 + padY * 2;
-  const pillX = (W - pillW) / 2;
-  const pillY = H - 110 - pillH;
+  // CTA éditorial : pas de pilule. Petit mot puis flèche → goldealsclub.com
+  const labelY = H - 140;
 
-  // Ombre pilule
-  applyShadow(ctx, VIDEO_SHADOWS.pill);
-  ctx.fillStyle = "#ffffff";
-  roundRect(ctx, pillX, pillY, pillW, pillH, pillH / 2);
-  ctx.fill();
-  clearShadow(ctx);
+  // Hairline gauche / droite encadrant le CTA
+  ctx.fillStyle = "rgba(13,13,13,0.22)";
+  ctx.fillRect(60, labelY - 36, W - 120, 1);
 
-
-  // Icône lien (deux maillons stylisés)
-  const ix = pillX + padX;
-  const iy = pillY + pillH / 2;
-  ctx.strokeStyle = LINK_BLUE;
-  ctx.lineWidth = 4.5;
-  ctx.lineCap = "round";
-  ctx.lineJoin = "round";
-  ctx.beginPath();
-  // Premier maillon (haut-droit)
-  ctx.moveTo(ix + 6, iy + 2);
-  ctx.quadraticCurveTo(ix + 22, iy - 14, ix + 36, iy - 18);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(ix + 6, iy - 2);
-  ctx.quadraticCurveTo(ix - 10, iy + 14, ix - 16, iy + 18);
-  ctx.stroke();
-  // Croisement central
-  ctx.beginPath();
-  ctx.moveTo(ix - 4, iy + 8);
-  ctx.lineTo(ix + 14, iy - 10);
-  ctx.stroke();
-
-  // Texte
-  ctx.fillStyle = INK_BLACK;
+  ctx.fillStyle = IVOIRE;
+  ctx.font = `500 38px ${SANS_FAMILY}`;
   ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText(label, ix + iconSize + gap, iy + 2);
+  ctx.textBaseline = "alphabetic";
+  (ctx as any).letterSpacing = "4px";
+  const label = "VOIR L'OFFRE";
+  ctx.fillText(label, 60, labelY);
+  const labelW = ctx.measureText(label).width;
+  (ctx as any).letterSpacing = "0px";
+
+  // Flèche éditoriale juste après le label
+  const arrowX = 60 + labelW + 32;
+  const arrowY = labelY - 12;
+  ctx.strokeStyle = IVOIRE;
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+  ctx.beginPath();
+  ctx.moveTo(arrowX, arrowY);
+  ctx.lineTo(arrowX + 70, arrowY);
+  ctx.moveTo(arrowX + 56, arrowY - 12);
+  ctx.lineTo(arrowX + 70, arrowY);
+  ctx.lineTo(arrowX + 56, arrowY + 12);
+  ctx.stroke();
+
+  // URL à droite
+  drawCapsText(ctx, "GOLDEALSCLUB.COM", W - 60, labelY, {
+    weight: 600, size: 20, tracking: 5, color: IVOIRE, align: "right",
+  });
 
   ctx.restore();
 }
@@ -892,14 +923,10 @@ function drawAdCTA(ctx: CanvasRenderingContext2D, alpha: number) {
 function drawSponsoBar(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.save();
   ctx.globalAlpha = alpha;
-  const barH = 64;
-  ctx.fillStyle = "#000000";
-  ctx.fillRect(0, H - barH, W, barH);
-  ctx.fillStyle = "#ffffff";
-  ctx.font = VIDEO_TYPO.sponso;
-  ctx.textAlign = "left";
-  ctx.textBaseline = "middle";
-  ctx.fillText("Sponsorisé", 40, H - barH / 2);
+  // Plus de bandeau noir : un simple crédit éditorial centré, sur le papier.
+  drawCapsText(ctx, "ÉDITION QUOTIDIENNE · GOLDEALS CLUB", W / 2, H - 56, {
+    weight: 500, size: 16, tracking: 6, color: activePalette.inkSoft, align: "center",
+  });
   ctx.restore();
 }
 
@@ -918,8 +945,9 @@ export function drawDealFullScreen(
   if (drawBg) drawCharcoalBg(ctx, hold);
 
   // Zone produit : centre, sous le header, au-dessus du CTA
-  const stageY = 470;
-  const stageH = Math.round(H * 0.50);
+  // Zone produit : sous le bloc titre, au-dessus de la bande prix
+  const stageY = 510;
+  const stageH = 880;
   const cxC = W / 2;
   const cyC = stageY + stageH * 0.5;
 
@@ -973,9 +1001,13 @@ export function drawDealFullScreen(
         plateCx, plateCy, plateR * 0.15,
         plateCx, plateCy, plateR,
       );
-      plate.addColorStop(0, "rgba(28,28,30,0.78)");
-      plate.addColorStop(0.55, "rgba(28,28,30,0.45)");
-      plate.addColorStop(1, "rgba(28,28,30,0)");
+      // Sur preset paper, halo taupe doux (jamais une tache sombre)
+      const c0 = activePresetName === "paper" ? "rgba(80,72,62,0.22)" : "rgba(28,28,30,0.78)";
+      const c1 = activePresetName === "paper" ? "rgba(80,72,62,0.10)" : "rgba(28,28,30,0.45)";
+      const c2 = activePresetName === "paper" ? "rgba(80,72,62,0)"    : "rgba(28,28,30,0)";
+      plate.addColorStop(0, c0);
+      plate.addColorStop(0.55, c1);
+      plate.addColorStop(1, c2);
       ctx.fillStyle = plate;
       ctx.beginPath();
       ctx.ellipse(plateCx, plateCy, plateR * 1.05, plateR * 0.95, 0, 0, Math.PI * 2);
@@ -1029,13 +1061,16 @@ export function drawDealFullScreen(
   }
   ctx.restore();
 
+  // Cadre éditorial hairline (uniquement preset paper)
+  drawEditorialFrame(ctx, (1 - exitE) * revealE);
+
   // Header marque + titre (gauche) — entrée légère
   drawAdHeader(ctx, deal, revealE, exitE, logo);
 
-  // Bloc prix rouge (droite)
+  // Bande prix éditoriale (bas)
   drawAdPriceBlock(ctx, deal, revealE, exitE, debugBadge);
 
-  // CTA pilule + barre sponsorisé — fade-in après le produit
+  // CTA + crédit — fade-in après le produit
   const ctaAlpha = easeOutExpo(clamp01((reveal - 0.25) / 0.6)) * (1 - exitE);
   drawAdCTA(ctx, ctaAlpha);
   drawSponsoBar(ctx, ctaAlpha);
@@ -1055,74 +1090,109 @@ function drawSelectionFrame(
 ) {
   const n = selection.deals.length;
 
-  // INTRO — éditorial nuit
+  // ══════════════════ INTRO — Paper & Ink éditorial ══════════════════
   if (t < INTRO) {
     const k = easeOut(t / INTRO);
     drawCharcoalBg(ctx, t / INTRO);
+    drawEditorialFrame(ctx, k);
 
     ctx.globalAlpha = k;
-    ctx.fillStyle = "rgba(20,20,20,0.7)";
-    ctx.font = "500 26px 'Inter',sans-serif";
+
+    // Rail haut : signature + date
+    drawCapsText(ctx, "GOLDEALS · ÉDITION", 60, 80, {
+      weight: 600, size: 19, tracking: 6, color: activePalette.inkSoft,
+    });
+    const now = new Date();
+    const dateLabel = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getFullYear()).slice(-2)}`;
+    drawCapsText(ctx, dateLabel, W - 60, 80, {
+      weight: 500, size: 18, tracking: 4, color: activePalette.inkSoft, align: "right",
+    });
+
+    // Eyebrow centré
+    drawCapsText(ctx, "ÉDITION QUOTIDIENNE", W / 2, H / 2 - 320, {
+      weight: 600, size: 22, tracking: 10, color: activePalette.inkSoft, align: "center",
+    });
+
+    // Filet central
+    ctx.fillStyle = "rgba(13,13,13,0.22)";
+    ctx.fillRect(W / 2 - 30, H / 2 - 280, 60, 1);
+
+    // Hero serif italic : "Le Top N°"
+    ctx.fillStyle = IVOIRE;
+    ctx.font = `italic 400 180px ${SERIF_FAMILY}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    (ctx as any).letterSpacing = "14px";
-    ctx.fillText("GOLDEALS CLUB", W / 2, H / 2 - 280);
-
-    ctx.fillStyle = GOLD;
-    ctx.fillRect(W / 2 - 32, H / 2 - 220, 64, 1);
-
-    ctx.fillStyle = IVOIRE;
-    ctx.font = "200 220px 'Playfair Display','Didot',Georgia,serif";
-    (ctx as any).letterSpacing = "0px";
-    const scale = 0.88 + 0.12 * springEase(k);
+    const scale = 0.94 + 0.06 * springEase(k);
     ctx.save();
-    ctx.translate(W / 2, H / 2 - 20);
+    ctx.translate(W / 2, H / 2 - 110);
     ctx.scale(scale, scale);
-    ctx.fillText(`Top ${n}`, 0, 0);
+    ctx.fillText("Sélection", 0, 0);
     ctx.restore();
 
-    ctx.fillStyle = "rgba(20,20,20,0.5)";
-    ctx.font = "300 30px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "12px";
-    ctx.fillText(selection.label.toUpperCase(), W / 2, H / 2 + 180);
-    (ctx as any).letterSpacing = "0px";
+    // Sous-titre serif (chiffre)
+    ctx.fillStyle = IVOIRE;
+    ctx.font = `italic 500 110px ${SERIF_FAMILY}`;
+    ctx.fillText(`N° 0${Math.min(n, 9)}`, W / 2, H / 2 + 40);
+
+    // Label sélection en caps
+    drawCapsText(ctx, selection.label.toUpperCase(), W / 2, H / 2 + 200, {
+      weight: 500, size: 22, tracking: 8, color: activePalette.inkSoft, align: "center",
+    });
+
+    // Hairline bas + crédit
+    ctx.fillStyle = "rgba(13,13,13,0.22)";
+    ctx.fillRect(60, H - 200, W - 120, 1);
+    drawCapsText(ctx, "GOLDEALSCLUB.COM", W / 2, H - 150, {
+      weight: 600, size: 22, tracking: 8, color: IVOIRE, align: "center",
+    });
+
     ctx.globalAlpha = 1;
     ctx.textBaseline = "alphabetic";
     return;
   }
 
-  // OUTRO
+  // ══════════════════ OUTRO — Paper & Ink éditorial ══════════════════
   if (t > totalSec - OUTRO) {
     const k = easeOut((t - (totalSec - OUTRO)) / OUTRO);
     drawCharcoalBg(ctx, 1);
+    drawEditorialFrame(ctx, k);
     ctx.globalAlpha = k;
 
-    ctx.fillStyle = "rgba(20,20,20,0.65)";
-    ctx.font = "500 22px 'Inter',sans-serif";
+    // Rail haut signature
+    drawCapsText(ctx, "GOLDEALS · ÉDITION", 60, 80, {
+      weight: 600, size: 19, tracking: 6, color: activePalette.inkSoft,
+    });
+
+    // Eyebrow
+    drawCapsText(ctx, "MERCI DE VOTRE LECTURE", W / 2, H / 2 - 300, {
+      weight: 600, size: 22, tracking: 10, color: activePalette.inkSoft, align: "center",
+    });
+    ctx.fillStyle = "rgba(13,13,13,0.22)";
+    ctx.fillRect(W / 2 - 30, H / 2 - 260, 60, 1);
+
+    // Hero serif italic
+    ctx.fillStyle = IVOIRE;
+    ctx.font = `italic 400 150px ${SERIF_FAMILY}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    (ctx as any).letterSpacing = "10px";
-    ctx.fillText("RETROUVE TOUS LES DEALS", W / 2, H / 2 - 240);
+    ctx.fillText("À demain.", W / 2, H / 2 - 90);
+
+    // Tagline en sans
+    ctx.fillStyle = activePalette.inkSoft;
+    ctx.font = `400 32px ${SANS_FAMILY}`;
+    ctx.fillText("Une nouvelle sélection chaque jour.", W / 2, H / 2 + 30);
+
+    // Hairline + URL serif
+    ctx.fillStyle = "rgba(13,13,13,0.22)";
+    ctx.fillRect(W / 2 - 200, H / 2 + 130, 400, 1);
 
     ctx.fillStyle = IVOIRE;
-    ctx.font = "200 150px 'Playfair Display','Didot',Georgia,serif";
-    (ctx as any).letterSpacing = "0px";
-    ctx.fillText("Sur le site", W / 2, H / 2 - 60);
+    ctx.font = `italic 500 78px ${SERIF_FAMILY}`;
+    ctx.fillText("goldealsclub.com", W / 2, H / 2 + 230);
 
-    ctx.fillStyle = GOLD;
-    ctx.fillRect(W / 2 - 32, H / 2 + 30, 64, 1);
-
-    const pillW = 760, pillH = 130;
-    const pillX = (W - pillW) / 2;
-    const pillY = H / 2 + 110;
-    ctx.strokeStyle = GOLD;
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, pillX, pillY, pillW, pillH, 2);
-    ctx.stroke();
-    ctx.fillStyle = IVOIRE;
-    ctx.font = "500 40px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "8px";
-    ctx.fillText("GOLDEALSCLUB.COM", W / 2, pillY + pillH / 2 + 2);
+    drawCapsText(ctx, "ABONNEZ-VOUS", W / 2, H - 150, {
+      weight: 600, size: 20, tracking: 8, color: activePalette.inkSoft, align: "center",
+    });
     (ctx as any).letterSpacing = "0px";
     ctx.globalAlpha = 1;
     ctx.textBaseline = "alphabetic";
@@ -1193,7 +1263,7 @@ export default function AdminVideoPage() {
   const [editableCaption, setEditableCaption] = useState("");
   const [history, setHistory] = useState<any[]>([]);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
-  const [bgPreset, setBgPreset] = useState<BgPreset>("zara");
+  const [bgPreset, setBgPreset] = useState<BgPreset>("paper");
   const [debugBadge, setDebugBadge] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const debugCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -1679,6 +1749,7 @@ export default function AdminVideoPage() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="paper">Paper &amp; Ink — éditorial papier</SelectItem>
                 <SelectItem value="zara">Zara — studio gris clair</SelectItem>
                 <SelectItem value="charcoal">Charcoal — nuit éditoriale</SelectItem>
                 <SelectItem value="ivoire">Ivoire — premium crème</SelectItem>

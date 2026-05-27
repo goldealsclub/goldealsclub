@@ -1,127 +1,148 @@
-import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig, Img, staticFile } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Playfair";
+import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
 
-const { fontFamily: playfair } = loadFont("normal", { weights: ["700"], subsets: ["latin"] });
+const { fontFamily: playfair } = loadFont("normal", { weights: ["400", "500", "700"], subsets: ["latin"] });
+const { fontFamily: inter } = loadInter("normal", { weights: ["400", "500", "600", "700"], subsets: ["latin"] });
 
-const IVOIRE = "#f6f0e9";
+// ── Paper & Ink ───────────────────────────────────────────────────────
+const PAPER = "#f5f3ee";
+const PAPER_MID = "#efece5";
+const INK = "#0d0d0d";
+const INK_SOFT = "rgba(13,13,13,0.55)";
+const RULE = "rgba(13,13,13,0.22)";
 
 export const IntroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const bgRotate = interpolate(frame, [0, 90], [0, 8]);
+  // Apparitions séquencées éditoriales
+  const railOpacity = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
+  const eyebrowOpacity = interpolate(frame, [6, 20], [0, 1], { extrapolateRight: "clamp" });
 
-  const logoScale = spring({ frame, fps, config: { damping: 12, stiffness: 120 } });
-  const logoOpacity = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
+  const heroSpring = spring({ frame: frame - 10, fps, config: { damping: 22, stiffness: 110 } });
+  const heroOpacity = interpolate(heroSpring, [0, 1], [0, 1]);
+  const heroY = interpolate(heroSpring, [0, 1], [22, 0]);
 
-  const sloganY = interpolate(
-    spring({ frame: frame - 14, fps, config: { damping: 18, stiffness: 220 } }),
-    [0, 1], [40, 0]
+  const numSpring = spring({ frame: frame - 22, fps, config: { damping: 20, stiffness: 130 } });
+  const numOpacity = interpolate(numSpring, [0, 1], [0, 1]);
+  const numScale = interpolate(numSpring, [0, 1], [0.94, 1]);
+
+  const ruleWidth = interpolate(
+    spring({ frame: frame - 32, fps, config: { damping: 200 } }),
+    [0, 1], [0, 400]
   );
-  const sloganOpacity = interpolate(frame, [14, 26], [0, 1], { extrapolateRight: "clamp" });
 
-  const lineWidth = interpolate(
-    spring({ frame: frame - 30, fps, config: { damping: 200 } }),
-    [0, 1], [0, 280]
-  );
+  const tagOpacity = interpolate(frame, [40, 55], [0, 1], { extrapolateRight: "clamp" });
 
-  const topY = interpolate(
-    spring({ frame: frame - 38, fps, config: { damping: 18, stiffness: 220 } }),
-    [0, 1], [30, 0]
-  );
-  const topOpacity = interpolate(frame, [38, 50], [0, 1], { extrapolateRight: "clamp" });
-
-  const floatY = Math.sin(frame * 0.05) * 4;
+  // Date du jour (formatée fr)
+  const now = new Date();
+  const dateLabel = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getFullYear()).slice(-2)}`;
 
   return (
-    <AbsoluteFill>
+    <AbsoluteFill style={{ backgroundColor: PAPER }}>
+      {/* Lumière éditoriale chaude off-center */}
       <AbsoluteFill style={{
-        background: `linear-gradient(${135 + bgRotate}deg, #0a0a0a 0%, #141414 35%, #1a1a16 100%)`,
-      }} />
-      <AbsoluteFill style={{
-        background: "radial-gradient(ellipse at 50% 30%, rgba(246,240,233,0.05) 0%, transparent 60%)",
+        background: `radial-gradient(ellipse at 32% 30%, rgba(255,253,247,0.55) 0%, ${PAPER_MID} 55%, #e8e4dd 100%)`,
       }} />
 
+      {/* Grain papier */}
       <AbsoluteFill style={{
-        display: "flex",
-        flexDirection: "column",
-        alignItems: "center",
-        justifyContent: "center",
-        transform: `translateY(${floatY}px)`,
-        padding: "0 30px",
+        backgroundImage:
+          "radial-gradient(rgba(0,0,0,0.04) 1px, transparent 1px), radial-gradient(rgba(255,255,255,0.06) 1px, transparent 1px)",
+        backgroundSize: "3px 3px, 5px 5px",
+        backgroundPosition: "0 0, 1px 2px",
+        mixBlendMode: "multiply",
+        opacity: 0.6,
+      }} />
+
+      {/* ── Cadre hairline éditorial ── */}
+      <div style={{
+        position: "absolute", top: 92, left: 60, right: 60, height: 1,
+        backgroundColor: RULE, opacity: railOpacity,
+      }} />
+      <div style={{
+        position: "absolute", bottom: 92, left: 60, right: 60, height: 1,
+        backgroundColor: RULE, opacity: railOpacity,
+      }} />
+      {/* Tickmarks coins */}
+      {[
+        { top: 80, left: 60 }, { top: 80, right: 60 },
+        { bottom: 80, left: 60 }, { bottom: 80, right: 60 },
+      ].map((s, i) => (
+        <div key={i} style={{
+          position: "absolute", width: 1, height: 24,
+          backgroundColor: RULE, opacity: railOpacity, ...s,
+        }} />
+      ))}
+
+      {/* ── Rail haut : signature + date ── */}
+      <div style={{
+        position: "absolute", top: 64, left: 60,
+        fontFamily: inter, fontSize: 19, fontWeight: 600, color: INK_SOFT,
+        letterSpacing: 6, opacity: railOpacity,
+      }}>GOLDEALS · ÉDITION</div>
+      <div style={{
+        position: "absolute", top: 64, right: 60,
+        fontFamily: inter, fontSize: 18, fontWeight: 500, color: INK_SOFT,
+        letterSpacing: 4, opacity: railOpacity,
+      }}>{dateLabel}</div>
+
+      {/* ── Bloc central ── */}
+      <AbsoluteFill style={{
+        display: "flex", flexDirection: "column",
+        alignItems: "center", justifyContent: "center",
+        padding: "0 60px", textAlign: "center",
       }}>
-        {/* Logo — massive, white on dark */}
+        {/* Eyebrow */}
         <div style={{
-          transform: `scale(${logoScale})`,
-          opacity: logoOpacity,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          width: "100%",
-        }}>
-          <Img
-            src={staticFile("logo.png")}
-            style={{
-              width: "100%",
-              objectFit: "contain",
-              filter: "invert(1) brightness(2)",
-            }}
-          />
-        </div>
+          fontFamily: inter, fontSize: 22, fontWeight: 600,
+          color: INK_SOFT, letterSpacing: 10, opacity: eyebrowOpacity,
+        }}>ÉDITION QUOTIDIENNE</div>
 
-        {/* Slogan — Playfair Display italic feel */}
+        {/* Filet court */}
         <div style={{
-          marginTop: 60,
-          transform: `translateY(${sloganY}px)`,
-          opacity: sloganOpacity,
-          textAlign: "center",
-        }}>
-          <div style={{
-            fontFamily: playfair, fontSize: 38, fontWeight: 700,
-            color: "#d4c4b0", lineHeight: 1.6, letterSpacing: 0.5,
-            fontStyle: "italic",
-          }}>
-            Vos marques préférées.
-          </div>
-          <div style={{
-            fontFamily: playfair, fontSize: 38, fontWeight: 700,
-            color: "#d4c4b0", lineHeight: 1.6, letterSpacing: 0.5,
-            fontStyle: "italic",
-          }}>
-            Les sites les plus fiables.
-          </div>
-          <div style={{
-            fontFamily: playfair, fontSize: 44, fontWeight: 700,
-            color: IVOIRE, lineHeight: 1.6, letterSpacing: 1,
-            marginTop: 10,
-          }}>
-            Les meilleurs prix, ici.
-          </div>
-        </div>
-
-        {/* Line */}
-        <div style={{
-          marginTop: 44, height: 1, width: lineWidth,
-          backgroundColor: "#d4c4b0", opacity: 0.4,
+          marginTop: 24, height: 1, width: 60,
+          backgroundColor: RULE, opacity: eyebrowOpacity,
         }} />
 
-        {/* Top 5 */}
+        {/* Hero serif italic */}
         <div style={{
-          marginTop: 40,
-          transform: `translateY(${topY}px)`,
-          opacity: topOpacity,
-          textAlign: "center",
-        }}>
-          <div style={{
-            fontFamily: "sans-serif", fontSize: 28, fontWeight: 700,
-            color: IVOIRE, letterSpacing: 5,
-          }}>★ TOP 5 DEALS ★</div>
-          <div style={{
-            fontFamily: "sans-serif", fontSize: 18, fontWeight: 300,
-            color: "rgba(212,196,176,0.5)", letterSpacing: 3, marginTop: 10,
-          }}>DE LA SEMAINE</div>
-        </div>
+          marginTop: 56,
+          fontFamily: playfair, fontStyle: "italic", fontWeight: 400,
+          fontSize: 180, color: INK, lineHeight: 1, letterSpacing: -2,
+          opacity: heroOpacity, transform: `translateY(${heroY}px)`,
+        }}>Sélection</div>
+
+        {/* Numéro */}
+        <div style={{
+          marginTop: 32,
+          fontFamily: playfair, fontStyle: "italic", fontWeight: 500,
+          fontSize: 110, color: INK, lineHeight: 1,
+          opacity: numOpacity, transform: `scale(${numScale})`,
+        }}>N° 05</div>
+
+        {/* Filet animé */}
+        <div style={{
+          marginTop: 52, height: 1, width: ruleWidth,
+          backgroundColor: INK, opacity: 0.5,
+        }} />
+
+        {/* Tagline */}
+        <div style={{
+          marginTop: 40, opacity: tagOpacity,
+          fontFamily: inter, fontSize: 22, fontWeight: 500,
+          color: INK_SOFT, letterSpacing: 8,
+        }}>LES MEILLEURS DEALS · CHAQUE JOUR</div>
       </AbsoluteFill>
+
+      {/* ── Pied éditorial ── */}
+      <div style={{
+        position: "absolute", bottom: 56, left: 0, right: 0,
+        textAlign: "center", opacity: tagOpacity,
+        fontFamily: inter, fontSize: 22, fontWeight: 600,
+        color: INK, letterSpacing: 8,
+      }}>GOLDEALSCLUB.COM</div>
     </AbsoluteFill>
   );
 };
