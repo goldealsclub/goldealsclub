@@ -1348,7 +1348,9 @@ export default function AdminVideoPage() {
   const renderSelection = async (idx: number) => {
     if (!brief) return;
     const selection = brief.deals[idx];
-    const totalSec = INTRO + selection.deals.length * PER_DEAL_SEC + OUTRO;
+    const n = selection.deals.length;
+    const perDealSec = Math.min(PER_DEAL_SEC, (MAX_TOTAL_SEC - INTRO - OUTRO) / n);
+    const totalSec = INTRO + n * perDealSec + OUTRO;
     applyBgPreset(bgPreset);
     setRenderingIdx(idx);
     setProgress(0);
