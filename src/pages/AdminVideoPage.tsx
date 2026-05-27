@@ -1603,8 +1603,11 @@ export default function AdminVideoPage() {
     (async () => {
       const img = await loadImage(deal.image_url);
       const logo = await getBrandLogo(deal.brand);
-      // Dessine une frame au milieu du 1er deal (t=INTRO+PER_DEAL_SEC/2)
-      drawSelectionFrame(ctx, INTRO + PER_DEAL_SEC * 0.5, selection, [img], INTRO + selection.deals.length * PER_DEAL_SEC + OUTRO, [logo], true);
+      const n = selection.deals.length;
+      const perDealSec = Math.min(PER_DEAL_SEC, (MAX_TOTAL_SEC - INTRO - OUTRO) / n);
+      const totalSec = INTRO + n * perDealSec + OUTRO;
+      // Dessine une frame au milieu du 1er deal
+      drawSelectionFrame(ctx, INTRO + perDealSec * 0.5, selection, [img], totalSec, [logo], true, perDealSec);
     })();
   }, [debugBadge, brief, bgPreset]);
 
