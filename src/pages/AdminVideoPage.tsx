@@ -236,7 +236,7 @@ const INTRO = 2.2;
 const OUTRO = 2.6;
 
 // ─── PRESETS DE FOND ───
-export type BgPreset = "zara" | "charcoal" | "ivoire";
+export type BgPreset = "paper" | "zara" | "charcoal" | "ivoire";
 
 type Palette = {
   bgTop: string;
@@ -253,6 +253,20 @@ type Palette = {
 };
 
 export const BG_PRESETS: Record<BgPreset, Palette> = {
+  // ── Paper & Ink éditorial (par défaut) ── off-white, encre, hairlines
+  paper: {
+    bgTop: "#f5f3ee",
+    bgMid: "#efece5",
+    bgBot: "#e8e4dd",
+    ink: "#0d0d0d",
+    inkSoft: "rgba(13,13,13,0.55)",
+    accent: "#2d2d2d",
+    taupe: "#7a756c",
+    haloInner: "rgba(255,253,247,0.45)",
+    haloMid: "rgba(255,253,247,0.05)",
+    vignette: "rgba(45,45,45,0.08)",
+    grainOnDark: false,
+  },
   // Studio gris clair façon ZARA — minimal, lumineux
   zara: {
     bgTop: "#e6e3de",
@@ -298,7 +312,8 @@ export const BG_PRESETS: Record<BgPreset, Palette> = {
 };
 
 // Theme actif — réassigné via applyBgPreset() avant chaque rendu
-let activePalette: Palette = BG_PRESETS.zara;
+let activePalette: Palette = BG_PRESETS.paper;
+let activePresetName: BgPreset = "paper";
 let NOIR = "#0a0a0a";
 let NOIR_SOFT = "#1a1a1a";
 let CHARCOAL_TOP = activePalette.bgTop;
@@ -311,6 +326,7 @@ let GOLD_DEEP = activePalette.accent;
 
 export function applyBgPreset(preset: BgPreset) {
   activePalette = BG_PRESETS[preset];
+  activePresetName = preset;
   CHARCOAL_TOP = activePalette.bgTop;
   CHARCOAL_MID = activePalette.bgMid;
   CHARCOAL_BOT = activePalette.bgBot;
