@@ -1119,6 +1119,7 @@ function drawSelectionFrame(
       nextHold,
       false,
       logos[idx + 1] ?? null,
+      debugBadge,
     );
     const curHold = clamp01(localT / PER_DEAL_SEC);
     drawDealFullScreen(
