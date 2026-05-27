@@ -1132,6 +1132,7 @@ function drawSelectionFrame(
       curHold,
       false,
       logos[idx] ?? null,
+      debugBadge,
     );
     return;
   }
