@@ -1090,74 +1090,109 @@ function drawSelectionFrame(
 ) {
   const n = selection.deals.length;
 
-  // INTRO — éditorial nuit
+  // ══════════════════ INTRO — Paper & Ink éditorial ══════════════════
   if (t < INTRO) {
     const k = easeOut(t / INTRO);
     drawCharcoalBg(ctx, t / INTRO);
+    drawEditorialFrame(ctx, k);
 
     ctx.globalAlpha = k;
-    ctx.fillStyle = "rgba(20,20,20,0.7)";
-    ctx.font = "500 26px 'Inter',sans-serif";
+
+    // Rail haut : signature + date
+    drawCapsText(ctx, "GOLDEALS · ÉDITION", 60, 80, {
+      weight: 600, size: 19, tracking: 6, color: activePalette.inkSoft,
+    });
+    const now = new Date();
+    const dateLabel = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getFullYear()).slice(-2)}`;
+    drawCapsText(ctx, dateLabel, W - 60, 80, {
+      weight: 500, size: 18, tracking: 4, color: activePalette.inkSoft, align: "right",
+    });
+
+    // Eyebrow centré
+    drawCapsText(ctx, "ÉDITION QUOTIDIENNE", W / 2, H / 2 - 320, {
+      weight: 600, size: 22, tracking: 10, color: activePalette.inkSoft, align: "center",
+    });
+
+    // Filet central
+    ctx.fillStyle = "rgba(13,13,13,0.22)";
+    ctx.fillRect(W / 2 - 30, H / 2 - 280, 60, 1);
+
+    // Hero serif italic : "Le Top N°"
+    ctx.fillStyle = IVOIRE;
+    ctx.font = `italic 400 180px ${SERIF_FAMILY}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    (ctx as any).letterSpacing = "14px";
-    ctx.fillText("GOLDEALS CLUB", W / 2, H / 2 - 280);
-
-    ctx.fillStyle = GOLD;
-    ctx.fillRect(W / 2 - 32, H / 2 - 220, 64, 1);
-
-    ctx.fillStyle = IVOIRE;
-    ctx.font = "200 220px 'Playfair Display','Didot',Georgia,serif";
-    (ctx as any).letterSpacing = "0px";
-    const scale = 0.88 + 0.12 * springEase(k);
+    const scale = 0.94 + 0.06 * springEase(k);
     ctx.save();
-    ctx.translate(W / 2, H / 2 - 20);
+    ctx.translate(W / 2, H / 2 - 110);
     ctx.scale(scale, scale);
-    ctx.fillText(`Top ${n}`, 0, 0);
+    ctx.fillText("Sélection", 0, 0);
     ctx.restore();
 
-    ctx.fillStyle = "rgba(20,20,20,0.5)";
-    ctx.font = "300 30px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "12px";
-    ctx.fillText(selection.label.toUpperCase(), W / 2, H / 2 + 180);
-    (ctx as any).letterSpacing = "0px";
+    // Sous-titre serif (chiffre)
+    ctx.fillStyle = IVOIRE;
+    ctx.font = `italic 500 110px ${SERIF_FAMILY}`;
+    ctx.fillText(`N° 0${Math.min(n, 9)}`, W / 2, H / 2 + 40);
+
+    // Label sélection en caps
+    drawCapsText(ctx, selection.label.toUpperCase(), W / 2, H / 2 + 200, {
+      weight: 500, size: 22, tracking: 8, color: activePalette.inkSoft, align: "center",
+    });
+
+    // Hairline bas + crédit
+    ctx.fillStyle = "rgba(13,13,13,0.22)";
+    ctx.fillRect(60, H - 200, W - 120, 1);
+    drawCapsText(ctx, "GOLDEALSCLUB.COM", W / 2, H - 150, {
+      weight: 600, size: 22, tracking: 8, color: IVOIRE, align: "center",
+    });
+
     ctx.globalAlpha = 1;
     ctx.textBaseline = "alphabetic";
     return;
   }
 
-  // OUTRO
+  // ══════════════════ OUTRO — Paper & Ink éditorial ══════════════════
   if (t > totalSec - OUTRO) {
     const k = easeOut((t - (totalSec - OUTRO)) / OUTRO);
     drawCharcoalBg(ctx, 1);
+    drawEditorialFrame(ctx, k);
     ctx.globalAlpha = k;
 
-    ctx.fillStyle = "rgba(20,20,20,0.65)";
-    ctx.font = "500 22px 'Inter',sans-serif";
+    // Rail haut signature
+    drawCapsText(ctx, "GOLDEALS · ÉDITION", 60, 80, {
+      weight: 600, size: 19, tracking: 6, color: activePalette.inkSoft,
+    });
+
+    // Eyebrow
+    drawCapsText(ctx, "MERCI DE VOTRE LECTURE", W / 2, H / 2 - 300, {
+      weight: 600, size: 22, tracking: 10, color: activePalette.inkSoft, align: "center",
+    });
+    ctx.fillStyle = "rgba(13,13,13,0.22)";
+    ctx.fillRect(W / 2 - 30, H / 2 - 260, 60, 1);
+
+    // Hero serif italic
+    ctx.fillStyle = IVOIRE;
+    ctx.font = `italic 400 150px ${SERIF_FAMILY}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    (ctx as any).letterSpacing = "10px";
-    ctx.fillText("RETROUVE TOUS LES DEALS", W / 2, H / 2 - 240);
+    ctx.fillText("À demain.", W / 2, H / 2 - 90);
+
+    // Tagline en sans
+    ctx.fillStyle = activePalette.inkSoft;
+    ctx.font = `400 32px ${SANS_FAMILY}`;
+    ctx.fillText("Une nouvelle sélection chaque jour.", W / 2, H / 2 + 30);
+
+    // Hairline + URL serif
+    ctx.fillStyle = "rgba(13,13,13,0.22)";
+    ctx.fillRect(W / 2 - 200, H / 2 + 130, 400, 1);
 
     ctx.fillStyle = IVOIRE;
-    ctx.font = "200 150px 'Playfair Display','Didot',Georgia,serif";
-    (ctx as any).letterSpacing = "0px";
-    ctx.fillText("Sur le site", W / 2, H / 2 - 60);
+    ctx.font = `italic 500 78px ${SERIF_FAMILY}`;
+    ctx.fillText("goldealsclub.com", W / 2, H / 2 + 230);
 
-    ctx.fillStyle = GOLD;
-    ctx.fillRect(W / 2 - 32, H / 2 + 30, 64, 1);
-
-    const pillW = 760, pillH = 130;
-    const pillX = (W - pillW) / 2;
-    const pillY = H / 2 + 110;
-    ctx.strokeStyle = GOLD;
-    ctx.lineWidth = 1.5;
-    roundRect(ctx, pillX, pillY, pillW, pillH, 2);
-    ctx.stroke();
-    ctx.fillStyle = IVOIRE;
-    ctx.font = "500 40px 'Inter',sans-serif";
-    (ctx as any).letterSpacing = "8px";
-    ctx.fillText("GOLDEALSCLUB.COM", W / 2, pillY + pillH / 2 + 2);
+    drawCapsText(ctx, "ABONNEZ-VOUS", W / 2, H - 150, {
+      weight: 600, size: 20, tracking: 8, color: activePalette.inkSoft, align: "center",
+    });
     (ctx as any).letterSpacing = "0px";
     ctx.globalAlpha = 1;
     ctx.textBaseline = "alphabetic";
