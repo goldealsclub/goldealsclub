@@ -15,6 +15,7 @@ import {
   VIDEO_SHADOWS,
   sampleAreaLuminance,
   pickBadgeContrast,
+  getBadgeSampleRect,
 } from "@/lib/video-tokens";
 
 type Swatch = { label: string; kind: "solid" | "gradient" | "noise" | "image"; value: string };
