@@ -20,6 +20,7 @@ import {
   clearShadow,
   sampleAreaLuminance,
   pickBadgeContrast,
+  getBadgeSampleRect,
 } from "@/lib/video-tokens";
 
 import brandNikeUrl from "@/assets/brand-nike.svg";
