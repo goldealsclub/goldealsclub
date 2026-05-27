@@ -1485,7 +1485,7 @@ export default function AdminVideoPage() {
       const nextRaf = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
-        drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos);
+        drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos, debugBadge);
         // Pousse EXACTEMENT une frame dans le MediaRecorder pour ce timestamp
         if (canRequestFrame) videoTrack.requestFrame();
         if ((f & 7) === 0) setProgress(Math.round((f / totalFrames) * 100));
