@@ -874,6 +874,7 @@ export function drawDealFullScreen(
   hold: number, // 0..1 progression à l'intérieur du hold (pour ken-burns)
   drawBg: boolean = true,
   logo: HTMLCanvasElement | null = null,
+  debugBadge = false,
 ) {
   if (drawBg) drawCharcoalBg(ctx, hold);
 
@@ -993,7 +994,7 @@ export function drawDealFullScreen(
   drawAdHeader(ctx, deal, revealE, exitE, logo);
 
   // Bloc prix rouge (droite)
-  drawAdPriceBlock(ctx, deal, revealE, exitE);
+  drawAdPriceBlock(ctx, deal, revealE, exitE, debugBadge);
 
   // CTA pilule + barre sponsorisé — fade-in après le produit
   const ctaAlpha = easeOutExpo(clamp01((reveal - 0.25) / 0.6)) * (1 - exitE);
@@ -1004,6 +1005,14 @@ export function drawDealFullScreen(
 }
 
 function drawSelectionFrame(
+  ctx: CanvasRenderingContext2D,
+  t: number,
+  selection: Selection,
+  imgs: (HTMLImageElement | null)[],
+  totalSec: number,
+  logos: (HTMLCanvasElement | null)[] = [],
+  debugBadge = false,
+) {
   ctx: CanvasRenderingContext2D,
   t: number,
   selection: Selection,
