@@ -230,6 +230,7 @@ type Brief = {
 export const W = 1080;
 export const H = 1920;
 const FPS = 60;                     // 60 fps → mouvement perçu parfaitement fluide (mobile)
+const MAX_TOTAL_SEC = 60;           // plafond global 60 s (Reels / Stories)
 const PER_DEAL_SEC = 4.2;          // produit affiché 4.2s — laisse respirer + crossfade ample
 const INTRO = 2.2;
 const OUTRO = 2.6;
