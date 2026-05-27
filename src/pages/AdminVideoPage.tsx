@@ -695,7 +695,10 @@ function drawAdPriceBlock(
   const boxY = 150;
 
   // ── Détection adaptative du fond derrière le badge ─────────────────
-  const sampleLum = sampleAreaLuminance(ctx, boxX - 8, boxY - 8, boxW + 16, boxH + 16);
+  // On échantillonne UNIQUEMENT la zone interne du badge (inset ~12 %)
+  // pour ignorer l'ombre, l'anneau et les transitions photo voisines.
+  const sampleRect = getBadgeSampleRect(ctx, boxX, boxY, boxW, boxH);
+  const sampleLum = sampleAreaLuminance(ctx, sampleRect.x, sampleRect.y, sampleRect.w, sampleRect.h);
   const badge = pickBadgeContrast(sampleLum);
 
   // Origine top-right pour le scale (comme la capture Instagram)
