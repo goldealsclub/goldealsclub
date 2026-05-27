@@ -1051,6 +1051,7 @@ function drawSelectionFrame(
   totalSec: number,
   logos: (HTMLCanvasElement | null)[] = [],
   debugBadge = false,
+  perDealSec = PER_DEAL_SEC,
 ) {
   const n = selection.deals.length;
 
