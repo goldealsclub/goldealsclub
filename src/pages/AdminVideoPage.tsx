@@ -1641,6 +1641,40 @@ export default function AdminVideoPage() {
             </Select>
           </div>
 
+          {/* Toggle debug badge */}
+          <div className="border rounded-lg p-4 mb-6 flex items-center justify-between">
+            <div>
+              <h2 className="font-semibold text-sm">Mode debug badge</h2>
+              <p className="text-xs text-muted-foreground">
+                Affiche luminance, variante et scrim sur le badge prix.
+              </p>
+            </div>
+            <label className="inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={debugBadge}
+                onChange={(e) => setDebugBadge(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="relative w-11 h-6 bg-muted rounded-full peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-colors" />
+              <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5" />
+            </label>
+          </div>
+
+          {/* Canvas preview debug */}
+          {debugBadge && (
+            <div className="mb-6 overflow-auto rounded-lg border bg-black/5 p-2">
+              <canvas
+                ref={debugCanvasRef}
+                style={{ width: 360, height: 640 }}
+                className="mx-auto block rounded"
+              />
+              <p className="text-[10px] text-center text-muted-foreground mt-1">
+                Preview frame statique · 1er deal · debug badge ON
+              </p>
+            </div>
+          )}
+
           <canvas ref={canvasRef} className="hidden" />
 
 
