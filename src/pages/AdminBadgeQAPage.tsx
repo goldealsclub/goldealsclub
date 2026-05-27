@@ -196,7 +196,8 @@ export default function AdminBadgeQAPage() {
         const by = (CELL_H - BADGE_H) / 2;
 
         // Échantillonnage de la luminance sous la zone du badge
-        const lum = sampleAreaLuminance(ctx, bx, by, BADGE_W, BADGE_H);
+        const sr = getBadgeSampleRect(ctx, bx, by, BADGE_W, BADGE_H);
+        const lum = sampleAreaLuminance(ctx, sr.x, sr.y, sr.w, sr.h);
         const c = pickBadgeContrast(lum);
 
         // Scrim (voile additionnel) si nécessaire
