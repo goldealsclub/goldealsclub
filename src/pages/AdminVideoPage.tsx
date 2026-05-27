@@ -1139,7 +1139,7 @@ function drawSelectionFrame(
 
   const reveal = clamp01(localT / REVEAL_DUR);
   const hold = clamp01(localT / PER_DEAL_SEC);
-  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false, logos[idx] ?? null);
+  drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false, logos[idx] ?? null, debugBadge);
 }
 
 export default function AdminVideoPage() {
