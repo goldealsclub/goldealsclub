@@ -1,6 +1,7 @@
 import { AbsoluteFill } from "remotion";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { fade } from "@remotion/transitions/fade";
+import { Fragment } from "react";
 import { IntroScene } from "./scenes/IntroScene";
 import { DealScene } from "./scenes/DealScene";
 import { OutroScene } from "./scenes/OutroScene";
@@ -28,18 +29,16 @@ export const MainVideo: React.FC = () => {
         <TransitionSeries.Sequence durationInFrames={90}>
           <IntroScene />
         </TransitionSeries.Sequence>
+        <TransitionSeries.Transition presentation={premiumFade()} timing={premiumTiming} />
 
         {deals.map((deal, i) => (
-          <TransitionSeries.Sequence key={i} durationInFrames={140}>
-            <DealScene deal={deal} index={i} total={TOTAL} />
-          </TransitionSeries.Sequence>
-        )).flatMap((seq, i, arr) =>
-          i < arr.length - 1
-            ? [seq, <TransitionSeries.Transition key={`t-${i}`} presentation={premiumFade()} timing={premiumTiming} />]
-            : [seq]
-        )}
-
-        <TransitionSeries.Transition presentation={premiumFade()} timing={premiumTiming} />
+          <Fragment key={i}>
+            <TransitionSeries.Sequence durationInFrames={140}>
+              <DealScene deal={deal} index={i} total={TOTAL} />
+            </TransitionSeries.Sequence>
+            <TransitionSeries.Transition presentation={premiumFade()} timing={premiumTiming} />
+          </Fragment>
+        ))}
 
         <TransitionSeries.Sequence durationInFrames={130}>
           <OutroScene />
