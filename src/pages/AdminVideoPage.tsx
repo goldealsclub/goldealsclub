@@ -1013,13 +1013,6 @@ function drawSelectionFrame(
   logos: (HTMLCanvasElement | null)[] = [],
   debugBadge = false,
 ) {
-  ctx: CanvasRenderingContext2D,
-  t: number,
-  selection: Selection,
-  imgs: (HTMLImageElement | null)[],
-  totalSec: number,
-  logos: (HTMLCanvasElement | null)[] = [],
-) {
   const n = selection.deals.length;
 
   // INTRO — éditorial nuit
