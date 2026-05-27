@@ -745,7 +745,7 @@ function drawAdHeader(
   }
 
   // ── Hairline + label "PRODUIT" ──
-  const hairY = brandBlockBottom + 36;
+  const hairY = brandBlockBottom + 24;
   ctx.fillStyle = "rgba(13,13,13,0.20)";
   ctx.fillRect(60, hairY, W - 120, 1);
   drawCapsText(ctx, "L'OBJET DU JOUR", 60, hairY + 28, {
@@ -776,8 +776,8 @@ function drawAdHeader(
     }
     lines[1] = lines[1] + "…";
   }
-  const titleStartY = hairY + 88;
-  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 56));
+  const titleStartY = hairY + 76;
+  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 50));
 
   ctx.restore();
 }
@@ -806,7 +806,7 @@ function drawAdPriceBlock(
   const priceTxt = `${fmt(priceVal)} €`;
 
   // ── Bande prix éditoriale en bas du frame (avant le crédit) ────────
-  const bandY = H - 360;
+  const bandY = H - 500;
   const bandH = 170;
 
   // Hairline supérieure + label "PRIX"
@@ -945,8 +945,9 @@ export function drawDealFullScreen(
   if (drawBg) drawCharcoalBg(ctx, hold);
 
   // Zone produit : centre, sous le header, au-dessus du CTA
-  const stageY = 470;
-  const stageH = Math.round(H * 0.50);
+  // Zone produit : sous le bloc titre, au-dessus de la bande prix
+  const stageY = 510;
+  const stageH = 880;
   const cxC = W / 2;
   const cyC = stageY + stageH * 0.5;
 
@@ -1056,13 +1057,16 @@ export function drawDealFullScreen(
   }
   ctx.restore();
 
+  // Cadre éditorial hairline (uniquement preset paper)
+  drawEditorialFrame(ctx, (1 - exitE) * revealE);
+
   // Header marque + titre (gauche) — entrée légère
   drawAdHeader(ctx, deal, revealE, exitE, logo);
 
-  // Bloc prix rouge (droite)
+  // Bande prix éditoriale (bas)
   drawAdPriceBlock(ctx, deal, revealE, exitE, debugBadge);
 
-  // CTA pilule + barre sponsorisé — fade-in après le produit
+  // CTA + crédit — fade-in après le produit
   const ctaAlpha = easeOutExpo(clamp01((reveal - 0.25) / 0.6)) * (1 - exitE);
   drawAdCTA(ctx, ctaAlpha);
   drawSponsoBar(ctx, ctaAlpha);
