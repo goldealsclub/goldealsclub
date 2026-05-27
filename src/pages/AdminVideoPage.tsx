@@ -1131,20 +1131,20 @@ function drawSelectionFrame(
 
   // SLIDESHOW
   const slideT = t - INTRO;
-  const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
-  const localT = slideT - idx * PER_DEAL_SEC;
+  const idx = Math.min(n - 1, Math.floor(slideT / perDealSec));
+  const localT = slideT - idx * perDealSec;
 
   // Fenêtres : entrée 1.0s, transition crossfade 1.8s entre deals (ultra doux à 60fps)
   const REVEAL_DUR = 1.0;
   const TRANS_DUR = 1.8;
 
   // Fond une seule fois — les deals sont composités par dessus
-  drawCharcoalBg(ctx, clamp01(localT / PER_DEAL_SEC));
+  drawCharcoalBg(ctx, clamp01(localT / perDealSec));
 
   // Crossfade : on dessine le suivant qui monte, puis le courant qui s'efface par-dessus.
-  const inTransition = idx < n - 1 && localT > PER_DEAL_SEC - TRANS_DUR;
+  const inTransition = idx < n - 1 && localT > perDealSec - TRANS_DUR;
   if (inTransition) {
-    const ttRaw = clamp01((localT - (PER_DEAL_SEC - TRANS_DUR)) / TRANS_DUR);
+    const ttRaw = clamp01((localT - (perDealSec - TRANS_DUR)) / TRANS_DUR);
     // Courbe ease-in-out plus douce → pas de jump perceptible
     const tt = easeInOutQuint(ttRaw);
     const nextReveal = tt;
@@ -1161,7 +1161,7 @@ function drawSelectionFrame(
       logos[idx + 1] ?? null,
       debugBadge,
     );
-    const curHold = clamp01(localT / PER_DEAL_SEC);
+    const curHold = clamp01(localT / perDealSec);
     drawDealFullScreen(
       ctx,
       selection.deals[idx],
@@ -1178,7 +1178,7 @@ function drawSelectionFrame(
   }
 
   const reveal = clamp01(localT / REVEAL_DUR);
-  const hold = clamp01(localT / PER_DEAL_SEC);
+  const hold = clamp01(localT / perDealSec);
   drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false, logos[idx] ?? null, debugBadge);
 }
 
