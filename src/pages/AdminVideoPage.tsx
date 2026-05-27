@@ -672,6 +672,7 @@ function drawAdPriceBlock(
   deal: Deal,
   reveal: number,
   exit: number,
+  debugBadge = false,
 ) {
   const alpha = reveal * (1 - exit);
   const scale = 0.9 + 0.1 * reveal;
@@ -694,8 +695,6 @@ function drawAdPriceBlock(
   const boxY = 150;
 
   // ── Détection adaptative du fond derrière le badge ─────────────────
-  // On échantillonne AVANT toute transformation (le translate/scale
-  // n'affecte pas getImageData qui lit en coordonnées device).
   const sampleLum = sampleAreaLuminance(ctx, boxX - 8, boxY - 8, boxW + 16, boxH + 16);
   const badge = pickBadgeContrast(sampleLum);
 
@@ -737,6 +736,40 @@ function drawAdPriceBlock(
   ctx.fillText(priceTxt, boxX + boxW / 2, boxY + boxH / 2 + 2);
   (ctx as any).letterSpacing = "0px";
 
+  // ── Overlay debug ──────────────────────────────────────────────────
+  if (debugBadge) {
+    const dbgH = 110;
+    const dbgW = 280;
+    const dbgX = boxX + boxW - dbgW;
+    const dbgY = boxY + boxH + 18;
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.92;
+    ctx.fillStyle = "#0a0a0a";
+    roundRect(ctx, dbgX, dbgY, dbgW, dbgH, VIDEO_RADII.sm);
+    ctx.fill();
+    ctx.globalAlpha = alpha;
+    ctx.strokeStyle = badge.isLightBg ? "#ffffff" : "#ff6b35";
+    ctx.lineWidth = 1.5;
+    roundRect(ctx, dbgX + 0.5, dbgY + 0.5, dbgW - 1, dbgH - 1, VIDEO_RADII.sm);
+    ctx.stroke();
+    ctx.fillStyle = "#ffffff";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.font = "500 18px 'Inter','Helvetica',sans-serif";
+    const padL = 16;
+    const lineH = 26;
+    let dy = dbgY + 28;
+    ctx.fillText(`Luminance : ${Math.round(sampleLum)}`, dbgX + padL, dy); dy += lineH;
+    ctx.fillText(`Variante  : ${badge.isLightBg ? 'dark (noir)' : 'light (blanc)'}`, dbgX + padL, dy); dy += lineH;
+    ctx.fillText(`Scrim     : ${badge.scrim > 0 ? badge.scrim.toFixed(2) : '—'}`, dbgX + padL, dy); dy += lineH;
+    ctx.fillStyle = badge.scrim > 0 ? "#ff6b35" : "#4ade80";
+    ctx.fillText(
+      badge.scrim > 0 ? "⚠️ Scrim actif (cas limite)" : "✓ Contraste OK",
+      dbgX + padL,
+      dy,
+    );
+    ctx.restore();
+  }
 
   // Prix barré sous la boîte — couleur synchronisée avec le badge
   if (deal.original_price && Number(deal.original_price) > priceVal) {
@@ -760,6 +793,7 @@ function drawAdPriceBlock(
 
   ctx.restore();
 }
+
 
 function drawAdCTA(ctx: CanvasRenderingContext2D, alpha: number) {
   ctx.save();
