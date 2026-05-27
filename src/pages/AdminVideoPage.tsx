@@ -1001,9 +1001,13 @@ export function drawDealFullScreen(
         plateCx, plateCy, plateR * 0.15,
         plateCx, plateCy, plateR,
       );
-      plate.addColorStop(0, "rgba(28,28,30,0.78)");
-      plate.addColorStop(0.55, "rgba(28,28,30,0.45)");
-      plate.addColorStop(1, "rgba(28,28,30,0)");
+      // Sur preset paper, halo taupe doux (jamais une tache sombre)
+      const c0 = activePresetName === "paper" ? "rgba(80,72,62,0.22)" : "rgba(28,28,30,0.78)";
+      const c1 = activePresetName === "paper" ? "rgba(80,72,62,0.10)" : "rgba(28,28,30,0.45)";
+      const c2 = activePresetName === "paper" ? "rgba(80,72,62,0)"    : "rgba(28,28,30,0)";
+      plate.addColorStop(0, c0);
+      plate.addColorStop(0.55, c1);
+      plate.addColorStop(1, c2);
       ctx.fillStyle = plate;
       ctx.beginPath();
       ctx.ellipse(plateCx, plateCy, plateR * 1.05, plateR * 0.95, 0, 0, Math.PI * 2);
