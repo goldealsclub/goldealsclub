@@ -378,8 +378,10 @@ function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement |
   ctx.drawImage(img as any, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
 }
 
-// Cache de détourage adaptatif : détecte la couleur de fond aux 4 coins
-// (blanc, gris clair, beige…) et la rend transparente avec feathering doux.
+// Cache de détourage adaptatif : flood-fill depuis les bords de l'image
+// pour ne retirer QUE les pixels de fond connectés aux coins. Évite les
+// "nuages" pixelisés autour du produit dus au bruit JPEG ou aux dégradés
+// subtils des photos e-commerce (qui faisaient échouer un seuillage global).
 const cutoutCache = new WeakMap<HTMLImageElement, HTMLCanvasElement>();
 function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
   const cached = cutoutCache.get(img);
@@ -395,10 +397,10 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     const d = id.data;
     const W0 = c.width, H0 = c.height;
 
-    // Échantillonne les 4 coins (16x16 px) pour détecter la couleur de fond
+    // 1) Échantillonne les 4 coins (24x24 px) pour estimer la couleur de fond.
     const sampleCorner = (x0: number, y0: number) => {
       let r = 0, g = 0, b = 0, n = 0;
-      const sz = 16;
+      const sz = 24;
       for (let y = y0; y < y0 + sz && y < H0; y++) {
         for (let x = x0; x < x0 + sz && x < W0; x++) {
           const i = (y * W0 + x) * 4;
@@ -409,60 +411,93 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     };
     const corners = [
       sampleCorner(0, 0),
-      sampleCorner(W0 - 16, 0),
-      sampleCorner(0, H0 - 16),
-      sampleCorner(W0 - 16, H0 - 16),
+      sampleCorner(W0 - 24, 0),
+      sampleCorner(0, H0 - 24),
+      sampleCorner(W0 - 24, H0 - 24),
     ];
-    // Couleur de fond moyenne
     let br = 0, bg = 0, bb = 0;
     for (const [r, g, b] of corners) { br += r; bg += g; bb += b; }
     br /= 4; bg /= 4; bb /= 4;
-    // Variance entre coins → si trop élevée, on annule (probablement une lifestyle photo)
+
+    // Si variance entre coins trop élevée → lifestyle photo, on ne touche pas.
     let variance = 0;
     for (const [r, g, b] of corners) {
       variance += Math.abs(r - br) + Math.abs(g - bg) + Math.abs(b - bb);
     }
-    if (variance > 80) {
-      // Pas de fond uniforme → on garde l'image brute
+    if (variance > 60) {
       cutoutCache.set(img, c);
       return c;
     }
-    // Si fond très sombre (lifestyle dark) : on n'enlève rien
+    // Fond sombre (lifestyle dark) : on n'enlève rien.
     const bgLum = (br + bg + bb) / 3;
-    if (bgLum < 140) {
+    if (bgLum < 150) {
       cutoutCache.set(img, c);
       return c;
     }
 
-    // Tolérance adaptative : fonds très clairs (JPEG e-commerce typiques)
-    // nécessitent une plage plus large pour éliminer le halo résiduel.
+    // 2) Flood-fill BFS depuis tous les pixels de bord proches de la couleur
+    //    de fond. Un pixel est candidat si sa distance euclidienne au fond
+    //    est < TOL_FILL. Les pixels "produit" ne sont jamais traversés.
     const veryLight = bgLum > 220;
-    const TOL_HARD = veryLight ? 26 : 14;   // distance euclidienne max pour transparence totale
-    const TOL_SOFT = veryLight ? 88 : 56;   // feathering plus large → bord plus doux, pas de "halo"
-    for (let i = 0; i < d.length; i += 4) {
-      const dr = d[i] - br;
-      const dg = d[i + 1] - bg;
-      const db = d[i + 2] - bb;
+    const TOL_FILL = veryLight ? 38 : 26;   // tolérance pendant le flood-fill
+    const TOL_HARD = veryLight ? 18 : 10;   // 100 % transparent en dessous
+    const TOL_SOFT = veryLight ? 60 : 42;   // feathering au-dessus
+    const total = W0 * H0;
+    const isBg = new Uint8Array(total);
+    const visited = new Uint8Array(total);
+    const stack = new Int32Array(total);
+    let sp = 0;
+    const pushPx = (x: number, y: number) => {
+      const k = y * W0 + x;
+      if (visited[k]) return;
+      visited[k] = 1;
+      const i = k * 4;
+      const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
+      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+      if (dist < TOL_FILL) {
+        isBg[k] = 1;
+        stack[sp++] = k;
+      }
+    };
+    // Seed : toute la bordure du canvas.
+    for (let x = 0; x < W0; x++) { pushPx(x, 0); pushPx(x, H0 - 1); }
+    for (let y = 0; y < H0; y++) { pushPx(0, y); pushPx(W0 - 1, y); }
+    while (sp > 0) {
+      const k = stack[--sp];
+      const x = k % W0, y = (k / W0) | 0;
+      if (x > 0)        pushPx(x - 1, y);
+      if (x < W0 - 1)   pushPx(x + 1, y);
+      if (y > 0)        pushPx(x, y - 1);
+      if (y < H0 - 1)   pushPx(x, y + 1);
+    }
+
+    // 3) Applique transparence + feathering UNIQUEMENT sur les pixels marqués
+    //    "fond connecté aux bords". Les pixels intérieurs au produit restent
+    //    intacts → plus de speckle / plaques pixelisées dans la silhouette.
+    for (let k = 0; k < total; k++) {
+      if (!isBg[k]) continue;
+      const i = k * 4;
+      const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
       const dist = Math.sqrt(dr * dr + dg * dg + db * db);
       if (dist < TOL_HARD) {
         d[i + 3] = 0;
       } else if (dist < TOL_SOFT) {
         const t = (dist - TOL_HARD) / (TOL_SOFT - TOL_HARD);
-        // courbe smoothstep pour transition plus naturelle
         const sm = t * t * (3 - 2 * t);
         d[i + 3] = Math.round(d[i + 3] * sm);
-        // ── Décontamination anti-halo ──
-        // Les pixels en feather ont encore le RGB du fond (blanc) mélangé.
-        // On retire la composante du fond pour révéler la vraie couleur
-        // du produit → plus de liseré blanc autour des sneakers blanches.
-        const k = 1 / Math.max(0.18, sm); // plus on est proche du bord, plus on retire
-        d[i]     = Math.max(0, Math.min(255, br + (d[i]     - br) * k));
-        d[i + 1] = Math.max(0, Math.min(255, bg + (d[i + 1] - bg) * k));
-        d[i + 2] = Math.max(0, Math.min(255, bb + (d[i + 2] - bb) * k));
+        // Décontamination anti-halo (retire la teinte du fond résiduelle).
+        const k2 = 1 / Math.max(0.18, sm);
+        d[i]     = Math.max(0, Math.min(255, br + (d[i]     - br) * k2));
+        d[i + 1] = Math.max(0, Math.min(255, bg + (d[i + 1] - bg) * k2));
+        d[i + 2] = Math.max(0, Math.min(255, bb + (d[i + 2] - bb) * k2));
+      } else {
+        // Bord de la zone fond : léger fondu pour adoucir la transition.
+        d[i + 3] = Math.round(d[i + 3] * 0.85);
       }
     }
     cx.putImageData(id, 0, 0);
-    // Mesure la luminance moyenne des pixels opaques pour adapter le fond
+
+    // Luminance moyenne des pixels opaques (pour adapter le fond derrière).
     let lumSum = 0, lumN = 0;
     for (let i = 0; i < d.length; i += 4) {
       if (d[i + 3] > 200) {
@@ -472,8 +507,7 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     }
     (c as any).__avgLum = lumN > 0 ? lumSum / lumN : 128;
 
-    // ── Silhouette pré-calculée pour le contour fin ──
-    // Canvas monochrome (noir doux) là où le produit est opaque.
+    // Silhouette pré-calculée pour le contour fin.
     const sil = document.createElement("canvas");
     sil.width = W0; sil.height = H0;
     const sx = sil.getContext("2d");
