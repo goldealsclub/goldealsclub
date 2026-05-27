@@ -1546,6 +1546,26 @@ export default function AdminVideoPage() {
     toast({ title: "Caption copiée" });
   };
 
+  // ── Preview debug badge (frame statique du 1er deal) ──
+  useEffect(() => {
+    if (!debugBadge || !brief || !debugCanvasRef.current) return;
+    const canvas = debugCanvasRef.current;
+    canvas.width = W;
+    canvas.height = H;
+    const ctx = canvas.getContext("2d")!;
+    const selection = brief.deals[0];
+    if (!selection) return;
+    const deal = selection.deals[0];
+    if (!deal) return;
+    applyBgPreset(bgPreset);
+    (async () => {
+      const img = await loadImage(deal.image_url);
+      const logo = await getBrandLogo(deal.brand);
+      // Dessine une frame au milieu du 1er deal (t=INTRO+PER_DEAL_SEC/2)
+      drawSelectionFrame(ctx, INTRO + PER_DEAL_SEC * 0.5, selection, [img], INTRO + selection.deals.length * PER_DEAL_SEC + OUTRO, [logo], true);
+    })();
+  }, [debugBadge, brief, bgPreset]);
+
   if (isAdmin === null) {
     return <div className="p-8 flex justify-center"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   }
