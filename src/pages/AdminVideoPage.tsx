@@ -573,7 +573,45 @@ function drawTopBar(ctx: CanvasRenderingContext2D, label: string, rank: number, 
 }
 
 function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
-  // Fond studio gris clair, style ZARA — dégradé vertical doux, presque uniforme
+  // ── Paper & Ink éditorial ─────────────────────────────────────────────
+  if (activePresetName === "paper") {
+    // Fond papier ultra-mat, dégradé chaud à peine perceptible
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, "#f6f4ef");
+    g.addColorStop(0.55, "#f1eee7");
+    g.addColorStop(1, "#ebe7df");
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, W, H);
+
+    // Halo très léger, off-center (lumière de fenêtre éditoriale)
+    const halo = ctx.createRadialGradient(W * 0.32, H * 0.30, 60, W * 0.32, H * 0.30, W * 0.95);
+    halo.addColorStop(0, "rgba(255,253,247,0.55)");
+    halo.addColorStop(0.55, "rgba(255,253,247,0.08)");
+    halo.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, W, H);
+
+    // Vignette sourde
+    const vign = ctx.createRadialGradient(W / 2, H * 0.55, W * 0.45, W / 2, H * 0.55, W * 0.95);
+    vign.addColorStop(0, "rgba(0,0,0,0)");
+    vign.addColorStop(1, "rgba(35,32,28,0.10)");
+    ctx.fillStyle = vign;
+    ctx.fillRect(0, 0, W, H);
+
+    // Grain papier (mélange clair/sombre, très discret)
+    ctx.save();
+    ctx.globalAlpha = 0.045;
+    for (let i = 0; i < 320; i++) {
+      const gx = (i * 137.13) % W;
+      const gy = (i * 241.91) % H;
+      ctx.fillStyle = i % 3 === 0 ? "#000" : "#fff";
+      ctx.fillRect(gx, gy, 1.5, 1.5);
+    }
+    ctx.restore();
+    return;
+  }
+
+  // ── Presets historiques (zara / charcoal / ivoire) ──────────────────
   const drift = Math.sin(t01 * Math.PI) * 0.03;
   const bgGrad = ctx.createLinearGradient(0, 0, 0, H);
   bgGrad.addColorStop(0, CHARCOAL_TOP);
@@ -582,7 +620,6 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
   ctx.fillStyle = bgGrad;
   ctx.fillRect(0, 0, W, H);
 
-  // Halo lumineux centré (couleur dépendante du preset)
   const haloR = ctx.createRadialGradient(W / 2, H * 0.42, 80, W / 2, H * 0.42, W * 0.75);
   haloR.addColorStop(0, activePalette.haloInner);
   haloR.addColorStop(0.5, activePalette.haloMid);
@@ -590,14 +627,12 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
   ctx.fillStyle = haloR;
   ctx.fillRect(0, 0, W, H);
 
-  // Vignette périphérique (intensité dépendante du preset)
   const vign = ctx.createRadialGradient(W / 2, H * 0.5, W * 0.35, W / 2, H * 0.5, W * 0.95);
   vign.addColorStop(0, "rgba(0,0,0,0)");
   vign.addColorStop(1, activePalette.vignette);
   ctx.fillStyle = vign;
   ctx.fillRect(0, 0, W, H);
 
-  // Grain très fin (texture papier mat)
   ctx.save();
   ctx.globalAlpha = activePalette.grainOnDark ? 0.05 : 0.035;
   for (let i = 0; i < 130; i++) {
@@ -609,6 +644,23 @@ function drawCharcoalBg(ctx: CanvasRenderingContext2D, t01: number) {
       : (dark ? "#000000" : "#ffffff");
     ctx.fillRect(gx, gy, 2, 2);
   }
+  ctx.restore();
+}
+
+// ── Hairline éditoriale : cadre haut/bas du frame Paper&Ink ───────────
+function drawEditorialFrame(ctx: CanvasRenderingContext2D, alpha = 1) {
+  if (activePresetName !== "paper") return;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "rgba(13,13,13,0.22)";
+  // Hairline top + bottom
+  ctx.fillRect(60, 92, W - 120, 1);
+  ctx.fillRect(60, H - 92, W - 120, 1);
+  // Marqueurs de coin discrets
+  ctx.fillRect(60, 80, 1, 24);
+  ctx.fillRect(W - 61, 80, 1, 24);
+  ctx.fillRect(60, H - 104, 1, 24);
+  ctx.fillRect(W - 61, H - 104, 1, 24);
   ctx.restore();
 }
 
