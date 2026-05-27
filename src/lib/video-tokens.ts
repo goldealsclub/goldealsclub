@@ -133,11 +133,51 @@ export const VIDEO_BADGE = {
   scrimOpacity: 0.12,
   /** Contraste minimal (ratio simple bg/fg sur 0-255) sous lequel on renforce. */
   minContrast: 90,
+  /**
+   * Ratio d'inset (0-0.49) appliqué à la zone d'échantillonnage par rapport
+   * à la boîte du badge. Un inset positif évite de capter les pixels du
+   * voisinage (ombres, ring, transitions photo) et stabilise le rendu.
+   */
+  sampleInsetRatio: 0.12,
+  /** Plafond de pixels échantillonnés — borne la charge CPU. */
+  sampleMaxPixels: 4096,
+  /** Pas minimum entre deux pixels échantillonnés (perf). */
+  sampleMinStride: 3,
 } as const;
 
 /**
- * Échantillonne la luminance moyenne d'une zone canvas.
- * Retourne 0 (noir) → 255 (blanc).
+ * Calcule le rectangle d'échantillonnage à utiliser pour mesurer la
+ * luminance derrière un badge. On rétrécit volontairement la boîte vers
+ * le centre (inset) pour ne capter QUE les pixels qui seront masqués par
+ * le badge — pas les ombres, le ring ou le voisinage photo. Le rectangle
+ * est borné aux dimensions du canvas pour éviter tout débordement.
+ */
+export function getBadgeSampleRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  insetRatio = VIDEO_BADGE.sampleInsetRatio,
+): { x: number; y: number; w: number; h: number } {
+  const cw = ctx.canvas.width;
+  const ch = ctx.canvas.height;
+  const inset = Math.max(0, Math.min(0.49, insetRatio));
+  const ix = x + w * inset;
+  const iy = y + h * inset;
+  const iw = w * (1 - inset * 2);
+  const ih = h * (1 - inset * 2);
+  const sx = Math.max(0, Math.min(cw - 1, Math.round(ix)));
+  const sy = Math.max(0, Math.min(ch - 1, Math.round(iy)));
+  const sw = Math.max(1, Math.min(cw - sx, Math.round(iw)));
+  const sh = Math.max(1, Math.min(ch - sy, Math.round(ih)));
+  return { x: sx, y: sy, w: sw, h: sh };
+}
+
+/**
+ * Échantillonne la luminance moyenne d'une zone canvas (0 → 255).
+ * Pas adaptatif : on vise ~`sampleMaxPixels` pixels lus quel que soit
+ * le format de la zone, ce qui rend le rendu stable et borne le coût.
  */
 export function sampleAreaLuminance(
   ctx: CanvasRenderingContext2D,
@@ -147,14 +187,26 @@ export function sampleAreaLuminance(
   h: number,
 ): number {
   try {
-    const data = ctx.getImageData(Math.max(0, x), Math.max(0, y), Math.max(1, w), Math.max(1, h)).data;
+    const cw = ctx.canvas.width;
+    const ch = ctx.canvas.height;
+    const sx = Math.max(0, Math.min(cw - 1, Math.round(x)));
+    const sy = Math.max(0, Math.min(ch - 1, Math.round(y)));
+    const sw = Math.max(1, Math.min(cw - sx, Math.round(w)));
+    const sh = Math.max(1, Math.min(ch - sy, Math.round(h)));
+    const data = ctx.getImageData(sx, sy, sw, sh).data;
+    const totalPx = sw * sh;
+    const stride = Math.max(
+      VIDEO_BADGE.sampleMinStride,
+      Math.ceil(Math.sqrt(totalPx / VIDEO_BADGE.sampleMaxPixels)),
+    );
     let sum = 0;
-    const step = 16; // sous-échantillonnage (perf)
     let count = 0;
-    for (let i = 0; i < data.length; i += 4 * step) {
-      // Rec. 601
-      sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      count++;
+    for (let py = 0; py < sh; py += stride) {
+      for (let px = 0; px < sw; px += stride) {
+        const i = (py * sw + px) * 4;
+        sum += 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
+        count++;
+      }
     }
     return count ? sum / count : 128;
   } catch {
