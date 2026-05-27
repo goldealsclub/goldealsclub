@@ -1649,14 +1649,14 @@ export default function AdminVideoPage() {
                 Affiche luminance, variante et scrim sur le badge prix.
               </p>
             </div>
-            <label className="inline-flex items-center cursor-pointer">
+            <label className="inline-flex items-center cursor-pointer relative">
               <input
                 type="checkbox"
                 checked={debugBadge}
                 onChange={(e) => setDebugBadge(e.target.checked)}
                 className="sr-only peer"
               />
-              <div className="relative w-11 h-6 bg-muted rounded-full peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-colors" />
+              <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:bg-primary peer-focus:ring-2 peer-focus:ring-primary/30 transition-colors" />
               <div className="absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition-transform peer-checked:translate-x-5" />
             </label>
           </div>
