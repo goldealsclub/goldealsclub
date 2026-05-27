@@ -1154,7 +1154,9 @@ export default function AdminVideoPage() {
   const [history, setHistory] = useState<any[]>([]);
   const [uploadingIdx, setUploadingIdx] = useState<number | null>(null);
   const [bgPreset, setBgPreset] = useState<BgPreset>("zara");
+  const [debugBadge, setDebugBadge] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const debugCanvasRef = useRef<HTMLCanvasElement>(null);
   const captionRef = useRef<HTMLTextAreaElement>(null);
 
   const loadHistory = async () => {
