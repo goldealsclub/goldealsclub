@@ -230,6 +230,7 @@ type Brief = {
 export const W = 1080;
 export const H = 1920;
 const FPS = 60;                     // 60 fps → mouvement perçu parfaitement fluide (mobile)
+const MAX_TOTAL_SEC = 60;           // plafond global 60 s (Reels / Stories)
 const PER_DEAL_SEC = 4.2;          // produit affiché 4.2s — laisse respirer + crossfade ample
 const INTRO = 2.2;
 const OUTRO = 2.6;
@@ -1050,6 +1051,7 @@ function drawSelectionFrame(
   totalSec: number,
   logos: (HTMLCanvasElement | null)[] = [],
   debugBadge = false,
+  perDealSec = PER_DEAL_SEC,
 ) {
   const n = selection.deals.length;
 
@@ -1129,20 +1131,20 @@ function drawSelectionFrame(
 
   // SLIDESHOW
   const slideT = t - INTRO;
-  const idx = Math.min(n - 1, Math.floor(slideT / PER_DEAL_SEC));
-  const localT = slideT - idx * PER_DEAL_SEC;
+  const idx = Math.min(n - 1, Math.floor(slideT / perDealSec));
+  const localT = slideT - idx * perDealSec;
 
   // Fenêtres : entrée 1.0s, transition crossfade 1.8s entre deals (ultra doux à 60fps)
   const REVEAL_DUR = 1.0;
   const TRANS_DUR = 1.8;
 
   // Fond une seule fois — les deals sont composités par dessus
-  drawCharcoalBg(ctx, clamp01(localT / PER_DEAL_SEC));
+  drawCharcoalBg(ctx, clamp01(localT / perDealSec));
 
   // Crossfade : on dessine le suivant qui monte, puis le courant qui s'efface par-dessus.
-  const inTransition = idx < n - 1 && localT > PER_DEAL_SEC - TRANS_DUR;
+  const inTransition = idx < n - 1 && localT > perDealSec - TRANS_DUR;
   if (inTransition) {
-    const ttRaw = clamp01((localT - (PER_DEAL_SEC - TRANS_DUR)) / TRANS_DUR);
+    const ttRaw = clamp01((localT - (perDealSec - TRANS_DUR)) / TRANS_DUR);
     // Courbe ease-in-out plus douce → pas de jump perceptible
     const tt = easeInOutQuint(ttRaw);
     const nextReveal = tt;
@@ -1159,7 +1161,7 @@ function drawSelectionFrame(
       logos[idx + 1] ?? null,
       debugBadge,
     );
-    const curHold = clamp01(localT / PER_DEAL_SEC);
+    const curHold = clamp01(localT / perDealSec);
     drawDealFullScreen(
       ctx,
       selection.deals[idx],
@@ -1176,7 +1178,7 @@ function drawSelectionFrame(
   }
 
   const reveal = clamp01(localT / REVEAL_DUR);
-  const hold = clamp01(localT / PER_DEAL_SEC);
+  const hold = clamp01(localT / perDealSec);
   drawDealFullScreen(ctx, selection.deals[idx], imgs[idx], reveal, 0, idx + 1, hold, false, logos[idx] ?? null, debugBadge);
 }
 
@@ -1346,7 +1348,9 @@ export default function AdminVideoPage() {
   const renderSelection = async (idx: number) => {
     if (!brief) return;
     const selection = brief.deals[idx];
-    const totalSec = INTRO + selection.deals.length * PER_DEAL_SEC + OUTRO;
+    const n = selection.deals.length;
+    const perDealSec = Math.min(PER_DEAL_SEC, (MAX_TOTAL_SEC - INTRO - OUTRO) / n);
+    const totalSec = INTRO + n * perDealSec + OUTRO;
     applyBgPreset(bgPreset);
     setRenderingIdx(idx);
     setProgress(0);
@@ -1523,7 +1527,7 @@ export default function AdminVideoPage() {
       const nextRaf = () => new Promise<void>((r) => requestAnimationFrame(() => r()));
       for (let f = 0; f < totalFrames; f++) {
         const t = f / FPS;
-        drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos, debugBadge);
+        drawSelectionFrame(ctx, t, selection, imgs, totalSec, logos, debugBadge, perDealSec);
         // Pousse EXACTEMENT une frame dans le MediaRecorder pour ce timestamp
         if (canRequestFrame) videoTrack.requestFrame();
         if ((f & 7) === 0) setProgress(Math.round((f / totalFrames) * 100));
@@ -1599,8 +1603,11 @@ export default function AdminVideoPage() {
     (async () => {
       const img = await loadImage(deal.image_url);
       const logo = await getBrandLogo(deal.brand);
-      // Dessine une frame au milieu du 1er deal (t=INTRO+PER_DEAL_SEC/2)
-      drawSelectionFrame(ctx, INTRO + PER_DEAL_SEC * 0.5, selection, [img], INTRO + selection.deals.length * PER_DEAL_SEC + OUTRO, [logo], true);
+      const n = selection.deals.length;
+      const perDealSec = Math.min(PER_DEAL_SEC, (MAX_TOTAL_SEC - INTRO - OUTRO) / n);
+      const totalSec = INTRO + n * perDealSec + OUTRO;
+      // Dessine une frame au milieu du 1er deal
+      drawSelectionFrame(ctx, INTRO + perDealSec * 0.5, selection, [img], totalSec, [logo], true, perDealSec);
     })();
   }, [debugBadge, brief, bgPreset]);
 
