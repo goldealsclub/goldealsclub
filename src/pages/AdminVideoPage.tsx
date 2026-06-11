@@ -441,12 +441,16 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     for (const [r, g, b] of corners) {
       variance += Math.abs(r - br) + Math.abs(g - bg) + Math.abs(b - bb);
     }
+    const bgLum = (br + bg + bb) / 3;
+    (c as any).__cornerLum = bgLum;
+    (c as any).__cornerVariance = variance;
+    (c as any).__cornerRGB = [br, bg, bb];
+
     if (variance > 60) {
       cutoutCache.set(img, c);
       return c;
     }
     // Fond sombre (lifestyle dark) : on n'enlève rien.
-    const bgLum = (br + bg + bb) / 3;
     if (bgLum < 150) {
       cutoutCache.set(img, c);
       return c;
@@ -987,67 +991,76 @@ export function drawDealFullScreen(
     const iy = stageY + (stageH - drawH) / 2 + slideIn + slideOut;
 
     const cut = getCutout(img);
+    const cornerLum = (cut as any).__cornerLum ?? 128;
+    const cornerVar = (cut as any).__cornerVariance ?? 999;
+    const isWhiteStudio = cornerLum > 215 && cornerVar < 50;
 
-    // Détection produit clair → on pose un disque sombre derrière pour
-    // garantir la lisibilité (sneaker blanche, t-shirt blanc, etc.).
-    const avgLum = (cut as any).__avgLum ?? 128;
-    if (avgLum > 195) {
-      ctx.save();
-      ctx.globalAlpha = alphaK * 0.92;
-      const plateCx = ix + drawW / 2;
-      const plateCy = iy + drawH / 2;
-      const plateR = Math.min(drawW, drawH) * 0.58;
-      const plate = ctx.createRadialGradient(
-        plateCx, plateCy, plateR * 0.15,
-        plateCx, plateCy, plateR,
-      );
-      // Sur preset paper, halo taupe doux (jamais une tache sombre)
-      const c0 = activePresetName === "paper" ? "rgba(80,72,62,0.22)" : "rgba(28,28,30,0.78)";
-      const c1 = activePresetName === "paper" ? "rgba(80,72,62,0.10)" : "rgba(28,28,30,0.45)";
-      const c2 = activePresetName === "paper" ? "rgba(80,72,62,0)"    : "rgba(28,28,30,0)";
-      plate.addColorStop(0, c0);
-      plate.addColorStop(0.55, c1);
-      plate.addColorStop(1, c2);
-      ctx.fillStyle = plate;
-      ctx.beginPath();
-      ctx.ellipse(plateCx, plateCy, plateR * 1.05, plateR * 0.95, 0, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
+    // ─── PAPER + photo studio fond blanc : blend "multiply" propre ───
+    // Le blanc du shooting fond exactement dans le papier ivoire, sans
+    // halo, sans trou, sans contour. C'est la technique qu'utilisent les
+    // magazines éditoriaux pour caler des packshots sur paper stock.
+    if (activePresetName === "paper" && isWhiteStudio) {
       ctx.save();
       ctx.globalAlpha = alphaK;
-    }
-
-    // Ombre portée unique, douce et propre (pas de halo dupliqué qui crée
-    // un effet "fantôme" sur les produits clairs).
-    applyShadow(ctx, avgLum > 195 ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
-    drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-    clearShadow(ctx);
-
-
-    // ── Contour fin via silhouette (anti-contour blanc) ──
-    // Trace la silhouette dans 8 directions à ±1.2 px → liseré sombre net
-    // qui détache parfaitement les produits clairs du fond.
-    const sil = (cut as any).__silhouette as HTMLCanvasElement | undefined;
-    if (sil) {
-      ctx.save();
-      ctx.globalAlpha = alphaK * (avgLum > 195 ? 0.85 : 0.55);
-      const off = avgLum > 195 ? 1.4 : 1.0;
-      const dirs: Array<[number, number]> = [
-        [off, 0], [-off, 0], [0, off], [0, -off],
-        [off, off], [-off, off], [off, -off], [-off, -off],
-      ];
-      for (const [dx, dy] of dirs) {
-        drawContainImage(ctx, sil, ix + dx, iy + dy, drawW, drawH);
+      ctx.globalCompositeOperation = "multiply";
+      drawContainImage(ctx, img, ix, iy, drawW, drawH);
+      ctx.restore();
+    } else {
+      // Détection produit clair → halo doux derrière pour lisibilité.
+      const avgLum = (cut as any).__avgLum ?? 128;
+      if (avgLum > 195) {
+        ctx.save();
+        ctx.globalAlpha = alphaK * 0.92;
+        const plateCx = ix + drawW / 2;
+        const plateCy = iy + drawH / 2;
+        const plateR = Math.min(drawW, drawH) * 0.58;
+        const plate = ctx.createRadialGradient(
+          plateCx, plateCy, plateR * 0.15,
+          plateCx, plateCy, plateR,
+        );
+        const c0 = activePresetName === "paper" ? "rgba(80,72,62,0.22)" : "rgba(28,28,30,0.78)";
+        const c1 = activePresetName === "paper" ? "rgba(80,72,62,0.10)" : "rgba(28,28,30,0.45)";
+        const c2 = activePresetName === "paper" ? "rgba(80,72,62,0)"    : "rgba(28,28,30,0)";
+        plate.addColorStop(0, c0);
+        plate.addColorStop(0.55, c1);
+        plate.addColorStop(1, c2);
+        ctx.fillStyle = plate;
+        ctx.beginPath();
+        ctx.ellipse(plateCx, plateCy, plateR * 1.05, plateR * 0.95, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = alphaK;
       }
-      ctx.restore();
-      // Redessine le produit par-dessus pour conserver tous les détails
-      ctx.save();
-      ctx.globalAlpha = alphaK;
-      drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-      ctx.restore();
-    }
 
-    if (avgLum > 195) ctx.restore();
+      applyShadow(ctx, avgLum > 195 ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
+      drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+      clearShadow(ctx);
+
+      // Contour fin via silhouette — uniquement preset sombre où le halo
+      // de flood-fill est visible. En paper, on évite le liseré qui souligne
+      // les imperfections de détourage.
+      const sil = (cut as any).__silhouette as HTMLCanvasElement | undefined;
+      if (sil && activePresetName !== "paper") {
+        ctx.save();
+        ctx.globalAlpha = alphaK * (avgLum > 195 ? 0.85 : 0.55);
+        const off = avgLum > 195 ? 1.4 : 1.0;
+        const dirs: Array<[number, number]> = [
+          [off, 0], [-off, 0], [0, off], [0, -off],
+          [off, off], [-off, off], [off, -off], [-off, -off],
+        ];
+        for (const [dx, dy] of dirs) {
+          drawContainImage(ctx, sil, ix + dx, iy + dy, drawW, drawH);
+        }
+        ctx.restore();
+        ctx.save();
+        ctx.globalAlpha = alphaK;
+        drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+        ctx.restore();
+      }
+
+      if (avgLum > 195) ctx.restore();
+    }
 
 
 
