@@ -441,12 +441,16 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     for (const [r, g, b] of corners) {
       variance += Math.abs(r - br) + Math.abs(g - bg) + Math.abs(b - bb);
     }
+    const bgLum = (br + bg + bb) / 3;
+    (c as any).__cornerLum = bgLum;
+    (c as any).__cornerVariance = variance;
+    (c as any).__cornerRGB = [br, bg, bb];
+
     if (variance > 60) {
       cutoutCache.set(img, c);
       return c;
     }
     // Fond sombre (lifestyle dark) : on n'enlève rien.
-    const bgLum = (br + bg + bb) / 3;
     if (bgLum < 150) {
       cutoutCache.set(img, c);
       return c;
