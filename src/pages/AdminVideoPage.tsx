@@ -808,30 +808,57 @@ function drawAdHeader(
     ctx.drawImage(logo, 60, 150, finalW, finalH);
     brandBlockBottom = 150 + finalH;
   } else {
-    // Fallback : nom marque en serif italic, gros, posé
+    // Fallback nom marque : la typographie suit la direction artistique
     ctx.fillStyle = IVOIRE;
-    ctx.font = `italic 700 78px ${SERIF_FAMILY}`;
+    if (activePresetName === "adidas" || activePresetName === "nike") {
+      ctx.font = `900 88px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+      (ctx as any).letterSpacing = "-2px";
+    } else {
+      ctx.font = `italic 700 78px ${SERIF_FAMILY}`;
+    }
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText((deal.brand || "—"), 60, 220);
+    (ctx as any).letterSpacing = "0px";
     brandBlockBottom = 240;
   }
 
-  // ── Hairline + label "PRODUIT" ──
+  // ── Hairline + label eyebrow par direction ──
   const hairY = brandBlockBottom + 24;
   ctx.fillStyle = "rgba(13,13,13,0.20)";
   ctx.fillRect(60, hairY, W - 120, 1);
-  drawCapsText(ctx, "L'OBJET DU JOUR", 60, hairY + 28, {
+  const eyebrowLabel =
+    activePresetName === "adidas" ? "DEAL OF THE DAY" :
+    activePresetName === "nike"   ? "TODAY'S DROP" :
+    activePresetName === "zara"   ? "Sélection du jour" :
+    "L'OBJET DU JOUR";
+  drawCapsText(ctx, eyebrowLabel, 60, hairY + 28, {
     weight: 600, size: 17, tracking: 5, color: activePalette.inkSoft,
   });
 
-  // ── Titre produit : serif italic, wrap 2 lignes max ──
+  // ── Titre produit — typographie par direction artistique ──────
   ctx.fillStyle = IVOIRE;
-  ctx.font = `italic 500 46px ${SERIF_FAMILY}`;
+  let titleLineH = 50;
+  if (activePresetName === "adidas") {
+    ctx.font = `900 52px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    (ctx as any).letterSpacing = "-1px";
+    titleLineH = 56;
+  } else if (activePresetName === "nike") {
+    ctx.font = `800 50px 'Archivo',${SANS_FAMILY}`;
+    (ctx as any).letterSpacing = "-1px";
+    titleLineH = 54;
+  } else if (activePresetName === "zara") {
+    ctx.font = `italic 400 52px ${SERIF_FAMILY}`;
+    titleLineH = 58;
+  } else {
+    ctx.font = `italic 500 46px ${SERIF_FAMILY}`;
+  }
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+  const upper = activePresetName === "adidas" || activePresetName === "nike";
+  const rawTitle = upper ? (deal.title || "").toUpperCase() : (deal.title || "");
   const titleMax = W - 120;
-  const words = (deal.title || "").split(/\s+/);
+  const words = rawTitle.split(/\s+/);
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
@@ -850,7 +877,8 @@ function drawAdHeader(
     lines[1] = lines[1] + "…";
   }
   const titleStartY = hairY + 76;
-  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 50));
+  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * titleLineH));
+  (ctx as any).letterSpacing = "0px";
 
   ctx.restore();
 }
