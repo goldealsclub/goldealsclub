@@ -3,6 +3,10 @@
   "module": "index.ts",
   "type": "module",
   "private": true,
+  "scripts": {
+    "qa": "node scripts/qa-frames.mjs",
+    "qa:update": "node scripts/qa-frames.mjs --update"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "pixelmatch": "^7.2.0",
