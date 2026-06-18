@@ -54,12 +54,13 @@ permissions:
 
 jobs:
   qa:
-    name: QA · ${{ matrix.scene }}
+    name: QA · ${{ matrix.style }} · ${{ matrix.scene }}
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 18
     strategy:
       fail-fast: false
       matrix:
+        style: [adidas, zara, nike]
         scene: [intro, deal, outro]
     defaults:
       run:
@@ -86,12 +87,11 @@ jobs:
           ln -sf "$(which ffmpeg)"  node_modules/@remotion/compositor-linux-x64-gnu/ffmpeg
           ln -sf "$(which ffprobe)" node_modules/@remotion/compositor-linux-x64-gnu/ffprobe
 
-      - name: Run QA — scene ${{ matrix.scene }}
+      - name: Run QA — ${{ matrix.style }} / ${{ matrix.scene }}
         id: qa
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
           # Surcharges de seuils via les inputs workflow_dispatch.
-          # Vide = on laisse qa/thresholds.json décider.
           QA_JITTER:        ${{ inputs.jitter }}
           QA_VISUAL:        ${{ inputs.visual }}
           QA_PIXELMATCH:    ${{ inputs.pixelmatch }}
@@ -101,14 +101,13 @@ jobs:
           QA_VISUAL_INTRO:  ${{ inputs.visual_intro }}
           QA_VISUAL_DEAL:   ${{ inputs.visual_deal }}
           QA_VISUAL_OUTRO:  ${{ inputs.visual_outro }}
-        # On capture l'exit code mais on continue pour pouvoir uploader
-        # l'artifact et écrire le step summary avant de faire échouer le check.
         continue-on-error: true
         run: |
           set +e
           node scripts/qa-frames.mjs \
+            --style=${{ matrix.style }} \
             --scene=${{ matrix.scene }} \
-            --report=qa/report-${{ matrix.scene }}.json
+            --report=qa/report-${{ matrix.style }}-${{ matrix.scene }}.json
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
       - name: Scene step summary
@@ -116,8 +115,8 @@ jobs:
         run: |
           node <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           const fs = require("fs");
-          const p = "qa/report-${{ matrix.scene }}.json";
-          if (!fs.existsSync(p)) { console.log("⚠️ Pas de rapport pour ${{ matrix.scene }}."); process.exit(0); }
+          const p = "qa/report-${{ matrix.style }}-${{ matrix.scene }}.json";
+          if (!fs.existsSync(p)) { console.log("⚠️ Pas de rapport."); process.exit(0); }
           const r = JSON.parse(fs.readFileSync(p, "utf8"));
           const s = r.scenes[0];
           const mark = (ok) => ok ? "✅" : "❌";
@@ -125,11 +124,11 @@ jobs:
             : v.status === "baseline-written" ? "📌 baseline"
             : `${mark(v.ok)} **${v.diffPct}%** (seuil ${v.threshold}%)`;
           const out = [];
-          out.push(`## 🎬 Scène ${s.name}`);
+          out.push(`## 🎨 ${r.styleId} · 🎬 ${s.name}`);
           out.push("");
           out.push(r.regressions > 0
             ? `❌ **${r.regressions} métrique(s) en régression**`
-            : "✅ Scène OK");
+            : "✅ OK");
           out.push("");
           out.push("| Métrique | Résultat |");
           out.push("|---|---|");
@@ -144,17 +143,17 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: remotion-qa-${{ matrix.scene }}
+          name: remotion-qa-${{ matrix.style }}-${{ matrix.scene }}
           path: |
-            remotion/qa/current/${{ matrix.scene }}-*.png
-            remotion/qa/diff/${{ matrix.scene }}-*.png
-            remotion/qa/report-${{ matrix.scene }}.json
+            remotion/qa/current/${{ matrix.style }}/${{ matrix.scene }}-*.png
+            remotion/qa/diff/${{ matrix.style }}/${{ matrix.scene }}-*.png
+            remotion/qa/report-${{ matrix.style }}-${{ matrix.scene }}.json
           retention-days: 14
 
-      - name: Fail scene check on regression
+      - name: Fail check on regression
         if: steps.qa.outputs.exit_code != '0'
         run: |
-          echo "Régression sur la scène ${{ matrix.scene }} — voir l'artifact remotion-qa-${{ matrix.scene }}."
+          echo "Régression ${{ matrix.style }}/${{ matrix.scene }} — voir l'artifact."
           exit 1
 
   summary:
@@ -164,7 +163,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Download all scene reports
+      - name: Download all reports
         uses: actions/download-artifact@v4
         with:
           path: artifacts
@@ -174,43 +173,50 @@ jobs:
         run: |
           node <<'EOF' > /tmp/comment.md
           const fs = require("fs"), path = require("path");
+          const styles = ["adidas", "zara", "nike"];
           const scenes = ["intro", "deal", "outro"];
           const reports = {};
-          let totalRegressions = 0, missing = [];
-          for (const name of scenes) {
-            const p = path.join("artifacts", `remotion-qa-${name}`, `report-${name}.json`);
-            if (!fs.existsSync(p)) { missing.push(name); continue; }
-            const r = JSON.parse(fs.readFileSync(p, "utf8"));
-            reports[name] = r.scenes[0];
-            totalRegressions += r.regressions || 0;
+          let totalRegressions = 0; const missing = [];
+          for (const style of styles) {
+            reports[style] = {};
+            for (const scene of scenes) {
+              const p = path.join("artifacts", `remotion-qa-${style}-${scene}`, `report-${style}-${scene}.json`);
+              if (!fs.existsSync(p)) { missing.push(`${style}/${scene}`); continue; }
+              const r = JSON.parse(fs.readFileSync(p, "utf8"));
+              reports[style][scene] = r.scenes[0];
+              totalRegressions += r.regressions || 0;
+            }
           }
           const mark = (ok) => ok ? "✅" : "❌";
           const cell = (v) => !v ? "—"
-            : v.status === "baseline-written" ? "📌 baseline"
+            : v.status === "baseline-written" ? "📌"
             : `${mark(v.ok)} ${v.diffPct}%`;
           const out = [];
-          out.push("## 🎬 Remotion QA visuelle");
+          out.push("## 🎬 Remotion QA visuelle — 3 styles × 3 scènes");
           out.push("");
           out.push(totalRegressions > 0
             ? `❌ **${totalRegressions} régression(s)** détectée(s).`
-            : "✅ Aucune régression visuelle ni tremblement sur les 3 scènes.");
+            : "✅ Aucune régression sur les 3 styles.");
           if (missing.length) out.push(`\n⚠️ Rapports manquants : ${missing.join(", ")}`);
           out.push("");
-          out.push("| Scène | 🌀 Jitter | 🖼 entry | 🖼 settled (halos) | 🖼 exit |");
-          out.push("|---|---|---|---|---|");
-          for (const name of scenes) {
-            const s = reports[name];
-            if (!s) { out.push(`| **${name}** | ⚠️ | ⚠️ | ⚠️ | ⚠️ |`); continue; }
-            const j = s.jitter ? `${mark(s.jitter.ok)} ${s.jitter.diffPct}%` : "—";
-            out.push(`| **${name}** | ${j} | ${cell(s.visual.entry)} | ${cell(s.visual.settled)} | ${cell(s.visual.exit)} |`);
+          for (const style of styles) {
+            out.push(`### 🎨 ${style}`);
+            out.push("| Scène | 🌀 Jitter | 🖼 entry | 🖼 settled (halos) | 🖼 exit |");
+            out.push("|---|---|---|---|---|");
+            for (const scene of scenes) {
+              const s = reports[style][scene];
+              if (!s) { out.push(`| **${scene}** | ⚠️ | ⚠️ | ⚠️ | ⚠️ |`); continue; }
+              const j = s.jitter ? `${mark(s.jitter.ok)} ${s.jitter.diffPct}%` : "—";
+              out.push(`| **${scene}** | ${j} | ${cell(s.visual.entry)} | ${cell(s.visual.settled)} | ${cell(s.visual.exit)} |`);
+            }
+            out.push("");
           }
-          out.push("");
-          out.push("Détail par scène : voir les checks **QA · intro / deal / outro** ci-dessus (chacun a son step summary + son artifact diff).");
+          out.push("Détail : voir les checks **QA · <style> · <scene>** ci-dessus.");
           if (totalRegressions > 0) {
             out.push("");
-            out.push("Si le changement est intentionnel, régénère les baselines :");
+            out.push("Si le changement est intentionnel, régénère les baselines du style concerné :");
             out.push("```bash");
-            out.push("cd remotion && bun qa:update");
+            out.push("cd remotion && bun qa:update --style=<adidas|zara|nike>");
             out.push("git add remotion/qa/baseline && git commit -m 'qa: bump baselines'");
             out.push("```");
           }

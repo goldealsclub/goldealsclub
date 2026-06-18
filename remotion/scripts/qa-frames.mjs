@@ -29,12 +29,6 @@ import pixelmatch from "pixelmatch";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 const qaDir = path.join(rootDir, "qa");
-const baselineDir = path.join(qaDir, "baseline");
-const currentDir = path.join(qaDir, "current");
-const diffDir = path.join(qaDir, "diff");
-for (const d of [qaDir, baselineDir, currentDir, diffDir]) {
-  fs.mkdirSync(d, { recursive: true });
-}
 
 const UPDATE = process.argv.includes("--update");
 const getArg = (name) => {
@@ -43,10 +37,26 @@ const getArg = (name) => {
 };
 // --scene=intro|deal|outro : restreint la QA à une seule scène
 const SCENE_FILTER = getArg("scene");
+// --style=adidas|zara|nike : QA d'une direction artistique (défaut adidas)
+const STYLE_ID = getArg("style") ?? "adidas";
+const VALID_STYLES = ["adidas", "zara", "nike"];
+if (!VALID_STYLES.includes(STYLE_ID)) {
+  console.error(`❌ Style inconnu: ${STYLE_ID}. Valides: ${VALID_STYLES.join(", ")}`);
+  process.exit(1);
+}
 // --report=path : écrit le rapport JSON à un chemin custom
 const REPORT_PATH = getArg("report");
 // --config=path : fichier JSON de seuils (défaut: qa/thresholds.json)
 const CONFIG_PATH = getArg("config") ?? path.join(qaDir, "thresholds.json");
+
+// Baselines / current / diff isolés par style → switcher Zara ne
+// casse pas la baseline Adidas, et inversement.
+const baselineDir = path.join(qaDir, "baseline", STYLE_ID);
+const currentDir  = path.join(qaDir, "current",  STYLE_ID);
+const diffDir     = path.join(qaDir, "diff",     STYLE_ID);
+for (const d of [qaDir, baselineDir, currentDir, diffDir]) {
+  fs.mkdirSync(d, { recursive: true });
+}
 
 // ── Seuils : config JSON + surcharges CLI/env ────────────────────────
 // Priorité (du + faible au + fort) :
@@ -105,12 +115,13 @@ function resolveThresholds(sceneName) {
 
 // ── Plan de capture ───────────────────────────────────────────────────
 // Frames calées sur les durées MainVideo (intro 80 / deal 130 / outro 110).
+// Les compositions Remotion sont suffixées par le style.
 const PLAN = [
-  { id: "qa-intro", name: "intro",
+  { id: `qa-intro-${STYLE_ID}`, name: "intro",
     frames: { entry: 22, settled: 60, settledNext: 61, exit: 78 } },
-  { id: "qa-deal", name: "deal",
+  { id: `qa-deal-${STYLE_ID}`, name: "deal",
     frames: { entry: 35, settled: 90, settledNext: 91, exit: 125 } },
-  { id: "qa-outro", name: "outro",
+  { id: `qa-outro-${STYLE_ID}`, name: "outro",
     frames: { entry: 28, settled: 80, settledNext: 81, exit: 105 } },
 ];
 
@@ -149,6 +160,7 @@ const browser = await openBrowser("chrome", {
 const report = {
   generatedAt: new Date().toISOString(),
   mode: UPDATE ? "update-baseline" : "compare",
+  styleId: STYLE_ID,
   configPath: path.relative(rootDir, CONFIG_PATH),
   thresholds: {
     pixelmatch: PIXELMATCH_THRESHOLD,
@@ -158,6 +170,8 @@ const report = {
   scenes: [],
 };
 let regressions = 0;
+
+console.log(`\n🎨 Style QA : ${STYLE_ID}`);
 
 const scenesToRun = SCENE_FILTER
   ? PLAN.filter((s) => s.name === SCENE_FILTER)

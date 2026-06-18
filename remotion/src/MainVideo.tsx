@@ -2,56 +2,85 @@ import { AbsoluteFill } from "remotion";
 import { TransitionSeries, linearTiming } from "@remotion/transitions";
 import { wipe } from "@remotion/transitions/wipe";
 import { slide } from "@remotion/transitions/slide";
+import { fade } from "@remotion/transitions/fade";
 import { Fragment } from "react";
 import { IntroScene } from "./scenes/IntroScene";
 import { DealScene } from "./scenes/DealScene";
 import { OutroScene } from "./scenes/OutroScene";
 import { deals } from "./data";
+import { StyleProvider } from "./lib/style-context";
+import { DEFAULT_STYLE_ID, getStyle, type StyleId } from "./lib/styles";
 
-// Direction Adidas — geometric & graphic.
-// Transitions FERMES : wipe linéaire (pas de fade lent éditorial).
-// Coupes nettes = signature 3-stripes appliquée au timeline lui-même.
-const TRANSITION_FRAMES = 16;
-const easeOutQuart = (t: number): number => 1 - Math.pow(1 - t, 4);
+interface MainVideoProps {
+  styleId?: StyleId;
+}
 
-const wipeRight = () => wipe({ direction: "from-left" });
-const wipeUp    = () => wipe({ direction: "from-bottom" });
-const slideLeft = () => slide({ direction: "from-right" });
-
-const tightTiming = linearTiming({
-  durationInFrames: TRANSITION_FRAMES,
-  easing: easeOutQuart,
-});
+const pickTransition = (kind: "wipe" | "fade" | "slide", i: number) => {
+  switch (kind) {
+    case "fade":  return fade({ enterStyle: { opacity: 0 }, exitStyle: { opacity: 0 } });
+    case "slide": return slide({ direction: i % 2 === 0 ? "from-right" : "from-left" });
+    case "wipe":
+    default:      return i % 2 === 0 ? wipe({ direction: "from-left" }) : wipe({ direction: "from-bottom" });
+  }
+};
 
 const TOTAL = deals.length;
 
-// Cadence resserrée : intro 80, deal 130, outro 110.
-// Total: 80 + 5*130 + 110 - 6*16 = 744 frames @ 30fps ≈ 24.8s
-export const MainVideo: React.FC = () => {
+// Durées par scène (inchangées) — le total est ajusté par durationInFrames
+// dans Root.tsx en fonction de transitionFrames de chaque style.
+const INTRO_FRAMES = 80;
+const DEAL_FRAMES  = 130;
+const OUTRO_FRAMES = 110;
+
+export const MainVideo: React.FC<MainVideoProps> = ({ styleId }) => {
+  const s = getStyle(styleId);
+  const timing = linearTiming({
+    durationInFrames: s.motion.transitionFrames,
+    easing: s.motion.easing,
+  });
+
   return (
-    <AbsoluteFill style={{ backgroundColor: "#f4f1ea" }}>
-      <TransitionSeries>
-        <TransitionSeries.Sequence durationInFrames={80}>
-          <IntroScene />
-        </TransitionSeries.Sequence>
-        <TransitionSeries.Transition presentation={wipeUp()} timing={tightTiming} />
+    <StyleProvider styleId={styleId ?? DEFAULT_STYLE_ID}>
+      <AbsoluteFill style={{ backgroundColor: s.paper }}>
+        <TransitionSeries>
+          <TransitionSeries.Sequence durationInFrames={INTRO_FRAMES}>
+            <IntroScene />
+          </TransitionSeries.Sequence>
+          <TransitionSeries.Transition presentation={pickTransition(s.motion.transitionKind, 0)} timing={timing} />
 
-        {deals.map((deal, i) => (
-          <Fragment key={i}>
-            <TransitionSeries.Sequence durationInFrames={130}>
-              <DealScene deal={deal} index={i} total={TOTAL} />
-            </TransitionSeries.Sequence>
-            <TransitionSeries.Transition
-              presentation={i % 2 === 0 ? slideLeft() : wipeRight()}
-              timing={tightTiming}
-            />
-          </Fragment>
-        ))}
+          {deals.map((deal, i) => (
+            <Fragment key={i}>
+              <TransitionSeries.Sequence durationInFrames={DEAL_FRAMES}>
+                <DealScene deal={deal} index={i} total={TOTAL} />
+              </TransitionSeries.Sequence>
+              <TransitionSeries.Transition
+                presentation={pickTransition(s.motion.transitionKind, i + 1)}
+                timing={timing}
+              />
+            </Fragment>
+          ))}
 
-        <TransitionSeries.Sequence durationInFrames={110}>
-          <OutroScene />
-        </TransitionSeries.Sequence>
-      </TransitionSeries>
-    </AbsoluteFill>
+          <TransitionSeries.Sequence durationInFrames={OUTRO_FRAMES}>
+            <OutroScene />
+          </TransitionSeries.Sequence>
+        </TransitionSeries>
+      </AbsoluteFill>
+    </StyleProvider>
   );
+};
+
+export const SCENE_DURATIONS = {
+  intro: INTRO_FRAMES,
+  deal: DEAL_FRAMES,
+  outro: OUTRO_FRAMES,
+};
+
+/**
+ * Total frames pour un style donné.
+ * Formule : intro + N*deal + outro - (N+1)*transitionFrames
+ */
+export const computeTotalFrames = (styleId: StyleId): number => {
+  const s = getStyle(styleId);
+  const transitions = TOTAL + 1;
+  return INTRO_FRAMES + TOTAL * DEAL_FRAMES + OUTRO_FRAMES - transitions * s.motion.transitionFrames;
 };

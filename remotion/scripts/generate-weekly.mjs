@@ -98,6 +98,18 @@ const themeKey = THEMES[forced] ? forced : themeOrder[dayNumber % themeOrder.len
 const theme = THEMES[themeKey];
 console.log(`🎯 Theme du jour : ${theme.label}${forced ? " (forcé)" : ""}`);
 
+// ── Direction artistique : adidas (défaut) / zara / nike ──
+// Override possible via env STYLE=zara ou flag --style=zara
+const styleArg = process.argv.find((a) => a.startsWith("--style="));
+const STYLE_ID = (styleArg ? styleArg.split("=")[1] : (process.env.STYLE || "adidas")).toLowerCase();
+const validStyles = ["adidas", "zara", "nike"];
+if (!validStyles.includes(STYLE_ID)) {
+  console.error(`❌ Style invalide: ${STYLE_ID}. Utiliser: ${validStyles.join(", ")}`);
+  process.exit(1);
+}
+console.log(`🎨 Direction artistique : ${STYLE_ID}`);
+
+
 const eligible = allDeals.filter((d) => {
   const cat = (d.category || "").toLowerCase();
   return theme.cats.has(cat) &&
@@ -307,13 +319,13 @@ const browser = await openBrowser("chrome", {
 
 const composition = await selectComposition({
   serveUrl: bundled,
-  id: "main",
+  id: `main-${STYLE_ID}`,
   puppeteerInstance: browser,
 });
 
 const date = new Date().toISOString().slice(0, 10);
-const rawVideoPath = `/tmp/goldeals-raw-${date}-${themeKey}.mp4`;
-const outputPath = `/mnt/documents/goldeals-tiktok-${date}-${themeKey}.mp4`;
+const rawVideoPath = `/tmp/goldeals-raw-${date}-${themeKey}-${STYLE_ID}.mp4`;
+const outputPath = `/mnt/documents/goldeals-tiktok-${date}-${themeKey}-${STYLE_ID}.mp4`;
 
 await renderMedia({
   composition,
