@@ -186,7 +186,11 @@ for (const scene of scenesToRun) {
 await browser.close({ silent: false });
 
 report.regressions = regressions;
-fs.writeFileSync(path.join(qaDir, "report.json"), JSON.stringify(report, null, 2));
+const reportOut = REPORT_PATH
+  ? path.resolve(rootDir, REPORT_PATH)
+  : path.join(qaDir, "report.json");
+fs.mkdirSync(path.dirname(reportOut), { recursive: true });
+fs.writeFileSync(reportOut, JSON.stringify(report, null, 2));
 
 console.log(`\n📊 Rapport : ${path.relative(rootDir, path.join(qaDir, "report.json"))}`);
 if (UPDATE) {
