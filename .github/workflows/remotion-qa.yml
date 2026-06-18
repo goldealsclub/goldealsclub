@@ -90,6 +90,17 @@ jobs:
         id: qa
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+          # Surcharges de seuils via les inputs workflow_dispatch.
+          # Vide = on laisse qa/thresholds.json décider.
+          QA_JITTER:        ${{ inputs.jitter }}
+          QA_VISUAL:        ${{ inputs.visual }}
+          QA_PIXELMATCH:    ${{ inputs.pixelmatch }}
+          QA_JITTER_INTRO:  ${{ inputs.jitter_intro }}
+          QA_JITTER_DEAL:   ${{ inputs.jitter_deal }}
+          QA_JITTER_OUTRO:  ${{ inputs.jitter_outro }}
+          QA_VISUAL_INTRO:  ${{ inputs.visual_intro }}
+          QA_VISUAL_DEAL:   ${{ inputs.visual_deal }}
+          QA_VISUAL_OUTRO:  ${{ inputs.visual_outro }}
         # On capture l'exit code mais on continue pour pouvoir uploader
         # l'artifact et écrire le step summary avant de faire échouer le check.
         continue-on-error: true
