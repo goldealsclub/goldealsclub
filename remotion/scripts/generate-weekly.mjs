@@ -196,12 +196,14 @@ async function fetchImage(url) {
   return { dataUri: `data:${ct};base64,${buf.toString("base64")}`, dims };
 }
 
-// Normalise le packshot via wsrv.nl (trim + fond blanc) pour que le
-// mixBlendMode:multiply de DealScene produise un détourage propre.
+// Normalise le packshot via wsrv.nl (trim agressif + pad + fond blanc strict) :
+// chasse les halos JPG des merchant feeds, garde une marge propre, et rend
+// le mixBlendMode:multiply invisible sur le stage ivoire.
 async function fetchStudioImage(rawUrl) {
   const stripped = rawUrl.replace(/^https?:\/\//, "");
   const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(stripped)}` +
-    `&w=1400&h=1400&fit=contain&cbg=white&bg=white&trim=20&output=jpg&q=92`;
+    `&w=1500&h=1500&fit=contain&cbg=ffffff&bg=ffffff` +
+    `&trim=30&pad=60&sharp=1&output=jpg&q=94`;
   const r = await fetch(wsrv, {
     headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://wsrv.nl/" },
   });
