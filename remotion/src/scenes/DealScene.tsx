@@ -125,7 +125,8 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
       {/* ═══ Header marque + titre ═══ */}
       <div style={{
         position: "absolute", top: 160, left: 60, right: 60,
-        opacity: headerOpacity, transform: `translateY(${headerY}px)`,
+        opacity: headerOpacity, transform: `translate3d(0, ${headerY}px, 0)`,
+        ...gpuLayer,
       }}>
         {/* Marque */}
         <div style={{ height: 100, display: "flex", alignItems: "center" }}>
