@@ -878,6 +878,181 @@ function drawAdPriceBlock(
   };
   const priceTxt = `${fmt(priceVal)} €`;
 
+  // ════════════════════════════════════════════════════════════════
+  // VARIANTES PAR DIRECTION ARTISTIQUE — branches dédiées
+  // (paper/charcoal/ivoire restent sur l'éditorial historique en bas)
+  // ════════════════════════════════════════════════════════════════
+
+  // ─── ADIDAS — geometric & graphic ─────────────────────────────
+  // Bloc ink franc en bas, prix XXL display, dossard -DISCOUNT% en
+  // inverse à droite, 3-stripes au-dessus du bloc.
+  if (activePresetName === "adidas") {
+    const blockY = H - 560;
+    const blockH = 380;
+    // 3-stripes
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = "#0a0a0a";
+      ctx.fillRect(60, blockY - 40 + i * 8, W - 120, 3);
+    }
+    // Bloc ink plein
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(0, blockY, W, blockH);
+    // Eyebrow
+    ctx.save();
+    ctx.fillStyle = "rgba(244,241,234,0.55)";
+    ctx.font = `700 18px ${SANS_FAMILY}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    (ctx as any).letterSpacing = "6px";
+    ctx.fillText("PRIX MEMBRE", 60, blockY + 56);
+    (ctx as any).letterSpacing = "0px";
+    ctx.restore();
+    // Prix XXL display
+    ctx.fillStyle = "#f4f1ea";
+    ctx.font = `900 200px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(priceTxt, 50, blockY + 240);
+    if (hasOrig) {
+      // Dossard -DISCOUNT% en inverse à droite
+      const chipW = 240, chipH = 110;
+      const chipX = W - 60 - chipW;
+      const chipY = blockY + 130;
+      ctx.fillStyle = "#f4f1ea";
+      ctx.fillRect(chipX, chipY, chipW, chipH);
+      ctx.fillStyle = "#0a0a0a";
+      ctx.font = `900 76px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`−${discount}%`, chipX + chipW / 2, chipY + chipH / 2 + 4);
+      // Prix barré au-dessus du chip
+      ctx.fillStyle = "rgba(244,241,234,0.55)";
+      ctx.font = `600 30px ${SANS_FAMILY}`;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "alphabetic";
+      const opTxt = `${fmt(origVal)} €`;
+      ctx.fillText(opTxt, W - 60, chipY - 22);
+      const opW = ctx.measureText(opTxt).width;
+      ctx.strokeStyle = "rgba(244,241,234,0.55)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(W - 60 - opW - 4, chipY - 32);
+      ctx.lineTo(W - 60 + 4, chipY - 32);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
+
+  // ─── NIKE — athletic & kinetic ────────────────────────────────
+  // Carte ink à droite, chip orange massif −DISCOUNT%, prix sur deux
+  // niveaux, vibe kinetic.
+  if (activePresetName === "nike") {
+    const blockY = H - 540;
+    const blockH = 360;
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(0, blockY, W, blockH);
+    // Eyebrow Bebas
+    ctx.save();
+    ctx.fillStyle = "rgba(244,241,234,0.5)";
+    ctx.font = `400 26px 'Bebas Neue','Oswald',${SANS_FAMILY}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    (ctx as any).letterSpacing = "8px";
+    ctx.fillText("MEMBER PRICE", 60, blockY + 56);
+    (ctx as any).letterSpacing = "0px";
+    ctx.restore();
+    // Prix XXL Archivo
+    ctx.fillStyle = "#f4f1ea";
+    ctx.font = `900 220px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(priceTxt, 50, blockY + 260);
+    if (hasOrig) {
+      // Chip orange Nike massif
+      const chipW = 280, chipH = 130;
+      const chipX = W - 60 - chipW;
+      const chipY = blockY + 120;
+      ctx.fillStyle = "#fa5400";
+      ctx.fillRect(chipX, chipY, chipW, chipH);
+      // Skew léger pour l'effet kinetic
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `900 88px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`−${discount}%`, chipX + chipW / 2, chipY + chipH / 2 + 6);
+      // Prix barré au-dessus
+      ctx.fillStyle = "rgba(244,241,234,0.45)";
+      ctx.font = `500 30px ${SANS_FAMILY}`;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "alphabetic";
+      const opTxt = `${fmt(origVal)} €`;
+      ctx.fillText(opTxt, W - 60, chipY - 22);
+      const opW = ctx.measureText(opTxt).width;
+      ctx.strokeStyle = "rgba(244,241,234,0.45)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(W - 60 - opW - 4, chipY - 32);
+      ctx.lineTo(W - 60 + 4, chipY - 32);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
+
+  // ─── ZARA — editorial fashion ─────────────────────────────────
+  // Composition centrée, prix serif italic monumentale, prix barré
+  // discret en-dessous, AUCUN chip de discount, beaucoup d'air.
+  if (activePresetName === "zara") {
+    const centerY = H - 320;
+    // Eyebrow centré
+    ctx.save();
+    ctx.fillStyle = "rgba(26,26,26,0.5)";
+    ctx.font = `500 17px ${SANS_FAMILY}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    (ctx as any).letterSpacing = "10px";
+    ctx.fillText("PRIX", W / 2, centerY - 180);
+    (ctx as any).letterSpacing = "0px";
+    ctx.restore();
+    // Hairline éditoriale au-dessus
+    ctx.fillStyle = "rgba(26,26,26,0.2)";
+    ctx.fillRect(W / 2 - 24, centerY - 156, 48, 1);
+    // Prix XXL serif italic
+    ctx.fillStyle = "#0a0a0a";
+    ctx.font = `italic 400 180px ${SERIF_FAMILY}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(priceTxt, W / 2, centerY);
+    if (hasOrig) {
+      // Prix barré + −DISCOUNT% sur une seule ligne, fin, gris
+      const opTxt = `${fmt(origVal)} €  ·  −${discount}%`;
+      ctx.fillStyle = "rgba(26,26,26,0.5)";
+      ctx.font = `500 28px ${SANS_FAMILY}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      (ctx as any).letterSpacing = "4px";
+      ctx.fillText(opTxt, W / 2, centerY + 56);
+      const opW = ctx.measureText(opTxt).width;
+      // Ligne barrée uniquement sur le prix d'origine (gauche)
+      const onlyOp = `${fmt(origVal)} €`;
+      const onlyOpW = ctx.measureText(onlyOp).width;
+      ctx.strokeStyle = "rgba(26,26,26,0.5)";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      const startX = W / 2 - opW / 2;
+      ctx.moveTo(startX, centerY + 48);
+      ctx.lineTo(startX + onlyOpW + 8, centerY + 48);
+      ctx.stroke();
+      (ctx as any).letterSpacing = "0px";
+    }
+    ctx.restore();
+    return;
+  }
+
+  // ─── Fallback : éditorial paper historique (paper/charcoal/ivoire) ──
+
+
   // ── Bande prix éditoriale en bas du frame (avant le crédit) ────────
   const bandY = H - 500;
   const bandH = 170;
