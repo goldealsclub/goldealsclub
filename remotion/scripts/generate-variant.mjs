@@ -123,18 +123,21 @@ async function fetchImage(url) {
 }
 
 // Normalise le packshot via wsrv.nl :
-//   - trim=20         → coupe les bords uniformes (cadres, marges marchand)
-//   - fit=contain     → conserve les proportions
-//   - bg=white        → comble avec un blanc pur (clé du blend "multiply")
-//   - output=jpg/q=92 → JPEG haute qualité, fichier raisonnable
+//   - trim=30           → tolérance plus permissive : coupe les bords presque-blancs
+//                         (chasse les halos JPG des merchant feeds)
+//   - fit=contain + pad → on contient puis on rajoute 60px de blanc strict tout autour
+//                         pour que le crop ne mange jamais le produit
+//   - cbg/bg=ffffff     → fond blanc pur indispensable au mixBlendMode:multiply
+//   - sharp=1           → re-sharpen léger après resize, packshot net en 1080p
+//   - output=jpg/q=94   → JPEG quasi sans perte
 //
-// Résultat : packshot toujours centré sur fond blanc strict, ce qui rend
-// le mixBlendMode:multiply propre (plus de cadre gris ni de halo) sur le
-// papier ivoire de DealScene.
+// Résultat : packshot toujours centré sur fond blanc strict, halos JPG des
+// merchant feeds neutralisés, blend "multiply" invisible sur le stage ivoire.
 async function fetchStudioImage(rawUrl) {
   const stripped = rawUrl.replace(/^https?:\/\//, "");
   const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(stripped)}` +
-    `&w=1400&h=1400&fit=contain&cbg=white&bg=white&trim=20&output=jpg&q=92`;
+    `&w=1500&h=1500&fit=contain&cbg=ffffff&bg=ffffff` +
+    `&trim=30&pad=60&sharp=1&output=jpg&q=94`;
   const r = await fetch(wsrv, {
     headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://wsrv.nl/" },
   });
