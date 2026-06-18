@@ -15,17 +15,25 @@ export const OutroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const heroSp = spring({ frame, fps, config: { damping: 22, stiffness: 110 } });
-  const heroOpacity = interpolate(heroSp, [0, 1], [0, 1]);
-  const heroY = interpolate(heroSp, [0, 1], [22, 0]);
+  const snap = (v: number) => Math.round(v);
+  const settle = (v: number) => (v > 0.995 ? 1 : v);
+  const gpuLayer: React.CSSProperties = {
+    willChange: "transform, opacity",
+    backfaceVisibility: "hidden",
+    WebkitFontSmoothing: "antialiased",
+  };
 
-  const urlSp = spring({ frame: frame - 22, fps, config: { damping: 20, stiffness: 130 } });
+  const heroSp = settle(spring({ frame, fps, config: { damping: 22, stiffness: 110 }, durationInFrames: 30 }));
+  const heroOpacity = interpolate(heroSp, [0, 1], [0, 1]);
+  const heroY = snap(interpolate(heroSp, [0, 1], [22, 0]));
+
+  const urlSp = settle(spring({ frame: frame - 22, fps, config: { damping: 20, stiffness: 130 }, durationInFrames: 30 }));
   const urlOpacity = interpolate(urlSp, [0, 1], [0, 1]);
 
-  const ruleWidth = interpolate(
+  const ruleWidth = snap(interpolate(
     spring({ frame: frame - 14, fps, config: { damping: 200 } }),
     [0, 1], [0, 400]
-  );
+  ));
 
   const ctaOpacity = interpolate(frame, [38, 52], [0, 1], { extrapolateRight: "clamp" });
 
@@ -69,7 +77,8 @@ export const OutroScene: React.FC = () => {
           marginTop: 56,
           fontFamily: playfair, fontStyle: "italic", fontWeight: 400,
           fontSize: 150, color: INK, lineHeight: 1, letterSpacing: -1.5,
-          opacity: heroOpacity, transform: `translateY(${heroY}px)`,
+          opacity: heroOpacity, transform: `translate3d(0, ${heroY}px, 0)`,
+          ...gpuLayer,
         }}>À demain.</div>
 
         <div style={{
