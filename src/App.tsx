@@ -101,6 +101,7 @@ const App = () => (
                 <Route path="/admin/video-qa" element={<AdminVideoQAPage />} />
                 <Route path="/admin/cards-qa" element={<AdminCardsQAPage />} />
                 <Route path="/admin/badge-qa" element={<AdminBadgeQAPage />} />
+                <Route path="/admin/style-preview-qa" element={<AdminStylePreviewQAPage />} />
 
 
                 <Route path="/install" element={<InstallPage />} />
