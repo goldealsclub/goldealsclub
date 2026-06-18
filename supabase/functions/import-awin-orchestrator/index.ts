@@ -8,15 +8,15 @@
 //   - parallel: fires all 4 in parallel without waiting (returns immediately).
 //     Fastest but harder to track. Recommended for cron.
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { requireAdminOrService, corsHeaders } from "../_shared/auth.ts";
 
 const ALL_FIDS = ["48225", "87190", "87833", "90621", "111256", "112989"];
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+
+  const auth = await requireAdminOrService(req);
+  if (!auth.ok) return auth.response;
 
   try {
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
