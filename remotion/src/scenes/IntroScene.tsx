@@ -16,22 +16,31 @@ export const IntroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
+  const snap = (v: number) => Math.round(v);
+  const snapScale = (v: number) => Math.round(v * 1000) / 1000;
+  const settle = (v: number) => (v > 0.995 ? 1 : v);
+  const gpuLayer: React.CSSProperties = {
+    willChange: "transform, opacity",
+    backfaceVisibility: "hidden",
+    WebkitFontSmoothing: "antialiased",
+  };
+
   // Apparitions séquencées éditoriales
   const railOpacity = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
   const eyebrowOpacity = interpolate(frame, [6, 20], [0, 1], { extrapolateRight: "clamp" });
 
-  const heroSpring = spring({ frame: frame - 10, fps, config: { damping: 22, stiffness: 110 } });
+  const heroSpring = settle(spring({ frame: frame - 10, fps, config: { damping: 22, stiffness: 110 }, durationInFrames: 30 }));
   const heroOpacity = interpolate(heroSpring, [0, 1], [0, 1]);
-  const heroY = interpolate(heroSpring, [0, 1], [22, 0]);
+  const heroY = snap(interpolate(heroSpring, [0, 1], [22, 0]));
 
-  const numSpring = spring({ frame: frame - 22, fps, config: { damping: 20, stiffness: 130 } });
+  const numSpring = settle(spring({ frame: frame - 22, fps, config: { damping: 20, stiffness: 130 }, durationInFrames: 30 }));
   const numOpacity = interpolate(numSpring, [0, 1], [0, 1]);
-  const numScale = interpolate(numSpring, [0, 1], [0.94, 1]);
+  const numScale = snapScale(interpolate(numSpring, [0, 1], [0.94, 1]));
 
-  const ruleWidth = interpolate(
+  const ruleWidth = snap(interpolate(
     spring({ frame: frame - 32, fps, config: { damping: 200 } }),
     [0, 1], [0, 400]
-  );
+  ));
 
   const tagOpacity = interpolate(frame, [40, 55], [0, 1], { extrapolateRight: "clamp" });
 
