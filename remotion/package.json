@@ -5,7 +5,13 @@
   "private": true,
   "scripts": {
     "qa": "node scripts/qa-frames.mjs",
-    "qa:update": "node scripts/qa-frames.mjs --update"
+    "qa:update": "node scripts/qa-frames.mjs --update",
+    "qa:adidas": "node scripts/qa-frames.mjs --style=adidas",
+    "qa:zara":   "node scripts/qa-frames.mjs --style=zara",
+    "qa:nike":   "node scripts/qa-frames.mjs --style=nike",
+    "qa:update:adidas": "node scripts/qa-frames.mjs --update --style=adidas",
+    "qa:update:zara":   "node scripts/qa-frames.mjs --update --style=zara",
+    "qa:update:nike":   "node scripts/qa-frames.mjs --update --style=nike"
   },
   "devDependencies": {
     "@types/bun": "latest",

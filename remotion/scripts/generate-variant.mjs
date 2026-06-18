@@ -19,14 +19,23 @@ import { imageSize } from "image-size";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
 
-const preset = (process.argv[2] || "top").toLowerCase();
+// CLI : 1er arg positionnel = preset deals, --style=<id> = direction artistique
+const positional = process.argv.slice(2).filter((a) => !a.startsWith("--"));
+const styleArg = process.argv.find((a) => a.startsWith("--style="));
+const preset = (positional[0] || "top").toLowerCase();
+const STYLE_ID = (styleArg ? styleArg.split("=")[1] : "adidas").toLowerCase();
 const validPresets = ["top", "nike", "budget", "adidas"];
+const validStyles = ["adidas", "zara", "nike"];
 if (!validPresets.includes(preset)) {
   console.error(`Preset invalide. Utiliser: ${validPresets.join(", ")}`);
   process.exit(1);
 }
+if (!validStyles.includes(STYLE_ID)) {
+  console.error(`Style invalide. Utiliser: ${validStyles.join(", ")}`);
+  process.exit(1);
+}
 
-console.log(`🎬 Génération vidéo variant: ${preset.toUpperCase()}`);
+console.log(`🎬 Génération vidéo variant: ${preset.toUpperCase()} — style ${STYLE_ID}`);
 
 const envPath = path.resolve(rootDir, "../.env");
 const envContent = fs.readFileSync(envPath, "utf-8");
@@ -236,11 +245,11 @@ const browser = await openBrowser("chrome", {
   chromiumOptions: { args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"] },
   chromeMode: "chrome-for-testing",
 });
-const composition = await selectComposition({ serveUrl: bundled, id: "main", puppeteerInstance: browser });
+const composition = await selectComposition({ serveUrl: bundled, id: `main-${STYLE_ID}`, puppeteerInstance: browser });
 
 const date = new Date().toISOString().slice(0, 10);
-const rawVideoPath = `/tmp/goldeals-${preset}-raw-${date}.mp4`;
-const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${date}.mp4`;
+const rawVideoPath = `/tmp/goldeals-${preset}-${STYLE_ID}-raw-${date}.mp4`;
+const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${STYLE_ID}-${date}.mp4`;
 
 await renderMedia({
   composition,
