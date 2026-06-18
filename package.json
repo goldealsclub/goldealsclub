@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "audit:brands": "vitest run src/test/brand-filter-audit.test.ts",
     "audit:site": "vitest run src/test/site-audit.test.ts",
-    "audit:full": "vitest run src/test/site-audit.test.ts src/test/brand-filter-audit.test.ts src/test/brand-filtering.test.ts src/test/deals-pipeline.test.ts"
+    "audit:full": "vitest run src/test/site-audit.test.ts src/test/brand-filter-audit.test.ts src/test/brand-filtering.test.ts src/test/deals-pipeline.test.ts",
+    "qa:styles": "node scripts/qa-style-preview.mjs",
+    "qa:styles:update": "node scripts/qa-style-preview.mjs --update"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
