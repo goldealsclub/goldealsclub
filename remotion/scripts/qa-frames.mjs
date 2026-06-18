@@ -148,10 +148,11 @@ const browser = await openBrowser("chrome", {
 const report = {
   generatedAt: new Date().toISOString(),
   mode: UPDATE ? "update-baseline" : "compare",
+  configPath: path.relative(rootDir, CONFIG_PATH),
   thresholds: {
-    visualDiffPct: VISUAL_DIFF_THRESHOLD_PCT,
-    jitterPct: JITTER_THRESHOLD_PCT,
     pixelmatch: PIXELMATCH_THRESHOLD,
+    defaults: { jitter: defaultJitter, visual: defaultVisual },
+    perScene: {},
   },
   scenes: [],
 };
@@ -166,15 +167,15 @@ if (SCENE_FILTER && scenesToRun.length === 0) {
 }
 report.sceneFilter = SCENE_FILTER;
 
-
-
 for (const scene of scenesToRun) {
-  console.log(`\n🎬 ${scene.name} (${scene.id})`);
+  const T = resolveThresholds(scene.name);
+  report.thresholds.perScene[scene.name] = T;
+  console.log(`\n🎬 ${scene.name} (${scene.id}) — seuils jitter=${T.jitter}% visual=${T.visual.entry}/${T.visual.settled}/${T.visual.exit}%`);
   const composition = await selectComposition({
     serveUrl, id: scene.id, puppeteerInstance: browser,
   });
 
-  const sceneReport = { name: scene.name, captures: {}, jitter: null, visual: {} };
+  const sceneReport = { name: scene.name, captures: {}, jitter: null, visual: {}, thresholds: T };
 
   for (const [label, frame] of Object.entries(scene.frames)) {
     const file = `${scene.name}-${label}-f${frame}.png`;
@@ -194,11 +195,11 @@ for (const scene of scenesToRun) {
     path.join(diffDir, `${scene.name}-jitter.png`));
   sceneReport.jitter = {
     diffPct: +jitterDiff.pct.toFixed(4),
-    threshold: JITTER_THRESHOLD_PCT,
-    ok: jitterDiff.pct <= JITTER_THRESHOLD_PCT,
+    threshold: T.jitter,
+    ok: jitterDiff.pct <= T.jitter,
   };
   const jitterMark = sceneReport.jitter.ok ? "✅" : "❌";
-  console.log(`   ${jitterMark} jitter : ${sceneReport.jitter.diffPct}% (seuil ${JITTER_THRESHOLD_PCT}%)`);
+  console.log(`   ${jitterMark} jitter : ${sceneReport.jitter.diffPct}% (seuil ${T.jitter}%)`);
   if (!sceneReport.jitter.ok) regressions++;
 
   // ── Test #2 : diff visuel vs baseline (halos, drift layout) ──────
@@ -212,15 +213,16 @@ for (const scene of scenesToRun) {
       console.log(`   📌 baseline ${label} écrite`);
       continue;
     }
+    const threshold = T.visual[label];
     const d = diffPngs(cur, base, path.join(diffDir, `${scene.name}-${label}-diff.png`));
-    const ok = d.pct <= VISUAL_DIFF_THRESHOLD_PCT;
+    const ok = d.pct <= threshold;
     sceneReport.visual[label] = {
       diffPct: +d.pct.toFixed(4),
-      threshold: VISUAL_DIFF_THRESHOLD_PCT,
+      threshold,
       ok, sizeMismatch: d.sizeMismatch,
     };
     const mark = ok ? "✅" : "❌";
-    console.log(`   ${mark} visual ${label} : ${sceneReport.visual[label].diffPct}% vs baseline`);
+    console.log(`   ${mark} visual ${label} : ${sceneReport.visual[label].diffPct}% vs baseline (seuil ${threshold}%)`);
     if (!ok) regressions++;
   }
 
