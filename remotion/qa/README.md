@@ -1,23 +1,42 @@
 # QA visuelle Remotion
 
 Génère et compare des stills par scène pour repérer halos / tremblements.
+La QA est isolée **par direction artistique** (`adidas` / `zara` / `nike`) :
+chaque style a ses propres baselines, donc bumper Zara ne casse pas Adidas.
 
 ```bash
 cd remotion
-# première fois : crée les baselines
-node scripts/qa-frames.mjs --update
+# première fois : crée les baselines du style adidas (défaut)
+bun qa:update                       # = --update --style=adidas (par défaut script)
+bun qa:update:zara                  # baselines Zara
+bun qa:update:nike                  # baselines Nike
 
 # à chaque itération : compare au baseline + détecte le jitter
-node scripts/qa-frames.mjs
+bun qa                              # adidas
+bun qa:zara
+bun qa:nike
+
+# ou forme générique
+node scripts/qa-frames.mjs --style=zara --scene=deal
 ```
 
-Sortie :
-- `qa/current/`  – stills du run (gitignored)
-- `qa/baseline/` – référence versionnée (committée)
-- `qa/diff/`     – pixels qui ont bougé (gitignored)
-- `qa/report.json` – résumé chiffré, mode CI
+Sortie (isolée par style) :
+- `qa/current/<style>/`  – stills du run (gitignored)
+- `qa/baseline/<style>/` – référence versionnée (committée)
+- `qa/diff/<style>/`     – pixels qui ont bougé (gitignored)
+- `qa/report.json` ou `qa/report-<scene>.json` – résumé chiffré, mode CI
 
 Exit code `2` = régression au-dessus des seuils.
+
+## Directions artistiques
+
+| `--style=`  | Vibe                          | Layouts                                |
+|-------------|-------------------------------|----------------------------------------|
+| `adidas`    | Geometric & graphic           | Split asymétrique, bandes diagonales, bloc ink |
+| `zara`      | Editorial fashion serif       | Centré, full-bleed produit, serif Playfair |
+| `nike`      | Athletic & kinetic            | Carte ink + chip orange accent, spring bouncy |
+
+Switcher = changer un seul paramètre — aucune scène n'est dupliquée, tout passe par les tokens de `src/lib/styles.ts`.
 
 ## Seuils
 
