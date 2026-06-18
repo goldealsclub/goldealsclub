@@ -77,7 +77,8 @@ export const OutroScene: React.FC = () => {
           marginTop: 56,
           fontFamily: playfair, fontStyle: "italic", fontWeight: 400,
           fontSize: 150, color: INK, lineHeight: 1, letterSpacing: -1.5,
-          opacity: heroOpacity, transform: `translateY(${heroY}px)`,
+          opacity: heroOpacity, transform: `translate3d(0, ${heroY}px, 0)`,
+          ...gpuLayer,
         }}>À demain.</div>
 
         <div style={{
