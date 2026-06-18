@@ -120,7 +120,8 @@ export const IntroScene: React.FC = () => {
           marginTop: 56,
           fontFamily: playfair, fontStyle: "italic", fontWeight: 400,
           fontSize: 180, color: INK, lineHeight: 1, letterSpacing: -2,
-          opacity: heroOpacity, transform: `translateY(${heroY}px)`,
+          opacity: heroOpacity, transform: `translate3d(0, ${heroY}px, 0)`,
+          ...gpuLayer,
         }}>Sélection</div>
 
         {/* Numéro */}
@@ -128,7 +129,8 @@ export const IntroScene: React.FC = () => {
           marginTop: 32,
           fontFamily: playfair, fontStyle: "italic", fontWeight: 500,
           fontSize: 110, color: INK, lineHeight: 1,
-          opacity: numOpacity, transform: `scale(${numScale})`,
+          opacity: numOpacity, transform: `scale(${numScale}) translateZ(0)`,
+          ...gpuLayer,
         }}>N° 05</div>
 
         {/* Filet animé */}
