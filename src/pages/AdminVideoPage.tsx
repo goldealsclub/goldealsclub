@@ -1778,26 +1778,33 @@ export default function AdminVideoPage() {
             />
           </div>
 
-          <div className="border rounded-lg p-4 mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
-            <div className="flex-1">
-              <h2 className="font-semibold text-sm">Fond de la vidéo</h2>
-              <p className="text-xs text-muted-foreground">
-                Choisis l'ambiance avant de générer.
-              </p>
+          <div className="border rounded-lg p-4 mb-6 flex flex-col gap-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <div className="flex-1">
+                <h2 className="font-semibold text-sm">Direction artistique</h2>
+                <p className="text-xs text-muted-foreground">
+                  Aperçu instantané — clique sur une miniature ou utilise la liste pour les autres ambiances.
+                </p>
+              </div>
+              <Select value={bgPreset} onValueChange={(v) => setBgPreset(v as BgPreset)} disabled={renderingIdx !== null}>
+                <SelectTrigger className="w-full sm:w-[260px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="paper">Paper &amp; Ink — éditorial papier</SelectItem>
+                  <SelectItem value="adidas">Adidas — geometric &amp; graphic</SelectItem>
+                  <SelectItem value="zara">Zara — studio gris clair</SelectItem>
+                  <SelectItem value="nike">Nike — athletic, accent orange</SelectItem>
+                  <SelectItem value="charcoal">Charcoal — nuit éditoriale</SelectItem>
+                  <SelectItem value="ivoire">Ivoire — premium crème</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Select value={bgPreset} onValueChange={(v) => setBgPreset(v as BgPreset)} disabled={renderingIdx !== null}>
-              <SelectTrigger className="w-full sm:w-[260px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="paper">Paper &amp; Ink — éditorial papier</SelectItem>
-                <SelectItem value="adidas">Adidas — geometric &amp; graphic</SelectItem>
-                <SelectItem value="zara">Zara — studio gris clair</SelectItem>
-                <SelectItem value="nike">Nike — athletic, accent orange</SelectItem>
-                <SelectItem value="charcoal">Charcoal — nuit éditoriale</SelectItem>
-                <SelectItem value="ivoire">Ivoire — premium crème</SelectItem>
-              </SelectContent>
-            </Select>
+            <StylePreview
+              value={bgPreset}
+              onChange={(v) => setBgPreset(v)}
+              disabled={renderingIdx !== null}
+            />
           </div>
 
           {/* Toggle debug badge */}
