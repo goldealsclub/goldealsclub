@@ -37,6 +37,13 @@ for (const d of [qaDir, baselineDir, currentDir, diffDir]) {
 }
 
 const UPDATE = process.argv.includes("--update");
+// --scene=intro|deal|outro : restreint la QA à une seule scène
+// (utilisé par la matrice GitHub Actions pour un check par scène)
+const sceneArg = process.argv.find((a) => a.startsWith("--scene="));
+const SCENE_FILTER = sceneArg ? sceneArg.split("=")[1] : null;
+// --report=path : écrit le rapport JSON à un chemin custom (sinon qa/report.json)
+const reportArg = process.argv.find((a) => a.startsWith("--report="));
+const REPORT_PATH = reportArg ? reportArg.split("=")[1] : null;
 
 // ── Seuils ────────────────────────────────────────────────────────────
 // Diff visuel scène vs baseline : > 2 % des pixels = halo / régression layout.
@@ -106,7 +113,18 @@ const report = {
 };
 let regressions = 0;
 
-for (const scene of PLAN) {
+const scenesToRun = SCENE_FILTER
+  ? PLAN.filter((s) => s.name === SCENE_FILTER)
+  : PLAN;
+if (SCENE_FILTER && scenesToRun.length === 0) {
+  console.error(`❌ Scène inconnue: ${SCENE_FILTER}. Valides: ${PLAN.map(p => p.name).join(", ")}`);
+  process.exit(1);
+}
+report.sceneFilter = SCENE_FILTER;
+
+
+
+for (const scene of scenesToRun) {
   console.log(`\n🎬 ${scene.name} (${scene.id})`);
   const composition = await selectComposition({
     serveUrl, id: scene.id, puppeteerInstance: browser,
@@ -168,9 +186,13 @@ for (const scene of PLAN) {
 await browser.close({ silent: false });
 
 report.regressions = regressions;
-fs.writeFileSync(path.join(qaDir, "report.json"), JSON.stringify(report, null, 2));
+const reportOut = REPORT_PATH
+  ? path.resolve(rootDir, REPORT_PATH)
+  : path.join(qaDir, "report.json");
+fs.mkdirSync(path.dirname(reportOut), { recursive: true });
+fs.writeFileSync(reportOut, JSON.stringify(report, null, 2));
 
-console.log(`\n📊 Rapport : ${path.relative(rootDir, path.join(qaDir, "report.json"))}`);
+console.log(`\n📊 Rapport : ${path.relative(rootDir, reportOut)}`);
 if (UPDATE) {
   console.log("✅ Baselines mises à jour.");
   process.exit(0);

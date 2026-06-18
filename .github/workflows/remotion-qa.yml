@@ -1,9 +1,9 @@
 name: Remotion QA visuelle
 
-# Lance la QA visuelle des scènes Remotion à chaque PR touchant le pipeline
-# vidéo. Détecte halos (diff vs baseline) et tremblements (diff settled vs
-# settled+1). Poste un résumé Markdown dans la PR et upload les diffs en
-# artifact pour inspection visuelle.
+# Un check distinct par scène (intro / deal / outro) pour voir immédiatement
+# laquelle régresse et sur quelle métrique. Un job d'agrégation final poste
+# un commentaire PR consolidé avec le tableau des 3 scènes et un lien vers
+# l'artifact des diffs visuels.
 on:
   pull_request:
     paths:
@@ -17,8 +17,13 @@ permissions:
 
 jobs:
   qa:
+    name: QA · ${{ matrix.scene }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        scene: [intro, deal, outro]
     defaults:
       run:
         working-directory: remotion
@@ -35,10 +40,7 @@ jobs:
       - name: Install Remotion deps
         run: bun install --frozen-lockfile
 
-      - name: Patch compositor (musl binary + ffmpeg symlinks)
-        # Remotion détecte glibc et charge la variante gnu, mais son binaire
-        # bundlé ne tourne pas toujours sur les runners. On force le musl
-        # qui fonctionne partout, et on symlink ffmpeg/ffprobe système.
+      - name: Patch compositor (musl + ffmpeg symlinks)
         run: |
           mkdir -p node_modules/@remotion/compositor-linux-x64-gnu
           cp node_modules/@remotion/compositor-linux-x64-musl/remotion \
@@ -47,86 +49,133 @@ jobs:
           ln -sf "$(which ffmpeg)"  node_modules/@remotion/compositor-linux-x64-gnu/ffmpeg
           ln -sf "$(which ffprobe)" node_modules/@remotion/compositor-linux-x64-gnu/ffprobe
 
-      - name: Run visual QA
+      - name: Run QA — scene ${{ matrix.scene }}
         id: qa
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
-        # On veut la suite des steps même si la QA échoue (exit code 2)
-        # pour pouvoir poster le résumé et uploader les diffs.
+        # On capture l'exit code mais on continue pour pouvoir uploader
+        # l'artifact et écrire le step summary avant de faire échouer le check.
         continue-on-error: true
         run: |
           set +e
-          node scripts/qa-frames.mjs
+          node scripts/qa-frames.mjs \
+            --scene=${{ matrix.scene }} \
+            --report=qa/report-${{ matrix.scene }}.json
           echo "exit_code=$?" >> "$GITHUB_OUTPUT"
 
-      - name: Build PR summary
-        id: summary
+      - name: Scene step summary
         if: always()
         run: |
-          node <<'EOF' > /tmp/summary.md
+          node <<'EOF' >> "$GITHUB_STEP_SUMMARY"
           const fs = require("fs");
-          const path = "qa/report.json";
-          if (!fs.existsSync(path)) {
-            console.log("⚠️ Pas de rapport QA généré.");
-            process.exit(0);
-          }
-          const r = JSON.parse(fs.readFileSync(path, "utf8"));
-          const lines = [];
-          lines.push("## 🎬 Remotion QA visuelle");
-          lines.push("");
-          lines.push(r.regressions > 0
-            ? `❌ **${r.regressions} régression(s)** détectée(s).`
-            : "✅ Aucune régression visuelle ni tremblement.");
-          lines.push("");
-          lines.push(`Seuils : visual **${r.thresholds.visualDiffPct}%**, jitter **${r.thresholds.jitterPct}%**`);
-          lines.push("");
-          lines.push("| Scène | Jitter (settled vs +1) | Entry | Settled | Exit |");
-          lines.push("|---|---|---|---|---|");
+          const p = "qa/report-${{ matrix.scene }}.json";
+          if (!fs.existsSync(p)) { console.log("⚠️ Pas de rapport pour ${{ matrix.scene }}."); process.exit(0); }
+          const r = JSON.parse(fs.readFileSync(p, "utf8"));
+          const s = r.scenes[0];
           const mark = (ok) => ok ? "✅" : "❌";
-          const cell = (v) => {
-            if (!v) return "—";
-            if (v.status === "baseline-written") return "📌 baseline";
-            return `${mark(v.ok)} ${v.diffPct}%`;
-          };
-          for (const s of r.scenes) {
-            const j = s.jitter;
-            const jc = j ? `${mark(j.ok)} ${j.diffPct}%` : "—";
-            lines.push(`| **${s.name}** | ${jc} | ${cell(s.visual.entry)} | ${cell(s.visual.settled)} | ${cell(s.visual.exit)} |`);
-          }
-          lines.push("");
-          if (r.regressions > 0) {
-            lines.push("👉 Diffs visuels (zones rouges = pixels qui ont bougé) disponibles dans l'**artifact `remotion-qa-diffs`** ci-dessous.");
-            lines.push("");
-            lines.push("Si le changement est intentionnel, régénère les baselines :");
-            lines.push("```bash");
-            lines.push("cd remotion && bun qa:update");
-            lines.push("git add remotion/qa/baseline && git commit -m 'qa: bump baselines'");
-            lines.push("```");
-          }
-          lines.push("");
-          lines.push(`<sub>Généré le ${r.generatedAt}</sub>`);
-          console.log(lines.join("\n"));
+          const cell = (v) => !v ? "—"
+            : v.status === "baseline-written" ? "📌 baseline"
+            : `${mark(v.ok)} **${v.diffPct}%** (seuil ${v.threshold}%)`;
+          const out = [];
+          out.push(`## 🎬 Scène ${s.name}`);
+          out.push("");
+          out.push(r.regressions > 0
+            ? `❌ **${r.regressions} métrique(s) en régression**`
+            : "✅ Scène OK");
+          out.push("");
+          out.push("| Métrique | Résultat |");
+          out.push("|---|---|");
+          out.push(`| 🌀 Jitter (settled vs +1) | ${s.jitter ? `${mark(s.jitter.ok)} **${s.jitter.diffPct}%** (seuil ${s.jitter.threshold}%)` : "—"} |`);
+          out.push(`| 🖼 Visual · entry        | ${cell(s.visual.entry)} |`);
+          out.push(`| 🖼 Visual · settled (halos) | ${cell(s.visual.settled)} |`);
+          out.push(`| 🖼 Visual · exit         | ${cell(s.visual.exit)} |`);
+          console.log(out.join("\n"));
           EOF
-          cat /tmp/summary.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Upload QA artifacts
+      - name: Upload scene artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: remotion-qa-diffs
+          name: remotion-qa-${{ matrix.scene }}
           path: |
-            remotion/qa/current/
-            remotion/qa/diff/
-            remotion/qa/report.json
+            remotion/qa/current/${{ matrix.scene }}-*.png
+            remotion/qa/diff/${{ matrix.scene }}-*.png
+            remotion/qa/report-${{ matrix.scene }}.json
           retention-days: 14
 
-      - name: Comment PR
-        if: always() && github.event_name == 'pull_request'
+      - name: Fail scene check on regression
+        if: steps.qa.outputs.exit_code != '0'
+        run: |
+          echo "Régression sur la scène ${{ matrix.scene }} — voir l'artifact remotion-qa-${{ matrix.scene }}."
+          exit 1
+
+  summary:
+    name: QA · résumé PR
+    needs: qa
+    if: always() && github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Download all scene reports
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          pattern: remotion-qa-*
+
+      - name: Build consolidated comment
+        run: |
+          node <<'EOF' > /tmp/comment.md
+          const fs = require("fs"), path = require("path");
+          const scenes = ["intro", "deal", "outro"];
+          const reports = {};
+          let totalRegressions = 0, missing = [];
+          for (const name of scenes) {
+            const p = path.join("artifacts", `remotion-qa-${name}`, `report-${name}.json`);
+            if (!fs.existsSync(p)) { missing.push(name); continue; }
+            const r = JSON.parse(fs.readFileSync(p, "utf8"));
+            reports[name] = r.scenes[0];
+            totalRegressions += r.regressions || 0;
+          }
+          const mark = (ok) => ok ? "✅" : "❌";
+          const cell = (v) => !v ? "—"
+            : v.status === "baseline-written" ? "📌 baseline"
+            : `${mark(v.ok)} ${v.diffPct}%`;
+          const out = [];
+          out.push("## 🎬 Remotion QA visuelle");
+          out.push("");
+          out.push(totalRegressions > 0
+            ? `❌ **${totalRegressions} régression(s)** détectée(s).`
+            : "✅ Aucune régression visuelle ni tremblement sur les 3 scènes.");
+          if (missing.length) out.push(`\n⚠️ Rapports manquants : ${missing.join(", ")}`);
+          out.push("");
+          out.push("| Scène | 🌀 Jitter | 🖼 entry | 🖼 settled (halos) | 🖼 exit |");
+          out.push("|---|---|---|---|---|");
+          for (const name of scenes) {
+            const s = reports[name];
+            if (!s) { out.push(`| **${name}** | ⚠️ | ⚠️ | ⚠️ | ⚠️ |`); continue; }
+            const j = s.jitter ? `${mark(s.jitter.ok)} ${s.jitter.diffPct}%` : "—";
+            out.push(`| **${name}** | ${j} | ${cell(s.visual.entry)} | ${cell(s.visual.settled)} | ${cell(s.visual.exit)} |`);
+          }
+          out.push("");
+          out.push("Détail par scène : voir les checks **QA · intro / deal / outro** ci-dessus (chacun a son step summary + son artifact diff).");
+          if (totalRegressions > 0) {
+            out.push("");
+            out.push("Si le changement est intentionnel, régénère les baselines :");
+            out.push("```bash");
+            out.push("cd remotion && bun qa:update");
+            out.push("git add remotion/qa/baseline && git commit -m 'qa: bump baselines'");
+            out.push("```");
+          }
+          console.log(out.join("\n"));
+          EOF
+          cat /tmp/comment.md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Post / update PR comment
         uses: actions/github-script@v7
         with:
           script: |
             const fs = require("fs");
-            const body = fs.readFileSync("/tmp/summary.md", "utf8");
+            const body = fs.readFileSync("/tmp/comment.md", "utf8");
             const marker = "<!-- remotion-qa-comment -->";
             const full = `${marker}\n${body}`;
             const { owner, repo } = context.repo;
@@ -144,9 +193,3 @@ jobs:
                 owner, repo, issue_number, body: full,
               });
             }
-
-      - name: Fail job on regression
-        if: steps.qa.outputs.exit_code != '0'
-        run: |
-          echo "Régression détectée — voir le résumé PR et l'artifact remotion-qa-diffs."
-          exit 1
