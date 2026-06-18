@@ -37,6 +37,13 @@ for (const d of [qaDir, baselineDir, currentDir, diffDir]) {
 }
 
 const UPDATE = process.argv.includes("--update");
+// --scene=intro|deal|outro : restreint la QA à une seule scène
+// (utilisé par la matrice GitHub Actions pour un check par scène)
+const sceneArg = process.argv.find((a) => a.startsWith("--scene="));
+const SCENE_FILTER = sceneArg ? sceneArg.split("=")[1] : null;
+// --report=path : écrit le rapport JSON à un chemin custom (sinon qa/report.json)
+const reportArg = process.argv.find((a) => a.startsWith("--report="));
+const REPORT_PATH = reportArg ? reportArg.split("=")[1] : null;
 
 // ── Seuils ────────────────────────────────────────────────────────────
 // Diff visuel scène vs baseline : > 2 % des pixels = halo / régression layout.
