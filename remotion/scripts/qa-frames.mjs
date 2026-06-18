@@ -113,6 +113,17 @@ const report = {
 };
 let regressions = 0;
 
+const scenesToRun = SCENE_FILTER
+  ? PLAN.filter((s) => s.name === SCENE_FILTER)
+  : PLAN;
+if (SCENE_FILTER && scenesToRun.length === 0) {
+  console.error(`❌ Scène inconnue: ${SCENE_FILTER}. Valides: ${PLAN.map(p => p.name).join(", ")}`);
+  process.exit(1);
+}
+report.sceneFilter = SCENE_FILTER;
+
+
+
 for (const scene of PLAN) {
   console.log(`\n🎬 ${scene.name} (${scene.id})`);
   const composition = await selectComposition({
