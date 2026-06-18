@@ -1,0 +1,26 @@
+{
+  "$comment": "Seuils QA visuelle Remotion. Ajustables sans toucher au code. Surcharges possibles via env (QA_PIXELMATCH, QA_JITTER, QA_VISUAL, QA_JITTER_<scene>, QA_VISUAL_<scene>, QA_VISUAL_<scene>_<phase>) ou via les inputs du workflow GitHub Actions 'Remotion QA visuelle'.",
+  "pixelmatch": 0.1,
+  "defaults": {
+    "jitter": 0.15,
+    "visual": {
+      "entry": 2.0,
+      "settled": 2.0,
+      "exit": 2.0
+    }
+  },
+  "scenes": {
+    "intro": {
+      "jitter": 0.15,
+      "visual": { "entry": 2.0, "settled": 2.0, "exit": 2.0 }
+    },
+    "deal": {
+      "jitter": 0.15,
+      "visual": { "entry": 2.0, "settled": 2.0, "exit": 2.0 }
+    },
+    "outro": {
+      "jitter": 0.15,
+      "visual": { "entry": 2.0, "settled": 2.0, "exit": 2.0 }
+    }
+  }
+}
