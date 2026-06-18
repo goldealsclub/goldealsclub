@@ -72,11 +72,9 @@ async function writePng(file, png) {
 
 async function captureScene(page, scene) {
   await page.setViewportSize(scene.viewport);
-  await page.goto(URL, { waitUntil: "networkidle" });
-  // Laisse les fonts régler avant la capture (sinon FOUT entre 2 runs)
+  await page.goto(`${URL}?scene=${scene.id}`, { waitUntil: "networkidle" });
   await page.evaluate(() => document.fonts && document.fonts.ready);
   const el = await page.waitForSelector(`[data-testid="${scene.testid}"]`, { timeout: 5000 });
-  await el.scrollIntoViewIfNeeded();
   const tmp = path.join(ACTUAL_DIR, `${scene.id}.png`);
   await el.screenshot({ path: tmp });
   return tmp;
