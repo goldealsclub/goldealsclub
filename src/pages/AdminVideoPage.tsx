@@ -236,7 +236,7 @@ const INTRO = 2.2;
 const OUTRO = 2.6;
 
 // ─── PRESETS DE FOND ───
-export type BgPreset = "paper" | "zara" | "charcoal" | "ivoire";
+export type BgPreset = "paper" | "zara" | "charcoal" | "ivoire" | "adidas" | "nike";
 
 type Palette = {
   bgTop: string;
@@ -307,6 +307,34 @@ export const BG_PRESETS: Record<BgPreset, Palette> = {
     haloInner: "rgba(255,250,240,0.4)",
     haloMid: "rgba(255,250,240,0.08)",
     vignette: "rgba(60,40,15,0.18)",
+    grainOnDark: false,
+  },
+  // ── Adidas — geometric & graphic ── ivoire chaud, encre profonde, accent ink
+  adidas: {
+    bgTop: "#f4f1ea",
+    bgMid: "#ebe6da",
+    bgBot: "#e3ddd1",
+    ink: "#0a0a0a",
+    inkSoft: "rgba(10,10,10,0.55)",
+    accent: "#0a0a0a",
+    taupe: "#6a655c",
+    haloInner: "rgba(255,253,247,0.4)",
+    haloMid: "rgba(255,253,247,0.05)",
+    vignette: "rgba(10,10,10,0.10)",
+    grainOnDark: false,
+  },
+  // ── Nike — athletic & kinetic ── ivoire chaud + accent orange Nike
+  nike: {
+    bgTop: "#f4f1ea",
+    bgMid: "#ebe6da",
+    bgBot: "#e3ddd1",
+    ink: "#0a0a0a",
+    inkSoft: "rgba(10,10,10,0.55)",
+    accent: "#fa5400",
+    taupe: "#6a655c",
+    haloInner: "rgba(255,247,240,0.45)",
+    haloMid: "rgba(250,84,0,0.05)",
+    vignette: "rgba(10,10,10,0.10)",
     grainOnDark: false,
   },
 };
@@ -1763,7 +1791,9 @@ export default function AdminVideoPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="paper">Paper &amp; Ink — éditorial papier</SelectItem>
+                <SelectItem value="adidas">Adidas — geometric &amp; graphic</SelectItem>
                 <SelectItem value="zara">Zara — studio gris clair</SelectItem>
+                <SelectItem value="nike">Nike — athletic, accent orange</SelectItem>
                 <SelectItem value="charcoal">Charcoal — nuit éditoriale</SelectItem>
                 <SelectItem value="ivoire">Ivoire — premium crème</SelectItem>
               </SelectContent>
