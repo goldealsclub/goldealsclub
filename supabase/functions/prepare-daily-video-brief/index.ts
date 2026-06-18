@@ -61,6 +61,10 @@ const TOP_N = 5;
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
 
+  const auth = await requireAdminOrService(req);
+  if (!auth.ok) return auth.response;
+
+
   let shuffle = false;
   let onlyCategory: string | null = null;
   try {
