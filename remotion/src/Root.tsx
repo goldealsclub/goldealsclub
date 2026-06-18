@@ -5,13 +5,13 @@ import { DealScene } from "./scenes/DealScene";
 import { OutroScene } from "./scenes/OutroScene";
 import { deals } from "./data";
 
-// Main : 90 + 5*140 + 130 - 6*35 = 710
+// Main : 80 + 5*130 + 110 - 6*16 = 744 frames @ 30fps ≈ 24.8s
 export const RemotionRoot = () => (
   <>
     <Composition
       id="main"
       component={MainVideo}
-      durationInFrames={710}
+      durationInFrames={744}
       fps={30}
       width={1080}
       height={1920}
@@ -20,7 +20,7 @@ export const RemotionRoot = () => (
     <Composition
       id="qa-intro"
       component={IntroScene}
-      durationInFrames={90}
+      durationInFrames={80}
       fps={30}
       width={1080}
       height={1920}
@@ -28,7 +28,7 @@ export const RemotionRoot = () => (
     <Composition
       id="qa-deal"
       component={DealScene}
-      durationInFrames={140}
+      durationInFrames={130}
       fps={30}
       width={1080}
       height={1920}
@@ -41,7 +41,7 @@ export const RemotionRoot = () => (
     <Composition
       id="qa-outro"
       component={OutroScene}
-      durationInFrames={130}
+      durationInFrames={110}
       fps={30}
       width={1080}
       height={1920}
