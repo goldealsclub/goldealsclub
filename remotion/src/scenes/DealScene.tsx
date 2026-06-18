@@ -29,26 +29,41 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
+  // Helpers anti-jitter : snap entier pixel & arrondi scale
+  const snap = (v: number) => Math.round(v);
+  const snapScale = (v: number) => Math.round(v * 1000) / 1000;
+  // Une fois la spring quasi-stabilisée, on fige la valeur pour éviter
+  // les micro-oscillations sub-pixel qui font shimmer la typo.
+  const settle = (v: number) => (v > 0.995 ? 1 : v);
+
   // Entrée éditoriale séquentielle
   const railOpacity = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
-  const headerSp = spring({ frame: frame - 4, fps, config: { damping: 22, stiffness: 120 } });
+  const headerSp = settle(spring({ frame: frame - 4, fps, config: { damping: 22, stiffness: 120 }, durationInFrames: 30 }));
   const headerOpacity = interpolate(headerSp, [0, 1], [0, 1]);
-  const headerY = interpolate(headerSp, [0, 1], [16, 0]);
+  const headerY = snap(interpolate(headerSp, [0, 1], [16, 0]));
 
-  const imgSp = spring({ frame: frame - 12, fps, config: { damping: 24, stiffness: 100 } });
+  const imgSp = settle(spring({ frame: frame - 12, fps, config: { damping: 24, stiffness: 100 }, durationInFrames: 30 }));
   const imgOpacity = interpolate(imgSp, [0, 1], [0, 1]);
-  const imgScale = interpolate(imgSp, [0, 1], [0.96, 1]);
+  const imgScale = snapScale(interpolate(imgSp, [0, 1], [0.96, 1]));
 
-  // Ken Burns
-  const kenZoom = interpolate(frame, [0, 140], [1.0, 1.04], { extrapolateRight: "clamp" });
-  const kenPanX = interpolate(frame, [0, 140], [-3, 3], { extrapolateRight: "clamp" }) * (index % 2 === 0 ? 1 : -1);
-  const kenPanY = interpolate(frame, [0, 140], [2, -2], { extrapolateRight: "clamp" });
+  // Ken Burns (arrondis pour éviter le scintillement)
+  const kenZoom = snapScale(interpolate(frame, [0, 140], [1.0, 1.04], { extrapolateRight: "clamp" }));
+  const kenPanX = snap(interpolate(frame, [0, 140], [-3, 3], { extrapolateRight: "clamp" }) * (index % 2 === 0 ? 1 : -1));
+  const kenPanY = snap(interpolate(frame, [0, 140], [2, -2], { extrapolateRight: "clamp" }));
 
-  const priceSp = spring({ frame: frame - 22, fps, config: { damping: 22, stiffness: 130 } });
+  const priceSp = settle(spring({ frame: frame - 22, fps, config: { damping: 22, stiffness: 130 }, durationInFrames: 30 }));
   const priceOpacity = interpolate(priceSp, [0, 1], [0, 1]);
-  const priceY = interpolate(priceSp, [0, 1], [18, 0]);
+  const priceY = snap(interpolate(priceSp, [0, 1], [18, 0]));
 
   const ctaOpacity = interpolate(frame, [38, 52], [0, 1], { extrapolateRight: "clamp" });
+
+  // Styles communs pour stabiliser le rendu typographique
+  const gpuLayer: React.CSSProperties = {
+    willChange: "transform, opacity",
+    backfaceVisibility: "hidden",
+    WebkitFontSmoothing: "antialiased",
+    transform: "translateZ(0)",
+  };
 
   const brandLogo = brandLogos[deal.brand];
 
