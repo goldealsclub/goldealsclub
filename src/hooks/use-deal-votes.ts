@@ -32,34 +32,36 @@ export function VotesProvider({ children }: { children: ReactNode }) {
       return next;
     });
 
-    // Batch fetch all votes for these deals
-    supabase
-      .from("deal_votes" as any)
-      .select("deal_id, vote, user_id")
-      .in("deal_id", newIds)
-      .then(({ data }: any) => {
-        if (!data) return;
-        const scoreMap: Record<string, { score: number; userVote: number | null }> = {};
+    const scoreMap: Record<string, VoteData> = {};
+    newIds.forEach((id) => {
+      scoreMap[id] = { score: 0, userVote: null };
+    });
 
-        // Initialize all requested ids
-        newIds.forEach((id) => {
-          scoreMap[id] = { score: 0, userVote: null };
-        });
+    // Public aggregated scores via security-definer RPC (no user_id exposure)
+    const scoresPromise = (supabase as any).rpc("get_deal_vote_scores", { deal_ids: newIds });
 
-        // Aggregate
-        data.forEach((row: any) => {
-          if (!scoreMap[row.deal_id]) {
-            scoreMap[row.deal_id] = { score: 0, userVote: null };
-          }
-          scoreMap[row.deal_id].score += row.vote;
-          if (user && row.user_id === user.id) {
-            scoreMap[row.deal_id].userVote = row.vote;
-          }
-        });
+    // User's own votes (RLS restricts to auth.uid())
+    const ownPromise = user
+      ? supabase
+          .from("deal_votes" as any)
+          .select("deal_id, vote")
+          .in("deal_id", newIds)
+          .eq("user_id", user.id)
+      : Promise.resolve({ data: [] as any[] });
 
-        setVotes((prev) => ({ ...prev, ...scoreMap }));
+    Promise.all([scoresPromise, ownPromise]).then(([scoresRes, ownRes]: any[]) => {
+      (scoresRes?.data || []).forEach((row: any) => {
+        if (!scoreMap[row.deal_id]) scoreMap[row.deal_id] = { score: 0, userVote: null };
+        scoreMap[row.deal_id].score = Number(row.score) || 0;
       });
+      (ownRes?.data || []).forEach((row: any) => {
+        if (!scoreMap[row.deal_id]) scoreMap[row.deal_id] = { score: 0, userVote: null };
+        scoreMap[row.deal_id].userVote = row.vote;
+      });
+      setVotes((prev) => ({ ...prev, ...scoreMap }));
+    });
   }, [loadedIds, user?.id]);
+
 
   const castVote = useCallback(async (dealId: string, value: 1 | -1) => {
     if (!user) return;
