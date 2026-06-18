@@ -196,6 +196,22 @@ async function fetchImage(url) {
   return { dataUri: `data:${ct};base64,${buf.toString("base64")}`, dims };
 }
 
+// Normalise le packshot via wsrv.nl (trim + fond blanc) pour que le
+// mixBlendMode:multiply de DealScene produise un détourage propre.
+async function fetchStudioImage(rawUrl) {
+  const stripped = rawUrl.replace(/^https?:\/\//, "");
+  const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(stripped)}` +
+    `&w=1400&h=1400&fit=contain&cbg=white&bg=white&trim=20&output=jpg&q=92`;
+  const r = await fetch(wsrv, {
+    headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://wsrv.nl/" },
+  });
+  if (!r.ok) throw new Error(`wsrv HTTP ${r.status}`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  let dims;
+  try { dims = imageSize(buf); } catch { throw new Error("wsrv undecodable"); }
+  return { dataUri: `data:image/jpeg;base64,${buf.toString("base64")}`, dims };
+}
+
 async function imageToDataUri(url) {
   const candidates = [url];
   const direct = extractDirectImageUrl(url);
@@ -203,12 +219,20 @@ async function imageToDataUri(url) {
   const errors = [];
   for (const c of candidates) {
     try {
-      const { dataUri, dims } = await fetchImage(c);
-      return { dataUri, dims, source: c === url ? "cdn" : "direct" };
+      // Probe la source pour valider taille / type
+      const probe = await fetchImage(c);
+      // Puis tente la version studio (trim + bg blanc) — fallback sur probe
+      try {
+        const studio = await fetchStudioImage(c);
+        return { dataUri: studio.dataUri, dims: studio.dims, source: "studio" };
+      } catch {
+        return { dataUri: probe.dataUri, dims: probe.dims, source: c === url ? "cdn" : "direct" };
+      }
     } catch (e) { errors.push(e.message); }
   }
   return { error: errors.join(" | ") };
 }
+
 
 const deals = [];
 for (const d of rawDeals) {
