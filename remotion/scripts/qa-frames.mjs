@@ -192,7 +192,7 @@ const reportOut = REPORT_PATH
 fs.mkdirSync(path.dirname(reportOut), { recursive: true });
 fs.writeFileSync(reportOut, JSON.stringify(report, null, 2));
 
-console.log(`\n📊 Rapport : ${path.relative(rootDir, path.join(qaDir, "report.json"))}`);
+console.log(`\n📊 Rapport : ${path.relative(rootDir, reportOut)}`);
 if (UPDATE) {
   console.log("✅ Baselines mises à jour.");
   process.exit(0);
