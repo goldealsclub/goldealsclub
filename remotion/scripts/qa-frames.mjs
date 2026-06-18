@@ -124,7 +124,7 @@ report.sceneFilter = SCENE_FILTER;
 
 
 
-for (const scene of PLAN) {
+for (const scene of scenesToRun) {
   console.log(`\n🎬 ${scene.name} (${scene.id})`);
   const composition = await selectComposition({
     serveUrl, id: scene.id, puppeteerInstance: browser,
