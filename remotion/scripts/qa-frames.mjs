@@ -104,13 +104,14 @@ function resolveThresholds(sceneName) {
 }
 
 // ── Plan de capture ───────────────────────────────────────────────────
+// Frames calées sur les durées MainVideo (intro 80 / deal 130 / outro 110).
 const PLAN = [
   { id: "qa-intro", name: "intro",
-    frames: { entry: 25, settled: 70, settledNext: 71, exit: 88 } },
+    frames: { entry: 22, settled: 60, settledNext: 61, exit: 78 } },
   { id: "qa-deal", name: "deal",
-    frames: { entry: 40, settled: 100, settledNext: 101, exit: 135 } },
+    frames: { entry: 35, settled: 90, settledNext: 91, exit: 125 } },
   { id: "qa-outro", name: "outro",
-    frames: { entry: 30, settled: 95, settledNext: 96, exit: 125 } },
+    frames: { entry: 28, settled: 80, settledNext: 81, exit: 105 } },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────
