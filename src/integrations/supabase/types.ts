@@ -451,6 +451,13 @@ export type Database = {
       }
     }
     Functions: {
+      get_deal_vote_scores: {
+        Args: { deal_ids: string[] }
+        Returns: {
+          deal_id: string
+          score: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
