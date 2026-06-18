@@ -319,13 +319,13 @@ const browser = await openBrowser("chrome", {
 
 const composition = await selectComposition({
   serveUrl: bundled,
-  id: "main",
+  id: `main-${STYLE_ID}`,
   puppeteerInstance: browser,
 });
 
 const date = new Date().toISOString().slice(0, 10);
-const rawVideoPath = `/tmp/goldeals-raw-${date}-${themeKey}.mp4`;
-const outputPath = `/mnt/documents/goldeals-tiktok-${date}-${themeKey}.mp4`;
+const rawVideoPath = `/tmp/goldeals-raw-${date}-${themeKey}-${STYLE_ID}.mp4`;
+const outputPath = `/mnt/documents/goldeals-tiktok-${date}-${themeKey}-${STYLE_ID}.mp4`;
 
 await renderMedia({
   composition,
