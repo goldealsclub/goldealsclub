@@ -164,14 +164,17 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
       <div style={{
         position: "absolute", top: 510, left: 0, right: 0, height: 880,
         display: "flex", alignItems: "center", justifyContent: "center",
-        opacity: imgOpacity, transform: `scale(${imgScale})`,
+        opacity: imgOpacity, transform: `scale(${imgScale}) translateZ(0)`,
+        ...gpuLayer,
       }}>
         <div style={{
           width: "88%", height: "100%",
           display: "flex", alignItems: "center", justifyContent: "center",
           filter: "drop-shadow(0 30px 28px rgba(0,0,0,0.18))",
-          transform: `scale(${kenZoom}) translate(${kenPanX}px, ${kenPanY}px)`,
+          transform: `translate3d(${kenPanX}px, ${kenPanY}px, 0) scale(${kenZoom})`,
           transformOrigin: "center",
+          willChange: "transform",
+          backfaceVisibility: "hidden",
         }}>
           <Img src={deal.imageUrl} style={{
             maxWidth: "100%", maxHeight: "100%",
@@ -184,7 +187,8 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
       {/* ═══ Bande prix ═══ */}
       <div style={{
         position: "absolute", left: 60, right: 60, top: 1420,
-        opacity: priceOpacity, transform: `translateY(${priceY}px)`,
+        opacity: priceOpacity, transform: `translate3d(0, ${priceY}px, 0)`,
+        ...gpuLayer,
       }}>
         {/* Hairline + label + remise */}
         <div style={{ height: 1, backgroundColor: RULE }} />
