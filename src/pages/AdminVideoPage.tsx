@@ -9,6 +9,7 @@ import { Loader2, Download, Copy, RefreshCw, ArrowLeft, Sparkles, Share2, Cloud,
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import VideoHistory from "@/components/admin/VideoHistory";
+import { StylePreview } from "@/components/admin/StylePreview";
 import {
   VIDEO_COLORS,
   VIDEO_SHADOWS,
