@@ -10,6 +10,43 @@ on:
       - "remotion/**"
       - ".github/workflows/remotion-qa.yml"
   workflow_dispatch:
+    inputs:
+      jitter:
+        description: "Seuil jitter global (%) — vide = valeur du fichier qa/thresholds.json"
+        required: false
+        default: ""
+      visual:
+        description: "Seuil visuel global (%) — vide = valeur du fichier qa/thresholds.json"
+        required: false
+        default: ""
+      pixelmatch:
+        description: "Sensibilité pixelmatch (0 strict → 1 laxiste) — vide = défaut"
+        required: false
+        default: ""
+      jitter_intro:
+        description: "Override jitter intro (%)"
+        required: false
+        default: ""
+      jitter_deal:
+        description: "Override jitter deal (%)"
+        required: false
+        default: ""
+      jitter_outro:
+        description: "Override jitter outro (%)"
+        required: false
+        default: ""
+      visual_intro:
+        description: "Override visuel intro (%) — toutes phases"
+        required: false
+        default: ""
+      visual_deal:
+        description: "Override visuel deal (%) — toutes phases"
+        required: false
+        default: ""
+      visual_outro:
+        description: "Override visuel outro (%) — toutes phases"
+        required: false
+        default: ""
 
 permissions:
   contents: read
