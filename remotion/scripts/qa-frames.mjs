@@ -37,29 +37,73 @@ for (const d of [qaDir, baselineDir, currentDir, diffDir]) {
 }
 
 const UPDATE = process.argv.includes("--update");
+const getArg = (name) => {
+  const a = process.argv.find((x) => x.startsWith(`--${name}=`));
+  return a ? a.split("=").slice(1).join("=") : null;
+};
 // --scene=intro|deal|outro : restreint la QA à une seule scène
-// (utilisé par la matrice GitHub Actions pour un check par scène)
-const sceneArg = process.argv.find((a) => a.startsWith("--scene="));
-const SCENE_FILTER = sceneArg ? sceneArg.split("=")[1] : null;
-// --report=path : écrit le rapport JSON à un chemin custom (sinon qa/report.json)
-const reportArg = process.argv.find((a) => a.startsWith("--report="));
-const REPORT_PATH = reportArg ? reportArg.split("=")[1] : null;
+const SCENE_FILTER = getArg("scene");
+// --report=path : écrit le rapport JSON à un chemin custom
+const REPORT_PATH = getArg("report");
+// --config=path : fichier JSON de seuils (défaut: qa/thresholds.json)
+const CONFIG_PATH = getArg("config") ?? path.join(qaDir, "thresholds.json");
 
-// ── Seuils ────────────────────────────────────────────────────────────
-// Diff visuel scène vs baseline : > 2 % des pixels = halo / régression layout.
-const VISUAL_DIFF_THRESHOLD_PCT = 2.0;
-// Jitter : 2 frames consécutives en zone settled doivent être quasi-identiques.
-// > 0.15 % de pixels différents = tremblement résiduel.
-const JITTER_THRESHOLD_PCT = 0.15;
-// Sensibilité pixelmatch (0 = strict, 1 = laxiste). 0.1 = par défaut.
-const PIXELMATCH_THRESHOLD = 0.1;
+// ── Seuils : config JSON + surcharges CLI/env ────────────────────────
+// Priorité (du + faible au + fort) :
+//   1) qa/thresholds.json (defaults + per-scene)
+//   2) env globaux        : QA_PIXELMATCH, QA_JITTER, QA_VISUAL
+//   3) env par scène      : QA_JITTER_<SCENE>, QA_VISUAL_<SCENE>
+//   4) env par phase      : QA_VISUAL_<SCENE>_<PHASE>   (PHASE = ENTRY|SETTLED|EXIT)
+//   5) flags CLI          : --jitter=, --visual=, --pixelmatch=
+const num = (v) => (v === undefined || v === null || v === "" ? null : Number(v));
+let configFile = {};
+if (fs.existsSync(CONFIG_PATH)) {
+  try { configFile = JSON.parse(fs.readFileSync(CONFIG_PATH, "utf8")); }
+  catch (e) { console.warn(`⚠️ Config illisible (${CONFIG_PATH}): ${e.message}`); }
+} else {
+  console.warn(`⚠️ Pas de fichier de seuils à ${CONFIG_PATH}, valeurs par défaut.`);
+}
+const CLI_JITTER = num(getArg("jitter"));
+const CLI_VISUAL = num(getArg("visual"));
+const CLI_PIXELMATCH = num(getArg("pixelmatch"));
+
+const PIXELMATCH_THRESHOLD =
+  CLI_PIXELMATCH ?? num(process.env.QA_PIXELMATCH) ?? num(configFile.pixelmatch) ?? 0.1;
+
+const defaultJitter =
+  num(process.env.QA_JITTER) ?? num(configFile?.defaults?.jitter) ?? 0.15;
+const defaultVisual = {
+  entry:   num(configFile?.defaults?.visual?.entry)   ?? num(process.env.QA_VISUAL) ?? 2.0,
+  settled: num(configFile?.defaults?.visual?.settled) ?? num(process.env.QA_VISUAL) ?? 2.0,
+  exit:    num(configFile?.defaults?.visual?.exit)    ?? num(process.env.QA_VISUAL) ?? 2.0,
+};
+if (num(process.env.QA_VISUAL) !== null) {
+  for (const k of ["entry", "settled", "exit"]) defaultVisual[k] = num(process.env.QA_VISUAL);
+}
+
+function resolveThresholds(sceneName) {
+  const sceneCfg = configFile?.scenes?.[sceneName] ?? {};
+  const upper = sceneName.toUpperCase();
+  const jitter =
+    CLI_JITTER ??
+    num(process.env[`QA_JITTER_${upper}`]) ??
+    num(sceneCfg.jitter) ??
+    defaultJitter;
+  const visualScene =
+    num(process.env[`QA_VISUAL_${upper}`]) ??
+    (CLI_VISUAL !== null ? CLI_VISUAL : null);
+  const visual = {};
+  for (const phase of ["entry", "settled", "exit"]) {
+    visual[phase] =
+      num(process.env[`QA_VISUAL_${upper}_${phase.toUpperCase()}`]) ??
+      visualScene ??
+      num(sceneCfg?.visual?.[phase]) ??
+      defaultVisual[phase];
+  }
+  return { jitter, visual };
+}
 
 // ── Plan de capture ───────────────────────────────────────────────────
-// Pour chaque scène :
-//   - "entry"   : pendant l'animation d'entrée (utile pour visual diff)
-//   - "settled" : tout est posé, c'est ici qu'on traque les halos
-//   - "settledNext" : settled + 1 frame, sert au test de tremblement
-//   - "exit"    : juste avant la transition
 const PLAN = [
   { id: "qa-intro", name: "intro",
     frames: { entry: 25, settled: 70, settledNext: 71, exit: 88 } },
