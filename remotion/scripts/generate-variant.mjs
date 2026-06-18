@@ -121,18 +121,51 @@ async function fetchImage(url) {
   if (minDim < MIN_IMG_SIZE) throw new Error(`too small ${dims.width}x${dims.height}`);
   return { dataUri: `data:${ct};base64,${buf.toString("base64")}`, dims };
 }
+
+// Normalise le packshot via wsrv.nl :
+//   - trim=20         → coupe les bords uniformes (cadres, marges marchand)
+//   - fit=contain     → conserve les proportions
+//   - bg=white        → comble avec un blanc pur (clé du blend "multiply")
+//   - output=jpg/q=92 → JPEG haute qualité, fichier raisonnable
+//
+// Résultat : packshot toujours centré sur fond blanc strict, ce qui rend
+// le mixBlendMode:multiply propre (plus de cadre gris ni de halo) sur le
+// papier ivoire de DealScene.
+async function fetchStudioImage(rawUrl) {
+  const stripped = rawUrl.replace(/^https?:\/\//, "");
+  const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(stripped)}` +
+    `&w=1400&h=1400&fit=contain&cbg=white&bg=white&trim=20&output=jpg&q=92`;
+  const r = await fetch(wsrv, {
+    headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://wsrv.nl/" },
+  });
+  if (!r.ok) throw new Error(`wsrv HTTP ${r.status}`);
+  const buf = Buffer.from(await r.arrayBuffer());
+  let dims;
+  try { dims = imageSize(buf); } catch { throw new Error("wsrv undecodable"); }
+  return { dataUri: `data:image/jpeg;base64,${buf.toString("base64")}`, dims };
+}
+
 async function imageToDataUri(url) {
   const candidates = [url];
   const direct = extractDirectImageUrl(url);
   if (direct) candidates.push(direct);
+
+  // 1) tente la version "studio" (wsrv trim + bg blanc) — meilleur rendu
   for (const c of candidates) {
     try {
-      const { dataUri, dims } = await fetchImage(c);
-      return { dataUri, dims, source: c === url ? "cdn" : "direct" };
+      // qualité source minimale d'abord (évite d'upscaler un thumbnail)
+      const probe = await fetchImage(c);
+      try {
+        const studio = await fetchStudioImage(c);
+        return { dataUri: studio.dataUri, dims: studio.dims, source: "studio" };
+      } catch {
+        return { dataUri: probe.dataUri, dims: probe.dims, source: c === url ? "cdn" : "direct" };
+      }
     } catch {}
   }
   return null;
 }
+
 
 const deals = [];
 const seenTitles = new Set();
