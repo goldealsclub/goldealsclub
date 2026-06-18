@@ -424,10 +424,21 @@ function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement |
   ctx.drawImage(img as any, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
 }
 
-// Cache de détourage adaptatif : flood-fill depuis les bords de l'image
-// pour ne retirer QUE les pixels de fond connectés aux coins. Évite les
-// "nuages" pixelisés autour du produit dus au bruit JPEG ou aux dégradés
-// subtils des photos e-commerce (qui faisaient échouer un seuillage global).
+// ─── DÉTOURAGE PRODUIT — v2 (refonte 2026-06) ──────────────────────
+// La v1 (flood-fill + smoothstep agressif + silhouette systématique)
+// produisait halos sur fonds non blancs, érosion des pixels sombres
+// du produit, liseré pixellisé visible. La v2 :
+//   0) Bypass si image déjà transparente (PNG ecommerce)
+//   1) Sample 4 coins → fond moyen, variance, luminance
+//   2) Bypass si variance > 60 OU fond sombre (lifestyle)
+//   3) Bypass si fond ultra-propre (variance < 6, lum > 245) — multiply
+//      sera plus chic qu'un cutout qui crée un micro-halo
+//   4) Flood-fill BFS depuis les bords
+//   5) Edge-aware feathering : on n'éteint un pixel candidat que si
+//      ≥ N voisins sont eux aussi candidats fond → stoppe les nuages
+//      pixelisés en bord de produit
+//   6) Décontamination de teinte plafonnée (jamais agressive)
+//   7) Silhouette OPT-IN (calcul à la demande, pas systématique)
 const cutoutCache = new WeakMap<HTMLImageElement, HTMLCanvasElement>();
 function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
   const cached = cutoutCache.get(img);
@@ -443,29 +454,43 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     const d = id.data;
     const W0 = c.width, H0 = c.height;
 
-    // 1) Échantillonne les 4 coins (24x24 px) pour estimer la couleur de fond.
+    // ── 0) PNG déjà transparent : on respecte le masque d'origine ──
+    let cornerAlphaLow = 0, cornerPix = 0;
+    const SZ = 24;
+    const sampleBlocks: Array<[number, number]> = [
+      [0, 0], [W0 - SZ, 0], [0, H0 - SZ], [W0 - SZ, H0 - SZ],
+    ];
+    for (const [x0, y0] of sampleBlocks) {
+      for (let y = y0; y < y0 + SZ && y < H0; y++) {
+        for (let x = x0; x < x0 + SZ && x < W0; x++) {
+          const a = d[(y * W0 + x) * 4 + 3];
+          if (a < 250) cornerAlphaLow++;
+          cornerPix++;
+        }
+      }
+    }
+    if (cornerAlphaLow / cornerPix > 0.05) {
+      (c as any).__alreadyTransparent = true;
+      (c as any).__avgLum = 128;
+      cutoutCache.set(img, c);
+      return c;
+    }
+
+    // ── 1) Sample des 4 coins ─────────────────────────────────────
     const sampleCorner = (x0: number, y0: number) => {
       let r = 0, g = 0, b = 0, n = 0;
-      const sz = 24;
-      for (let y = y0; y < y0 + sz && y < H0; y++) {
-        for (let x = x0; x < x0 + sz && x < W0; x++) {
+      for (let y = y0; y < y0 + SZ && y < H0; y++) {
+        for (let x = x0; x < x0 + SZ && x < W0; x++) {
           const i = (y * W0 + x) * 4;
           r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
         }
       }
       return n > 0 ? [r / n, g / n, b / n] : [255, 255, 255];
     };
-    const corners = [
-      sampleCorner(0, 0),
-      sampleCorner(W0 - 24, 0),
-      sampleCorner(0, H0 - 24),
-      sampleCorner(W0 - 24, H0 - 24),
-    ];
+    const corners = sampleBlocks.map(([x, y]) => sampleCorner(x, y));
     let br = 0, bg = 0, bb = 0;
     for (const [r, g, b] of corners) { br += r; bg += g; bb += b; }
     br /= 4; bg /= 4; bb /= 4;
-
-    // Si variance entre coins trop élevée → lifestyle photo, on ne touche pas.
     let variance = 0;
     for (const [r, g, b] of corners) {
       variance += Math.abs(r - br) + Math.abs(g - bg) + Math.abs(b - bb);
@@ -475,79 +500,91 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     (c as any).__cornerVariance = variance;
     (c as any).__cornerRGB = [br, bg, bb];
 
-    if (variance > 60) {
-      cutoutCache.set(img, c);
-      return c;
-    }
-    // Fond sombre (lifestyle dark) : on n'enlève rien.
-    if (bgLum < 150) {
+    // ── 2) Bypass : fond pas exploitable ──────────────────────────
+    if (variance > 60 || bgLum < 150) {
       cutoutCache.set(img, c);
       return c;
     }
 
-    // 2) Flood-fill BFS depuis tous les pixels de bord proches de la couleur
-    //    de fond. Un pixel est candidat si sa distance euclidienne au fond
-    //    est < TOL_FILL. Les pixels "produit" ne sont jamais traversés.
+    // ── 3) Bypass : fond ultra-propre → laisse multiply gérer ─────
+    if (variance < 6 && bgLum > 245) {
+      (c as any).__cleanWhite = true;
+      cutoutCache.set(img, c);
+      return c;
+    }
+
+    // ── 4) Flood-fill BFS ────────────────────────────────────────
     const veryLight = bgLum > 220;
-    const TOL_FILL = veryLight ? 38 : 26;   // tolérance pendant le flood-fill
-    const TOL_HARD = veryLight ? 18 : 10;   // 100 % transparent en dessous
-    const TOL_SOFT = veryLight ? 60 : 42;   // feathering au-dessus
+    const TOL_FILL = veryLight ? 34 : 22;
+    const TOL_HARD = veryLight ? 14 : 8;
+    const TOL_SOFT = veryLight ? 46 : 32;
     const total = W0 * H0;
     const isBg = new Uint8Array(total);
     const visited = new Uint8Array(total);
     const stack = new Int32Array(total);
     let sp = 0;
+    const TOL_FILL_SQ = TOL_FILL * TOL_FILL;
+    const dist2 = (i: number) => {
+      const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
+      return dr * dr + dg * dg + db * db;
+    };
     const pushPx = (x: number, y: number) => {
       const k = y * W0 + x;
       if (visited[k]) return;
       visited[k] = 1;
-      const i = k * 4;
-      const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
-      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-      if (dist < TOL_FILL) {
+      if (dist2(k * 4) < TOL_FILL_SQ) {
         isBg[k] = 1;
         stack[sp++] = k;
       }
     };
-    // Seed : toute la bordure du canvas.
     for (let x = 0; x < W0; x++) { pushPx(x, 0); pushPx(x, H0 - 1); }
     for (let y = 0; y < H0; y++) { pushPx(0, y); pushPx(W0 - 1, y); }
     while (sp > 0) {
       const k = stack[--sp];
       const x = k % W0, y = (k / W0) | 0;
-      if (x > 0)        pushPx(x - 1, y);
-      if (x < W0 - 1)   pushPx(x + 1, y);
-      if (y > 0)        pushPx(x, y - 1);
-      if (y < H0 - 1)   pushPx(x, y + 1);
+      if (x > 0)      pushPx(x - 1, y);
+      if (x < W0 - 1) pushPx(x + 1, y);
+      if (y > 0)      pushPx(x, y - 1);
+      if (y < H0 - 1) pushPx(x, y + 1);
     }
 
-    // 3) Applique transparence + feathering UNIQUEMENT sur les pixels marqués
-    //    "fond connecté aux bords". Les pixels intérieurs au produit restent
-    //    intacts → plus de speckle / plaques pixelisées dans la silhouette.
-    for (let k = 0; k < total; k++) {
-      if (!isBg[k]) continue;
-      const i = k * 4;
-      const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
-      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-      if (dist < TOL_HARD) {
-        d[i + 3] = 0;
-      } else if (dist < TOL_SOFT) {
-        const t = (dist - TOL_HARD) / (TOL_SOFT - TOL_HARD);
-        const sm = t * t * (3 - 2 * t);
-        d[i + 3] = Math.round(d[i + 3] * sm);
-        // Décontamination anti-halo (retire la teinte du fond résiduelle).
-        const k2 = 1 / Math.max(0.18, sm);
-        d[i]     = Math.max(0, Math.min(255, br + (d[i]     - br) * k2));
-        d[i + 1] = Math.max(0, Math.min(255, bg + (d[i + 1] - bg) * k2));
-        d[i + 2] = Math.max(0, Math.min(255, bb + (d[i + 2] - bb) * k2));
-      } else {
-        // Bord de la zone fond : léger fondu pour adoucir la transition.
-        d[i + 3] = Math.round(d[i + 3] * 0.85);
+    // ── 5) Edge-aware feathering ─────────────────────────────────
+    // Un pixel candidat n'est éteint que si ses voisins le sont aussi.
+    // Stoppe les nuages pixelisés en bord de produit.
+    const TOL_HARD_SQ = TOL_HARD * TOL_HARD;
+    const TOL_SOFT_SQ = TOL_SOFT * TOL_SOFT;
+    const range = TOL_SOFT - TOL_HARD;
+    for (let y = 1; y < H0 - 1; y++) {
+      for (let x = 1; x < W0 - 1; x++) {
+        const k = y * W0 + x;
+        if (!isBg[k]) continue;
+        const nb =
+          isBg[k - 1] + isBg[k + 1] +
+          isBg[k - W0] + isBg[k + W0] +
+          isBg[k - W0 - 1] + isBg[k - W0 + 1] +
+          isBg[k + W0 - 1] + isBg[k + W0 + 1];
+        const i = k * 4;
+        const dsq = dist2(i);
+        if (nb >= 6 && dsq < TOL_HARD_SQ) {
+          d[i + 3] = 0;
+        } else if (nb >= 4 && dsq < TOL_SOFT_SQ) {
+          const t = (Math.sqrt(dsq) - TOL_HARD) / range;
+          const sm = t * t * (3 - 2 * t);
+          d[i + 3] = Math.round(d[i + 3] * sm);
+          // Décontamination plafonnée à k2 = 1.6 (jamais agressive)
+          const k2 = Math.min(1.6, 1 / Math.max(0.55, sm));
+          d[i]     = Math.max(0, Math.min(255, br + (d[i]     - br) * k2));
+          d[i + 1] = Math.max(0, Math.min(255, bg + (d[i + 1] - bg) * k2));
+          d[i + 2] = Math.max(0, Math.min(255, bb + (d[i + 2] - bb) * k2));
+        } else if (nb >= 7) {
+          d[i + 3] = Math.round(d[i + 3] * 0.78);
+        }
+        // sinon : pixel ambigu → on garde tel quel
       }
     }
     cx.putImageData(id, 0, 0);
 
-    // Luminance moyenne des pixels opaques (pour adapter le fond derrière).
+    // Luminance moyenne des pixels opaques (pour décor sous-jacent)
     let lumSum = 0, lumN = 0;
     for (let i = 0; i < d.length; i += 4) {
       if (d[i + 3] > 200) {
@@ -557,17 +594,20 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     }
     (c as any).__avgLum = lumN > 0 ? lumSum / lumN : 128;
 
-    // Silhouette pré-calculée pour le contour fin.
-    const sil = document.createElement("canvas");
-    sil.width = W0; sil.height = H0;
-    const sx = sil.getContext("2d");
-    if (sx) {
-      sx.drawImage(c, 0, 0);
-      sx.globalCompositeOperation = "source-in";
-      sx.fillStyle = "rgba(15,15,17,1)";
-      sx.fillRect(0, 0, W0, H0);
-    }
-    (c as any).__silhouette = sil;
+    // Silhouette : OPT-IN, calculée à la demande via __getSilhouette()
+    (c as any).__getSilhouette = () => {
+      const sil = document.createElement("canvas");
+      sil.width = W0; sil.height = H0;
+      const sx = sil.getContext("2d");
+      if (sx) {
+        sx.drawImage(c, 0, 0);
+        sx.globalCompositeOperation = "source-in";
+        sx.fillStyle = "rgba(15,15,17,1)";
+        sx.fillRect(0, 0, W0, H0);
+      }
+      return sil;
+    };
+
     cutoutCache.set(img, c);
     return c;
 
