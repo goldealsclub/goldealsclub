@@ -1,6 +1,7 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, spring, useVideoConfig } from "remotion";
 import { loadFont } from "@remotion/google-fonts/Playfair";
 import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
+import { snap, settled, fadeIn, slideY, popScale, gpuLayer, TIMING, SPRING_PRESETS } from "../lib/motion";
 
 const { fontFamily: playfair } = loadFont("normal", { weights: ["400", "500", "700"], subsets: ["latin"] });
 const { fontFamily: inter } = loadInter("normal", { weights: ["400", "500", "600", "700"], subsets: ["latin"] });
@@ -16,29 +17,20 @@ export const IntroScene: React.FC = () => {
   const frame = useCurrentFrame();
   const { fps } = useVideoConfig();
 
-  const snap = (v: number) => Math.round(v);
-  const snapScale = (v: number) => Math.round(v * 1000) / 1000;
-  const settle = (v: number) => (v > 0.995 ? 1 : v);
-  const gpuLayer: React.CSSProperties = {
-    willChange: "transform, opacity",
-    backfaceVisibility: "hidden",
-    WebkitFontSmoothing: "antialiased",
-  };
+  // Cadence partagée des bandeaux
+  const railOpacity = interpolate(frame, [TIMING.rail.in, TIMING.rail.out], [0, 1], { extrapolateRight: "clamp" });
+  const eyebrowOpacity = interpolate(frame, [TIMING.eyebrow.in, TIMING.eyebrow.out], [0, 1], { extrapolateRight: "clamp" });
 
-  // Apparitions séquencées éditoriales
-  const railOpacity = interpolate(frame, [0, 12], [0, 1], { extrapolateRight: "clamp" });
-  const eyebrowOpacity = interpolate(frame, [6, 20], [0, 1], { extrapolateRight: "clamp" });
+  const heroSpring = settled({ frame, fps, delay: TIMING.heroDelay, preset: "hero" });
+  const heroOpacity = fadeIn(heroSpring);
+  const heroY = slideY(heroSpring, 22);
 
-  const heroSpring = settle(spring({ frame: frame - 10, fps, config: { damping: 22, stiffness: 110 }, durationInFrames: 30 }));
-  const heroOpacity = interpolate(heroSpring, [0, 1], [0, 1]);
-  const heroY = snap(interpolate(heroSpring, [0, 1], [22, 0]));
-
-  const numSpring = settle(spring({ frame: frame - 22, fps, config: { damping: 20, stiffness: 130 }, durationInFrames: 30 }));
-  const numOpacity = interpolate(numSpring, [0, 1], [0, 1]);
-  const numScale = snapScale(interpolate(numSpring, [0, 1], [0.94, 1]));
+  const numSpring = settled({ frame, fps, delay: TIMING.secondaryDelay, preset: "num" });
+  const numOpacity = fadeIn(numSpring);
+  const numScale = popScale(numSpring, 0.94);
 
   const ruleWidth = snap(interpolate(
-    spring({ frame: frame - 32, fps, config: { damping: 200 } }),
+    spring({ frame: frame - 32, fps, config: SPRING_PRESETS.rule }),
     [0, 1], [0, 400]
   ));
 
