@@ -3,11 +3,8 @@
 // by brand. Stored in public.daily_video_briefs.deals as:
 // [{type:'selection', category, label, deals: Deal[5]}, ...]
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.45.0";
+import { requireAdminOrService, corsHeaders } from "../_shared/auth.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
 
 const HYPE_BRANDS = [
   "nike", "jordan", "air jordan", "yeezy", "adidas", "new balance", "asics",
