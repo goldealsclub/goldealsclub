@@ -37,6 +37,13 @@ export async function requireAdminOrService(req: Request): Promise<AuthOk | Auth
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
 
+  // 1. Internal cron / server-to-server: pre-shared secret header.
+  const cronSecret = Deno.env.get("CRON_SECRET");
+  const providedCron = req.headers.get("x-cron-secret");
+  if (cronSecret && providedCron && providedCron === cronSecret) {
+    return { ok: true, userId: null, isServiceRole: true };
+  }
+
   const authHeader = req.headers.get("Authorization") || "";
   if (!authHeader.toLowerCase().startsWith("bearer ")) {
     return { ok: false, response: json(401, { error: "unauthorized" }) };
@@ -48,6 +55,7 @@ export async function requireAdminOrService(req: Request): Promise<AuthOk | Auth
   if (role === "service_role") {
     return { ok: true, userId: null, isServiceRole: true };
   }
+
 
   const supabaseAuth = createClient(
     Deno.env.get("SUPABASE_URL")!,
