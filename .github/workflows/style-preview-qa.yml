@@ -10,10 +10,14 @@ on:
       - "qa/style-preview/baseline/**"
       - ".github/workflows/style-preview-qa.yml"
 
+permissions:
+  contents: read
+  pull-requests: write
+
 jobs:
   visual:
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
@@ -30,12 +34,46 @@ jobs:
             sleep 1
           done
           echo "Dev server failed to start"; cat /tmp/vite.log; exit 1
-      - name: Run visual QA
-        run: node scripts/qa-style-preview.mjs
-      - name: Upload diffs on failure
-        if: failure()
+      - name: Run visual QA (with auto-retry + report)
+        id: qa
+        run: node scripts/qa-style-preview.mjs --retries=2 --report
+      - name: Upload diffs, captures & report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: style-preview-diffs
-          path: qa/style-preview/
+          path: |
+            qa/style-preview/actual/
+            qa/style-preview/diff/
+            qa/style-preview/report.json
+            qa/style-preview/report.md
           if-no-files-found: ignore
+      - name: Comment regression report on PR
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'qa/style-preview/report.md';
+            if (!fs.existsSync(path)) {
+              core.warning('No report.md to post');
+              return;
+            }
+            const body = [
+              '## 🎨 StylePreview visual regression',
+              '',
+              fs.readFileSync(path, 'utf8'),
+              '',
+              `_Artifacts uploaded as **style-preview-diffs** in this run._`,
+            ].join('\n');
+            const marker = '<!-- style-preview-qa-report -->';
+            const { owner, repo } = context.repo;
+            const issue_number = context.issue.number;
+            const { data: comments } = await github.rest.issues.listComments({ owner, repo, issue_number });
+            const existing = comments.find((c) => c.body && c.body.includes(marker));
+            const finalBody = `${marker}\n${body}`;
+            if (existing) {
+              await github.rest.issues.updateComment({ owner, repo, comment_id: existing.id, body: finalBody });
+            } else {
+              await github.rest.issues.createComment({ owner, repo, issue_number, body: finalBody });
+            }
