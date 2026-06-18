@@ -1,206 +1,96 @@
 /**
  * Miniatures instantanées des 3 directions artistiques (Adidas / Zara / Nike).
- * Chaque carte = un mini-mockup canvas 9:16 rendu côté client à partir de la
- * palette du preset, cliquable pour sélectionner le style avant le rendu.
  *
- * Pas de network, pas de Remotion — c'est juste un repère visuel pour
- * l'utilisateur dans /admin/video.
+ * Approche : mockups HTML/CSS responsifs (aspect 9:16) qui reproduisent
+ * fidèlement la composition de chaque scène DealScene Remotion :
+ *  - Adidas  → bloc ink en bas, 3-stripes, dossard, prix XXL
+ *  - Zara    → produit centré, titre serif, prix discret, beaucoup d'air
+ *  - Nike    → bloc ink + chip accent orange, kinetic
+ *
+ * Aucune sneakers dessinée à la main (visuellement catastrophique) :
+ * on rend un "bloc produit" sobre — un carré arrondi crème — qui sert
+ * uniquement de repère de composition.
  */
-import { useEffect, useRef } from "react";
 import { BG_PRESETS, type BgPreset } from "@/pages/AdminVideoPage";
 import { cn } from "@/lib/utils";
 
-// Tokens spécifiques de mise en page par direction (mirroir des choix Remotion).
-const STYLE_BLUEPRINT: Record<
-  "adidas" | "zara" | "nike",
-  {
-    label: string;
-    sub: string;
-    headline: string;
-    brand: string;
-    layout: "block" | "editorial" | "kinetic";
-    chipBg: "ink" | "accent" | "paper";
-    showStripes: boolean;
-    fontDisplay: string;
-    fontSerif?: boolean;
-  }
-> = {
+type StyleId = "adidas" | "zara" | "nike";
+
+interface Blueprint {
+  label: string;
+  sub: string;
+  // Affichage
+  serif: boolean;
+  showStripes: boolean;
+  chipAccent: boolean; // chip discount en couleur d'accent (Nike)
+  layout: "block" | "editorial" | "kinetic";
+  discount: string;
+  price: string;
+  origPrice: string;
+  brand: string;
+  category: string;
+  title: string;
+}
+
+const BLUEPRINTS: Record<StyleId, Blueprint> = {
   adidas: {
     label: "Adidas",
     sub: "Geometric & graphic",
-    headline: "−45%",
-    brand: "ADIDAS",
-    layout: "block",
-    chipBg: "paper",
+    serif: false,
     showStripes: true,
-    fontDisplay: "900 22px 'Archivo Black', 'Archivo', system-ui, sans-serif",
+    chipAccent: false,
+    layout: "block",
+    discount: "−45%",
+    price: "59€",
+    origPrice: "109 €",
+    brand: "ADIDAS",
+    category: "SNEAKERS",
+    title: "SAMBA OG",
   },
   zara: {
     label: "Zara",
     sub: "Editorial fashion",
-    headline: "199 €",
-    brand: "ZARA",
-    layout: "editorial",
-    chipBg: "paper",
+    serif: true,
     showStripes: false,
-    fontDisplay: "500 28px 'Playfair Display', Georgia, serif",
-    fontSerif: true,
+    chipAccent: false,
+    layout: "editorial",
+    discount: "",
+    price: "199",
+    origPrice: "279 €",
+    brand: "ZARA",
+    category: "SÉLECTION",
+    title: "Bouclé Coat",
   },
   nike: {
     label: "Nike",
     sub: "Athletic & kinetic",
-    headline: "−50%",
-    brand: "NIKE",
-    layout: "kinetic",
-    chipBg: "accent",
+    serif: false,
     showStripes: false,
-    fontDisplay: "900 24px 'Archivo Black', 'Archivo', system-ui, sans-serif",
+    chipAccent: true,
+    layout: "kinetic",
+    discount: "−50%",
+    price: "89€",
+    origPrice: "179 €",
+    brand: "NIKE",
+    category: "RUNNING",
+    title: "AIR MAX 90",
   },
 };
 
-const W = 180;
-const H = 320;
-
-function drawThumbnail(
-  ctx: CanvasRenderingContext2D,
-  preset: keyof typeof STYLE_BLUEPRINT,
-) {
-  const p = BG_PRESETS[preset];
-  const b = STYLE_BLUEPRINT[preset];
-
-  // ── Background gradient ──
-  const grad = ctx.createLinearGradient(0, 0, 0, H);
-  grad.addColorStop(0, p.bgTop);
-  grad.addColorStop(0.5, p.bgMid);
-  grad.addColorStop(1, p.bgBot);
-  ctx.fillStyle = grad;
-  ctx.fillRect(0, 0, W, H);
-
-  // ── Bandes diagonales (signature adidas/nike) ──
-  if (b.showStripes) {
-    ctx.save();
-    ctx.translate(0, -10);
-    ctx.rotate((-22 * Math.PI) / 180);
-    ctx.fillStyle = p.ink;
-    ctx.globalAlpha = 0.07;
-    for (let i = 0; i < 3; i++) {
-      ctx.fillRect(-40, 20 + i * 28, 320, 14);
-    }
-    ctx.globalAlpha = 1;
-    ctx.restore();
-  }
-
-  // ── Header marque + index dossard ──
-  ctx.fillStyle = p.inkSoft;
-  ctx.font = "700 8px system-ui, sans-serif";
-  ctx.textBaseline = "top";
-  ctx.fillText("ÉDITION QUOTIDIENNE", 12, 14);
-  ctx.font = "700 9px system-ui, sans-serif";
-  ctx.fillStyle = p.ink;
-  ctx.textAlign = "right";
-  ctx.fillText("01/05", W - 12, 14);
-  ctx.textAlign = "left";
-
-  // ── Mock produit (forme abstraite) ──
-  const productY = b.layout === "editorial" ? 60 : 50;
-  ctx.save();
-  ctx.fillStyle = p.ink;
-  ctx.globalAlpha = 0.15;
-  // semelle ovale
-  ctx.beginPath();
-  ctx.ellipse(W / 2, productY + 80, 55, 12, 0, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.globalAlpha = 0.55;
-  // silhouette sneaker stylisée
-  ctx.beginPath();
-  ctx.moveTo(W / 2 - 50, productY + 75);
-  ctx.quadraticCurveTo(W / 2 - 55, productY + 30, W / 2 - 20, productY + 25);
-  ctx.quadraticCurveTo(W / 2, productY + 15, W / 2 + 35, productY + 35);
-  ctx.quadraticCurveTo(W / 2 + 55, productY + 50, W / 2 + 50, productY + 75);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-
-  // ── Variante layout ──
-  if (b.layout === "editorial") {
-    // ZARA : serif centré sous le produit, prix discret en bas
-    ctx.fillStyle = p.inkSoft;
-    ctx.font = "500 6.5px system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("S É L E C T I O N", W / 2, 175);
-    ctx.fillStyle = p.ink;
-    ctx.font = b.fontDisplay;
-    ctx.fillText(b.headline, W / 2, 200);
-    ctx.font = "400 7px system-ui, sans-serif";
-    ctx.fillStyle = p.inkSoft;
-    ctx.fillText("GOLDEALSCLUB.COM", W / 2, 295);
-    ctx.textAlign = "left";
-    return;
-  }
-
-  // ── ADIDAS / NIKE : bloc ink en bas avec prix + chip ──
-  const blockY = 195;
-  ctx.fillStyle = p.ink;
-  ctx.fillRect(0, blockY, W, H - blockY);
-
-  // 3-stripes frontière (adidas)
-  if (b.showStripes) {
-    ctx.fillStyle = p.ink;
-    for (let i = 0; i < 3; i++) {
-      ctx.fillRect(0, blockY - 8 + i * 3, W, 1.4);
-    }
-  }
-
-  // titre court
-  ctx.fillStyle = "rgba(255,255,255,0.55)";
-  ctx.font = "700 6px system-ui, sans-serif";
-  ctx.fillText("SNEAKERS", 12, blockY + 12);
-  ctx.fillStyle = "#fff";
-  ctx.font = "800 11px system-ui, sans-serif";
-  ctx.fillText("AIR MAX 90", 12, blockY + 24);
-
-  // prix XXL
-  ctx.fillStyle = "#fff";
-  ctx.font = b.fontDisplay.replace(/\d+px/, "34px");
-  ctx.fillText(b.headline, 12, blockY + 70);
-
-  // chip discount
-  const chipColor =
-    b.chipBg === "accent" ? p.accent : b.chipBg === "ink" ? p.ink : p.bgTop;
-  const chipFg = b.chipBg === "accent" ? "#fff" : p.ink;
-  const chipW = 42, chipH = 22;
-  const chipX = W - chipW - 12, chipY = blockY + 80;
-  ctx.fillStyle = chipColor;
-  ctx.fillRect(chipX, chipY, chipW, chipH);
-  ctx.fillStyle = chipFg;
-  ctx.font = "900 11px system-ui, sans-serif";
-  ctx.textAlign = "center";
-  ctx.fillText("−50%", chipX + chipW / 2, chipY + 7);
-  ctx.textAlign = "left";
-}
-
 interface CardProps {
-  styleId: keyof typeof STYLE_BLUEPRINT;
+  styleId: StyleId;
   active: boolean;
   disabled?: boolean;
   onClick: () => void;
 }
 
 const PreviewCard: React.FC<CardProps> = ({ styleId, active, disabled, onClick }) => {
-  const ref = useRef<HTMLCanvasElement | null>(null);
-  const b = STYLE_BLUEPRINT[styleId];
-  const dpr = typeof window !== "undefined" ? window.devicePixelRatio || 1 : 1;
-
-  useEffect(() => {
-    const cvs = ref.current;
-    if (!cvs) return;
-    cvs.width = W * dpr;
-    cvs.height = H * dpr;
-    const ctx = cvs.getContext("2d");
-    if (!ctx) return;
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    drawThumbnail(ctx, styleId);
-  }, [styleId, dpr]);
+  const b = BLUEPRINTS[styleId];
+  const p = BG_PRESETS[styleId];
+  const display = b.serif
+    ? "'Playfair Display', Georgia, serif"
+    : "'Archivo Black', 'Archivo', system-ui, sans-serif";
+  const body = "Inter, system-ui, sans-serif";
 
   return (
     <button
@@ -215,14 +105,227 @@ const PreviewCard: React.FC<CardProps> = ({ styleId, active, disabled, onClick }
         active && "border-foreground ring-2 ring-foreground/80 shadow-md",
       )}
     >
-      <canvas
-        ref={ref}
-        style={{ width: W, height: H, display: "block", borderRadius: 6 }}
-      />
+      {/* Mockup 9:16 responsive */}
+      <div
+        className="relative w-full overflow-hidden rounded-md"
+        style={{
+          aspectRatio: "9 / 16",
+          background: `linear-gradient(180deg, ${p.bgTop} 0%, ${p.bgMid} 50%, ${p.bgBot} 100%)`,
+          color: p.ink,
+          fontFamily: body,
+        }}
+      >
+        {/* Header marque + dossard */}
+        <div className="absolute inset-x-0 top-0 flex items-center justify-between px-[6%] py-[4%]">
+          <span
+            style={{
+              fontFamily: b.serif ? body : display,
+              fontWeight: b.serif ? 500 : 900,
+              fontSize: "9px",
+              letterSpacing: b.serif ? "0.4em" : "0.05em",
+              color: p.ink,
+            }}
+          >
+            {b.brand}
+          </span>
+          {b.layout !== "editorial" && (
+            <span
+              style={{
+                fontFamily: display,
+                fontWeight: 900,
+                fontSize: "9px",
+                padding: "2px 5px",
+                border: `1.2px solid ${p.ink}`,
+                color: p.ink,
+                lineHeight: 1,
+              }}
+            >
+              01/05
+            </span>
+          )}
+          {b.layout === "editorial" && (
+            <span
+              style={{
+                fontSize: "8px",
+                letterSpacing: "0.3em",
+                color: p.inkSoft,
+              }}
+            >
+              01 — 05
+            </span>
+          )}
+        </div>
+
+        {/* Zone produit (carré arrondi crème, sobre, juste repère de compo) */}
+        <div
+          className="absolute left-1/2 -translate-x-1/2"
+          style={{
+            top: b.layout === "editorial" ? "18%" : "16%",
+            width: "72%",
+            height: b.layout === "editorial" ? "44%" : "48%",
+          }}
+        >
+          <div
+            style={{
+              width: "100%",
+              height: "100%",
+              borderRadius: "8%",
+              background: `linear-gradient(160deg, ${p.bgTop} 0%, ${p.bgBot} 100%)`,
+              boxShadow: `inset 0 0 0 1px ${p.inkSoft}, 0 10px 18px -8px rgba(0,0,0,0.18)`,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              color: p.inkSoft,
+              fontFamily: display,
+              fontWeight: 900,
+              fontSize: "10px",
+              letterSpacing: "0.2em",
+            }}
+          >
+            PRODUIT
+          </div>
+        </div>
+
+        {/* ── ZARA : layout éditorial, titre serif centré, prix discret ── */}
+        {b.layout === "editorial" && (
+          <div
+            className="absolute inset-x-0 flex flex-col items-center text-center"
+            style={{ bottom: "8%", padding: "0 8%" }}
+          >
+            <span
+              style={{
+                fontSize: "7px",
+                letterSpacing: "0.45em",
+                color: p.inkSoft,
+                marginBottom: "6px",
+              }}
+            >
+              {b.category}
+            </span>
+            <span
+              style={{
+                fontFamily: display,
+                fontWeight: 500,
+                fontSize: "15px",
+                lineHeight: 1.1,
+                color: p.ink,
+                marginBottom: "8px",
+              }}
+            >
+              {b.title}
+            </span>
+            <div className="flex items-baseline gap-2">
+              <span
+                style={{
+                  fontFamily: display,
+                  fontWeight: 400,
+                  fontSize: "22px",
+                  lineHeight: 1,
+                  color: p.ink,
+                  letterSpacing: "-0.02em",
+                }}
+              >
+                {b.price}
+                <span style={{ fontSize: "11px", marginLeft: "2px" }}>€</span>
+              </span>
+              <span
+                style={{
+                  fontSize: "9px",
+                  color: p.inkSoft,
+                  textDecoration: "line-through",
+                }}
+              >
+                {b.origPrice}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* ── ADIDAS / NIKE : bloc ink en bas avec prix XXL + chip ── */}
+        {b.layout !== "editorial" && (
+          <>
+            {/* 3-stripes adidas frontière */}
+            {b.showStripes && (
+              <div
+                className="absolute inset-x-0 flex flex-col gap-[2px]"
+                style={{ bottom: "37%" }}
+              >
+                <div style={{ height: "1.5px", background: p.ink }} />
+                <div style={{ height: "1.5px", background: p.ink }} />
+                <div style={{ height: "1.5px", background: p.ink }} />
+              </div>
+            )}
+            {/* bloc ink */}
+            <div
+              className="absolute inset-x-0 bottom-0 flex flex-col justify-between"
+              style={{
+                height: "34%",
+                background: p.ink,
+                color: "#fff",
+                padding: "8% 6%",
+              }}
+            >
+              <div>
+                <div
+                  style={{
+                    fontSize: "7px",
+                    letterSpacing: "0.4em",
+                    color: "rgba(255,255,255,0.6)",
+                  }}
+                >
+                  {b.category}
+                </div>
+                <div
+                  style={{
+                    fontFamily: display,
+                    fontWeight: 900,
+                    fontSize: "14px",
+                    marginTop: "3px",
+                    letterSpacing: "-0.01em",
+                    color: "#fff",
+                  }}
+                >
+                  {b.title}
+                </div>
+              </div>
+              <div className="flex items-end justify-between gap-2">
+                <div
+                  style={{
+                    fontFamily: display,
+                    fontWeight: 900,
+                    fontSize: "30px",
+                    color: "#fff",
+                    lineHeight: 0.9,
+                    letterSpacing: "-0.05em",
+                  }}
+                >
+                  {b.price}
+                </div>
+                <div
+                  style={{
+                    background: b.chipAccent ? p.accent : "#fff",
+                    color: b.chipAccent ? "#fff" : p.ink,
+                    padding: "4px 7px",
+                    fontFamily: display,
+                    fontWeight: 900,
+                    fontSize: "13px",
+                    letterSpacing: "-0.02em",
+                    lineHeight: 1,
+                  }}
+                >
+                  {b.discount}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
       <div className="px-1 pb-1">
         <div className="text-sm font-semibold leading-tight">{b.label}</div>
         <div className="text-[11px] text-muted-foreground leading-tight">{b.sub}</div>
       </div>
+
       {active && (
         <span
           aria-hidden
@@ -242,9 +345,9 @@ interface Props {
 }
 
 export const StylePreview: React.FC<Props> = ({ value, onChange, disabled }) => {
-  const ids: (keyof typeof STYLE_BLUEPRINT)[] = ["adidas", "zara", "nike"];
+  const ids: StyleId[] = ["adidas", "zara", "nike"];
   return (
-    <div className="grid grid-cols-3 gap-3">
+    <div className="grid grid-cols-3 gap-2 sm:gap-3">
       {ids.map((id) => (
         <PreviewCard
           key={id}
