@@ -23,43 +23,8 @@ import type { BgPreset } from "@/pages/AdminVideoPage";
 
 const STYLES: BgPreset[] = ["adidas", "zara", "nike"];
 
-const Scene: React.FC<{
-  label: string;
-  cardWidth: number;
-  testid: string;
-}> = ({ label, cardWidth, testid }) => {
-  const [active, setActive] = useState<BgPreset>("adidas");
-  return (
-    <section
-      data-testid={testid}
-      className="border-b border-border bg-background p-6"
-      style={{ fontFamily: "Inter, system-ui, sans-serif" }}
-    >
-      <h2 className="mb-4 text-sm font-semibold uppercase tracking-widest text-muted-foreground">
-        {label}
-      </h2>
-      <div
-        className="flex gap-3"
-        style={{ width: cardWidth * 3 + 24 }}
-        data-testid={`${testid}-grid`}
-      >
-        {STYLES.map((id) => (
-          <div
-            key={id}
-            data-testid={`${testid}-card-${id}`}
-            style={{ width: cardWidth, flexShrink: 0 }}
-          >
-            <StylePreview
-              value={active}
-              onChange={setActive}
-              disabled={false}
-            />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-};
+// (composant Scene par-carte retiré : on capture la grille naturelle telle
+// qu'elle s'affiche dans /admin/video — voir SceneGrid ci-dessous.)
 
 /**
  * En réalité on a besoin de capturer la grille NATURELLE (3 cartes côte à

@@ -61,10 +61,6 @@ async function ensureDirs() {
   }
 }
 
-function readPng(file) {
-  return PNG.sync.read(require("fs").readFileSync(file));
-}
-
 async function readPngAsync(file) {
   const buf = await fs.readFile(file);
   return PNG.sync.read(buf);

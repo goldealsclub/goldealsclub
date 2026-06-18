@@ -35,6 +35,7 @@ import AdminVideoHistoryPage from "./pages/AdminVideoHistoryPage";
 import AdminVideoQAPage from "./pages/AdminVideoQAPage";
 import AdminCardsQAPage from "./pages/AdminCardsQAPage";
 import AdminBadgeQAPage from "./pages/AdminBadgeQAPage";
+import AdminStylePreviewQAPage from "./pages/AdminStylePreviewQAPage";
 
 
 import InstallPage from "./pages/InstallPage";
