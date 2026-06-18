@@ -24,7 +24,7 @@ export const OutroScene: React.FC = () => {
   const urlOpacity = fadeIn(urlSp);
 
   const ruleWidth = snap(interpolate(
-    spring({ frame: frame - 14, fps, config: SPRING_PRESETS.rule }),
+    spring({ frame: frame - TIMING.ruleDelay, fps, config: SPRING_PRESETS.rule }),
     [0, 1], [0, 400]
   ));
 

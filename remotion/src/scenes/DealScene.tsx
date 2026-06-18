@@ -33,11 +33,11 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   // Cadence partagée des bandeaux (TIMING) + helpers d'arrondi (snap/snapScale)
   const railOpacity = interpolate(frame, [TIMING.rail.in, TIMING.rail.out], [0, 1], { extrapolateRight: "clamp" });
 
-  const headerSp = settled({ frame, fps, delay: 4, preset: "header" });
+  const headerSp = settled({ frame, fps, delay: TIMING.headerDelay, preset: "header" });
   const headerOpacity = fadeIn(headerSp);
   const headerY = slideY(headerSp, 16);
 
-  const imgSp = settled({ frame, fps, delay: 12, preset: "image" });
+  const imgSp = settled({ frame, fps, delay: TIMING.imageDelay, preset: "image" });
   const imgOpacity = fadeIn(imgSp);
   const imgScale = popScale(imgSp, 0.96);
 

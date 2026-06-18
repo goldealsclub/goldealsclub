@@ -30,11 +30,11 @@ export const IntroScene: React.FC = () => {
   const numScale = popScale(numSpring, 0.94);
 
   const ruleWidth = snap(interpolate(
-    spring({ frame: frame - 32, fps, config: SPRING_PRESETS.rule }),
+    spring({ frame: frame - TIMING.ruleDelay, fps, config: SPRING_PRESETS.rule }),
     [0, 1], [0, 400]
   ));
 
-  const tagOpacity = interpolate(frame, [40, 55], [0, 1], { extrapolateRight: "clamp" });
+  const tagOpacity = interpolate(frame, [TIMING.ctaIn, TIMING.ctaOut], [0, 1], { extrapolateRight: "clamp" });
 
   // Date du jour (formatée fr)
   const now = new Date();

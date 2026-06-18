@@ -31,13 +31,19 @@ export const gpuLayer: React.CSSProperties = {
 
 // ── Cadence commune des bandeaux ─────────────────────────────────
 // Toutes les scènes partagent ces frames pour un rythme homogène.
+// Règle d'or : aucune scène ne doit utiliser de delays/durations
+// codés en dur ; toujours référencer TIMING.* ci-dessous.
 export const TIMING = {
-  rail: { in: 0, out: 12 },        // hairlines / rails latéraux
-  eyebrow: { in: 6, out: 20 },     // libellés secondaires
-  heroDelay: 10,                   // décalage du hero
-  secondaryDelay: 22,              // prix / numéro / url
+  rail: { in: 0, out: 12 },          // hairlines / rails latéraux
+  eyebrow: { in: 6, out: 20 },       // libellés secondaires
+  heroDelay: 10,                     // hero (Sélection, À demain.)
+  headerDelay: 4,                    // header marque (DealScene)
+  imageDelay: 12,                    // packshot produit (DealScene)
+  secondaryDelay: 22,                // prix / numéro / url
+  ruleDelay: 14,                     // filet animé (Intro/Outro)
   ctaIn: 38,
   ctaOut: 52,
+  springDuration: 30,                // durée par défaut des springs settlées
 } as const;
 
 // ── Spring presets partagés ──────────────────────────────────────
