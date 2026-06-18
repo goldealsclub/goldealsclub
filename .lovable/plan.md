@@ -1,75 +1,101 @@
-# Variantes de style pour les vidéos Remotion
+## Diagnostic
 
-Objectif : pouvoir switcher entre 3 directions artistiques (Adidas geometric — actuel, Zara editorial, Nike kinetic) en changeant **un seul paramètre**, sans dupliquer les 3 fichiers de scènes.
+Après lecture de `src/pages/AdminVideoPage.tsx` (2063 lignes, pipeline canvas qui rend réellement la vidéo) :
 
-## Architecture
+1. **La direction artistique ne change quasi rien.** `applyBgPreset()` ne swap que la palette (fond, encre, accent). Tout le reste — layout, typographie, header, bloc prix, CTA, transitions, ken-burns — est **monolithique** : Adidas, Zara et Nike sortent à 90% identiques avec juste un fond légèrement différent. Le preset `nike` n'utilise même pas son orange `#fa5400` dans le badge prix.
+2. **Détourage catastrophique.** `getCutout()` (lignes 432-577) fait un flood-fill global qui :
+   - laisse des halos colorés sur fonds non blancs (Snipes, lifestyle…),
+   - écrase les ombres portées naturelles du produit,
+   - applique un contour silhouette systématique (le « liseré pixellisé »),
+   - se déclenche même quand le fond est déjà parfaitement propre → dégrade au lieu d'améliorer.
 
-Un **thème = un objet de tokens** (palette, polices, easing, transition, options de layout). Les 3 scènes lisent ces tokens via un `useTheme()` au lieu de constantes en dur. Les variations « lourdes » (split asymétrique, bandes 3-stripes, serif éditorial) deviennent des **booléens conditionnels** dans le même JSX.
+## Plan d'action
+
+### 1. Refonte du système de direction artistique (impact visuel max)
+
+Créer `src/lib/video-art-direction.ts` : un objet `ART_DIRECTIONS[bgPreset]` qui expose **tout** ce qui doit varier — pas juste les couleurs :
 
 ```text
-remotion/src/
-  lib/
-    themes.ts            ← NOUVEAU : type Theme + 3 presets
-    theme-context.tsx    ← NOUVEAU : Provider + useTheme()
-    motion.ts            ← inchangé
-  MainVideo.tsx          ← wrap dans <ThemeProvider themeId={...} />
-  Root.tsx               ← 3 compositions : main-adidas / main-zara / main-nike
-  scenes/
-    IntroScene.tsx       ← lit useTheme(), branches selon tokens
-    DealScene.tsx        ← idem
-    OutroScene.tsx       ← idem
+ArtDirection {
+  palette          (existant)
+  layout: {
+    productPad, productStageY, productStageH,
+    headerStyle:   'split' | 'centered' | 'kinetic',
+    priceLayout:   'block-bottom' | 'baseline-serif' | 'kinetic-card',
+    ctaStyle:      'underline' | 'minimal' | 'pill-accent',
+    showStripes:   bool,    // 3-stripes Adidas
+    showDossard:   bool,    // 01/05
+    showGhostBrand:bool,    // wordmark fantôme
+  }
+  typography: {
+    display:   { family, weight, tracking, transform }
+    body:      { ... }
+    titleSize, priceSize, eyebrowSize
+  }
+  motion: {
+    revealCurve:    'expo' | 'quint' | 'spring',
+    transitionDur:  ms,
+    kenBurnsAmp:    number,
+    staggerMul:     number,
+  }
+  accents: {
+    priceChipBg:   'paper' | 'accent' | 'ink',
+    priceChipFg:   string,
+    underlineColor:string,
+  }
+}
 ```
 
-## Tokens exposés par chaque thème
+Trois presets vraiment distincts :
 
-| Catégorie | Champs |
-|---|---|
-| Palette | `ink`, `paper`, `paperDeep`, `inkSoft`, `paperSoft`, `accent` |
-| Fonts | `display` (gros titres), `kinetic` (eyebrow/compteur), `body` |
-| Motion | `useSpring` (bool), `easing` (fn), `staggerMs`, `transitionKind` (`wipe` / `fade` / `slide`), `transitionFrames` |
-| Layout intro | `layout` (`split` / `editorial` / `centered`), `showStripes`, `heroLines` (3 lignes Adidas ou serif 1 ligne Zara) |
-| Layout deal | `dealLayout` (`block-bottom` / `full-bleed-serif` / `kinetic-card`), `showStripes`, `showDossard` |
-| Layout outro | `outroLayout` (`stripes-signature` / `serif-fade` / `kinetic-cuts`) |
+- **Adidas** — geometric : split header avec dossard `01/05`, 3-stripes au sol, bloc prix XXL en bas, ghost wordmark de la marque, Archivo Black tracking serré, motion ferme (easeOutQuart, 280ms).
+- **Zara** — editorial : composition centrée, Playfair serif pour titre et prix, beaucoup d'air, line-through discret, pas de chip badge, fades longs (easeInOutCubic, 600ms), ken-burns plus lent.
+- **Nike** — kinetic : carte ink à droite décalée, % géant en chip orange `#fa5400`, dossard en oblique, Bebas Neue eyebrow, motion nerveuse (spring stiff, 220ms, stagger 0.7×).
 
-## Les 3 presets
+Refactor :
 
-**`adidas` (actuel, par défaut)** — palette ivoire/encre, Archivo Black + Bebas, motion linear ferme, transitions wipe/slide, bandes diagonales visibles, dossard 01/05 encadré, split asymétrique intro.
+- Découper les fonctions monolithiques `drawAdHeader / drawAdPriceBlock / drawAdCTA / drawDealFullScreen` en variantes par direction (lookup table `{ split: drawHeaderSplit, centered: drawHeaderCentered, kinetic: drawHeaderKinetic }`).
+- Remplacer les constantes module-scope `IVOIRE / GOLD / NOIR` par lecture directe de `getActiveDirection()` (single source of truth, pas de drift).
+- Étendre `BgPreset` : `paper | adidas | zara | nike | charcoal | ivoire` (les 3 derniers gardent l'ancien rendu monolithique pour ne rien casser).
 
-**`zara`** — palette ivoire/taupe/encre, Playfair Display (serif fin) + Inter, motion lent fade-only avec easeInOut, transitions fade longues (35f), **pas de bandes**, layout intro centré, deal full-bleed produit + serif oversize, beaucoup de silence visuel, prix en chiffres fins.
+### 2. Refonte du détourage produit
 
-**`nike`** — palette ivoire/encre + accent unique (orange Nike #FA5400 utilisé avec parcimonie), Bebas Neue + Archivo Black ultra-condensés, motion **spring bouncy** (damping 12), transitions slide rapides (12f), grosse % géant en type-as-design, cuts nerveux, pas de wordmark fantôme — tout sur le produit et le %.
+Remplacer `getCutout()` par `cutoutProduct()` en 3 passes intelligentes :
 
-## Mécanisme de switch
+1. **Détection préalable** — si l'image a déjà un canal alpha (PNG transparent ecommerce) ou un fond uniforme < 8 d'écart-type RGB sur les 4 coins **ET** lum > 240 → **on ne touche à rien**, l'image est déjà propre. Aujourd'hui on dégrade ces images.
+2. **Flood-fill avec tolérance adaptative** par bande de luminance (au lieu d'un seuil unique), pour mieux gérer les dégradés Snipes / fonds gris doux.
+3. **Edge-aware feathering** — au lieu du smoothstep aveugle qui produit le halo, utiliser un kernel 3×3 sur les pixels candidats : on ne décrémente l'alpha que si la majorité des voisins sont aussi marqués « fond » → arrête les nuages pixelisés autour des semelles.
+4. **Supprimer le contour silhouette par défaut** (lignes 1072-1089). Aujourd'hui un offset 8 directions est dessiné → ça crée un liseré gras sur tous les produits. Le passer en **opt-in** par direction artistique (`accents.productOutline: false` partout sauf Adidas où on garde un 1px très subtil).
+5. **Préserver les ombres naturelles** — détecter la composante d'ombre sous le produit (zone juste sous la bbox du produit, lum < bg) et la conserver hors du masque alpha.
 
-1. **Via composition** : `Root.tsx` enregistre 3 IDs (`main-adidas`, `main-zara`, `main-nike`) qui passent tous le même `MainVideo` avec `defaultProps={{ themeId }}`.
-2. **Via CLI render** : `bunx remotion render src/index.ts main-zara out.mp4` ou override : `--props='{"themeId":"nike"}'`.
-3. **Via UI admin** : la page `/admin/video` reçoit un select Adidas/Zara/Nike qui appelle le pipeline avec la bonne compo (changement côté `remotion/scripts/generate-variant.mjs` : prend un `--theme` flag).
+Toutes les options exposées via les flags de la direction artistique, donc Zara peut demander « zéro contour, multiply propre » et Nike « hard cutout + ombre dropshadow ».
 
-## Refacto des scènes (inchangé côté layout par défaut)
+### 3. QA visuelle dédiée
 
-Chaque scène garde sa structure JSX actuelle. Les valeurs hardcodées (`INK`, `PAPER`, `archivo`, `linEase`, durées, présence des stripes…) deviennent `const t = useTheme()` + `t.ink`, `t.fonts.display`, `t.ease`, `t.intro.showStripes && (...)`. Aucun fichier scène n'est dupliqué — un seul JSX qui réagit aux tokens.
+- Ajouter `scripts/qa-video-frames.mjs` : pour chaque direction `{adidas, zara, nike}`, rendre la frame du 1er deal (`drawDealFullScreen` dans un canvas offscreen via jsdom + canvas) et la sauvegarder dans `qa/video-directions/baseline/`.
+- Étendre le workflow `style-preview-qa.yml` existant pour aussi capturer ces 3 frames → détection immédiate si une refonte casse une direction.
+- Tests unitaires `src/test/art-direction.test.ts` qui vérifient que chaque preset expose bien toutes les clés requises (pas de fallback silencieux sur Adidas).
 
-Pour Zara où la structure diverge vraiment (serif 1 ligne au lieu de 3 lignes Archivo) : un sous-bloc `{t.intro.layout === "editorial" ? <EditorialHero/> : <KineticHero/>}` à l'intérieur de la même `IntroScene`.
+### 4. Validation manuelle
 
-## QA & non-régression
+- Rendre 3 vidéos de bout en bout (1 par direction) via `bun run dev` + `/admin/video`, screenshots de 4 frames clés (intro / deal-2 / deal-5 / outro) postés dans le chat avec comparaison côte à côte.
+- Vérifier sur 3 images produit représentatives :
+  - **Nike studio blanc pur** → cutout no-op + multiply propre,
+  - **Snipes dégradé gris** → cutout adaptatif sans halo,
+  - **Lifestyle dark** → no cutout, l'image passe telle quelle.
 
-- `scripts/qa-frames.mjs` reçoit `--theme=adidas|zara|nike` et écrit `qa/report-<scene>-<theme>.json` + baselines `qa/baseline/<theme>/<scene>-...png`.
-- `.github/workflows/remotion-qa.yml` : matrice élargie `scene × theme` (9 jobs au lieu de 3) ; chaque thème a sa baseline indépendante donc un changement Zara n'invalide pas Adidas.
-- Seuils dans `qa/thresholds.json` : ajout d'une clé `themes` optionnelle pour surcharger par thème si besoin.
+## Détails techniques (annexe)
 
-## Pipeline de génération
+Fichiers touchés :
+- `src/lib/video-art-direction.ts` *(nouveau)* — registry direction artistique
+- `src/lib/video-cutout.ts` *(nouveau)* — `cutoutProduct()`, helpers de détection
+- `src/pages/AdminVideoPage.tsx` — refactor : remplacer `applyBgPreset / IVOIRE / GOLD / getCutout`, découper les `drawAd*` en variantes par layout
+- `src/components/admin/StylePreview.tsx` — miniatures alignées sur les nouveaux layouts (split / centered / kinetic)
+- `scripts/qa-video-frames.mjs` *(nouveau)* + extension `style-preview-qa.yml`
+- `src/test/art-direction.test.ts` *(nouveau)*
 
-- `remotion/scripts/generate-variant.mjs` accepte `--theme=<id>` (défaut `adidas`) et rend `main-<theme>`.
-- `remotion/scripts/generate-weekly.mjs` boucle sur les 3 thèmes si on veut produire les 3 variantes le même jour.
+Non-régression : les presets `paper / charcoal / ivoire` continuent d'utiliser le pipeline monolithique actuel (zéro changement). Seuls `adidas / zara / nike` passent au nouveau système. `prebuild` reste vert.
 
-## Livrables
+Temps estimé : ~6-8 itérations file-edit (la `AdminVideoPage` est très grosse, on procède section par section avec QA frame-by-frame entre chaque).
 
-1. `remotion/src/lib/themes.ts` — types + 3 presets
-2. `remotion/src/lib/theme-context.tsx` — Provider + hook
-3. `remotion/src/MainVideo.tsx` — accepte `themeId` prop, wrap dans Provider, transitions choisies selon `t.transition`
-4. `remotion/src/Root.tsx` — 3 compositions `main-{adidas,zara,nike}` + QA solo compositions paramétrées par thème
-5. `remotion/src/scenes/{Intro,Deal,Outro}Scene.tsx` — branchées sur `useTheme()`, layouts conditionnels
-6. `remotion/scripts/qa-frames.mjs` — flag `--theme`, baselines isolées
-7. `remotion/scripts/generate-variant.mjs` + `generate-weekly.mjs` — flag `--theme`
-8. `.github/workflows/remotion-qa.yml` — matrice `scene × theme`
-9. `remotion/qa/README.md` — doc des 3 thèmes + commandes
+Tu valides ce plan ? Une fois OK je commence par le registry + le cutout, puis je branche les 3 directions et je te montre les rendus avant d'aller plus loin.

@@ -424,10 +424,21 @@ function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement |
   ctx.drawImage(img as any, x + (w - iw) / 2, y + (h - ih) / 2, iw, ih);
 }
 
-// Cache de détourage adaptatif : flood-fill depuis les bords de l'image
-// pour ne retirer QUE les pixels de fond connectés aux coins. Évite les
-// "nuages" pixelisés autour du produit dus au bruit JPEG ou aux dégradés
-// subtils des photos e-commerce (qui faisaient échouer un seuillage global).
+// ─── DÉTOURAGE PRODUIT — v2 (refonte 2026-06) ──────────────────────
+// La v1 (flood-fill + smoothstep agressif + silhouette systématique)
+// produisait halos sur fonds non blancs, érosion des pixels sombres
+// du produit, liseré pixellisé visible. La v2 :
+//   0) Bypass si image déjà transparente (PNG ecommerce)
+//   1) Sample 4 coins → fond moyen, variance, luminance
+//   2) Bypass si variance > 60 OU fond sombre (lifestyle)
+//   3) Bypass si fond ultra-propre (variance < 6, lum > 245) — multiply
+//      sera plus chic qu'un cutout qui crée un micro-halo
+//   4) Flood-fill BFS depuis les bords
+//   5) Edge-aware feathering : on n'éteint un pixel candidat que si
+//      ≥ N voisins sont eux aussi candidats fond → stoppe les nuages
+//      pixelisés en bord de produit
+//   6) Décontamination de teinte plafonnée (jamais agressive)
+//   7) Silhouette OPT-IN (calcul à la demande, pas systématique)
 const cutoutCache = new WeakMap<HTMLImageElement, HTMLCanvasElement>();
 function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement {
   const cached = cutoutCache.get(img);
@@ -443,29 +454,43 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     const d = id.data;
     const W0 = c.width, H0 = c.height;
 
-    // 1) Échantillonne les 4 coins (24x24 px) pour estimer la couleur de fond.
+    // ── 0) PNG déjà transparent : on respecte le masque d'origine ──
+    let cornerAlphaLow = 0, cornerPix = 0;
+    const SZ = 24;
+    const sampleBlocks: Array<[number, number]> = [
+      [0, 0], [W0 - SZ, 0], [0, H0 - SZ], [W0 - SZ, H0 - SZ],
+    ];
+    for (const [x0, y0] of sampleBlocks) {
+      for (let y = y0; y < y0 + SZ && y < H0; y++) {
+        for (let x = x0; x < x0 + SZ && x < W0; x++) {
+          const a = d[(y * W0 + x) * 4 + 3];
+          if (a < 250) cornerAlphaLow++;
+          cornerPix++;
+        }
+      }
+    }
+    if (cornerAlphaLow / cornerPix > 0.05) {
+      (c as any).__alreadyTransparent = true;
+      (c as any).__avgLum = 128;
+      cutoutCache.set(img, c);
+      return c;
+    }
+
+    // ── 1) Sample des 4 coins ─────────────────────────────────────
     const sampleCorner = (x0: number, y0: number) => {
       let r = 0, g = 0, b = 0, n = 0;
-      const sz = 24;
-      for (let y = y0; y < y0 + sz && y < H0; y++) {
-        for (let x = x0; x < x0 + sz && x < W0; x++) {
+      for (let y = y0; y < y0 + SZ && y < H0; y++) {
+        for (let x = x0; x < x0 + SZ && x < W0; x++) {
           const i = (y * W0 + x) * 4;
           r += d[i]; g += d[i + 1]; b += d[i + 2]; n++;
         }
       }
       return n > 0 ? [r / n, g / n, b / n] : [255, 255, 255];
     };
-    const corners = [
-      sampleCorner(0, 0),
-      sampleCorner(W0 - 24, 0),
-      sampleCorner(0, H0 - 24),
-      sampleCorner(W0 - 24, H0 - 24),
-    ];
+    const corners = sampleBlocks.map(([x, y]) => sampleCorner(x, y));
     let br = 0, bg = 0, bb = 0;
     for (const [r, g, b] of corners) { br += r; bg += g; bb += b; }
     br /= 4; bg /= 4; bb /= 4;
-
-    // Si variance entre coins trop élevée → lifestyle photo, on ne touche pas.
     let variance = 0;
     for (const [r, g, b] of corners) {
       variance += Math.abs(r - br) + Math.abs(g - bg) + Math.abs(b - bb);
@@ -475,79 +500,91 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     (c as any).__cornerVariance = variance;
     (c as any).__cornerRGB = [br, bg, bb];
 
-    if (variance > 60) {
-      cutoutCache.set(img, c);
-      return c;
-    }
-    // Fond sombre (lifestyle dark) : on n'enlève rien.
-    if (bgLum < 150) {
+    // ── 2) Bypass : fond pas exploitable ──────────────────────────
+    if (variance > 60 || bgLum < 150) {
       cutoutCache.set(img, c);
       return c;
     }
 
-    // 2) Flood-fill BFS depuis tous les pixels de bord proches de la couleur
-    //    de fond. Un pixel est candidat si sa distance euclidienne au fond
-    //    est < TOL_FILL. Les pixels "produit" ne sont jamais traversés.
+    // ── 3) Bypass : fond ultra-propre → laisse multiply gérer ─────
+    if (variance < 6 && bgLum > 245) {
+      (c as any).__cleanWhite = true;
+      cutoutCache.set(img, c);
+      return c;
+    }
+
+    // ── 4) Flood-fill BFS ────────────────────────────────────────
     const veryLight = bgLum > 220;
-    const TOL_FILL = veryLight ? 38 : 26;   // tolérance pendant le flood-fill
-    const TOL_HARD = veryLight ? 18 : 10;   // 100 % transparent en dessous
-    const TOL_SOFT = veryLight ? 60 : 42;   // feathering au-dessus
+    const TOL_FILL = veryLight ? 34 : 22;
+    const TOL_HARD = veryLight ? 14 : 8;
+    const TOL_SOFT = veryLight ? 46 : 32;
     const total = W0 * H0;
     const isBg = new Uint8Array(total);
     const visited = new Uint8Array(total);
     const stack = new Int32Array(total);
     let sp = 0;
+    const TOL_FILL_SQ = TOL_FILL * TOL_FILL;
+    const dist2 = (i: number) => {
+      const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
+      return dr * dr + dg * dg + db * db;
+    };
     const pushPx = (x: number, y: number) => {
       const k = y * W0 + x;
       if (visited[k]) return;
       visited[k] = 1;
-      const i = k * 4;
-      const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
-      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-      if (dist < TOL_FILL) {
+      if (dist2(k * 4) < TOL_FILL_SQ) {
         isBg[k] = 1;
         stack[sp++] = k;
       }
     };
-    // Seed : toute la bordure du canvas.
     for (let x = 0; x < W0; x++) { pushPx(x, 0); pushPx(x, H0 - 1); }
     for (let y = 0; y < H0; y++) { pushPx(0, y); pushPx(W0 - 1, y); }
     while (sp > 0) {
       const k = stack[--sp];
       const x = k % W0, y = (k / W0) | 0;
-      if (x > 0)        pushPx(x - 1, y);
-      if (x < W0 - 1)   pushPx(x + 1, y);
-      if (y > 0)        pushPx(x, y - 1);
-      if (y < H0 - 1)   pushPx(x, y + 1);
+      if (x > 0)      pushPx(x - 1, y);
+      if (x < W0 - 1) pushPx(x + 1, y);
+      if (y > 0)      pushPx(x, y - 1);
+      if (y < H0 - 1) pushPx(x, y + 1);
     }
 
-    // 3) Applique transparence + feathering UNIQUEMENT sur les pixels marqués
-    //    "fond connecté aux bords". Les pixels intérieurs au produit restent
-    //    intacts → plus de speckle / plaques pixelisées dans la silhouette.
-    for (let k = 0; k < total; k++) {
-      if (!isBg[k]) continue;
-      const i = k * 4;
-      const dr = d[i] - br, dg = d[i + 1] - bg, db = d[i + 2] - bb;
-      const dist = Math.sqrt(dr * dr + dg * dg + db * db);
-      if (dist < TOL_HARD) {
-        d[i + 3] = 0;
-      } else if (dist < TOL_SOFT) {
-        const t = (dist - TOL_HARD) / (TOL_SOFT - TOL_HARD);
-        const sm = t * t * (3 - 2 * t);
-        d[i + 3] = Math.round(d[i + 3] * sm);
-        // Décontamination anti-halo (retire la teinte du fond résiduelle).
-        const k2 = 1 / Math.max(0.18, sm);
-        d[i]     = Math.max(0, Math.min(255, br + (d[i]     - br) * k2));
-        d[i + 1] = Math.max(0, Math.min(255, bg + (d[i + 1] - bg) * k2));
-        d[i + 2] = Math.max(0, Math.min(255, bb + (d[i + 2] - bb) * k2));
-      } else {
-        // Bord de la zone fond : léger fondu pour adoucir la transition.
-        d[i + 3] = Math.round(d[i + 3] * 0.85);
+    // ── 5) Edge-aware feathering ─────────────────────────────────
+    // Un pixel candidat n'est éteint que si ses voisins le sont aussi.
+    // Stoppe les nuages pixelisés en bord de produit.
+    const TOL_HARD_SQ = TOL_HARD * TOL_HARD;
+    const TOL_SOFT_SQ = TOL_SOFT * TOL_SOFT;
+    const range = TOL_SOFT - TOL_HARD;
+    for (let y = 1; y < H0 - 1; y++) {
+      for (let x = 1; x < W0 - 1; x++) {
+        const k = y * W0 + x;
+        if (!isBg[k]) continue;
+        const nb =
+          isBg[k - 1] + isBg[k + 1] +
+          isBg[k - W0] + isBg[k + W0] +
+          isBg[k - W0 - 1] + isBg[k - W0 + 1] +
+          isBg[k + W0 - 1] + isBg[k + W0 + 1];
+        const i = k * 4;
+        const dsq = dist2(i);
+        if (nb >= 6 && dsq < TOL_HARD_SQ) {
+          d[i + 3] = 0;
+        } else if (nb >= 4 && dsq < TOL_SOFT_SQ) {
+          const t = (Math.sqrt(dsq) - TOL_HARD) / range;
+          const sm = t * t * (3 - 2 * t);
+          d[i + 3] = Math.round(d[i + 3] * sm);
+          // Décontamination plafonnée à k2 = 1.6 (jamais agressive)
+          const k2 = Math.min(1.6, 1 / Math.max(0.55, sm));
+          d[i]     = Math.max(0, Math.min(255, br + (d[i]     - br) * k2));
+          d[i + 1] = Math.max(0, Math.min(255, bg + (d[i + 1] - bg) * k2));
+          d[i + 2] = Math.max(0, Math.min(255, bb + (d[i + 2] - bb) * k2));
+        } else if (nb >= 7) {
+          d[i + 3] = Math.round(d[i + 3] * 0.78);
+        }
+        // sinon : pixel ambigu → on garde tel quel
       }
     }
     cx.putImageData(id, 0, 0);
 
-    // Luminance moyenne des pixels opaques (pour adapter le fond derrière).
+    // Luminance moyenne des pixels opaques (pour décor sous-jacent)
     let lumSum = 0, lumN = 0;
     for (let i = 0; i < d.length; i += 4) {
       if (d[i + 3] > 200) {
@@ -557,17 +594,20 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
     }
     (c as any).__avgLum = lumN > 0 ? lumSum / lumN : 128;
 
-    // Silhouette pré-calculée pour le contour fin.
-    const sil = document.createElement("canvas");
-    sil.width = W0; sil.height = H0;
-    const sx = sil.getContext("2d");
-    if (sx) {
-      sx.drawImage(c, 0, 0);
-      sx.globalCompositeOperation = "source-in";
-      sx.fillStyle = "rgba(15,15,17,1)";
-      sx.fillRect(0, 0, W0, H0);
-    }
-    (c as any).__silhouette = sil;
+    // Silhouette : OPT-IN, calculée à la demande via __getSilhouette()
+    (c as any).__getSilhouette = () => {
+      const sil = document.createElement("canvas");
+      sil.width = W0; sil.height = H0;
+      const sx = sil.getContext("2d");
+      if (sx) {
+        sx.drawImage(c, 0, 0);
+        sx.globalCompositeOperation = "source-in";
+        sx.fillStyle = "rgba(15,15,17,1)";
+        sx.fillRect(0, 0, W0, H0);
+      }
+      return sil;
+    };
+
     cutoutCache.set(img, c);
     return c;
 
@@ -768,30 +808,57 @@ function drawAdHeader(
     ctx.drawImage(logo, 60, 150, finalW, finalH);
     brandBlockBottom = 150 + finalH;
   } else {
-    // Fallback : nom marque en serif italic, gros, posé
+    // Fallback nom marque : la typographie suit la direction artistique
     ctx.fillStyle = IVOIRE;
-    ctx.font = `italic 700 78px ${SERIF_FAMILY}`;
+    if (activePresetName === "adidas" || activePresetName === "nike") {
+      ctx.font = `900 88px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+      (ctx as any).letterSpacing = "-2px";
+    } else {
+      ctx.font = `italic 700 78px ${SERIF_FAMILY}`;
+    }
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText((deal.brand || "—"), 60, 220);
+    (ctx as any).letterSpacing = "0px";
     brandBlockBottom = 240;
   }
 
-  // ── Hairline + label "PRODUIT" ──
+  // ── Hairline + label eyebrow par direction ──
   const hairY = brandBlockBottom + 24;
   ctx.fillStyle = "rgba(13,13,13,0.20)";
   ctx.fillRect(60, hairY, W - 120, 1);
-  drawCapsText(ctx, "L'OBJET DU JOUR", 60, hairY + 28, {
+  const eyebrowLabel =
+    activePresetName === "adidas" ? "DEAL OF THE DAY" :
+    activePresetName === "nike"   ? "TODAY'S DROP" :
+    activePresetName === "zara"   ? "Sélection du jour" :
+    "L'OBJET DU JOUR";
+  drawCapsText(ctx, eyebrowLabel, 60, hairY + 28, {
     weight: 600, size: 17, tracking: 5, color: activePalette.inkSoft,
   });
 
-  // ── Titre produit : serif italic, wrap 2 lignes max ──
+  // ── Titre produit — typographie par direction artistique ──────
   ctx.fillStyle = IVOIRE;
-  ctx.font = `italic 500 46px ${SERIF_FAMILY}`;
+  let titleLineH = 50;
+  if (activePresetName === "adidas") {
+    ctx.font = `900 52px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    (ctx as any).letterSpacing = "-1px";
+    titleLineH = 56;
+  } else if (activePresetName === "nike") {
+    ctx.font = `800 50px 'Archivo',${SANS_FAMILY}`;
+    (ctx as any).letterSpacing = "-1px";
+    titleLineH = 54;
+  } else if (activePresetName === "zara") {
+    ctx.font = `italic 400 52px ${SERIF_FAMILY}`;
+    titleLineH = 58;
+  } else {
+    ctx.font = `italic 500 46px ${SERIF_FAMILY}`;
+  }
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
+  const upper = activePresetName === "adidas" || activePresetName === "nike";
+  const rawTitle = upper ? (deal.title || "").toUpperCase() : (deal.title || "");
   const titleMax = W - 120;
-  const words = (deal.title || "").split(/\s+/);
+  const words = rawTitle.split(/\s+/);
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
@@ -810,7 +877,8 @@ function drawAdHeader(
     lines[1] = lines[1] + "…";
   }
   const titleStartY = hairY + 76;
-  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * 50));
+  lines.forEach((ln, i) => ctx.fillText(ln, 60, titleStartY + i * titleLineH));
+  (ctx as any).letterSpacing = "0px";
 
   ctx.restore();
 }
@@ -837,6 +905,181 @@ function drawAdPriceBlock(
     return Number.isInteger(r) ? `${r}` : r.toFixed(2);
   };
   const priceTxt = `${fmt(priceVal)} €`;
+
+  // ════════════════════════════════════════════════════════════════
+  // VARIANTES PAR DIRECTION ARTISTIQUE — branches dédiées
+  // (paper/charcoal/ivoire restent sur l'éditorial historique en bas)
+  // ════════════════════════════════════════════════════════════════
+
+  // ─── ADIDAS — geometric & graphic ─────────────────────────────
+  // Bloc ink franc en bas, prix XXL display, dossard -DISCOUNT% en
+  // inverse à droite, 3-stripes au-dessus du bloc.
+  if (activePresetName === "adidas") {
+    const blockY = H - 560;
+    const blockH = 380;
+    // 3-stripes
+    for (let i = 0; i < 3; i++) {
+      ctx.fillStyle = "#0a0a0a";
+      ctx.fillRect(60, blockY - 40 + i * 8, W - 120, 3);
+    }
+    // Bloc ink plein
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(0, blockY, W, blockH);
+    // Eyebrow
+    ctx.save();
+    ctx.fillStyle = "rgba(244,241,234,0.55)";
+    ctx.font = `700 18px ${SANS_FAMILY}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    (ctx as any).letterSpacing = "6px";
+    ctx.fillText("PRIX MEMBRE", 60, blockY + 56);
+    (ctx as any).letterSpacing = "0px";
+    ctx.restore();
+    // Prix XXL display
+    ctx.fillStyle = "#f4f1ea";
+    ctx.font = `900 200px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(priceTxt, 50, blockY + 240);
+    if (hasOrig) {
+      // Dossard -DISCOUNT% en inverse à droite
+      const chipW = 240, chipH = 110;
+      const chipX = W - 60 - chipW;
+      const chipY = blockY + 130;
+      ctx.fillStyle = "#f4f1ea";
+      ctx.fillRect(chipX, chipY, chipW, chipH);
+      ctx.fillStyle = "#0a0a0a";
+      ctx.font = `900 76px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`−${discount}%`, chipX + chipW / 2, chipY + chipH / 2 + 4);
+      // Prix barré au-dessus du chip
+      ctx.fillStyle = "rgba(244,241,234,0.55)";
+      ctx.font = `600 30px ${SANS_FAMILY}`;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "alphabetic";
+      const opTxt = `${fmt(origVal)} €`;
+      ctx.fillText(opTxt, W - 60, chipY - 22);
+      const opW = ctx.measureText(opTxt).width;
+      ctx.strokeStyle = "rgba(244,241,234,0.55)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(W - 60 - opW - 4, chipY - 32);
+      ctx.lineTo(W - 60 + 4, chipY - 32);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
+
+  // ─── NIKE — athletic & kinetic ────────────────────────────────
+  // Carte ink à droite, chip orange massif −DISCOUNT%, prix sur deux
+  // niveaux, vibe kinetic.
+  if (activePresetName === "nike") {
+    const blockY = H - 540;
+    const blockH = 360;
+    ctx.fillStyle = "#0a0a0a";
+    ctx.fillRect(0, blockY, W, blockH);
+    // Eyebrow Bebas
+    ctx.save();
+    ctx.fillStyle = "rgba(244,241,234,0.5)";
+    ctx.font = `400 26px 'Bebas Neue','Oswald',${SANS_FAMILY}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    (ctx as any).letterSpacing = "8px";
+    ctx.fillText("MEMBER PRICE", 60, blockY + 56);
+    (ctx as any).letterSpacing = "0px";
+    ctx.restore();
+    // Prix XXL Archivo
+    ctx.fillStyle = "#f4f1ea";
+    ctx.font = `900 220px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(priceTxt, 50, blockY + 260);
+    if (hasOrig) {
+      // Chip orange Nike massif
+      const chipW = 280, chipH = 130;
+      const chipX = W - 60 - chipW;
+      const chipY = blockY + 120;
+      ctx.fillStyle = "#fa5400";
+      ctx.fillRect(chipX, chipY, chipW, chipH);
+      // Skew léger pour l'effet kinetic
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `900 88px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(`−${discount}%`, chipX + chipW / 2, chipY + chipH / 2 + 6);
+      // Prix barré au-dessus
+      ctx.fillStyle = "rgba(244,241,234,0.45)";
+      ctx.font = `500 30px ${SANS_FAMILY}`;
+      ctx.textAlign = "right";
+      ctx.textBaseline = "alphabetic";
+      const opTxt = `${fmt(origVal)} €`;
+      ctx.fillText(opTxt, W - 60, chipY - 22);
+      const opW = ctx.measureText(opTxt).width;
+      ctx.strokeStyle = "rgba(244,241,234,0.45)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(W - 60 - opW - 4, chipY - 32);
+      ctx.lineTo(W - 60 + 4, chipY - 32);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
+
+  // ─── ZARA — editorial fashion ─────────────────────────────────
+  // Composition centrée, prix serif italic monumentale, prix barré
+  // discret en-dessous, AUCUN chip de discount, beaucoup d'air.
+  if (activePresetName === "zara") {
+    const centerY = H - 320;
+    // Eyebrow centré
+    ctx.save();
+    ctx.fillStyle = "rgba(26,26,26,0.5)";
+    ctx.font = `500 17px ${SANS_FAMILY}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    (ctx as any).letterSpacing = "10px";
+    ctx.fillText("PRIX", W / 2, centerY - 180);
+    (ctx as any).letterSpacing = "0px";
+    ctx.restore();
+    // Hairline éditoriale au-dessus
+    ctx.fillStyle = "rgba(26,26,26,0.2)";
+    ctx.fillRect(W / 2 - 24, centerY - 156, 48, 1);
+    // Prix XXL serif italic
+    ctx.fillStyle = "#0a0a0a";
+    ctx.font = `italic 400 180px ${SERIF_FAMILY}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "alphabetic";
+    ctx.fillText(priceTxt, W / 2, centerY);
+    if (hasOrig) {
+      // Prix barré + −DISCOUNT% sur une seule ligne, fin, gris
+      const opTxt = `${fmt(origVal)} €  ·  −${discount}%`;
+      ctx.fillStyle = "rgba(26,26,26,0.5)";
+      ctx.font = `500 28px ${SANS_FAMILY}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "alphabetic";
+      (ctx as any).letterSpacing = "4px";
+      ctx.fillText(opTxt, W / 2, centerY + 56);
+      const opW = ctx.measureText(opTxt).width;
+      // Ligne barrée uniquement sur le prix d'origine (gauche)
+      const onlyOp = `${fmt(origVal)} €`;
+      const onlyOpW = ctx.measureText(onlyOp).width;
+      ctx.strokeStyle = "rgba(26,26,26,0.5)";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      const startX = W / 2 - opW / 2;
+      ctx.moveTo(startX, centerY + 48);
+      ctx.lineTo(startX + onlyOpW + 8, centerY + 48);
+      ctx.stroke();
+      (ctx as any).letterSpacing = "0px";
+    }
+    ctx.restore();
+    return;
+  }
+
+  // ─── Fallback : éditorial paper historique (paper/charcoal/ivoire) ──
+
 
   // ── Bande prix éditoriale en bas du frame (avant le crédit) ────────
   const bandY = H - 500;
@@ -1020,24 +1263,34 @@ export function drawDealFullScreen(
     const iy = stageY + (stageH - drawH) / 2 + slideIn + slideOut;
 
     const cut = getCutout(img);
-    const cornerLum = (cut as any).__cornerLum ?? 128;
-    const cornerVar = (cut as any).__cornerVariance ?? 999;
-    const isWhiteStudio = cornerLum > 215 && cornerVar < 50;
+    const cleanWhite       = !!(cut as any).__cleanWhite;
+    const alreadyTransparent = !!(cut as any).__alreadyTransparent;
+    const avgLum           = (cut as any).__avgLum ?? 128;
+    const isProductLight   = avgLum > 195;
 
-    // ─── PAPER + photo studio fond blanc : blend "multiply" propre ───
-    // Le blanc du shooting fond exactement dans le papier ivoire, sans
-    // halo, sans trou, sans contour. C'est la technique qu'utilisent les
-    // magazines éditoriaux pour caler des packshots sur paper stock.
-    if (activePresetName === "paper" && isWhiteStudio) {
+    // ─── CAS 1 — PNG ecommerce déjà transparent ───────────────────
+    // Le masque alpha d'origine est presque toujours meilleur que
+    // tout ce qu'on pourrait recalculer. On respecte, on pose une
+    // ombre douce, c'est tout.
+    if (alreadyTransparent) {
+      applyShadow(ctx, isProductLight ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
+      drawContainImage(ctx, img, ix, iy, drawW, drawH);
+      clearShadow(ctx);
+
+    // ─── CAS 2 — Studio blanc ultra-propre + fond paper ──────────
+    // Multiply : le blanc du shooting fond exactement dans le papier.
+    // Zéro halo, zéro contour, zéro perte de pixel sombre.
+    } else if (cleanWhite && (activePresetName === "paper" || activePresetName === "zara" || activePresetName === "adidas" || activePresetName === "nike" || activePresetName === "ivoire")) {
       ctx.save();
       ctx.globalAlpha = alphaK;
       ctx.globalCompositeOperation = "multiply";
       drawContainImage(ctx, img, ix, iy, drawW, drawH);
       ctx.restore();
+
+    // ─── CAS 3 — Fond hétérogène / sombre / cutout calculé ───────
     } else {
-      // Détection produit clair → halo doux derrière pour lisibilité.
-      const avgLum = (cut as any).__avgLum ?? 128;
-      if (avgLum > 195) {
+      // Halo doux derrière les produits clairs pour la lisibilité
+      if (isProductLight) {
         ctx.save();
         ctx.globalAlpha = alphaK * 0.92;
         const plateCx = ix + drawW / 2;
@@ -1047,9 +1300,11 @@ export function drawDealFullScreen(
           plateCx, plateCy, plateR * 0.15,
           plateCx, plateCy, plateR,
         );
-        const c0 = activePresetName === "paper" ? "rgba(80,72,62,0.22)" : "rgba(28,28,30,0.78)";
-        const c1 = activePresetName === "paper" ? "rgba(80,72,62,0.10)" : "rgba(28,28,30,0.45)";
-        const c2 = activePresetName === "paper" ? "rgba(80,72,62,0)"    : "rgba(28,28,30,0)";
+        const onPaper = activePresetName === "paper" || activePresetName === "zara"
+          || activePresetName === "adidas" || activePresetName === "nike" || activePresetName === "ivoire";
+        const c0 = onPaper ? "rgba(80,72,62,0.22)" : "rgba(28,28,30,0.78)";
+        const c1 = onPaper ? "rgba(80,72,62,0.10)" : "rgba(28,28,30,0.45)";
+        const c2 = onPaper ? "rgba(80,72,62,0)"    : "rgba(28,28,30,0)";
         plate.addColorStop(0, c0);
         plate.addColorStop(0.55, c1);
         plate.addColorStop(1, c2);
@@ -1062,34 +1317,31 @@ export function drawDealFullScreen(
         ctx.globalAlpha = alphaK;
       }
 
-      applyShadow(ctx, avgLum > 195 ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
+      applyShadow(ctx, isProductLight ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
       drawContainImage(ctx, cut, ix, iy, drawW, drawH);
       clearShadow(ctx);
 
-      // Contour fin via silhouette — uniquement preset sombre où le halo
-      // de flood-fill est visible. En paper, on évite le liseré qui souligne
-      // les imperfections de détourage.
-      const sil = (cut as any).__silhouette as HTMLCanvasElement | undefined;
-      if (sil && activePresetName !== "paper") {
-        ctx.save();
-        ctx.globalAlpha = alphaK * (avgLum > 195 ? 0.85 : 0.55);
-        const off = avgLum > 195 ? 1.4 : 1.0;
-        const dirs: Array<[number, number]> = [
-          [off, 0], [-off, 0], [0, off], [0, -off],
-          [off, off], [-off, off], [off, -off], [-off, -off],
-        ];
-        for (const [dx, dy] of dirs) {
-          drawContainImage(ctx, sil, ix + dx, iy + dy, drawW, drawH);
+      // Contour silhouette : SUPPRIMÉ par défaut (créait le liseré
+      // pixellisé). Réactivable opt-in uniquement pour adidas avec
+      // une intensité minimale (1 pixel, 25% d'opacité).
+      if (activePresetName === "adidas") {
+        const getSil = (cut as any).__getSilhouette as (() => HTMLCanvasElement) | undefined;
+        if (getSil) {
+          const sil = getSil();
+          ctx.save();
+          ctx.globalAlpha = alphaK * 0.25;
+          drawContainImage(ctx, sil, ix + 1, iy + 1, drawW, drawH);
+          ctx.restore();
+          ctx.save();
+          ctx.globalAlpha = alphaK;
+          drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+          ctx.restore();
         }
-        ctx.restore();
-        ctx.save();
-        ctx.globalAlpha = alphaK;
-        drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-        ctx.restore();
       }
 
-      if (avgLum > 195) ctx.restore();
+      if (isProductLight) ctx.restore();
     }
+
 
 
 
