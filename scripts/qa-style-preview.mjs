@@ -76,18 +76,9 @@ async function captureScene(page, scene) {
   // Laisse les fonts régler avant la capture (sinon FOUT entre 2 runs)
   await page.evaluate(() => document.fonts && document.fonts.ready);
   const el = await page.waitForSelector(`[data-testid="${scene.testid}"]`, { timeout: 5000 });
-  const box = await el.boundingBox();
-  if (!box) throw new Error(`Could not locate ${scene.testid}`);
+  await el.scrollIntoViewIfNeeded();
   const tmp = path.join(ACTUAL_DIR, `${scene.id}.png`);
-  await page.screenshot({
-    path: tmp,
-    clip: {
-      x: Math.floor(box.x),
-      y: Math.floor(box.y),
-      width: Math.ceil(box.width),
-      height: Math.ceil(box.height),
-    },
-  });
+  await el.screenshot({ path: tmp });
   return tmp;
 }
 
