@@ -24,7 +24,7 @@ const TOTAL = deals.length;
 
 export const MainVideo: React.FC = () => {
   return (
-    <AbsoluteFill style={{ backgroundColor: "#f5f3ee" }}>
+    <AbsoluteFill style={{ backgroundColor: "#f4f1ea" }}>
       <TransitionSeries>
         <TransitionSeries.Sequence durationInFrames={90}>
           <IntroScene />
