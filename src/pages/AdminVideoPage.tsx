@@ -1060,24 +1060,34 @@ export function drawDealFullScreen(
     const iy = stageY + (stageH - drawH) / 2 + slideIn + slideOut;
 
     const cut = getCutout(img);
-    const cornerLum = (cut as any).__cornerLum ?? 128;
-    const cornerVar = (cut as any).__cornerVariance ?? 999;
-    const isWhiteStudio = cornerLum > 215 && cornerVar < 50;
+    const cleanWhite       = !!(cut as any).__cleanWhite;
+    const alreadyTransparent = !!(cut as any).__alreadyTransparent;
+    const avgLum           = (cut as any).__avgLum ?? 128;
+    const isProductLight   = avgLum > 195;
 
-    // ─── PAPER + photo studio fond blanc : blend "multiply" propre ───
-    // Le blanc du shooting fond exactement dans le papier ivoire, sans
-    // halo, sans trou, sans contour. C'est la technique qu'utilisent les
-    // magazines éditoriaux pour caler des packshots sur paper stock.
-    if (activePresetName === "paper" && isWhiteStudio) {
+    // ─── CAS 1 — PNG ecommerce déjà transparent ───────────────────
+    // Le masque alpha d'origine est presque toujours meilleur que
+    // tout ce qu'on pourrait recalculer. On respecte, on pose une
+    // ombre douce, c'est tout.
+    if (alreadyTransparent) {
+      applyShadow(ctx, isProductLight ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
+      drawContainImage(ctx, img, ix, iy, drawW, drawH);
+      clearShadow(ctx);
+
+    // ─── CAS 2 — Studio blanc ultra-propre + fond paper ──────────
+    // Multiply : le blanc du shooting fond exactement dans le papier.
+    // Zéro halo, zéro contour, zéro perte de pixel sombre.
+    } else if (cleanWhite && (activePresetName === "paper" || activePresetName === "zara" || activePresetName === "adidas" || activePresetName === "nike" || activePresetName === "ivoire")) {
       ctx.save();
       ctx.globalAlpha = alphaK;
       ctx.globalCompositeOperation = "multiply";
       drawContainImage(ctx, img, ix, iy, drawW, drawH);
       ctx.restore();
+
+    // ─── CAS 3 — Fond hétérogène / sombre / cutout calculé ───────
     } else {
-      // Détection produit clair → halo doux derrière pour lisibilité.
-      const avgLum = (cut as any).__avgLum ?? 128;
-      if (avgLum > 195) {
+      // Halo doux derrière les produits clairs pour la lisibilité
+      if (isProductLight) {
         ctx.save();
         ctx.globalAlpha = alphaK * 0.92;
         const plateCx = ix + drawW / 2;
@@ -1087,9 +1097,11 @@ export function drawDealFullScreen(
           plateCx, plateCy, plateR * 0.15,
           plateCx, plateCy, plateR,
         );
-        const c0 = activePresetName === "paper" ? "rgba(80,72,62,0.22)" : "rgba(28,28,30,0.78)";
-        const c1 = activePresetName === "paper" ? "rgba(80,72,62,0.10)" : "rgba(28,28,30,0.45)";
-        const c2 = activePresetName === "paper" ? "rgba(80,72,62,0)"    : "rgba(28,28,30,0)";
+        const onPaper = activePresetName === "paper" || activePresetName === "zara"
+          || activePresetName === "adidas" || activePresetName === "nike" || activePresetName === "ivoire";
+        const c0 = onPaper ? "rgba(80,72,62,0.22)" : "rgba(28,28,30,0.78)";
+        const c1 = onPaper ? "rgba(80,72,62,0.10)" : "rgba(28,28,30,0.45)";
+        const c2 = onPaper ? "rgba(80,72,62,0)"    : "rgba(28,28,30,0)";
         plate.addColorStop(0, c0);
         plate.addColorStop(0.55, c1);
         plate.addColorStop(1, c2);
@@ -1102,34 +1114,31 @@ export function drawDealFullScreen(
         ctx.globalAlpha = alphaK;
       }
 
-      applyShadow(ctx, avgLum > 195 ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
+      applyShadow(ctx, isProductLight ? VIDEO_SHADOWS.productLight : VIDEO_SHADOWS.product);
       drawContainImage(ctx, cut, ix, iy, drawW, drawH);
       clearShadow(ctx);
 
-      // Contour fin via silhouette — uniquement preset sombre où le halo
-      // de flood-fill est visible. En paper, on évite le liseré qui souligne
-      // les imperfections de détourage.
-      const sil = (cut as any).__silhouette as HTMLCanvasElement | undefined;
-      if (sil && activePresetName !== "paper") {
-        ctx.save();
-        ctx.globalAlpha = alphaK * (avgLum > 195 ? 0.85 : 0.55);
-        const off = avgLum > 195 ? 1.4 : 1.0;
-        const dirs: Array<[number, number]> = [
-          [off, 0], [-off, 0], [0, off], [0, -off],
-          [off, off], [-off, off], [off, -off], [-off, -off],
-        ];
-        for (const [dx, dy] of dirs) {
-          drawContainImage(ctx, sil, ix + dx, iy + dy, drawW, drawH);
+      // Contour silhouette : SUPPRIMÉ par défaut (créait le liseré
+      // pixellisé). Réactivable opt-in uniquement pour adidas avec
+      // une intensité minimale (1 pixel, 25% d'opacité).
+      if (activePresetName === "adidas") {
+        const getSil = (cut as any).__getSilhouette as (() => HTMLCanvasElement) | undefined;
+        if (getSil) {
+          const sil = getSil();
+          ctx.save();
+          ctx.globalAlpha = alphaK * 0.25;
+          drawContainImage(ctx, sil, ix + 1, iy + 1, drawW, drawH);
+          ctx.restore();
+          ctx.save();
+          ctx.globalAlpha = alphaK;
+          drawContainImage(ctx, cut, ix, iy, drawW, drawH);
+          ctx.restore();
         }
-        ctx.restore();
-        ctx.save();
-        ctx.globalAlpha = alphaK;
-        drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-        ctx.restore();
       }
 
-      if (avgLum > 195) ctx.restore();
+      if (isProductLight) ctx.restore();
     }
+
 
 
 
