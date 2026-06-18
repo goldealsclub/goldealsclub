@@ -14,7 +14,9 @@
     "test:watch": "vitest",
     "audit:brands": "vitest run src/test/brand-filter-audit.test.ts",
     "audit:site": "vitest run src/test/site-audit.test.ts",
-    "audit:full": "vitest run src/test/site-audit.test.ts src/test/brand-filter-audit.test.ts src/test/brand-filtering.test.ts src/test/deals-pipeline.test.ts"
+    "audit:full": "vitest run src/test/site-audit.test.ts src/test/brand-filter-audit.test.ts src/test/brand-filtering.test.ts src/test/deals-pipeline.test.ts",
+    "qa:styles": "node scripts/qa-style-preview.mjs",
+    "qa:styles:update": "node scripts/qa-style-preview.mjs --update"
   },
   "dependencies": {
     "@capacitor/android": "^8.2.0",
@@ -93,6 +95,9 @@
     "globals": "^15.15.0",
     "jsdom": "^20.0.3",
     "lovable-tagger": "^1.1.13",
+    "pixelmatch": "^7.2.0",
+    "playwright": "1.56.0",
+    "pngjs": "^7.0.0",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17",
     "typescript": "^5.8.3",
