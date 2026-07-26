@@ -30,13 +30,24 @@ const AuthPage = () => {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const from = (location.state as any)?.from || "/";
+  // Post-auth destination: ?next=<relative path> (used by the OAuth consent flow), else router state.
+  const rawNext = new URLSearchParams(location.search).get("next");
+  const safeNext = rawNext && /^\/(?!\/)/.test(rawNext) ? rawNext : null;
+  const stored = typeof sessionStorage !== "undefined" ? sessionStorage.getItem("auth:next") : null;
+  const from = safeNext || (location.state as any)?.from || (stored && /^\/(?!\/)/.test(stored) ? stored : "/");
 
   // Redirect if already logged in
   if (user) {
+    if (typeof sessionStorage !== "undefined") sessionStorage.removeItem("auth:next");
     navigate(from, { replace: true });
     return null;
   }
+
+  const socialRedirect = () => {
+    if (safeNext && typeof sessionStorage !== "undefined") sessionStorage.setItem("auth:next", safeNext);
+    return `${window.location.origin}/auth`;
+  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +63,7 @@ const AuthPage = () => {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          options: { emailRedirectTo: window.location.origin },
+          options: { emailRedirectTo: `${window.location.origin}${safeNext ?? "/"}` },
         });
         if (error) throw error;
         toast.success("Vérifiez votre email pour confirmer votre inscription.");
@@ -131,7 +142,7 @@ const AuthPage = () => {
               <button
                 onClick={async () => {
                   const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
+                    redirect_uri: socialRedirect(),
                   });
                   if (error) toast.error(error.message);
                 }}
@@ -149,7 +160,7 @@ const AuthPage = () => {
               <button
                 onClick={async () => {
                   const { error } = await lovable.auth.signInWithOAuth("apple", {
-                    redirect_uri: window.location.origin,
+                    redirect_uri: socialRedirect(),
                   });
                   if (error) toast.error(error.message);
                 }}

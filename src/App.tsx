@@ -40,6 +40,8 @@ import AdminStylePreviewQAPage from "./pages/AdminStylePreviewQAPage";
 
 import InstallPage from "./pages/InstallPage";
 import PromoCodesPage from "./pages/PromoCodesPage";
+import OAuthConsent from "./pages/OAuthConsent";
+
 import WorldCup2026Page from "./pages/WorldCup2026Page";
 import InstallBanner from "./components/InstallBanner";
 import UpdateBanner from "./components/UpdateBanner";
@@ -107,6 +109,8 @@ const App = () => (
 
                 <Route path="/install" element={<InstallPage />} />
                 <Route path="/codes-promo" element={<PromoCodesPage />} />
+                <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
                 <Route path="/coupe-du-monde-2026" element={<WorldCup2026Page />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>

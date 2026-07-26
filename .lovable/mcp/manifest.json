@@ -1,0 +1,174 @@
+{
+  "version": 1,
+  "sdk_version": "0.24.0",
+  "path": "/functions/v1/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://yyqgxhuzobmqygksbaze.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "goldeals-club-mcp",
+      "version": "0.1.0",
+      "title": "GOLDEALS CLUB"
+    },
+    "tools": [
+      {
+        "name": "search_deals",
+        "title": "Search deals",
+        "description": "Search GOLDEALS CLUB fashion, streetwear and sneaker deals by keyword, brand, category, gender, merchant, price or discount.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "query": {
+              "type": "string",
+              "description": "Free-text search on the product title."
+            },
+            "brand": {
+              "type": "string",
+              "description": "Brand name, e.g. Nike, Adidas."
+            },
+            "category": {
+              "type": "string",
+              "description": "Category slug or label."
+            },
+            "gender": {
+              "type": "string",
+              "description": "Gender label, e.g. Homme, Femme, Unisexe."
+            },
+            "merchant": {
+              "type": "string",
+              "description": "Merchant/seller name, e.g. Snipes, JD Sports."
+            },
+            "min_discount": {
+              "type": "number",
+              "description": "Minimum discount percentage."
+            },
+            "max_price": {
+              "type": "number",
+              "description": "Maximum sale price."
+            },
+            "super_deals_only": {
+              "type": "boolean",
+              "description": "Only return super deals."
+            },
+            "limit": {
+              "type": "number",
+              "description": "Number of results, default 20, max 50."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_deal",
+        "title": "Get deal details",
+        "description": "Fetch the full details of a single deal by its id, including description and purchase link.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "deal_id": {
+              "type": "string",
+              "description": "The deal id returned by search_deals."
+            }
+          },
+          "required": [
+            "deal_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_favorites",
+        "title": "List my favorite deals",
+        "description": "List the deals the signed-in user has saved as favorites on GOLDEALS CLUB.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "limit": {
+              "type": "number",
+              "description": "Number of favorites to return, default 50."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_favorite",
+        "title": "Save a deal to favorites",
+        "description": "Save a deal to the signed-in user's GOLDEALS CLUB favorites.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "deal_id": {
+              "type": "string",
+              "description": "The deal id to save."
+            }
+          },
+          "required": [
+            "deal_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "remove_favorite",
+        "title": "Remove a deal from favorites",
+        "description": "Remove a deal from the signed-in user's GOLDEALS CLUB favorites.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "deal_id": {
+              "type": "string",
+              "description": "The deal id to remove."
+            }
+          },
+          "required": [
+            "deal_id"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
