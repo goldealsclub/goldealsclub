@@ -142,7 +142,7 @@ const AuthPage = () => {
               <button
                 onClick={async () => {
                   const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: window.location.origin,
+                    redirect_uri: socialRedirect(),
                   });
                   if (error) toast.error(error.message);
                 }}
@@ -160,7 +160,7 @@ const AuthPage = () => {
               <button
                 onClick={async () => {
                   const { error } = await lovable.auth.signInWithOAuth("apple", {
-                    redirect_uri: window.location.origin,
+                    redirect_uri: socialRedirect(),
                   });
                   if (error) toast.error(error.message);
                 }}
