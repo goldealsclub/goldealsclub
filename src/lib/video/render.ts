@@ -60,7 +60,18 @@ export async function renderStyleVideo(opts: RenderOptions): Promise<RenderResul
   const perDealSec = Math.min(PER_DEAL_SEC, (MAX_TOTAL_SEC - INTRO - OUTRO) / n);
   const totalSec = INTRO + n * perDealSec + OUTRO;
 
-  applyBgPreset(preset);
+  // Réglages éditables du style (page /admin/styles) — facultatifs.
+  let styleSettings: any = null;
+  try {
+    const { data } = await supabase
+      .from("video_style_settings" as any)
+      .select("*")
+      .eq("style_id", style)
+      .maybeSingle();
+    styleSettings = data ?? null;
+  } catch {}
+  applyBgPreset(preset, styleSettings);
+
   onProgress?.(0);
 
   canvas.width = W;
