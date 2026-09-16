@@ -17,7 +17,7 @@ interface MainVideoProps {
 
 const pickTransition = (kind: "wipe" | "fade" | "slide", i: number) => {
   switch (kind) {
-    case "fade":  return fade({ enterStyle: { opacity: 0 }, exitStyle: { opacity: 0 } });
+    case "fade":  return fade({ shouldFadeOutExitingScene: true });
     case "slide": return slide({ direction: i % 2 === 0 ? "from-right" : "from-left" });
     case "wipe":
     default:      return i % 2 === 0 ? wipe({ direction: "from-left" }) : wipe({ direction: "from-bottom" });

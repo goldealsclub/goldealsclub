@@ -7,11 +7,11 @@
     "qa": "node scripts/qa-frames.mjs",
     "qa:update": "node scripts/qa-frames.mjs --update",
     "qa:adidas": "node scripts/qa-frames.mjs --style=adidas",
-    "qa:zara":   "node scripts/qa-frames.mjs --style=zara",
-    "qa:nike":   "node scripts/qa-frames.mjs --style=nike",
+    "qa:zara": "node scripts/qa-frames.mjs --style=zara",
+    "qa:nike": "node scripts/qa-frames.mjs --style=nike",
     "qa:update:adidas": "node scripts/qa-frames.mjs --update --style=adidas",
-    "qa:update:zara":   "node scripts/qa-frames.mjs --update --style=zara",
-    "qa:update:nike":   "node scripts/qa-frames.mjs --update --style=nike"
+    "qa:update:zara": "node scripts/qa-frames.mjs --update --style=zara",
+    "qa:update:nike": "node scripts/qa-frames.mjs --update --style=nike"
   },
   "devDependencies": {
     "@types/bun": "latest",
@@ -30,6 +30,7 @@
     "@remotion/renderer": "^4.0.451",
     "@remotion/transitions": "4.0.242",
     "@types/react": "^19.2.14",
+    "image-size": "^2.0.4",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "remotion": "4.0.242"
