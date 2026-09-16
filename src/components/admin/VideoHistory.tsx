@@ -96,10 +96,11 @@ export default function VideoHistory({ limit, compact }: Props) {
   const resetFilters = () => {
     setSearch("");
     setCategory("all");
+    setStyleFilter("all");
     setDate("");
   };
 
-  const hasFilters = search || category !== "all" || date;
+  const hasFilters = search || category !== "all" || styleFilter !== "all" || date;
 
   return (
     <div>
@@ -124,6 +125,17 @@ export default function VideoHistory({ limit, compact }: Props) {
                 {c}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={styleFilter} onValueChange={setStyleFilter}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Style" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les styles</SelectItem>
+            <SelectItem value="adidas">Adidas</SelectItem>
+            <SelectItem value="zara">Zara</SelectItem>
+            <SelectItem value="nike">Nike</SelectItem>
           </SelectContent>
         </Select>
         <Input
