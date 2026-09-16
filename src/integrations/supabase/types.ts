@@ -246,10 +246,13 @@ export type Database = {
           hashtags: string | null
           id: string
           images_loaded: number
+          is_published: boolean
           label: string
           public_url: string
+          published_at: string | null
           size_bytes: number | null
           storage_path: string
+          style: string
         }
         Insert: {
           brief_date: string
@@ -260,10 +263,13 @@ export type Database = {
           hashtags?: string | null
           id?: string
           images_loaded?: number
+          is_published?: boolean
           label?: string
           public_url: string
+          published_at?: string | null
           size_bytes?: number | null
           storage_path: string
+          style?: string
         }
         Update: {
           brief_date?: string
@@ -274,10 +280,13 @@ export type Database = {
           hashtags?: string | null
           id?: string
           images_loaded?: number
+          is_published?: boolean
           label?: string
           public_url?: string
+          published_at?: string | null
           size_bytes?: number | null
           storage_path?: string
+          style?: string
         }
         Relationships: []
       }
