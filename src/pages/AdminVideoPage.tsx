@@ -1259,7 +1259,6 @@ export function drawDealFullScreen(
     const iy = stageY + (stageH - drawH) / 2 + slideIn + slideOut;
 
     const cut = getCutout(img);
-    const cleanWhite       = !!(cut as any).__cleanWhite;
     const alreadyTransparent = !!(cut as any).__alreadyTransparent;
     const avgLum           = (cut as any).__avgLum ?? 128;
     const isProductLight   = avgLum > 195;
@@ -1273,17 +1272,7 @@ export function drawDealFullScreen(
       drawContainImage(ctx, img, ix, iy, drawW, drawH);
       clearShadow(ctx);
 
-    // ─── CAS 2 — Studio blanc ultra-propre + fond paper ──────────
-    // Multiply : le blanc du shooting fond exactement dans le papier.
-    // Zéro halo, zéro contour, zéro perte de pixel sombre.
-    } else if (cleanWhite && (activePresetName === "paper" || activePresetName === "zara" || activePresetName === "adidas" || activePresetName === "nike" || activePresetName === "ivoire")) {
-      ctx.save();
-      ctx.globalAlpha = alphaK;
-      ctx.globalCompositeOperation = "multiply";
-      drawContainImage(ctx, img, ix, iy, drawW, drawH);
-      ctx.restore();
-
-    // ─── CAS 3 — Fond hétérogène / sombre / cutout calculé ───────
+    // ─── CAS 2 — Fond studio détouré ou image lifestyle ──────────
     } else {
       // Halo doux derrière les produits clairs pour la lisibilité
       if (isProductLight) {
@@ -1317,23 +1306,7 @@ export function drawDealFullScreen(
       drawContainImage(ctx, cut, ix, iy, drawW, drawH);
       clearShadow(ctx);
 
-      // Contour silhouette : SUPPRIMÉ par défaut (créait le liseré
-      // pixellisé). Réactivable opt-in uniquement pour adidas avec
-      // une intensité minimale (1 pixel, 25% d'opacité).
-      if (activePresetName === "adidas") {
-        const getSil = (cut as any).__getSilhouette as (() => HTMLCanvasElement) | undefined;
-        if (getSil) {
-          const sil = getSil();
-          ctx.save();
-          ctx.globalAlpha = alphaK * 0.25;
-          drawContainImage(ctx, sil, ix + 1, iy + 1, drawW, drawH);
-          ctx.restore();
-          ctx.save();
-          ctx.globalAlpha = alphaK;
-          drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-          ctx.restore();
-        }
-      }
+      // Aucun contour artificiel : même traitement propre pour les trois styles.
 
       if (isProductLight) ctx.restore();
     }
