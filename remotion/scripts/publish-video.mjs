@@ -93,8 +93,12 @@ const upload = async (storagePath, upsert) => {
 };
 
 await upload(remoteName, false);
-// Alias stable par style (URL fixe partageable)
-await upload(`latest-${style}.mp4`, true);
+// Alias stable par style (URL fixe partageable) — non bloquant
+try {
+  await upload(`latest-${style}.mp4`, true);
+} catch (e) {
+  console.warn("⚠️ Alias latest ignoré :", e?.message ?? e);
+}
 
 const { video } = await callFn({
   action: "finalize",

@@ -58,8 +58,7 @@ jobs:
       - name: Publish to the site
         if: ${{ env.skip != 'true' }}
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VIDEO_PUBLISH_TOKEN: ${{ secrets.VIDEO_PUBLISH_TOKEN }}
         run: |
           VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
           echo "Publishing $VIDEO"
