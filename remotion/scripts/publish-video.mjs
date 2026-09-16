@@ -77,28 +77,27 @@ const callFn = async (payload) => {
   return body;
 };
 
-const upload = async (storagePath, upsert) => {
+const upload = async (storagePath, upsert, fatal = true) => {
   const { signedUrl } = await callFn({ action: "sign", path: storagePath });
-  // Les URL signées n'acceptent pas x-upsert : pour l'alias latest, on
-  // tente l'upload ; si le fichier existe déjà, on le supprime d'abord via sign.
   const up = await fetch(signedUrl, {
     method: "PUT",
     headers: { "Content-Type": "video/mp4", ...(upsert ? { "x-upsert": "true" } : {}) },
     body: buffer,
   });
   if (!up.ok) {
-    console.error(`❌ Upload échoué [${up.status}]`, await up.text());
+    const details = await up.text();
+    if (!fatal) {
+      console.warn(`⚠️ Upload alias ignoré [${up.status}]`, details);
+      return;
+    }
+    console.error(`❌ Upload échoué [${up.status}]`, details);
     process.exit(1);
   }
 };
 
 await upload(remoteName, false);
 // Alias stable par style (URL fixe partageable) — non bloquant
-try {
-  await upload(`latest-${style}.mp4`, true);
-} catch (e) {
-  console.warn("⚠️ Alias latest ignoré :", e?.message ?? e);
-}
+await upload(`latest-${style}.mp4`, true, false);
 
 const { video } = await callFn({
   action: "finalize",
