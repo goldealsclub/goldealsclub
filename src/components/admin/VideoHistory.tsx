@@ -24,6 +24,9 @@ type VideoRow = {
   size_bytes: number | null;
   duration_sec: number | null;
   images_loaded: number | null;
+  style: string | null;
+  is_published: boolean | null;
+  published_at: string | null;
   created_at: string;
 };
 
