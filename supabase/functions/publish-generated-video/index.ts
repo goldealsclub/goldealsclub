@@ -52,15 +52,19 @@ serve(async (req) => {
     const upsert = body.upsert === true;
     if (upsert) {
       // Les URLs signées "upload" acceptent le remplacement d'un objet existant.
-      const signed = await supabase.storage
-        .from(BUCKET)
-        .createUploadSignedUrl(path, { upsert: true });
-      if (!signed.error && signed.data) {
-        return json({
-          path,
-          signedUrl: signed.data.signedUrl,
-          token: signed.data.token,
-        });
+      try {
+        const signed = await supabase.storage
+          .from(BUCKET)
+          .createUploadSignedUrl(path, { upsert: true });
+        if (!signed.error && signed.data) {
+          return json({
+            path,
+            signedUrl: signed.data.signedUrl,
+            token: signed.data.token,
+          });
+        }
+      } catch {
+        // méthode indisponible dans cette version du SDK : on passe au secours
       }
       // Secours : on supprime l'ancien objet avant de renégocier une URL.
       await supabase.storage.from(BUCKET).remove([path]);
