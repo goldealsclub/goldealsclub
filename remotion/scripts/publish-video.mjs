@@ -14,13 +14,18 @@
 import fs from "fs";
 import path from "path";
 
-// Lecture du .env du repo en secours (SUPABASE_URL non sensible)
+// Lecture du .env du repo en secours (SUPABASE_URL non sensible).
+// Les valeurs peuvent être entre guillemets ("https://...") : on les retire,
+// sinon l'URL construite est invalide et l'appel échoue immédiatement.
+const unquote = (v) =>
+  v.trim().replace(/^"([^"]*)"$/, "$1").replace(/^'([^']*)'$/, "$1");
+
 const readEnvFile = () => {
   try {
     const raw = fs.readFileSync(path.resolve(process.cwd(), ".env"), "utf8");
     for (const line of raw.split("\n")) {
       const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
-      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].trim();
+      if (m && !process.env[m[1]]) process.env[m[1]] = unquote(m[2]);
     }
   } catch { /* pas de .env, tant pis */ }
 };
