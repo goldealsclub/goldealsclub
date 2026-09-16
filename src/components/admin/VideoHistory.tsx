@@ -170,6 +170,22 @@ export default function VideoHistory({ limit, compact }: Props) {
                 <span className="text-xs font-bold uppercase">{item.category}</span>
                 <span className="text-xs text-muted-foreground">{item.brief_date}</span>
               </div>
+              <div className="flex items-center gap-1 mb-1">
+                {item.style && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-muted text-foreground/70">
+                    {item.style}
+                  </span>
+                )}
+                <span
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                    item.is_published
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {item.is_published ? "Publiée" : "Brouillon"}
+                </span>
+              </div>
               {(item.images_loaded ?? 2) < 2 && (
                 <span
                   className="inline-flex items-center gap-1 self-start mb-1 px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-300"
