@@ -174,12 +174,15 @@ function inferGender(title: string, description: string, productCategory: string
   const enfantExclude = ["baby tee","junior mesure"];
   if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
 
-  const femmeKw = ["pour femme"," femme ", " femme,", "femmes","women","woman","wmns","w's ","ladies","damen",
-    "baby tee","bra ","brassière","legging","sports bra","crop top","cropped","mini skirt","mini jupe","robe ","dress ","bikini","yoga","wide leg","high rise","ribbed tank"];
+  const femmeKw = ["pour femme"," femme ", " femme,", " femmes ","women","woman","wmns","w's ","ladies","damen",
+    "pour fille", " fille ", "mädchen", " mujer ", " donna ",
+    "baby tee","bra ","brassière","soutien-gorge","legging","sports bra","crop top","cropped","mini skirt","mini jupe","jupe ","robe ","dress ","bikini","yoga","wide leg","high rise","ribbed tank",
+    "escarpin", "ballerine", "nuisette", "maternity"];
   const femmeExclude = ["dress shirt"];
   if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
 
-  const hommeKw = ["pour homme"," homme ", " homme,", "hommes","men's","for men"," herren"," mens "," male "];
+  const hommeKw = ["pour homme"," homme ", " homme,", " hommes ","men's","for men"," herren", " herren "," mens "," male ",
+    "pour garçon", " garçon ", " garcon ", " hombre ", " uomo ", "boxer homme", "caleçon homme"];
   if (hommeKw.some(k => combined.includes(k))) return "homme";
 
   return "unisexe";

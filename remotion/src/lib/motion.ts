@@ -18,6 +18,8 @@ export const snap = (v: number) => (SNAP_ENABLED ? Math.round(v) : v);
 /** Arrondi 3 décimales (scale) */
 export const snapScale = (v: number) =>
   SNAP_ENABLED ? Math.round(v * 1000) / 1000 : v;
+/** Transformations de contenu : sous-pixel pour éviter les marches visibles. */
+export const smooth = (v: number) => Math.round(v * 1000) / 1000;
 /** Fige une spring une fois quasi-stabilisée pour éviter les micro-oscillations */
 export const settle = (v: number) => (v > SETTLE_THRESHOLD ? 1 : v);
 
@@ -80,6 +82,33 @@ export const settled = ({
       durationInFrames: duration,
     })
   );
+
+type EnterArgs = {
+  frame: number;
+  fps: number;
+  delay: number;
+  duration: number;
+  from: number;
+  multiplier: number;
+  easing: (value: number) => number;
+  springEnabled: boolean;
+};
+
+/** Entrée commune, sans rebond résiduel ni arrondi au pixel. */
+export const smoothEnter = ({ frame, fps, delay, duration, from, multiplier, easing, springEnabled }: EnterArgs) => {
+  const scaledDelay = delay * multiplier;
+  const scaledDuration = Math.max(1, Math.round(duration * multiplier));
+  const raw = springEnabled
+    ? spring({
+        frame: frame - scaledDelay,
+        fps,
+        config: { damping: 24, stiffness: 110, mass: 0.9 },
+        durationInFrames: scaledDuration,
+      })
+    : easing((frame - scaledDelay) / scaledDuration);
+  const t = settle(Math.max(0, Math.min(1, raw)));
+  return { t, y: smooth(interpolate(t, [0, 1], [from, 0])) };
+};
 
 /** Opacité standard 0→1 depuis une spring settlée */
 export const fadeIn = (sp: number) => interpolate(sp, [0, 1], [0, 1]);

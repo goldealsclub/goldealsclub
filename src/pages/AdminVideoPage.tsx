@@ -506,12 +506,8 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
       return c;
     }
 
-    // ── 3) Bypass : fond ultra-propre → laisse multiply gérer ─────
-    if (variance < 6 && bgLum > 245) {
-      (c as any).__cleanWhite = true;
-      cutoutCache.set(img, c);
-      return c;
-    }
+    // Un fond blanc propre passe aussi par le masque alpha : `multiply`
+    // conservait les ombres JPEG et créait un rectangle sur le papier ivoire.
 
     // ── 4) Flood-fill BFS ────────────────────────────────────────
     const veryLight = bgLum > 220;

@@ -8,8 +8,8 @@
  *
  * Le motion choisit linear-ease ou spring selon style.motion.useSpring.
  */
-import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig, spring } from "remotion";
-import { snap, gpuLayer } from "../lib/motion";
+import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } from "remotion";
+import { snap, smoothEnter, gpuLayer } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
 
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
@@ -24,17 +24,7 @@ export const IntroScene: React.FC = () => {
 
   /** Slide ferme OU spring bouncy selon style. Renvoie {t, y}. */
   const enter = (delay: number, dur: number, fromY: number) => {
-    if (useSpring) {
-      const sp = spring({
-        frame: frame - delay * mul, fps,
-        config: { damping: 12, stiffness: 110 },
-        durationInFrames: Math.round(dur * mul),
-      });
-      const t = clamp(sp);
-      return { t, y: snap(interpolate(t, [0, 1], [fromY, 0])) };
-    }
-    const t = ease((frame - delay * mul) / (dur * mul));
-    return { t, y: snap(interpolate(t, [0, 1], [fromY, 0])) };
+    return smoothEnter({ frame, fps, delay, duration: dur, from: fromY, multiplier: mul, easing: ease, springEnabled: useSpring });
   };
 
   // Bloc noir / bandes — uniquement layouts non-centered

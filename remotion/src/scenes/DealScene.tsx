@@ -6,10 +6,10 @@
  *  - "full-bleed-serif" (zara)   : produit centré, titre serif, prix fin
  *  - "kinetic-card"     (nike)   : carte ink à droite, % géant orange
  */
-import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig, Img, spring } from "remotion";
+import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig, Img } from "remotion";
 import type { Deal } from "../data";
 import { brandLogos } from "../data";
-import { snap, snapScale, gpuLayer } from "../lib/motion";
+import { snap, smooth, smoothEnter, gpuLayer } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
 
 interface DealSceneProps {
@@ -33,17 +33,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   const useSpring = s.motion.useSpring;
 
   const enter = (delay: number, dur: number, fromY: number) => {
-    if (useSpring) {
-      const sp = spring({
-        frame: frame - delay * mul, fps,
-        config: { damping: 12, stiffness: 110 },
-        durationInFrames: Math.round(dur * mul),
-      });
-      const t = clamp(sp);
-      return { t, y: snap(interpolate(t, [0, 1], [fromY, 0])) };
-    }
-    const t = ease((frame - delay * mul) / (dur * mul));
-    return { t, y: snap(interpolate(t, [0, 1], [fromY, 0])) };
+    return smoothEnter({ frame, fps, delay, duration: dur, from: fromY, multiplier: mul, easing: ease, springEnabled: useSpring });
   };
 
   const sale = Number(deal.salePrice ?? 0);
@@ -59,20 +49,20 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   const head = enter(4, 12, -26);
   // Produit
   const img = enter(10, 18, 0);
-  const imgScale = snapScale(interpolate(img.t, [0, 1], [0.94, 1]));
-  const kenZoom = snapScale(interpolate(frame, [0, 130], [1.0, 1.06], { extrapolateRight: "clamp" }));
-  const kenPanX = snap(interpolate(frame, [0, 130], [-6, 6], { extrapolateRight: "clamp" }));
+  const imgScale = smooth(interpolate(img.t, [0, 1], [0.96, 1]));
+  const kenZoom = smooth(interpolate(frame, [0, 130], [1.0, 1.035], { extrapolateRight: "clamp" }));
+  const kenPanX = smooth(interpolate(frame, [0, 130], [-3, 3], { extrapolateRight: "clamp" }));
   // Wordmark ghost
   const ghostT = clamp(ease((frame - 6 * mul) / (22 * mul)));
-  const ghostX = snap(interpolate(frame, [0, 130], [-10, 10], { extrapolateRight: "clamp" }));
+  const ghostX = smooth(interpolate(frame, [0, 130], [-6, 6], { extrapolateRight: "clamp" }));
   // Titre
   const title = enter(22, 14, 20);
   // Prix
   const price = enter(30, 14, 0);
-  const priceX = snap(interpolate(price.t, [0, 1], [120, 0]));
+  const priceX = smooth(interpolate(price.t, [0, 1], [120, 0]));
   // Chip discount
   const chip = enter(40, 12, 0);
-  const chipX = snap(interpolate(chip.t, [0, 1], [180, 0]));
+  const chipX = smooth(interpolate(chip.t, [0, 1], [180, 0]));
   // CTA
   const cta = enter(50, 14, 0);
 
@@ -124,7 +114,6 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
             <Img src={deal.imageUrl} style={{
               maxWidth: "100%", maxHeight: "100%",
               width: "auto", height: "auto", objectFit: "contain",
-              mixBlendMode: "multiply",
             }} />
           </div>
         </div>
@@ -245,7 +234,6 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
           <Img src={deal.imageUrl} style={{
             maxWidth: "100%", maxHeight: "100%",
             width: "auto", height: "auto", objectFit: "contain",
-            mixBlendMode: "multiply",
           }} />
         </div>
       </div>
