@@ -257,8 +257,7 @@ function removeConnectedStudioBackground(buf) {
 }
 
 // Normalise puis retire uniquement le fond clair connecté aux bords.
-// chasse les halos JPG des merchant feeds, garde une marge propre, et rend
-// le mixBlendMode:multiply invisible sur le stage ivoire.
+// chasse les halos JPG des merchant feeds et produit un canal alpha réel.
 async function fetchStudioImage(rawUrl) {
   const stripped = rawUrl.replace(/^https?:\/\//, "");
   const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(stripped)}` +

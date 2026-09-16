@@ -431,8 +431,7 @@ function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement |
 //   0) Bypass si image déjà transparente (PNG ecommerce)
 //   1) Sample 4 coins → fond moyen, variance, luminance
 //   2) Bypass si variance > 60 OU fond sombre (lifestyle)
-//   3) Bypass si fond ultra-propre (variance < 6, lum > 245) — multiply
-//      sera plus chic qu'un cutout qui crée un micro-halo
+//   3) Fond clair, même uniforme : masque alpha réel, jamais multiply
 //   4) Flood-fill BFS depuis les bords
 //   5) Edge-aware feathering : on n'éteint un pixel candidat que si
 //      ≥ N voisins sont eux aussi candidats fond → stoppe les nuages

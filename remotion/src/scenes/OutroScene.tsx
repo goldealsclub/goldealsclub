@@ -7,7 +7,7 @@
  *  - "kinetic-cuts"      (nike)   : fond ink, type ultra-condensé, bandes nettes
  */
 import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } from "remotion";
-import { snap, smoothEnter, gpuLayer } from "../lib/motion";
+import { snap, smoothEnter, gpuLayer, TIMING } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
 
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
@@ -25,11 +25,11 @@ export const OutroScene: React.FC = () => {
   };
 
   const stripeT = (i: number) => clamp(ease((frame - (6 + i * 5) * mul) / (22 * mul)));
-  const eye = enter(14, 10, 0);
-  const hero = enter(18, 12, 70);
-  const sub = enter(26, 12, 70);
-  const ruleW = snap(interpolate(clamp(ease((frame - 38 * mul) / (16 * mul))), [0, 1], [0, 600]));
-  const url = enter(50, 14, 0);
+  const eye = enter(TIMING.eyebrow.in, 10, 0);
+  const hero = enter(TIMING.heroDelay, 12, 70);
+  const sub = enter(TIMING.secondaryDelay, 12, 70);
+  const ruleW = snap(interpolate(clamp(ease((frame - TIMING.ctaIn * mul) / (16 * mul))), [0, 1], [0, 600]));
+  const url = enter(TIMING.ctaOut, 14, 0);
 
   const isInkBg = s.outro.background === "ink";
   const bg = isInkBg ? s.ink : `linear-gradient(180deg, ${s.paper} 0%, ${s.paperDeep} 100%)`;

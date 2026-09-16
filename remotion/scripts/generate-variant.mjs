@@ -188,8 +188,7 @@ function removeConnectedStudioBackground(buf) {
 //   - sharp=1           → re-sharpen léger après resize, packshot net en 1080p
 //   - output=jpg/q=94   → JPEG quasi sans perte
 //
-// Résultat : packshot toujours centré sur fond blanc strict, halos JPG des
-// merchant feeds neutralisés, blend "multiply" invisible sur le stage ivoire.
+// Résultat : packshot centré avec un canal alpha réel, sans rectangle blanc.
 async function fetchStudioImage(rawUrl) {
   const stripped = rawUrl.replace(/^https?:\/\//, "");
   const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(stripped)}` +
@@ -210,7 +209,7 @@ async function imageToDataUri(url) {
   const direct = extractDirectImageUrl(url);
   if (direct) candidates.push(direct);
 
-  // 1) tente la version "studio" (wsrv trim + bg blanc) — meilleur rendu
+  // 1) tente la version studio détourée — meilleur rendu
   for (const c of candidates) {
     try {
       // qualité source minimale d'abord (évite d'upscaler un thumbnail)

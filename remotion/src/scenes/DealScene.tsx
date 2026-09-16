@@ -9,7 +9,7 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig, Img } from "remotion";
 import type { Deal } from "../data";
 import { brandLogos } from "../data";
-import { snap, smooth, smoothEnter, gpuLayer } from "../lib/motion";
+import { snap, smooth, smoothEnter, gpuLayer, TIMING } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
 
 interface DealSceneProps {
@@ -44,11 +44,11 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   const brandLogo = brandLogos[deal.brand];
 
   // Bloc bas
-  const block = enter(18, 16, 320);
+  const block = enter(TIMING.secondaryDelay, 16, 320);
   // Header marque
-  const head = enter(4, 12, -26);
+  const head = enter(TIMING.headerDelay, 12, -26);
   // Produit
-  const img = enter(10, 18, 0);
+  const img = enter(TIMING.imageDelay, 18, 0);
   const imgScale = smooth(interpolate(img.t, [0, 1], [0.96, 1]));
   const kenZoom = smooth(interpolate(frame, [0, 130], [1.0, 1.035], { extrapolateRight: "clamp" }));
   const kenPanX = smooth(interpolate(frame, [0, 130], [-3, 3], { extrapolateRight: "clamp" }));
@@ -56,15 +56,15 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   const ghostT = clamp(ease((frame - 6 * mul) / (22 * mul)));
   const ghostX = smooth(interpolate(frame, [0, 130], [-6, 6], { extrapolateRight: "clamp" }));
   // Titre
-  const title = enter(22, 14, 20);
+  const title = enter(TIMING.secondaryDelay, 14, 20);
   // Prix
-  const price = enter(30, 14, 0);
+  const price = enter(TIMING.secondaryDelay + 8, 14, 0);
   const priceX = smooth(interpolate(price.t, [0, 1], [120, 0]));
   // Chip discount
   const chip = enter(40, 12, 0);
   const chipX = smooth(interpolate(chip.t, [0, 1], [180, 0]));
   // CTA
-  const cta = enter(50, 14, 0);
+  const cta = enter(TIMING.ctaOut, 14, 0);
 
   // Stripes
   const stripeT = (i: number) => clamp(ease((frame - (10 + i * 3) * mul) / (14 * mul)));
