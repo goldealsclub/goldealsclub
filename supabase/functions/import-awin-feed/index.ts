@@ -129,6 +129,20 @@ function inferCategory(category: string, title: string): string {
   // Robes / jupes → autres (pas de catégorie dédiée)
   if (/( robe | dress | jupe | skirt )/i.test(t)) return "autres";
 
+  // ── Rattrapage "autres" : familles fréquentes mal classées ─────────────
+  // Chaussures non-sneakers
+  if (/(botte|bottine|chausson|clog\b|crocs|mule[s]?\b|sabot|espadrille|mocassin|loafer|derby\b|ballerine)/i.test(all)) return "sneakers";
+  // Mailles / polaires
+  if (/(pull\b|pull |pull-|polaire|knit\b|tricot|cardigan|col-v|col rond|col roulé)/i.test(all)) return "hoodies";
+  // Chemises / tops
+  if (/(chemise|blouse|chasuble|débardeur|body\b|top\b)/i.test(all)) return "t-shirts";
+  // Bas
+  if (/(cuissard|sous-short|corsaire|pantacourt|salopette|surv[êe]tement|ensemble )/i.test(all)) return "pantalons";
+  // Combinaisons / tenues chaudes
+  if (/(combinaison de ski|combinaison hiver)/i.test(all)) return "vestes";
+  // Petits équipements portés → accessoires
+  if (/(b[ée]ret|banane|sacoche|lacet|laces\b|moufle|jambi[èe]re|genouill[èe]re|coudi[èe]re|chevill[èe]re|prot[èe]ge|brassard|manchon|cagoule|tour de cou|mitaine|serre-t[êe]te)/i.test(all)) return "accessoires";
+
   return "autres";
 }
 
@@ -139,10 +153,17 @@ const OFF_TOPIC_RE =
   /(hame[çc]on|plomb[s]? |plombs\b|amor[çc]age|bouillette|boilie|appât|appat|leurre|canne à p[êe]che|moulinet|bas de ligne|t[êe]te plomb[ée]e|p[êc]he\b|carpe\b|carp\b|fishing|rod pod|épuisette|bivvy|fluorocarbon|tresse de p[êe]che|nasse|flotteur\b|émerillon|emerillon|swivel\b|hookbait|pellet[s]?\b|pva\b|method feeder|cage feeder)/i;
 const OFF_TOPIC_RE2 =
   /(prot[ée]ine en poudre|whey\b|cr[ée]atine|gainer\b|barre [ée]nerg[ée]tique|gel [ée]nerg[ée]tique|compl[ée]ment alimentaire|vitamine[s]?\b|boisson isotonique|shaker\b)/i;
+// Moto / vélo / équitation / matériel de club / maison : hors périmètre mode.
+const OFF_TOPIC_RE3 =
+  /(moto\b|scooter|vespa|casque (de |)moto|clignotant|amortisseur|rockshox|d[ée]railleur|guidon|cintre zipp|plaquette[s]? de frein|chambre à air|v[ée]lo\b|cyclisme|vtt\b|[ée]quitation|licol|r[êe]nes|[ée]trier[s]?\b|chambri[èe]re|tapis de selle|mors\b|imperm[ée]abilisant|produit[s]? d'entretien|drapeau|banderole|pompe à ballon|gonfleur|haie tremblay|plot[s]? de marquage|filet de but|panier de basket|but de football)/i;
+
+// Matériel de club, pièces techniques, maison, bagagerie, soins : hors mode.
+const OFF_TOPIC_RE4 =
+  /(pour cheval|couverture d'ext[ée]rieur|cr[ée]me solaire|pi[èe]ces? d[ée]tach[ée]e|joint[s]? de fourche|roulement|antivol|porte[- ]bidon|cordage|filet de (table|tennis)|anneaux de coordination|balle h[ée]risson|poids additionnel|dalle pleine|haltère|lampe\b|led lenser|valise|bagage|bols?\b|vaisselle|interior gift|tapis de sol|table de tennis|arbitr[ea]|kit arbitro|tresse shimano|cible\b|raquette)/i;
 
 export function isOffTopic(title: string, category: string, description: string): boolean {
   const all = ` ${(title || "")} ${(category || "")} ${(description || "").slice(0, 300)} `;
-  return OFF_TOPIC_RE.test(all) || OFF_TOPIC_RE2.test(all);
+  return OFF_TOPIC_RE.test(all) || OFF_TOPIC_RE2.test(all) || OFF_TOPIC_RE3.test(all) || OFF_TOPIC_RE4.test(all);
 }
 
 function inferGender(title: string, description: string, productCategory: string): string {
@@ -359,6 +380,14 @@ Deno.serve(async (req) => {
         discount = Math.round(((originalPrice - salePrice) / originalPrice) * 100);
       }
       discount = discount ?? 0;
+
+      // Prix barrés gonflés : au-delà de 90 % de remise, le prix de référence
+      // n'est pas crédible (constaté sur Sport Outlet). On neutralise le prix
+      // barré plutôt que de supprimer l'offre.
+      if (discount >= 90) {
+        originalPrice = null;
+        discount = 0;
+      }
 
       const merchantId = r.merchant_id || "0";
       const productId = r.aw_product_id || r.merchant_product_id || "";
