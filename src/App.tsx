@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes, useLocation } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -30,7 +30,7 @@ import NewDealNotifier from "./components/NewDealNotifier";
 import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
-import AdminVideoPage from "./pages/AdminVideoPage";
+
 import AdminVideosPage from "./pages/AdminVideosPage";
 import AdminVideoHistoryPage from "./pages/AdminVideoHistoryPage";
 import AdminVideoQAPage from "./pages/AdminVideoQAPage";
@@ -102,7 +102,7 @@ const App = () => (
                 <Route path="/privacy" element={<PrivacyPage />} />
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/video" element={<AdminVideoPage />} />
+                <Route path="/admin/video" element={<Navigate to="/admin/videos" replace />} />
                 <Route path="/admin/videos" element={<AdminVideosPage />} />
                 <Route path="/admin/styles" element={<AdminStylesPage />} />
 
