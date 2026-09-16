@@ -306,6 +306,9 @@ const Index = () => {
         </div>
       </section>
 
+      {/* Vidéos publiées */}
+      <PublishedVideos />
+
       {/* Recently Viewed */}
       <RecentlyViewed />
 
