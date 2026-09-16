@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import VideoHistory from "@/components/admin/VideoHistory";
-import { renderStyleVideo } from "@/lib/video/render";
+
 import type { BgPreset, Brief } from "@/pages/AdminVideoPage";
 import {
   ArrowLeft,
@@ -63,7 +63,7 @@ export default function AdminVideosPage() {
   const [status, setStatus] = useState("");
   const [publishAt, setPublishAt] = useState<Record<string, string>>({});
   const [historyKey, setHistoryKey] = useState(0);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
 
   useEffect(() => {
     document.title = "Gestion des vidéos — Admin";
@@ -280,7 +280,7 @@ export default function AdminVideosPage() {
         </div>
       )}
 
-      <canvas ref={canvasRef} className="hidden" />
+      
 
       <div className="grid gap-4 md:grid-cols-3 mb-10">
         {STYLES.map((s) => {
@@ -329,7 +329,7 @@ export default function AdminVideosPage() {
                 <Button
                   size="sm"
                   onClick={() => generate(s.id)}
-                  disabled={busyStyle !== null || !brief}
+                  disabled={busyStyle !== null}
                 >
                   {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                   {row ? "Régénérer" : "Générer"}
