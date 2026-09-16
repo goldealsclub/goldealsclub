@@ -127,37 +127,61 @@ export default function AdminVideosPage() {
     setLoading(false);
   };
 
+  /**
+   * Lance le rendu officiel : même script Remotion et mêmes paramètres que
+   * la génération automatique quotidienne (aucun rendu navigateur).
+   */
   const generate = async (style: BgPreset) => {
-    const selection = brief?.deals?.[categoryIdx];
-    if (!selection || !canvasRef.current) {
-      toast({ title: "Aucune sélection disponible", variant: "destructive" });
-      return;
-    }
     setBusyStyle(style);
     setProgress(0);
-    setStatus("Préparation…");
+    setStatus("Lancement du rendu Remotion…");
+    const before = latest[style]?.id ?? null;
     try {
-      await renderStyleVideo({
-        canvas: canvasRef.current,
-        selection,
-        preset: style,
-        style,
-        briefDate: brief!.brief_date,
-        caption: brief!.caption,
-        hashtags: brief!.hashtags,
-        onProgress: setProgress,
-        onStatus: setStatus,
+      const { data, error } = await supabase.functions.invoke("trigger-remotion-render", {
+        body: { style },
       });
-      toast({ title: `Vidéo ${style} générée ✓` });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).message || (data as any).error);
+
+      toast({
+        title: `Rendu ${style} lancé`,
+        description: "La vidéo apparaîtra ici automatiquement à la fin du rendu (~5–15 min).",
+      });
+
+      // Attente passive : on interroge la base jusqu'à l'apparition d'une
+      // nouvelle vidéo pour ce style (max 25 min).
+      setStatus("Rendu en cours sur le serveur…");
+      const deadline = Date.now() + 25 * 60 * 1000;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 20_000));
+        const { data: rows } = await supabase
+          .from("generated_videos" as any)
+          .select("id")
+          .eq("style", style)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        const newest = (rows as any[])?.[0]?.id ?? null;
+        if (newest && newest !== before) {
+          toast({ title: `Vidéo ${style} disponible ✓` });
+          break;
+        }
+        setProgress((p) => Math.min(95, p + 4));
+      }
       await loadLatest();
       setHistoryKey((k) => k + 1);
     } catch (e: any) {
-      toast({ title: "Échec du rendu", description: e?.message || String(e), variant: "destructive" });
+      toast({
+        title: "Échec du lancement",
+        description: e?.message || String(e),
+        variant: "destructive",
+      });
     } finally {
       setBusyStyle(null);
       setStatus("");
+      setProgress(0);
     }
   };
+
 
   const publish = async (row: VideoRow, styleId: string) => {
     const local = publishAt[styleId];
