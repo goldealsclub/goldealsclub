@@ -36,7 +36,7 @@ export default function AdminVideoHistoryPage() {
     <div className="min-h-screen bg-background text-foreground p-4 md:p-8 max-w-7xl mx-auto">
       <div className="mb-6">
         <Link
-          to="/admin/video"
+          to="/admin/videos"
           className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour Vidéo du jour
