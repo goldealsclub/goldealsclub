@@ -27,6 +27,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { execSync } from "child_process";
 import { imageSize } from "image-size";
+import { PNG } from "pngjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -208,22 +209,68 @@ async function fetchImage(url) {
   return { dataUri: `data:${ct};base64,${buf.toString("base64")}`, dims };
 }
 
-// Normalise le packshot via wsrv.nl (trim agressif + pad + fond blanc strict) :
-// chasse les halos JPG des merchant feeds, garde une marge propre, et rend
-// le mixBlendMode:multiply invisible sur le stage ivoire.
+function removeConnectedStudioBackground(buf) {
+  const png = PNG.sync.read(buf);
+  const { width, height, data } = png;
+  const total = width * height;
+  const visited = new Uint8Array(total);
+  const background = new Uint8Array(total);
+  const queue = new Int32Array(total);
+  const cornerSize = Math.max(8, Math.min(32, Math.floor(Math.min(width, height) * 0.02)));
+  let br = 0, bg = 0, bb = 0, samples = 0;
+  for (const [x0, y0] of [[0, 0], [width - cornerSize, 0], [0, height - cornerSize], [width - cornerSize, height - cornerSize]]) {
+    for (let y = y0; y < y0 + cornerSize; y++) for (let x = x0; x < x0 + cornerSize; x++) {
+      const i = (y * width + x) * 4; br += data[i]; bg += data[i + 1]; bb += data[i + 2]; samples++;
+    }
+  }
+  br /= samples; bg /= samples; bb /= samples;
+  if ((br + bg + bb) / 3 < 210) return buf;
+  const threshold2 = 42 * 42;
+  const distance = (pixel) => {
+    const i = pixel * 4, dr = data[i] - br, dg = data[i + 1] - bg, db = data[i + 2] - bb;
+    return dr * dr + dg * dg + db * db;
+  };
+  let head = 0, tail = 0;
+  const push = (pixel) => {
+    if (visited[pixel]) return;
+    visited[pixel] = 1;
+    if (distance(pixel) <= threshold2) { background[pixel] = 1; queue[tail++] = pixel; }
+  };
+  for (let x = 0; x < width; x++) { push(x); push((height - 1) * width + x); }
+  for (let y = 0; y < height; y++) { push(y * width); push(y * width + width - 1); }
+  while (head < tail) {
+    const p = queue[head++], x = p % width, y = Math.floor(p / width);
+    if (x > 0) push(p - 1); if (x + 1 < width) push(p + 1);
+    if (y > 0) push(p - width); if (y + 1 < height) push(p + width);
+  }
+  for (let p = 0; p < total; p++) {
+    if (!background[p]) continue;
+    const x = p % width, y = Math.floor(p / width);
+    let neighbours = 0;
+    for (let oy = -1; oy <= 1; oy++) for (let ox = -1; ox <= 1; ox++) {
+      const nx = x + ox, ny = y + oy;
+      if (nx >= 0 && nx < width && ny >= 0 && ny < height && background[ny * width + nx]) neighbours++;
+    }
+    data[p * 4 + 3] = neighbours >= 8 ? 0 : neighbours >= 5 ? 72 : 180;
+  }
+  return PNG.sync.write(png);
+}
+
+// Normalise puis retire uniquement le fond clair connecté aux bords.
+// chasse les halos JPG des merchant feeds et produit un canal alpha réel.
 async function fetchStudioImage(rawUrl) {
   const stripped = rawUrl.replace(/^https?:\/\//, "");
   const wsrv = `https://wsrv.nl/?url=${encodeURIComponent(stripped)}` +
     `&w=1500&h=1500&fit=contain&cbg=ffffff&bg=ffffff` +
-    `&trim=30&pad=60&sharp=1&output=jpg&q=94`;
+    `&trim=30&pad=60&sharp=1&output=png&q=94`;
   const r = await fetch(wsrv, {
     headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://wsrv.nl/" },
   });
   if (!r.ok) throw new Error(`wsrv HTTP ${r.status}`);
-  const buf = Buffer.from(await r.arrayBuffer());
+  const buf = removeConnectedStudioBackground(Buffer.from(await r.arrayBuffer()));
   let dims;
   try { dims = imageSize(buf); } catch { throw new Error("wsrv undecodable"); }
-  return { dataUri: `data:image/jpeg;base64,${buf.toString("base64")}`, dims };
+  return { dataUri: `data:image/png;base64,${buf.toString("base64")}`, dims };
 }
 
 async function imageToDataUri(url) {

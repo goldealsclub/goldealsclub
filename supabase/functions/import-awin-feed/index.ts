@@ -166,7 +166,7 @@ export function isOffTopic(title: string, category: string, description: string)
   return OFF_TOPIC_RE.test(all) || OFF_TOPIC_RE2.test(all) || OFF_TOPIC_RE3.test(all) || OFF_TOPIC_RE4.test(all);
 }
 
-function inferGender(title: string, description: string, productCategory: string): string {
+function inferGender(title: string, description: string, productCategory: string, genderField = ""): string {
   const combined = ` ${(description || "").toLowerCase()} ${(title || "").toLowerCase()} ${(productCategory || "").toLowerCase()} `;
 
   const enfantKw = [" enfant","enfants","kids","junior","bébé","toddler","infant","youth","kinder"," boy "," girl ",
@@ -174,12 +174,22 @@ function inferGender(title: string, description: string, productCategory: string
   const enfantExclude = ["baby tee","junior mesure"];
   if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
 
-  const femmeKw = ["pour femme"," femme ", " femme,", "femmes","women","woman","wmns","w's ","ladies","damen",
-    "baby tee","bra ","brassière","legging","sports bra","crop top","cropped","mini skirt","mini jupe","robe ","dress ","bikini","yoga","wide leg","high rise","ribbed tank"];
+  // Le champ marchand explicite est prioritaire sur les heuristiques adultes.
+  const supplied = genderField.trim().toLowerCase();
+  if (["female", "femme", "women", "woman", "damen"].includes(supplied)) return "femme";
+  if (["male", "homme", "men", "man", "herren"].includes(supplied)) return "homme";
+  if (["child", "children", "kids", "kid", "enfant", "junior"].includes(supplied)) return "enfant";
+  if (["unisex", "unisexe"].includes(supplied)) return "unisexe";
+
+  const femmeKw = ["pour femme"," femme ", " femme,", " femmes ","women","woman","wmns","w's ","ladies","damen",
+    "pour fille", " fille ", "mädchen", " mujer ", " donna ",
+    "baby tee","bra ","brassière","soutien-gorge","legging","sports bra","crop top","cropped","mini skirt","mini jupe","jupe ","robe ","dress ","bikini","yoga","wide leg","high rise","ribbed tank",
+    "escarpin", "ballerine", "nuisette", "maternity"];
   const femmeExclude = ["dress shirt"];
   if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
 
-  const hommeKw = ["pour homme"," homme ", " homme,", "hommes","men's","for men"," herren"," mens "," male "];
+  const hommeKw = ["pour homme"," homme ", " homme,", " hommes ","men's","for men"," herren", " herren "," mens "," male ",
+    "pour garçon", " garçon ", " garcon ", " hombre ", " uomo ", "boxer homme", "caleçon homme"];
   if (hommeKw.some(k => combined.includes(k))) return "homme";
 
   return "unisexe";
@@ -286,7 +296,7 @@ Deno.serve(async (req) => {
     const COLUMNS = [
       "aw_deep_link","product_name","aw_product_id","merchant_product_id",
       "merchant_image_url","description","merchant_category","search_price",
-      "merchant_name","merchant_id","category_name","aw_image_url","currency",
+      "merchant_name","merchant_id","category_name","aw_image_url","currency","gender","product_gender",
       "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
       "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
       // Some merchants ship the RRP only via product_price_old / base_price / saving
@@ -407,7 +417,7 @@ Deno.serve(async (req) => {
       const merchant = (r.merchant_name || "").trim() || "Awin";
       const brand = cleanBrand(r.brand_name || "", merchant);
       const category = inferCategory(r.merchant_category || r.category_name || "", title);
-      const gender = inferGender(title, r.description || "", r.merchant_category || "");
+      const gender = inferGender(title, r.description || "", r.merchant_category || "", r.gender || r.product_gender || "");
 
       let dealLevel = "promo-normale", flameCount = 1;
       if (discount >= 50) { dealLevel = "hot-deal"; flameCount = 3; }

@@ -8,8 +8,8 @@
  *
  * Le motion choisit linear-ease ou spring selon style.motion.useSpring.
  */
-import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig, spring } from "remotion";
-import { snap, gpuLayer } from "../lib/motion";
+import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } from "remotion";
+import { snap, smoothEnter, gpuLayer, TIMING } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
 
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
@@ -24,22 +24,12 @@ export const IntroScene: React.FC = () => {
 
   /** Slide ferme OU spring bouncy selon style. Renvoie {t, y}. */
   const enter = (delay: number, dur: number, fromY: number) => {
-    if (useSpring) {
-      const sp = spring({
-        frame: frame - delay * mul, fps,
-        config: { damping: 12, stiffness: 110 },
-        durationInFrames: Math.round(dur * mul),
-      });
-      const t = clamp(sp);
-      return { t, y: snap(interpolate(t, [0, 1], [fromY, 0])) };
-    }
-    const t = ease((frame - delay * mul) / (dur * mul));
-    return { t, y: snap(interpolate(t, [0, 1], [fromY, 0])) };
+    return smoothEnter({ frame, fps, delay, duration: dur, from: fromY, multiplier: mul, easing: ease, springEnabled: useSpring });
   };
 
   // Bloc noir / bandes — uniquement layouts non-centered
   const isCentered = s.intro.layout === "centered";
-  const blockEnter = enter(0, 14, -440);
+  const blockEnter = enter(TIMING.rail.in, 14, -440);
   const blockX = isCentered ? 0 : -440 + blockEnter.y + 440; // = blockEnter.y bounded
   const actualBlockX = isCentered ? 0 : snap(interpolate(blockEnter.t, [0, 1], [-440, 0]));
 
@@ -47,17 +37,17 @@ export const IntroScene: React.FC = () => {
   const stripeT = (i: number) =>
     clamp(ease((frame - (4 + i * 4) * mul) / (18 * mul)));
 
-  const eye = enter(14, 8, 18);
+  const eye = enter(TIMING.eyebrow.in, 8, 18);
   const heroFontKey = s.intro.heroFont;
   const heroFamily = heroFontKey === "body" ? s.fonts.body : s.fonts.display;
 
   // Multi-lignes ou single-line
   const heroLines = s.intro.heroLines.map((txt, i) =>
-    ({ txt, line: enter(18 + i * 6, 12, 80) })
+    ({ txt, line: enter(TIMING.heroDelay + 8 + i * 6, 12, 80) })
   );
 
-  const counter = enter(38, 12, 0);
-  const ruleW = snap(interpolate(clamp(ease((frame - 22 * mul) / (16 * mul))), [0, 1], [0, 380]));
+  const counter = enter(TIMING.ctaIn, 12, 0);
+  const ruleW = snap(interpolate(clamp(ease((frame - TIMING.secondaryDelay * mul) / (16 * mul))), [0, 1], [0, 380]));
 
   const now = new Date();
   const dateLabel = `${String(now.getDate()).padStart(2, "0")}.${String(now.getMonth() + 1).padStart(2, "0")}.${String(now.getFullYear()).slice(-2)}`;

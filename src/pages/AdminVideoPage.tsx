@@ -431,8 +431,7 @@ function drawContainImage(ctx: CanvasRenderingContext2D, img: HTMLImageElement |
 //   0) Bypass si image déjà transparente (PNG ecommerce)
 //   1) Sample 4 coins → fond moyen, variance, luminance
 //   2) Bypass si variance > 60 OU fond sombre (lifestyle)
-//   3) Bypass si fond ultra-propre (variance < 6, lum > 245) — multiply
-//      sera plus chic qu'un cutout qui crée un micro-halo
+//   3) Fond clair, même uniforme : masque alpha réel, jamais multiply
 //   4) Flood-fill BFS depuis les bords
 //   5) Edge-aware feathering : on n'éteint un pixel candidat que si
 //      ≥ N voisins sont eux aussi candidats fond → stoppe les nuages
@@ -506,12 +505,8 @@ function getCutout(img: HTMLImageElement): HTMLCanvasElement | HTMLImageElement 
       return c;
     }
 
-    // ── 3) Bypass : fond ultra-propre → laisse multiply gérer ─────
-    if (variance < 6 && bgLum > 245) {
-      (c as any).__cleanWhite = true;
-      cutoutCache.set(img, c);
-      return c;
-    }
+    // Un fond blanc propre passe aussi par le masque alpha : `multiply`
+    // conservait les ombres JPEG et créait un rectangle sur le papier ivoire.
 
     // ── 4) Flood-fill BFS ────────────────────────────────────────
     const veryLight = bgLum > 220;
@@ -1263,7 +1258,6 @@ export function drawDealFullScreen(
     const iy = stageY + (stageH - drawH) / 2 + slideIn + slideOut;
 
     const cut = getCutout(img);
-    const cleanWhite       = !!(cut as any).__cleanWhite;
     const alreadyTransparent = !!(cut as any).__alreadyTransparent;
     const avgLum           = (cut as any).__avgLum ?? 128;
     const isProductLight   = avgLum > 195;
@@ -1277,17 +1271,7 @@ export function drawDealFullScreen(
       drawContainImage(ctx, img, ix, iy, drawW, drawH);
       clearShadow(ctx);
 
-    // ─── CAS 2 — Studio blanc ultra-propre + fond paper ──────────
-    // Multiply : le blanc du shooting fond exactement dans le papier.
-    // Zéro halo, zéro contour, zéro perte de pixel sombre.
-    } else if (cleanWhite && (activePresetName === "paper" || activePresetName === "zara" || activePresetName === "adidas" || activePresetName === "nike" || activePresetName === "ivoire")) {
-      ctx.save();
-      ctx.globalAlpha = alphaK;
-      ctx.globalCompositeOperation = "multiply";
-      drawContainImage(ctx, img, ix, iy, drawW, drawH);
-      ctx.restore();
-
-    // ─── CAS 3 — Fond hétérogène / sombre / cutout calculé ───────
+    // ─── CAS 2 — Fond studio détouré ou image lifestyle ──────────
     } else {
       // Halo doux derrière les produits clairs pour la lisibilité
       if (isProductLight) {
@@ -1321,23 +1305,7 @@ export function drawDealFullScreen(
       drawContainImage(ctx, cut, ix, iy, drawW, drawH);
       clearShadow(ctx);
 
-      // Contour silhouette : SUPPRIMÉ par défaut (créait le liseré
-      // pixellisé). Réactivable opt-in uniquement pour adidas avec
-      // une intensité minimale (1 pixel, 25% d'opacité).
-      if (activePresetName === "adidas") {
-        const getSil = (cut as any).__getSilhouette as (() => HTMLCanvasElement) | undefined;
-        if (getSil) {
-          const sil = getSil();
-          ctx.save();
-          ctx.globalAlpha = alphaK * 0.25;
-          drawContainImage(ctx, sil, ix + 1, iy + 1, drawW, drawH);
-          ctx.restore();
-          ctx.save();
-          ctx.globalAlpha = alphaK;
-          drawContainImage(ctx, cut, ix, iy, drawW, drawH);
-          ctx.restore();
-        }
-      }
+      // Aucun contour artificiel : même traitement propre pour les trois styles.
 
       if (isProductLight) ctx.restore();
     }

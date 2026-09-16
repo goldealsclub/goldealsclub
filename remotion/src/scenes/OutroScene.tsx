@@ -6,8 +6,8 @@
  *  - "serif-fade"        (zara)   : fond paper, serif fin, beaucoup d'air
  *  - "kinetic-cuts"      (nike)   : fond ink, type ultra-condensé, bandes nettes
  */
-import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig, spring } from "remotion";
-import { snap, gpuLayer } from "../lib/motion";
+import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } from "remotion";
+import { snap, smoothEnter, gpuLayer, TIMING } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
 
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
@@ -21,25 +21,15 @@ export const OutroScene: React.FC = () => {
   const useSpring = s.motion.useSpring;
 
   const enter = (delay: number, dur: number, fromY: number) => {
-    if (useSpring) {
-      const sp = spring({
-        frame: frame - delay * mul, fps,
-        config: { damping: 12, stiffness: 110 },
-        durationInFrames: Math.round(dur * mul),
-      });
-      const t = clamp(sp);
-      return { t, y: snap(interpolate(t, [0, 1], [fromY, 0])) };
-    }
-    const t = ease((frame - delay * mul) / (dur * mul));
-    return { t, y: snap(interpolate(t, [0, 1], [fromY, 0])) };
+    return smoothEnter({ frame, fps, delay, duration: dur, from: fromY, multiplier: mul, easing: ease, springEnabled: useSpring });
   };
 
   const stripeT = (i: number) => clamp(ease((frame - (6 + i * 5) * mul) / (22 * mul)));
-  const eye = enter(14, 10, 0);
-  const hero = enter(18, 12, 70);
-  const sub = enter(26, 12, 70);
-  const ruleW = snap(interpolate(clamp(ease((frame - 38 * mul) / (16 * mul))), [0, 1], [0, 600]));
-  const url = enter(50, 14, 0);
+  const eye = enter(TIMING.eyebrow.in, 10, 0);
+  const hero = enter(TIMING.heroDelay, 12, 70);
+  const sub = enter(TIMING.secondaryDelay, 12, 70);
+  const ruleW = snap(interpolate(clamp(ease((frame - TIMING.ctaIn * mul) / (16 * mul))), [0, 1], [0, 600]));
+  const url = enter(TIMING.ctaOut, 14, 0);
 
   const isInkBg = s.outro.background === "ink";
   const bg = isInkBg ? s.ink : `linear-gradient(180deg, ${s.paper} 0%, ${s.paperDeep} 100%)`;

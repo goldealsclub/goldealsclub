@@ -120,7 +120,7 @@ function inferGender(genderField: string, description: string, title: string): G
   if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
 
   // Femme-specific patterns
-  const femmeKw = ["pour femme","pour fille","women","woman","wmns","w's ","ladies",
+  const femmeKw = ["pour femme"," femme "," femme,"," femmes ","pour fille"," fille ","women","woman","wmns","w's ","ladies","damen"," mujer "," donna ",
     "baby tee","bra ","brassière","legging","sports bra","sport bra","crop top",
     "cropped top","cropped ","crop ","mini skirt","mini jupe","dress ","bikini top",
     "yoga ","maternity","enceinte","low waist","hooded top","racer top","tank top wmn","wmn",
@@ -128,14 +128,14 @@ function inferGender(genderField: string, description: string, title: string): G
     "classic ultra mini","classic mini ","tazz","lowmel","funkette","tazzelle","disquette",
     "pipah","cora sand","goldenstar","scuffette","w disquette","w classic",
     " gls","pro sculpt","phoenix fleece","brooklyn fleece oversized",
-    "high-waisted"];
+    "high-waisted","jupe ","escarpin","ballerine","soutien-gorge","nuisette"];
   const femmeExclude = ["robe di kappa","dress shirt","stacked western"];
   if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
 
-  // Homme-specific patterns
-  if (combined.includes("pour homme") || combined.includes("pour garçon") || combined.includes("men's") || combined.includes("for men")) {
-    return "homme";
-  }
+  // Homme-specific patterns — seulement des signaux explicites
+  const hommeKw = ["pour homme"," homme "," homme,"," hommes ","pour garçon"," garçon "," garcon ",
+    "men's","for men"," herren "," mens "," male "," hombre "," uomo ","boxer homme","caleçon homme"];
+  if (hommeKw.some(k => combined.includes(k))) return "homme";
 
   const g = (genderField || "").toLowerCase();
   if (g === "homme" || g === "men") return "homme";
