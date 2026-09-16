@@ -245,7 +245,9 @@ export default function AdminVideosPage() {
         <Clapperboard className="h-7 w-7" /> Gestion des vidéos
       </h1>
       <p className="text-muted-foreground mb-6">
-        Une vidéo par direction artistique, générée en direct avec les offres du jour, puis publiée sur le site.
+        Une vidéo par direction artistique, produite par le moteur de rendu officiel (le même script
+        et les mêmes réglages que la génération automatique), puis publiée sur le site.
+
       </p>
 
       {brief && brief.deals.length > 0 && (
