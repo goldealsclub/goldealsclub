@@ -9,6 +9,7 @@ interface FavoritesContextType {
   toggle: (id: string) => void;
   isFav: (id: string) => boolean;
   loading: boolean;
+  refresh: () => Promise<void>;
 }
 
 const STORAGE_KEY = "goldeals-favorites";
