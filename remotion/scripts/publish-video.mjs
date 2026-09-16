@@ -75,16 +75,21 @@ const callFn = async (payload) => {
     body: JSON.stringify(payload),
   });
   const body = await res.json().catch(() => ({}));
-  if (!res.ok) {
-    console.error(`❌ publish-generated-video [${res.status}]`, body);
-    process.exit(1);
-  }
-  return body;
+  return { ok: res.ok, status: res.status, body };
 };
 
-const upload = async (storagePath, upsert, fatal = true) => {
-  const { signedUrl } = await callFn({ action: "sign", path: storagePath });
-  const up = await fetch(signedUrl, {
+const upload = async (storagePath, { upsert = false, fatal = true } = {}) => {
+  const sign = await callFn({ action: "sign", path: storagePath, upsert });
+  if (!sign.ok || !sign.body.signedUrl) {
+    const details = `sign [${sign.status}] ${JSON.stringify(sign.body)}`;
+    if (!fatal) {
+      console.warn(`⚠️ Upload alias ignoré — ${details}`);
+      return;
+    }
+    console.error(`❌ ${details}`);
+    process.exit(1);
+  }
+  const up = await fetch(sign.body.signedUrl, {
     method: "PUT",
     headers: { "Content-Type": "video/mp4", ...(upsert ? { "x-upsert": "true" } : {}) },
     body: buffer,
@@ -100,9 +105,9 @@ const upload = async (storagePath, upsert, fatal = true) => {
   }
 };
 
-await upload(remoteName, false);
+await upload(remoteName);
 // Alias stable par style (URL fixe partageable) — non bloquant
-await upload(`latest-${style}.mp4`, true, false);
+await upload(`latest-${style}.mp4`, { upsert: true, fatal: false });
 
 const { video } = await callFn({
   action: "finalize",
