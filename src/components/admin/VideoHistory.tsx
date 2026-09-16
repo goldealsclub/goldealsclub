@@ -42,6 +42,7 @@ export default function VideoHistory({ limit, compact }: Props) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [date, setDate] = useState<string>("");
+  const [styleFilter, setStyleFilter] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
@@ -70,6 +71,7 @@ export default function VideoHistory({ limit, compact }: Props) {
     const q = search.trim().toLowerCase();
     let out = rows.filter((r) => {
       if (category !== "all" && r.category !== category) return false;
+      if (styleFilter !== "all" && (r.style ?? "") !== styleFilter) return false;
       if (date && r.brief_date !== date) return false;
       if (q && !`${r.label} ${r.category} ${r.caption} ${r.hashtags}`.toLowerCase().includes(q))
         return false;
@@ -77,7 +79,8 @@ export default function VideoHistory({ limit, compact }: Props) {
     });
     if (limit) out = out.slice(0, limit);
     return out;
-  }, [rows, search, category, date, limit]);
+  }, [rows, search, category, styleFilter, date, limit]);
+
 
   const handleDelete = async (item: VideoRow) => {
     if (!confirm(`Supprimer "${item.label}" du ${item.brief_date} ?`)) return;
