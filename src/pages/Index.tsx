@@ -10,6 +10,7 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import BackToTop from "@/components/BackToTop";
 import RecentlyViewed from "@/components/RecentlyViewed";
+import PublishedVideos from "@/components/PublishedVideos";
 import BrandBanner from "@/components/BrandBanner";
 import WorldCupBanner from "@/components/WorldCupBanner";
 import hero1 from "@/assets/hero-1.jpg";
