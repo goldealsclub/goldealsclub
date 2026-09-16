@@ -139,7 +139,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const isFav = useCallback((id: string) => favorites.has(id), [favorites]);
 
   return (
-    <FavoritesContext.Provider value={{ favorites, toggle, isFav, loading }}>
+    <FavoritesContext.Provider value={{ favorites, toggle, isFav, loading, refresh: loadFromDb }}>
       {children}
     </FavoritesContext.Provider>
   );
