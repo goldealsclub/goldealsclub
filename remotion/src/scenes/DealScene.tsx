@@ -50,11 +50,13 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   // Produit
   const img = enter(TIMING.imageDelay, 18, 0);
   const imgScale = smooth(interpolate(img.t, [0, 1], [0.96, 1]));
-  const kenZoom = smooth(interpolate(frame, [0, 130], [1.0, 1.035], { extrapolateRight: "clamp" }));
-  const kenPanX = smooth(interpolate(frame, [0, 130], [-3, 3], { extrapolateRight: "clamp" }));
+  // Le drift se termine avant la phase stable QA : aucun mouvement perpétuel
+  // du packshot, donc pas de vibration pendant la lecture du prix.
+  const kenZoom = smooth(interpolate(frame, [0, 68], [1.0, 1.025], { extrapolateRight: "clamp" }));
+  const kenPanX = smooth(interpolate(frame, [0, 68], [-2, 2], { extrapolateRight: "clamp" }));
   // Wordmark ghost
   const ghostT = clamp(ease((frame - 6 * mul) / (22 * mul)));
-  const ghostX = smooth(interpolate(frame, [0, 130], [-6, 6], { extrapolateRight: "clamp" }));
+  const ghostX = smooth(interpolate(frame, [0, 68], [-4, 4], { extrapolateRight: "clamp" }));
   // Titre
   const title = enter(TIMING.secondaryDelay, 14, 20);
   // Prix
