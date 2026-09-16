@@ -45,12 +45,6 @@ jobs:
         working-directory: remotion
         run: npm install --no-audit --no-fund --force
 
-      - name: Write .env for the script
-        if: ${{ env.skip != 'true' }}
-        run: |
-          echo "VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
-          echo "VITE_SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" >> .env
-
       - name: Generate video (${{ matrix.style }})
         if: ${{ env.skip != 'true' }}
         working-directory: remotion
