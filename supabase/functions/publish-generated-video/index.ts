@@ -49,6 +49,27 @@ serve(async (req) => {
       /^latest-(adidas|zara|nike)\.mp4$/.test(path);
     if (!ok) return json({ error: "invalid_path" }, 400);
 
+    const upsert = body.upsert === true;
+    if (upsert) {
+      // Les URLs signées "upload" acceptent le remplacement d'un objet existant.
+      try {
+        const signed = await supabase.storage
+          .from(BUCKET)
+          .createUploadSignedUrl(path, { upsert: true });
+        if (!signed.error && signed.data) {
+          return json({
+            path,
+            signedUrl: signed.data.signedUrl,
+            token: signed.data.token,
+          });
+        }
+      } catch {
+        // méthode indisponible dans cette version du SDK : on passe au secours
+      }
+      // Secours : on supprime l'ancien objet avant de renégocier une URL.
+      await supabase.storage.from(BUCKET).remove([path]);
+    }
+
     const { data, error } = await supabase.storage
       .from(BUCKET)
       .createSignedUploadUrl(path);
