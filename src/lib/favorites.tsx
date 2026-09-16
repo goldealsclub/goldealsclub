@@ -9,6 +9,7 @@ interface FavoritesContextType {
   toggle: (id: string) => void;
   isFav: (id: string) => boolean;
   loading: boolean;
+  refresh: () => Promise<void>;
 }
 
 const STORAGE_KEY = "goldeals-favorites";
@@ -32,6 +33,7 @@ const FavoritesContext = createContext<FavoritesContextType>({
   toggle: () => {},
   isFav: () => false,
   loading: false,
+  refresh: async () => {},
 });
 
 export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -39,6 +41,37 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const [favorites, setFavorites] = useState<Set<string>>(loadLocalFavorites);
   const [loading, setLoading] = useState(false);
   const syncedRef = useRef(false);
+
+  const loadFromDb = useCallback(async () => {
+    if (!user) return;
+    setLoading(true);
+    const { data, error } = await supabase
+      .from("favorites")
+      .select("deal_id")
+      .eq("user_id", user.id);
+
+    if (!error && data) {
+      const dbFavs = new Set(data.map((r) => r.deal_id));
+
+      // On first login, merge localStorage favorites into DB
+      if (!syncedRef.current) {
+        const localFavs = loadLocalFavorites();
+        const toSync = [...localFavs].filter((id) => !dbFavs.has(id));
+        if (toSync.length > 0) {
+          await supabase
+            .from("favorites")
+            .insert(toSync.map((deal_id) => ({ user_id: user.id, deal_id })));
+          toSync.forEach((id) => dbFavs.add(id));
+        }
+        // Clear localStorage after merge
+        localStorage.removeItem(STORAGE_KEY);
+        syncedRef.current = true;
+      }
+
+      setFavorites(dbFavs);
+    }
+    setLoading(false);
+  }, [user]);
 
   // Load favorites from DB when user logs in
   useEffect(() => {
@@ -48,39 +81,23 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
       setFavorites(loadLocalFavorites());
       return;
     }
-
-    const loadFromDb = async () => {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from("favorites")
-        .select("deal_id")
-        .eq("user_id", user.id);
-
-      if (!error && data) {
-        const dbFavs = new Set(data.map((r) => r.deal_id));
-
-        // On first login, merge localStorage favorites into DB
-        if (!syncedRef.current) {
-          const localFavs = loadLocalFavorites();
-          const toSync = [...localFavs].filter((id) => !dbFavs.has(id));
-          if (toSync.length > 0) {
-            await supabase
-              .from("favorites")
-              .insert(toSync.map((deal_id) => ({ user_id: user.id, deal_id })));
-            toSync.forEach((id) => dbFavs.add(id));
-          }
-          // Clear localStorage after merge
-          localStorage.removeItem(STORAGE_KEY);
-          syncedRef.current = true;
-        }
-
-        setFavorites(dbFavs);
-      }
-      setLoading(false);
-    };
-
     loadFromDb();
-  }, [user]);
+  }, [user, loadFromDb]);
+
+  // Keep the list in sync when it changes elsewhere (other device, agent via MCP)
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`favorites-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "favorites", filter: `user_id=eq.${user.id}` },
+        () => { loadFromDb(); },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [user, loadFromDb]);
+
 
   const toggle = useCallback(
     async (id: string) => {
@@ -122,7 +139,7 @@ export const FavoritesProvider: React.FC<{ children: React.ReactNode }> = ({ chi
   const isFav = useCallback((id: string) => favorites.has(id), [favorites]);
 
   return (
-    <FavoritesContext.Provider value={{ favorites, toggle, isFav, loading }}>
+    <FavoritesContext.Provider value={{ favorites, toggle, isFav, loading, refresh: loadFromDb }}>
       {children}
     </FavoritesContext.Provider>
   );

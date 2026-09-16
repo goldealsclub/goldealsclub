@@ -213,14 +213,14 @@ export type Deal = {
 };
 
 
-type Selection = {
+export type Selection = {
   type: "selection";
   category: string;
   label: string;
   deals: Deal[];
 };
 
-type Brief = {
+export type Brief = {
   brief_date: string;
   focus_brand: string;
   deals: Selection[];
@@ -230,11 +230,11 @@ type Brief = {
 
 export const W = 1080;
 export const H = 1920;
-const FPS = 60;                     // 60 fps → mouvement perçu parfaitement fluide (mobile)
-const MAX_TOTAL_SEC = 60;           // plafond global 60 s (Reels / Stories)
-const PER_DEAL_SEC = 4.2;          // produit affiché 4.2s — laisse respirer + crossfade ample
-const INTRO = 2.2;
-const OUTRO = 2.6;
+export const FPS = 60;              // 60 fps → mouvement perçu parfaitement fluide (mobile)
+export const MAX_TOTAL_SEC = 60;    // plafond global 60 s (Reels / Stories)
+export const PER_DEAL_SEC = 4.2;    // produit affiché 4.2s — laisse respirer + crossfade ample
+export const INTRO = 2.2;
+export const OUTRO = 2.6;
 
 // ─── PRESETS DE FOND ───
 export type BgPreset = "paper" | "zara" | "charcoal" | "ivoire" | "adidas" | "nike";
@@ -1340,7 +1340,7 @@ export function drawDealFullScreen(
   ctx.globalAlpha = 1;
 }
 
-function drawSelectionFrame(
+export function drawSelectionFrame(
   ctx: CanvasRenderingContext2D,
   t: number,
   selection: Selection,

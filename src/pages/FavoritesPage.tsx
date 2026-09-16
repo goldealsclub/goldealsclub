@@ -4,22 +4,31 @@ import { deals } from "@/lib/data";
 import DealCard from "@/components/DealCard";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
-import { Heart } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Heart, RefreshCw } from "lucide-react";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
 
 const FavoritesPage = () => {
   const { t } = useI18n();
-  const { favorites } = useFavorites();
+  const { favorites, loading, refresh } = useFavorites();
 
   const favDeals = deals.filter((d) => favorites.has(d.id));
-  useLoadVotes(favDeals.map(d => d.id));
+  useLoadVotes(favDeals.map((d) => d.id));
 
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="container mx-auto px-4 py-12">
-        <h1 className="font-display text-3xl md:text-4xl tracking-wider mb-2">{t.favorites}</h1>
-        <p className="font-body text-xs text-foreground/50 mb-8">{favDeals.length} deals</p>
+        <div className="flex items-start justify-between gap-4 mb-8">
+          <div>
+            <h1 className="font-display text-3xl md:text-4xl tracking-wider mb-2">{t.favorites}</h1>
+            <p className="font-body text-xs text-foreground/50">{favDeals.length} deals</p>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => refresh()} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            Actualiser
+          </Button>
+        </div>
 
         {favDeals.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-24 text-center">

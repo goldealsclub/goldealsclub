@@ -31,6 +31,7 @@ import ProfilePage from "./pages/ProfilePage";
 import NotFound from "./pages/NotFound";
 import AdminDashboard from "./pages/AdminDashboard";
 import AdminVideoPage from "./pages/AdminVideoPage";
+import AdminVideosPage from "./pages/AdminVideosPage";
 import AdminVideoHistoryPage from "./pages/AdminVideoHistoryPage";
 import AdminVideoQAPage from "./pages/AdminVideoQAPage";
 import AdminCardsQAPage from "./pages/AdminCardsQAPage";
@@ -100,6 +101,7 @@ const App = () => (
                 <Route path="/terms" element={<TermsPage />} />
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/video" element={<AdminVideoPage />} />
+                <Route path="/admin/videos" element={<AdminVideosPage />} />
                 <Route path="/admin/video/historique" element={<AdminVideoHistoryPage />} />
                 <Route path="/admin/video-qa" element={<AdminVideoQAPage />} />
                 <Route path="/admin/cards-qa" element={<AdminCardsQAPage />} />

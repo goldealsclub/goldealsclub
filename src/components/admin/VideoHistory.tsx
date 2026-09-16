@@ -24,6 +24,9 @@ type VideoRow = {
   size_bytes: number | null;
   duration_sec: number | null;
   images_loaded: number | null;
+  style: string | null;
+  is_published: boolean | null;
+  published_at: string | null;
   created_at: string;
 };
 
@@ -39,6 +42,7 @@ export default function VideoHistory({ limit, compact }: Props) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("all");
   const [date, setDate] = useState<string>("");
+  const [styleFilter, setStyleFilter] = useState<string>("all");
 
   const load = async () => {
     setLoading(true);
@@ -67,6 +71,7 @@ export default function VideoHistory({ limit, compact }: Props) {
     const q = search.trim().toLowerCase();
     let out = rows.filter((r) => {
       if (category !== "all" && r.category !== category) return false;
+      if (styleFilter !== "all" && (r.style ?? "") !== styleFilter) return false;
       if (date && r.brief_date !== date) return false;
       if (q && !`${r.label} ${r.category} ${r.caption} ${r.hashtags}`.toLowerCase().includes(q))
         return false;
@@ -74,7 +79,8 @@ export default function VideoHistory({ limit, compact }: Props) {
     });
     if (limit) out = out.slice(0, limit);
     return out;
-  }, [rows, search, category, date, limit]);
+  }, [rows, search, category, styleFilter, date, limit]);
+
 
   const handleDelete = async (item: VideoRow) => {
     if (!confirm(`Supprimer "${item.label}" du ${item.brief_date} ?`)) return;
@@ -90,10 +96,11 @@ export default function VideoHistory({ limit, compact }: Props) {
   const resetFilters = () => {
     setSearch("");
     setCategory("all");
+    setStyleFilter("all");
     setDate("");
   };
 
-  const hasFilters = search || category !== "all" || date;
+  const hasFilters = search || category !== "all" || styleFilter !== "all" || date;
 
   return (
     <div>
@@ -118,6 +125,17 @@ export default function VideoHistory({ limit, compact }: Props) {
                 {c}
               </SelectItem>
             ))}
+          </SelectContent>
+        </Select>
+        <Select value={styleFilter} onValueChange={setStyleFilter}>
+          <SelectTrigger className="w-[150px]">
+            <SelectValue placeholder="Style" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les styles</SelectItem>
+            <SelectItem value="adidas">Adidas</SelectItem>
+            <SelectItem value="zara">Zara</SelectItem>
+            <SelectItem value="nike">Nike</SelectItem>
           </SelectContent>
         </Select>
         <Input
@@ -166,6 +184,22 @@ export default function VideoHistory({ limit, compact }: Props) {
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-bold uppercase">{item.category}</span>
                 <span className="text-xs text-muted-foreground">{item.brief_date}</span>
+              </div>
+              <div className="flex items-center gap-1 mb-1">
+                {item.style && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider bg-muted text-foreground/70">
+                    {item.style}
+                  </span>
+                )}
+                <span
+                  className={`px-1.5 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider ${
+                    item.is_published
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {item.is_published ? "Publiée" : "Brouillon"}
+                </span>
               </div>
               {(item.images_loaded ?? 2) < 2 && (
                 <span
