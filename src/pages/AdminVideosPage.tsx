@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
 import VideoHistory from "@/components/admin/VideoHistory";
-import { renderStyleVideo } from "@/lib/video/render";
+
 import type { BgPreset, Brief } from "@/pages/AdminVideoPage";
 import {
   ArrowLeft,
@@ -63,7 +63,7 @@ export default function AdminVideosPage() {
   const [status, setStatus] = useState("");
   const [publishAt, setPublishAt] = useState<Record<string, string>>({});
   const [historyKey, setHistoryKey] = useState(0);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
 
   useEffect(() => {
     document.title = "Gestion des vidéos — Admin";
@@ -127,37 +127,61 @@ export default function AdminVideosPage() {
     setLoading(false);
   };
 
+  /**
+   * Lance le rendu officiel : même script Remotion et mêmes paramètres que
+   * la génération automatique quotidienne (aucun rendu navigateur).
+   */
   const generate = async (style: BgPreset) => {
-    const selection = brief?.deals?.[categoryIdx];
-    if (!selection || !canvasRef.current) {
-      toast({ title: "Aucune sélection disponible", variant: "destructive" });
-      return;
-    }
     setBusyStyle(style);
     setProgress(0);
-    setStatus("Préparation…");
+    setStatus("Lancement du rendu Remotion…");
+    const before = latest[style]?.id ?? null;
     try {
-      await renderStyleVideo({
-        canvas: canvasRef.current,
-        selection,
-        preset: style,
-        style,
-        briefDate: brief!.brief_date,
-        caption: brief!.caption,
-        hashtags: brief!.hashtags,
-        onProgress: setProgress,
-        onStatus: setStatus,
+      const { data, error } = await supabase.functions.invoke("trigger-remotion-render", {
+        body: { style },
       });
-      toast({ title: `Vidéo ${style} générée ✓` });
+      if (error) throw error;
+      if ((data as any)?.error) throw new Error((data as any).message || (data as any).error);
+
+      toast({
+        title: `Rendu ${style} lancé`,
+        description: "La vidéo apparaîtra ici automatiquement à la fin du rendu (~5–15 min).",
+      });
+
+      // Attente passive : on interroge la base jusqu'à l'apparition d'une
+      // nouvelle vidéo pour ce style (max 25 min).
+      setStatus("Rendu en cours sur le serveur…");
+      const deadline = Date.now() + 25 * 60 * 1000;
+      while (Date.now() < deadline) {
+        await new Promise((r) => setTimeout(r, 20_000));
+        const { data: rows } = await supabase
+          .from("generated_videos" as any)
+          .select("id")
+          .eq("style", style)
+          .order("created_at", { ascending: false })
+          .limit(1);
+        const newest = (rows as any[])?.[0]?.id ?? null;
+        if (newest && newest !== before) {
+          toast({ title: `Vidéo ${style} disponible ✓` });
+          break;
+        }
+        setProgress((p) => Math.min(95, p + 4));
+      }
       await loadLatest();
       setHistoryKey((k) => k + 1);
     } catch (e: any) {
-      toast({ title: "Échec du rendu", description: e?.message || String(e), variant: "destructive" });
+      toast({
+        title: "Échec du lancement",
+        description: e?.message || String(e),
+        variant: "destructive",
+      });
     } finally {
       setBusyStyle(null);
       setStatus("");
+      setProgress(0);
     }
   };
+
 
   const publish = async (row: VideoRow, styleId: string) => {
     const local = publishAt[styleId];
@@ -221,7 +245,9 @@ export default function AdminVideosPage() {
         <Clapperboard className="h-7 w-7" /> Gestion des vidéos
       </h1>
       <p className="text-muted-foreground mb-6">
-        Une vidéo par direction artistique, générée en direct avec les offres du jour, puis publiée sur le site.
+        Une vidéo par direction artistique, produite par le moteur de rendu officiel (le même script
+        et les mêmes réglages que la génération automatique), puis publiée sur le site.
+
       </p>
 
       {brief && brief.deals.length > 0 && (
@@ -256,7 +282,7 @@ export default function AdminVideosPage() {
         </div>
       )}
 
-      <canvas ref={canvasRef} className="hidden" />
+      
 
       <div className="grid gap-4 md:grid-cols-3 mb-10">
         {STYLES.map((s) => {
@@ -305,7 +331,7 @@ export default function AdminVideosPage() {
                 <Button
                   size="sm"
                   onClick={() => generate(s.id)}
-                  disabled={busyStyle !== null || !brief}
+                  disabled={busyStyle !== null}
                 >
                   {busy ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
                   {row ? "Régénérer" : "Générer"}
