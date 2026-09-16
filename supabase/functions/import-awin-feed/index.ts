@@ -132,19 +132,34 @@ function inferCategory(category: string, title: string): string {
   return "autres";
 }
 
+// Produits hors-sujet (mode/streetwear) présents dans certains flux Awin
+// (pêche, nutrition, matériel technique, maison…). Ils polluent le catalogue
+// et doivent être rejetés dès l'import.
+const OFF_TOPIC_RE =
+  /(hame[çc]on|plomb[s]? |plombs\b|amor[çc]age|bouillette|boilie|appât|appat|leurre|canne à p[êe]che|moulinet|bas de ligne|t[êe]te plomb[ée]e|p[êc]he\b|carpe\b|carp\b|fishing|rod pod|épuisette|bivvy|fluorocarbon|tresse de p[êe]che|nasse|flotteur\b|émerillon|emerillon|swivel\b|hookbait|pellet[s]?\b|pva\b|method feeder|cage feeder)/i;
+const OFF_TOPIC_RE2 =
+  /(prot[ée]ine en poudre|whey\b|cr[ée]atine|gainer\b|barre [ée]nerg[ée]tique|gel [ée]nerg[ée]tique|compl[ée]ment alimentaire|vitamine[s]?\b|boisson isotonique|shaker\b)/i;
+
+export function isOffTopic(title: string, category: string, description: string): boolean {
+  const all = ` ${(title || "")} ${(category || "")} ${(description || "").slice(0, 300)} `;
+  return OFF_TOPIC_RE.test(all) || OFF_TOPIC_RE2.test(all);
+}
+
 function inferGender(title: string, description: string, productCategory: string): string {
   const combined = ` ${(description || "").toLowerCase()} ${(title || "").toLowerCase()} ${(productCategory || "").toLowerCase()} `;
 
-  const enfantKw = [" enfant","enfants","kids","junior","bébé","toddler","infant","youth","kinder"," boy "," girl "];
+  const enfantKw = [" enfant","enfants","kids","junior","bébé","toddler","infant","youth","kinder"," boy "," girl ",
+     " garçon"," garcon"," fille ","(gs)","(ps)","(td)"," jr "," gs)"," cadet","juniors"];
   const enfantExclude = ["baby tee","junior mesure"];
   if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
 
-  const femmeKw = ["pour femme","femmes","women","woman","wmns","w's ","ladies","damen",
+  const femmeKw = ["pour femme"," femme ", " femme,", "femmes","women","woman","wmns","w's ","ladies","damen",
     "baby tee","bra ","brassière","legging","sports bra","crop top","cropped","mini skirt","mini jupe","robe ","dress ","bikini","yoga","wide leg","high rise","ribbed tank"];
   const femmeExclude = ["dress shirt"];
   if (femmeKw.some(k => combined.includes(k)) && !femmeExclude.some(k => combined.includes(k))) return "femme";
 
-  if (combined.includes("pour homme") || combined.includes("hommes") || combined.includes("men's") || combined.includes("for men") || combined.includes(" herren")) return "homme";
+  const hommeKw = ["pour homme"," homme ", " homme,", "hommes","men's","for men"," herren"," mens "," male "];
+  if (hommeKw.some(k => combined.includes(k))) return "homme";
 
   return "unisexe";
 }
@@ -273,7 +288,7 @@ Deno.serve(async (req) => {
     let headers: string[] | null = null;
     let rowCount = 0;
     let kept = 0;
-    let skippedNoImage = 0, skippedNoPrice = 0, skippedOutOfStock = 0, skippedNoTitle = 0;
+    let skippedNoImage = 0, skippedNoPrice = 0, skippedOutOfStock = 0, skippedNoTitle = 0, skippedOffTopic = 0;
     const importedIds = new Set<string>();
     let buffer: Record<string, any>[] = [];
     const BATCH_SIZE = 250;
@@ -354,6 +369,11 @@ Deno.serve(async (req) => {
 
       const title = (r.product_name || "").trim();
       if (!title) { skippedNoTitle++; continue; }
+      if (isOffTopic(title, r.merchant_category || r.category_name || "", r.description || "")) {
+        skippedOffTopic++;
+        continue;
+      }
+
 
       const merchant = (r.merchant_name || "").trim() || "Awin";
       const brand = cleanBrand(r.brand_name || "", merchant);
@@ -436,7 +456,7 @@ Deno.serve(async (req) => {
       total_rows: rowCount,
       imported: kept,
       deleted_stale: deleted,
-      skipped: { no_image: skippedNoImage, no_price: skippedNoPrice, out_of_stock: skippedOutOfStock, no_title: skippedNoTitle },
+      skipped: { no_image: skippedNoImage, no_price: skippedNoPrice, out_of_stock: skippedOutOfStock, no_title: skippedNoTitle, off_topic: skippedOffTopic },
     };
     console.log("🎉 Done:", JSON.stringify(result));
 

@@ -1,10 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, forwardRef } from "react";
 import { Bell, BellOff, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 
-const AlertPreferences = () => {
+const AlertPreferences = forwardRef<HTMLButtonElement>((_props, ref) => {
   const { user } = useAuth();
   const [enabled, setEnabled] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -67,6 +67,7 @@ const AlertPreferences = () => {
 
   return (
     <button
+      ref={ref}
       onClick={toggle}
       disabled={saving}
       className={`flex items-center gap-1.5 p-1.5 md:px-3 md:py-1.5 text-[10px] font-display uppercase tracking-[0.15em] border transition-all ${
@@ -86,6 +87,8 @@ const AlertPreferences = () => {
       <span className="hidden md:inline">{enabled ? "Alertes ON" : "Alertes OFF"}</span>
     </button>
   );
-};
+});
+
+AlertPreferences.displayName = "AlertPreferences";
 
 export default AlertPreferences;
