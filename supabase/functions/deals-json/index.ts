@@ -85,8 +85,10 @@ Deno.serve(async (req) => {
       headers: {
         ...corsHeaders,
         "Content-Type": "application/json",
-        // 5-minute CDN cache; stale-while-revalidate keeps responses snappy
-        "Cache-Control": "public, max-age=300, s-maxage=300, stale-while-revalidate=600",
+        // 15-minute CDN cache + 1 h stale-while-revalidate : le catalogue ne
+        // change qu'aux imports (3 h/6 h), donc la quasi-totalité des visiteurs
+        // est servie depuis le CDN au lieu d'attendre le calcul complet.
+        "Cache-Control": "public, max-age=600, s-maxage=900, stale-while-revalidate=3600",
       },
     });
   } catch (err) {

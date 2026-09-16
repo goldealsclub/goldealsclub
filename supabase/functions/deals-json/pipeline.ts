@@ -13,6 +13,17 @@ export const PROTECTED_MERCHANTS = [
 ];
 
 export const PER_MERCHANT_CAP = 2500;
+
+/**
+ * Plafonds spécifiques. Snipes EU réimporte plusieurs fois le même produit
+ * par jour : sur les 2500 lignes les plus récentes, seules ~17 % portent un
+ * prix barré (40 % sur l'ensemble du flux) et la dédup n'en garde que ~510
+ * produits uniques. On élargit donc sa fenêtre pour retrouver le catalogue
+ * réel et les prix barrés.
+ */
+export const MERCHANT_CAPS: Record<string, number> = {
+  "Snipes EU": 6000,
+};
 export const PAGE = 1000;
 export const RECENT_DISCOVERY_LIMIT = 5000;
 
@@ -132,8 +143,9 @@ export async function runPipeline(
   const seenIds = new Set<string>();
 
   for (const merchant of merchants) {
-    for (let from = 0; from < cap; from += page) {
-      const to = Math.min(from + page, cap) - 1;
+    const merchantCap = MERCHANT_CAPS[merchant] ?? cap;
+    for (let from = 0; from < merchantCap; from += page) {
+      const to = Math.min(from + page, merchantCap) - 1;
       const rows = await repo.pageForMerchant(merchant, from, to);
       if (!rows || rows.length === 0) break;
       for (const r of rows) {
