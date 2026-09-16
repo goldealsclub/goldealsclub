@@ -1,6 +1,7 @@
 // Déclenche le rendu vidéo officiel (pipeline Remotion) via GitHub Actions.
 // Le site n'exécute plus de rendu navigateur : on lance exactement le même
 // script et les mêmes paramètres que le rendu automatique quotidien.
+// L'appel GitHub passe par le connecteur (gateway) : aucun token à gérer.
 import { corsHeaders, requireAdminOrService } from "../_shared/auth.ts";
 
 const json = (status: number, body: unknown) =>
@@ -15,12 +16,19 @@ Deno.serve(async (req) => {
   const auth = await requireAdminOrService(req);
   if (!auth.ok) return auth.response;
 
-  const token = Deno.env.get("GITHUB_DISPATCH_TOKEN");
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  const GITHUB_API_KEY = Deno.env.get("GITHUB_API_KEY");
   const repo = Deno.env.get("GITHUB_REPO"); // format "owner/repo"
-  if (!token || !repo) {
+  if (!LOVABLE_API_KEY || !GITHUB_API_KEY) {
+    return json(400, {
+      error: "missing_connection",
+      message: "La connexion GitHub n'est pas liée au projet.",
+    });
+  }
+  if (!repo) {
     return json(400, {
       error: "missing_config",
-      message: "GITHUB_DISPATCH_TOKEN et GITHUB_REPO doivent être configurés.",
+      message: "GITHUB_REPO doit être configuré (format owner/repo).",
     });
   }
 
@@ -37,15 +45,15 @@ Deno.serve(async (req) => {
   const workflow = "daily-tiktok-video.yml";
 
   const res = await fetch(
-    `https://api.github.com/repos/${repo}/actions/workflows/${workflow}/dispatches`,
+    `https://connector-gateway.lovable.dev/github/repos/${repo}/actions/workflows/${workflow}/dispatches`,
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        "X-Connection-Api-Key": GITHUB_API_KEY,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         "Content-Type": "application/json",
-        "User-Agent": "goldeals-video-trigger",
       },
       body: JSON.stringify({ ref, inputs: { style } }),
     },
