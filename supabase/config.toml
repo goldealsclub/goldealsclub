@@ -8,3 +8,6 @@ verify_jwt = false
 
 [functions.deals-json]
 verify_jwt = false
+
+[functions.publish-generated-video]
+verify_jwt = false

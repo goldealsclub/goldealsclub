@@ -45,12 +45,6 @@ jobs:
         working-directory: remotion
         run: npm install --no-audit --no-fund --force
 
-      - name: Write .env for the script
-        if: ${{ env.skip != 'true' }}
-        run: |
-          echo "VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
-          echo "VITE_SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" >> .env
-
       - name: Generate video (${{ matrix.style }})
         if: ${{ env.skip != 'true' }}
         working-directory: remotion
@@ -64,8 +58,7 @@ jobs:
       - name: Publish to the site
         if: ${{ env.skip != 'true' }}
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          VIDEO_PUBLISH_TOKEN: ${{ secrets.VIDEO_PUBLISH_TOKEN }}
         run: |
           VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
           echo "Publishing $VIDEO"
