@@ -443,6 +443,78 @@ export type Database = {
         }
         Relationships: []
       }
+      video_style_settings: {
+        Row: {
+          accent: string
+          bg_bot: string
+          bg_mid: string
+          bg_top: string
+          body_font: string
+          created_at: string
+          display_font: string
+          eyebrow_label: string
+          id: string
+          ink: string
+          ink_soft: string
+          label: string
+          price_font_size: number
+          price_label: string
+          show_discount_chip: boolean
+          show_strikethrough: boolean
+          style_id: string
+          taupe: string
+          title_font_size: number
+          title_uppercase: boolean
+          updated_at: string
+        }
+        Insert: {
+          accent?: string
+          bg_bot?: string
+          bg_mid?: string
+          bg_top?: string
+          body_font?: string
+          created_at?: string
+          display_font?: string
+          eyebrow_label?: string
+          id?: string
+          ink?: string
+          ink_soft?: string
+          label?: string
+          price_font_size?: number
+          price_label?: string
+          show_discount_chip?: boolean
+          show_strikethrough?: boolean
+          style_id: string
+          taupe?: string
+          title_font_size?: number
+          title_uppercase?: boolean
+          updated_at?: string
+        }
+        Update: {
+          accent?: string
+          bg_bot?: string
+          bg_mid?: string
+          bg_top?: string
+          body_font?: string
+          created_at?: string
+          display_font?: string
+          eyebrow_label?: string
+          id?: string
+          ink?: string
+          ink_soft?: string
+          label?: string
+          price_font_size?: number
+          price_label?: string
+          show_discount_chip?: boolean
+          show_strikethrough?: boolean
+          style_id?: string
+          taupe?: string
+          title_font_size?: number
+          title_uppercase?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       click_stats: {

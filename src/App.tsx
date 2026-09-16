@@ -37,6 +37,8 @@ import AdminVideoQAPage from "./pages/AdminVideoQAPage";
 import AdminCardsQAPage from "./pages/AdminCardsQAPage";
 import AdminBadgeQAPage from "./pages/AdminBadgeQAPage";
 import AdminStylePreviewQAPage from "./pages/AdminStylePreviewQAPage";
+import AdminStylesPage from "./pages/AdminStylesPage";
+
 
 
 import InstallPage from "./pages/InstallPage";
@@ -102,6 +104,8 @@ const App = () => (
                 <Route path="/admin" element={<AdminDashboard />} />
                 <Route path="/admin/video" element={<AdminVideoPage />} />
                 <Route path="/admin/videos" element={<AdminVideosPage />} />
+                <Route path="/admin/styles" element={<AdminStylesPage />} />
+
                 <Route path="/admin/video/historique" element={<AdminVideoHistoryPage />} />
                 <Route path="/admin/video-qa" element={<AdminVideoQAPage />} />
                 <Route path="/admin/cards-qa" element={<AdminCardsQAPage />} />

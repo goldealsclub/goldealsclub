@@ -340,6 +340,34 @@ export const BG_PRESETS: Record<BgPreset, Palette> = {
   },
 };
 
+/**
+ * Réglages éditables d'un style (table `video_style_settings`).
+ * Quand ils sont fournis, ils surchargent la palette et la typographie
+ * du preset correspondant — aucune modification de code nécessaire.
+ */
+export type StyleSettings = {
+  style_id: string;
+  label?: string;
+  bg_top: string;
+  bg_mid: string;
+  bg_bot: string;
+  ink: string;
+  ink_soft: string;
+  accent: string;
+  taupe: string;
+  display_font: string;
+  body_font: string;
+  title_font_size: number;
+  title_uppercase: boolean;
+  eyebrow_label: string;
+  price_font_size: number;
+  price_label: string;
+  show_strikethrough: boolean;
+  show_discount_chip: boolean;
+};
+
+let activeStyleCfg: StyleSettings | null = null;
+
 // Theme actif — réassigné via applyBgPreset() avant chaque rendu
 let activePalette: Palette = BG_PRESETS.paper;
 let activePresetName: BgPreset = "paper";
@@ -353,9 +381,22 @@ let TAUPE = activePalette.taupe;
 let GOLD = activePalette.accent;
 let GOLD_DEEP = activePalette.accent;
 
-export function applyBgPreset(preset: BgPreset) {
-  activePalette = BG_PRESETS[preset];
+export function applyBgPreset(preset: BgPreset, settings?: StyleSettings | null) {
+  activeStyleCfg = settings ?? null;
+  activePalette = settings
+    ? {
+        ...BG_PRESETS[preset],
+        bgTop: settings.bg_top,
+        bgMid: settings.bg_mid,
+        bgBot: settings.bg_bot,
+        ink: settings.ink,
+        inkSoft: settings.ink_soft,
+        accent: settings.accent,
+        taupe: settings.taupe,
+      }
+    : BG_PRESETS[preset];
   activePresetName = preset;
+
   CHARCOAL_TOP = activePalette.bgTop;
   CHARCOAL_MID = activePalette.bgMid;
   CHARCOAL_BOT = activePalette.bgBot;
@@ -748,6 +789,13 @@ const LINK_BLUE = VIDEO_COLORS.link;
 const SERIF_FAMILY = "'Playfair Display','Didot',Georgia,serif";
 const SANS_FAMILY = "'Inter','Helvetica',sans-serif";
 
+/** Famille d'affichage (titres/prix) — surchargée par les réglages de style. */
+const displayFamily = (fallback: string) =>
+  activeStyleCfg?.display_font
+    ? `'${activeStyleCfg.display_font}','Archivo',${SANS_FAMILY}`
+    : fallback;
+
+
 /** Petit utilitaire texte avec lettrage espacé (caps editorial). */
 function drawCapsText(
   ctx: CanvasRenderingContext2D,
@@ -823,10 +871,11 @@ function drawAdHeader(
   ctx.fillStyle = "rgba(13,13,13,0.20)";
   ctx.fillRect(60, hairY, W - 120, 1);
   const eyebrowLabel =
-    activePresetName === "adidas" ? "DEAL OF THE DAY" :
-    activePresetName === "nike"   ? "TODAY'S DROP" :
-    activePresetName === "zara"   ? "Sélection du jour" :
-    "L'OBJET DU JOUR";
+    activeStyleCfg?.eyebrow_label ||
+    (activePresetName === "adidas" ? "DEAL OF THE DAY" :
+     activePresetName === "nike"   ? "TODAY'S DROP" :
+     activePresetName === "zara"   ? "Sélection du jour" :
+     "L'OBJET DU JOUR");
   drawCapsText(ctx, eyebrowLabel, 60, hairY + 28, {
     weight: 600, size: 17, tracking: 5, color: activePalette.inkSoft,
   });
@@ -834,23 +883,31 @@ function drawAdHeader(
   // ── Titre produit — typographie par direction artistique ──────
   ctx.fillStyle = IVOIRE;
   let titleLineH = 50;
+  const tSize = activeStyleCfg?.title_font_size;
   if (activePresetName === "adidas") {
-    ctx.font = `900 52px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    const s = tSize ?? 52;
+    ctx.font = `900 ${s}px ${displayFamily(`'Archivo Black','Archivo',${SANS_FAMILY}`)}`;
     (ctx as any).letterSpacing = "-1px";
-    titleLineH = 56;
+    titleLineH = s + 4;
   } else if (activePresetName === "nike") {
-    ctx.font = `800 50px 'Archivo',${SANS_FAMILY}`;
+    const s = tSize ?? 50;
+    ctx.font = `800 ${s}px ${displayFamily(`'Archivo',${SANS_FAMILY}`)}`;
     (ctx as any).letterSpacing = "-1px";
-    titleLineH = 54;
+    titleLineH = s + 4;
   } else if (activePresetName === "zara") {
-    ctx.font = `italic 400 52px ${SERIF_FAMILY}`;
-    titleLineH = 58;
+    const s = tSize ?? 52;
+    ctx.font = `italic 400 ${s}px ${displayFamily(SERIF_FAMILY)}`;
+    titleLineH = s + 6;
   } else {
     ctx.font = `italic 500 46px ${SERIF_FAMILY}`;
+
   }
   ctx.textAlign = "left";
   ctx.textBaseline = "alphabetic";
-  const upper = activePresetName === "adidas" || activePresetName === "nike";
+  const upper = activeStyleCfg
+    ? activeStyleCfg.title_uppercase
+    : activePresetName === "adidas" || activePresetName === "nike";
+
   const rawTitle = upper ? (deal.title || "").toUpperCase() : (deal.title || "");
   const titleMax = W - 120;
   const words = rawTitle.split(/\s+/);
@@ -927,16 +984,17 @@ function drawAdPriceBlock(
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     (ctx as any).letterSpacing = "6px";
-    ctx.fillText("PRIX MEMBRE", 60, blockY + 56);
+    ctx.fillText(activeStyleCfg?.price_label || "PRIX MEMBRE", 60, blockY + 56);
     (ctx as any).letterSpacing = "0px";
     ctx.restore();
     // Prix XXL display
     ctx.fillStyle = "#f4f1ea";
-    ctx.font = `900 200px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    ctx.font = `900 ${activeStyleCfg?.price_font_size ?? 200}px ${displayFamily(`'Archivo Black','Archivo',${SANS_FAMILY}`)}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText(priceTxt, 50, blockY + 240);
-    if (hasOrig) {
+    if (hasOrig && (activeStyleCfg?.show_discount_chip ?? true)) {
+
       // Dossard -DISCOUNT% en inverse à droite
       const chipW = 240, chipH = 110;
       const chipX = W - 60 - chipW;
@@ -949,7 +1007,9 @@ function drawAdPriceBlock(
       ctx.textBaseline = "middle";
       ctx.fillText(`−${discount}%`, chipX + chipW / 2, chipY + chipH / 2 + 4);
       // Prix barré au-dessus du chip
+      if (activeStyleCfg?.show_strikethrough ?? true) {
       ctx.fillStyle = "rgba(244,241,234,0.55)";
+
       ctx.font = `600 30px ${SANS_FAMILY}`;
       ctx.textAlign = "right";
       ctx.textBaseline = "alphabetic";
@@ -962,7 +1022,9 @@ function drawAdPriceBlock(
       ctx.moveTo(W - 60 - opW - 4, chipY - 32);
       ctx.lineTo(W - 60 + 4, chipY - 32);
       ctx.stroke();
+      }
     }
+
     ctx.restore();
     return;
   }
@@ -982,16 +1044,17 @@ function drawAdPriceBlock(
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     (ctx as any).letterSpacing = "8px";
-    ctx.fillText("MEMBER PRICE", 60, blockY + 56);
+    ctx.fillText(activeStyleCfg?.price_label || "MEMBER PRICE", 60, blockY + 56);
     (ctx as any).letterSpacing = "0px";
     ctx.restore();
     // Prix XXL Archivo
     ctx.fillStyle = "#f4f1ea";
-    ctx.font = `900 220px 'Archivo Black','Archivo',${SANS_FAMILY}`;
+    ctx.font = `900 ${activeStyleCfg?.price_font_size ?? 220}px ${displayFamily(`'Archivo Black','Archivo',${SANS_FAMILY}`)}`;
     ctx.textAlign = "left";
     ctx.textBaseline = "alphabetic";
     ctx.fillText(priceTxt, 50, blockY + 260);
-    if (hasOrig) {
+    if (hasOrig && (activeStyleCfg?.show_discount_chip ?? true)) {
+
       // Chip orange Nike massif
       const chipW = 280, chipH = 130;
       const chipX = W - 60 - chipW;
@@ -1005,7 +1068,9 @@ function drawAdPriceBlock(
       ctx.textBaseline = "middle";
       ctx.fillText(`−${discount}%`, chipX + chipW / 2, chipY + chipH / 2 + 6);
       // Prix barré au-dessus
+      if (activeStyleCfg?.show_strikethrough ?? true) {
       ctx.fillStyle = "rgba(244,241,234,0.45)";
+
       ctx.font = `500 30px ${SANS_FAMILY}`;
       ctx.textAlign = "right";
       ctx.textBaseline = "alphabetic";
@@ -1018,7 +1083,9 @@ function drawAdPriceBlock(
       ctx.moveTo(W - 60 - opW - 4, chipY - 32);
       ctx.lineTo(W - 60 + 4, chipY - 32);
       ctx.stroke();
+      }
     }
+
     ctx.restore();
     return;
   }
@@ -1035,7 +1102,7 @@ function drawAdPriceBlock(
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     (ctx as any).letterSpacing = "10px";
-    ctx.fillText("PRIX", W / 2, centerY - 180);
+    ctx.fillText(activeStyleCfg?.price_label || "PRIX", W / 2, centerY - 180);
     (ctx as any).letterSpacing = "0px";
     ctx.restore();
     // Hairline éditoriale au-dessus
@@ -1043,11 +1110,12 @@ function drawAdPriceBlock(
     ctx.fillRect(W / 2 - 24, centerY - 156, 48, 1);
     // Prix XXL serif italic
     ctx.fillStyle = "#0a0a0a";
-    ctx.font = `italic 400 180px ${SERIF_FAMILY}`;
+    ctx.font = `italic 400 ${activeStyleCfg?.price_font_size ?? 180}px ${displayFamily(SERIF_FAMILY)}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "alphabetic";
     ctx.fillText(priceTxt, W / 2, centerY);
-    if (hasOrig) {
+    if (hasOrig && (activeStyleCfg?.show_strikethrough ?? true)) {
+
       // Prix barré + −DISCOUNT% sur une seule ligne, fin, gris
       const opTxt = `${fmt(origVal)} €  ·  −${discount}%`;
       ctx.fillStyle = "rgba(26,26,26,0.5)";

@@ -4,61 +4,80 @@ on:
   schedule:
     # 06:00 UTC every day (07h Paris hiver / 08h Paris été)
     - cron: "0 6 * * *"
-  workflow_dispatch: # allow manual trigger from GitHub UI
+  workflow_dispatch:
+    inputs:
+      style:
+        description: "Style à générer (vide = les trois)"
+        required: false
+        default: ""
 
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
+    strategy:
+      fail-fast: false
+      matrix:
+        style: [adidas, zara, nike]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Skip non-selected style
+        if: ${{ github.event.inputs.style != '' && github.event.inputs.style != matrix.style }}
+        run: echo "skip=true" >> $GITHUB_ENV
+
       - name: Setup Node 20
+        if: ${{ env.skip != 'true' }}
         uses: actions/setup-node@v4
         with:
           node-version: "20"
 
       - name: Install ffmpeg + chromium
+        if: ${{ env.skip != 'true' }}
         run: |
           sudo apt-get update
           sudo apt-get install -y ffmpeg chromium-browser
 
       - name: Install Remotion deps
+        if: ${{ env.skip != 'true' }}
         working-directory: remotion
-        run: npm install --no-audit --no-fund
+        run: npm install --no-audit --no-fund --force
 
       - name: Write .env for the script
+        if: ${{ env.skip != 'true' }}
         run: |
           echo "VITE_SUPABASE_URL=${{ secrets.SUPABASE_URL }}" > .env
           echo "VITE_SUPABASE_PUBLISHABLE_KEY=${{ secrets.SUPABASE_PUBLISHABLE_KEY }}" >> .env
 
-      - name: Generate video
+      - name: Generate video (${{ matrix.style }})
+        if: ${{ env.skip != 'true' }}
         working-directory: remotion
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
         run: |
-          mkdir -p /mnt/documents
-          # Script writes to /mnt/documents which doesn't exist on GH runners — symlink to ./out
-          mkdir -p out
           sudo mkdir -p /mnt/documents
           sudo chmod 777 /mnt/documents
-          node scripts/generate-weekly.mjs
+          node scripts/generate-variant.mjs top --style=${{ matrix.style }}
 
-      - name: Upload to Supabase Storage
+      - name: Publish to the site
+        if: ${{ env.skip != 'true' }}
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
-          # Le script écrit /mnt/documents/goldeals-tiktok-YYYY-MM-DD-<theme>.mp4
-          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*.mp4 | head -n1)
-          echo "Uploading $VIDEO"
-          node remotion/scripts/upload-to-storage.mjs "$VIDEO"
+          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
+          echo "Publishing $VIDEO"
+          node remotion/scripts/publish-video.mjs "$VIDEO" \
+            --style=${{ matrix.style }} \
+            --category=top \
+            --label="Sélection du jour"
 
       - name: Upload as workflow artifact (backup)
+        if: ${{ env.skip != 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-video
-          path: /mnt/documents/goldeals-tiktok-*.mp4
+          name: tiktok-video-${{ matrix.style }}
+          path: /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4
           retention-days: 14
