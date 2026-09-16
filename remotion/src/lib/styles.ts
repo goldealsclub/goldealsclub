@@ -242,7 +242,7 @@ export const STYLES: Record<StyleId, VideoStyle> = {
       layout: "kinetic-cuts",
       showStripes: true,
       heroText: "TOMORROW.",
-      heroFontSize: 260,
+      heroFontSize: 180,
       heroFont: "display",
       heroLetterSpacing: -9,
       background: "ink",
