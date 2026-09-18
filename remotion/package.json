@@ -5,13 +5,13 @@
   "private": true,
   "scripts": {
     "qa": "node scripts/qa-frames.mjs",
-    "qa:update": "node scripts/qa-frames.mjs --update",
+    "qa:update": "VISUAL_BASELINE_APPROVED=YES node scripts/qa-frames.mjs --update",
     "qa:adidas": "node scripts/qa-frames.mjs --style=adidas",
     "qa:zara": "node scripts/qa-frames.mjs --style=zara",
     "qa:nike": "node scripts/qa-frames.mjs --style=nike",
-    "qa:update:adidas": "node scripts/qa-frames.mjs --update --style=adidas",
-    "qa:update:zara": "node scripts/qa-frames.mjs --update --style=zara",
-    "qa:update:nike": "node scripts/qa-frames.mjs --update --style=nike"
+    "qa:update:adidas": "VISUAL_BASELINE_APPROVED=YES node scripts/qa-frames.mjs --update --style=adidas",
+    "qa:update:zara": "VISUAL_BASELINE_APPROVED=YES node scripts/qa-frames.mjs --update --style=zara",
+    "qa:update:nike": "VISUAL_BASELINE_APPROVED=YES node scripts/qa-frames.mjs --update --style=nike"
     ,"qa:cutout": "node scripts/qa-cutout.mjs"
     ,"qa:cutout:update": "CUTOUT_BASELINE_APPROVED=YES node scripts/qa-cutout.mjs --update"
   },

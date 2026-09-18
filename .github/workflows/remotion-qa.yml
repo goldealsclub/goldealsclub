@@ -5,6 +5,11 @@ name: Remotion QA visuelle
 # un commentaire PR consolidé avec le tableau des 3 scènes et un lien vers
 # l'artifact des diffs visuels.
 on:
+  push:
+    branches: [main]
+    paths:
+      - "remotion/**"
+      - ".github/workflows/remotion-qa.yml"
   pull_request:
     paths:
       - "remotion/**"
@@ -53,6 +58,25 @@ permissions:
   pull-requests: write
 
 jobs:
+  baseline-guard:
+    name: QA · références protégées
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Require explicit approval for baseline changes
+        env:
+          HAS_APPROVAL_LABEL: ${{ contains(github.event.pull_request.labels.*.name, 'baseline-update-approved') }}
+        run: |
+          CHANGED=$(git diff --name-only "${{ github.event.pull_request.base.sha }}" "${{ github.event.pull_request.head.sha }}" -- remotion/qa/baseline remotion/qa/cutout/baseline)
+          if [ -n "$CHANGED" ] && [ "$HAS_APPROVAL_LABEL" != "true" ]; then
+            echo "Les références visuelles ont changé sans le label baseline-update-approved."
+            echo "$CHANGED"
+            exit 1
+          fi
+
   cutout:
     name: QA · détourage
     runs-on: ubuntu-latest
