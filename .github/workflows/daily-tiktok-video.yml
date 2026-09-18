@@ -50,6 +50,13 @@ jobs:
       - uses: oven-sh/setup-bun@v2
       - run: sudo apt-get update && sudo apt-get install -y chromium-browser ffmpeg
       - run: bun install --frozen-lockfile
+      - name: Prepare Remotion compositor
+        run: |
+          mkdir -p node_modules/@remotion/compositor-linux-x64-gnu
+          cp node_modules/@remotion/compositor-linux-x64-musl/remotion node_modules/@remotion/compositor-linux-x64-gnu/remotion
+          chmod +x node_modules/@remotion/compositor-linux-x64-gnu/remotion
+          ln -sf "$(which ffmpeg)" node_modules/@remotion/compositor-linux-x64-gnu/ffmpeg
+          ln -sf "$(which ffprobe)" node_modules/@remotion/compositor-linux-x64-gnu/ffprobe
       - name: Verify approved ${{ matrix.style }} frames
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
@@ -86,6 +93,16 @@ jobs:
         if: ${{ env.skip != 'true' }}
         working-directory: remotion
         run: bun install --frozen-lockfile
+
+      - name: Prepare Remotion compositor
+        if: ${{ env.skip != 'true' }}
+        working-directory: remotion
+        run: |
+          mkdir -p node_modules/@remotion/compositor-linux-x64-gnu
+          cp node_modules/@remotion/compositor-linux-x64-musl/remotion node_modules/@remotion/compositor-linux-x64-gnu/remotion
+          chmod +x node_modules/@remotion/compositor-linux-x64-gnu/remotion
+          ln -sf "$(which ffmpeg)" node_modules/@remotion/compositor-linux-x64-gnu/ffmpeg
+          ln -sf "$(which ffprobe)" node_modules/@remotion/compositor-linux-x64-gnu/ffprobe
 
       - name: Generate video (${{ matrix.style }})
         if: ${{ env.skip != 'true' }}
