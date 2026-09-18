@@ -23,6 +23,17 @@ const fmtPrice = (n: number) => {
   return Number.isInteger(r) ? `${r}` : r.toFixed(2);
 };
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
+const titleSize = (title: string, editorial: boolean) => {
+  if (editorial) return title.length > 72 ? 46 : title.length > 52 ? 52 : 60;
+  return title.length > 72 ? 32 : title.length > 52 ? 37 : title.length > 38 ? 41 : 46;
+};
+const priceSize = (price: number, configured: number, hasComparison: boolean) => {
+  const chars = fmtPrice(price).length;
+  const digitLimit = chars >= 7 ? 140 : chars >= 6 ? 160 : chars >= 5 ? 185 : configured;
+  const comparisonLimit = hasComparison ? 210 : configured;
+  return Math.min(configured, digitLimit, comparisonLimit);
+};
+const brandSize = (brand: string) => brand.length > 18 ? 34 : brand.length > 12 ? 42 : 52;
 
 export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) => {
   const s = useStyle();
@@ -42,6 +53,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   const discount = hasOrig ? Math.round((1 - sale / orig) * 100) : 0;
   const brandUpper = (deal.brand || "").toUpperCase();
   const brandLogo = brandLogos[deal.brand];
+  const fittedPriceSize = priceSize(sale, s.deal.priceFontSize, hasOrig);
 
   // Bloc bas
   const block = enter(TIMING.secondaryDelay, 16, 320);
@@ -102,7 +114,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
 
         {/* Produit centré, large */}
         <div style={{
-          position: "absolute", top: 240, left: 0, right: 0, height: 1100,
+          position: "absolute", top: 220, left: 40, right: 40, height: 1060,
           display: "flex", alignItems: "center", justifyContent: "center",
           opacity: img.t, transform: `scale(${imgScale}) translateZ(0)`, ...gpuLayer,
         }}>
@@ -122,7 +134,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
 
         {/* Titre serif sous le produit */}
         <div style={{
-          position: "absolute", left: 80, right: 80, top: 1380,
+          position: "absolute", left: 80, right: 80, top: 1325, height: 230,
           textAlign: "center",
           opacity: title.t, transform: `translate3d(0, ${title.y}px, 0)`, ...gpuLayer,
         }}>
@@ -134,23 +146,25 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
           <div style={{
             marginTop: 16,
             fontFamily: s.fonts.display, fontWeight: 500,
-            fontSize: 64, color: s.ink, lineHeight: 1.1, letterSpacing: -0.5,
-            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-            overflow: "hidden",
+            fontSize: titleSize(deal.title, true), color: s.ink, lineHeight: 1.05, letterSpacing: 0,
+            display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
+            overflow: "hidden", textOverflow: "ellipsis",
           }}>{deal.title}</div>
         </div>
 
         {/* Bloc prix horizontal, fin */}
         <div style={{
-          position: "absolute", left: 80, right: 80, bottom: 170,
+          position: "absolute", left: 80, right: 80, bottom: 155,
           display: "flex", alignItems: "baseline", justifyContent: "center", gap: 40,
+          overflow: "hidden",
           opacity: price.t, transform: `translate3d(0, ${-price.y}px, 0)`, ...gpuLayer,
         }}>
           <div style={{
             fontFamily: s.fonts.display, fontWeight: 400,
-            fontSize: s.deal.priceFontSize, color: s.ink,
+            fontSize: fittedPriceSize, color: s.ink,
             lineHeight: 0.9, letterSpacing: -3,
-          }}>{fmtPrice(sale)}<span style={{ fontSize: s.deal.priceFontSize * 0.55 }}> €</span></div>
+            whiteSpace: "nowrap", flexShrink: 1,
+          }}>{fmtPrice(sale)}<span style={{ fontSize: fittedPriceSize * 0.55 }}> €</span></div>
           {hasOrig && (
             <div style={{
               fontFamily: s.fonts.body, fontSize: 38, fontWeight: 400,
@@ -192,19 +206,21 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
       )}
 
       {/* Header marque + dossard */}
-      <div style={{
+        <div style={{
         position: "absolute", top: 90, left: 60, right: 60,
         display: "flex", alignItems: "center", justifyContent: "space-between",
+          gap: 32,
         opacity: head.t, transform: `translate3d(0, ${head.y}px, 0)`, ...gpuLayer,
       }}>
-        <div style={{ display: "flex", alignItems: "center", height: 72 }}>
+        <div style={{ display: "flex", alignItems: "center", height: 72, minWidth: 0, maxWidth: 720, overflow: "hidden" }}>
           {brandLogo ? (
             <Img src={brandLogo} style={{ height: 60, width: "auto", objectFit: "contain", filter: "brightness(0)" }} />
           ) : (
             <span style={{
               fontFamily: s.fonts.display, fontWeight: 900,
-              fontSize: 52, color: s.ink, letterSpacing: -1,
+              fontSize: brandSize(brandUpper), color: s.ink, letterSpacing: 0,
               textTransform: "uppercase",
+              whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
             }}>{brandUpper}</span>
           )}
         </div>
@@ -274,10 +290,10 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
           <div style={{
             marginTop: 12,
             fontFamily: s.fonts.display, fontWeight: 800,
-            fontSize: 46, color: s.paper, lineHeight: 1.05, letterSpacing: -0.5,
+            fontSize: titleSize(deal.title, false), color: s.paper, lineHeight: 1.05, letterSpacing: 0,
             textTransform: s.deal.titleUppercase ? "uppercase" : "none",
-            display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical",
-            overflow: "hidden",
+            display: "-webkit-box", WebkitLineClamp: 3, WebkitBoxOrient: "vertical",
+            overflow: "hidden", textOverflow: "ellipsis",
           }}>{deal.title}</div>
         </div>
 
@@ -297,15 +313,16 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
             <div style={{
               marginTop: 8,
               fontFamily: s.fonts.display, fontWeight: 900,
-              fontSize: s.deal.priceFontSize, color: s.paper,
+              fontSize: fittedPriceSize, color: s.paper,
               lineHeight: 0.85, letterSpacing: -8,
-            }}>{fmtPrice(sale)}<span style={{ fontSize: s.deal.priceFontSize * 0.56, marginLeft: 8 }}>€</span></div>
+              whiteSpace: "nowrap",
+            }}>{fmtPrice(sale)}<span style={{ fontSize: fittedPriceSize * 0.56, marginLeft: 8 }}>€</span></div>
           </div>
 
           {hasOrig && (
             <div style={{
               opacity: chip.t, transform: `translate3d(${chipX}px, 0, 0)`, ...gpuLayer,
-              display: "flex", flexDirection: "column", alignItems: "flex-end",
+              display: "flex", flexDirection: "column", alignItems: "flex-end", flexShrink: 0,
               gap: 18, paddingBottom: 24,
             }}>
               <div style={{
