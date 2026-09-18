@@ -25,12 +25,15 @@
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { execSync } from "child_process";
+import { execFileSync, execSync } from "child_process";
 import { imageSize } from "image-size";
 import { assertCleanCutout, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
+
+console.log("🛡️  Contrôle anti-régression du détourage...");
+execFileSync(process.execPath, [path.join(__dirname, "qa-cutout.mjs")], { cwd: rootDir, stdio: "inherit" });
 
 // ── 1. Read env from the main project's .env ──
 const envPath = path.resolve(rootDir, "../.env");

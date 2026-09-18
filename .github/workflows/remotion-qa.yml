@@ -53,6 +53,30 @@ permissions:
   pull-requests: write
 
 jobs:
+  cutout:
+    name: QA · détourage
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: remotion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Compare with approved cutouts
+        run: bun run qa:cutout
+      - name: Upload cutout report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: remotion-qa-cutout
+          path: |
+            remotion/qa/cutout/current/*.png
+            remotion/qa/cutout/diff/*.png
+            remotion/qa/cutout/report.json
+          retention-days: 14
+
   qa:
     name: QA · ${{ matrix.style }} · ${{ matrix.scene }}
     runs-on: ubuntu-latest

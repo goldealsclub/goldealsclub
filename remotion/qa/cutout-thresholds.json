@@ -1,0 +1,10 @@
+{
+  "pixelmatchThreshold": 0.08,
+  "maxVisualDiffPercent": 0.15,
+  "limits": {
+    "minTransparentRatio": 0.08,
+    "minOpaqueRatio": 0.02,
+    "maxSemiTransparentRatio": 0.01,
+    "maxOpaqueBorderRatio": 0
+  }
+}

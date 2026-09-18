@@ -12,7 +12,51 @@ on:
         default: ""
 
 jobs:
+  cutout-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    defaults:
+      run:
+        working-directory: remotion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: bun install --frozen-lockfile
+      - name: Verify approved cutout references
+        run: bun run qa:cutout
+      - name: Upload cutout report on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cutout-qa-report
+          path: |
+            remotion/qa/cutout/current/*.png
+            remotion/qa/cutout/diff/*.png
+            remotion/qa/cutout/report.json
+          retention-days: 14
+
+  visual-qa:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        style: [adidas, zara, nike]
+    defaults:
+      run:
+        working-directory: remotion
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+      - run: sudo apt-get update && sudo apt-get install -y chromium-browser ffmpeg
+      - run: bun install --frozen-lockfile
+      - name: Verify approved ${{ matrix.style }} frames
+        env:
+          PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
+        run: bun run qa:${{ matrix.style }}
+
   generate:
+    needs: [cutout-qa, visual-qa]
     runs-on: ubuntu-latest
     timeout-minutes: 35
     strategy:
