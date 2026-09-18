@@ -72,11 +72,9 @@ jobs:
         if: ${{ github.event.inputs.style != '' && github.event.inputs.style != matrix.style }}
         run: echo "skip=true" >> $GITHUB_ENV
 
-      - name: Setup Node 20
+      - name: Setup Bun
         if: ${{ env.skip != 'true' }}
-        uses: actions/setup-node@v4
-        with:
-          node-version: "20"
+        uses: oven-sh/setup-bun@v2
 
       - name: Install ffmpeg + chromium
         if: ${{ env.skip != 'true' }}
@@ -87,7 +85,7 @@ jobs:
       - name: Install Remotion deps
         if: ${{ env.skip != 'true' }}
         working-directory: remotion
-        run: npm install --no-audit --no-fund --force
+        run: bun install --frozen-lockfile
 
       - name: Generate video (${{ matrix.style }})
         if: ${{ env.skip != 'true' }}
