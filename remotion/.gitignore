@@ -27,6 +27,11 @@ report.[0-9]_.[0-9]_.[0-9]_.[0-9]_.json
 .cache
 *.tsbuildinfo
 
+# QA outputs (approved baselines remain versioned)
+qa/cutout/current
+qa/cutout/diff
+qa/cutout/report.json
+
 # IntelliJ based IDEs
 .idea
 

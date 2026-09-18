@@ -2,6 +2,13 @@ import { PNG } from "pngjs";
 
 const DEFAULT_DISTANCE = 42;
 
+export const CUTOUT_LIMITS = Object.freeze({
+  minTransparentRatio: 0.08,
+  minOpaqueRatio: 0.02,
+  maxSemiTransparentRatio: 0.01,
+  maxOpaqueBorderRatio: 0,
+});
+
 /**
  * Retire uniquement le fond clair connecté aux bords du packshot.
  * Les pixels du bord extérieur restent totalement transparents : le feather
@@ -97,22 +104,53 @@ export function removeConnectedStudioBackground(buf, distanceThreshold = DEFAULT
   return PNG.sync.write(png);
 }
 
-export function assertCleanCutout(buf) {
+export function measureCutout(buf) {
   const png = PNG.sync.read(buf);
   const { width, height, data } = png;
   let transparent = 0;
   let opaque = 0;
+  let semiTransparent = 0;
   for (let pixel = 0; pixel < width * height; pixel++) {
     const alpha = data[pixel * 4 + 3];
     if (alpha === 0) transparent++;
     if (alpha >= 250) opaque++;
+    if (alpha > 0 && alpha < 250) semiTransparent++;
   }
-  const borderPoints = [0, width - 1, (height - 1) * width, width * height - 1];
-  if (borderPoints.some((pixel) => data[pixel * 4 + 3] !== 0)) {
+  let opaqueBorder = 0;
+  let borderPixels = 0;
+  for (let x = 0; x < width; x++) {
+    for (const y of [0, height - 1]) {
+      borderPixels++;
+      if (data[(y * width + x) * 4 + 3] !== 0) opaqueBorder++;
+    }
+  }
+  for (let y = 1; y < height - 1; y++) {
+    for (const x of [0, width - 1]) {
+      borderPixels++;
+      if (data[(y * width + x) * 4 + 3] !== 0) opaqueBorder++;
+    }
+  }
+  const total = width * height;
+  return {
+    width,
+    height,
+    transparentRatio: transparent / total,
+    opaqueRatio: opaque / total,
+    semiTransparentRatio: semiTransparent / total,
+    opaqueBorderRatio: opaqueBorder / borderPixels,
+  };
+}
+
+export function assertCleanCutout(buf, limits = CUTOUT_LIMITS) {
+  const metrics = measureCutout(buf);
+  if (metrics.opaqueBorderRatio > limits.maxOpaqueBorderRatio) {
     throw new Error("cadre résiduel détecté");
   }
-  const ratio = transparent / (width * height);
-  if (ratio < 0.08 || opaque < width * height * 0.02) {
-    throw new Error(`détourage non fiable (${Math.round(ratio * 100)} % transparent)`);
+  if (metrics.transparentRatio < limits.minTransparentRatio || metrics.opaqueRatio < limits.minOpaqueRatio) {
+    throw new Error(`détourage non fiable (${Math.round(metrics.transparentRatio * 100)} % transparent)`);
   }
+  if (metrics.semiTransparentRatio > limits.maxSemiTransparentRatio) {
+    throw new Error(`halo excessif (${(metrics.semiTransparentRatio * 100).toFixed(2)} % semi-transparent)`);
+  }
+  return metrics;
 }

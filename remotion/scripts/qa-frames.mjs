@@ -31,6 +31,9 @@ const rootDir = path.resolve(__dirname, "..");
 const qaDir = path.join(rootDir, "qa");
 
 const UPDATE = process.argv.includes("--update");
+if (UPDATE && process.env.VISUAL_BASELINE_APPROVED !== "YES") {
+  throw new Error("Mise à jour refusée : définir VISUAL_BASELINE_APPROVED=YES après validation visuelle.");
+}
 const getArg = (name) => {
   const a = process.argv.find((x) => x.startsWith(`--${name}=`));
   return a ? a.split("=").slice(1).join("=") : null;
