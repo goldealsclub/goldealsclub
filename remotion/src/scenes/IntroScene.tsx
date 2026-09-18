@@ -14,8 +14,8 @@ import { useStyle } from "../lib/style-context";
 
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
 
-const fitDisplaySize = (text: string, configuredSize: number, width: number, minSize: number) => {
-  const glyphWidth = text.length * configuredSize * 0.53;
+const fitDisplaySize = (text: string, configuredSize: number, width: number, minSize: number, glyphRatio = 0.53) => {
+  const glyphWidth = text.length * configuredSize * glyphRatio;
   return Math.max(minSize, Math.min(configuredSize, configuredSize * width / Math.max(width, glyphWidth)));
 };
 
@@ -194,7 +194,7 @@ export const IntroScene: React.FC = () => {
         {heroLines.map(({ txt, line }, i) => (
           <div key={i} style={{
             fontFamily: heroFamily, fontWeight: 900,
-            fontSize: fitDisplaySize(txt, s.intro.heroFontSize, 510, 118), color: s.ink,
+            fontSize: fitDisplaySize(txt, s.intro.heroFontSize, 510, 96, 0.72), color: s.ink,
             lineHeight: s.intro.heroLineHeight,
             letterSpacing: s.intro.heroLetterSpacing,
             textTransform: "uppercase",
