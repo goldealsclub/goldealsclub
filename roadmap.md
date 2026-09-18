@@ -7,3 +7,4 @@
 - [x] Bouton « Générer » du site = vrai moteur Remotion (déclenche le rendu GitHub Actions, publie via l'endpoint sécurisé, histoire et date de publication réelles)
 - [x] Rendu de contrôle : les 3 styles régénérés et publiés depuis la chaîne complète, visibles sur l'accueil
 - [x] Corriger le cadrage 1080 × 1920 des trois styles et valider les contenus longs
+- [x] Restaurer la qualité de détourage vidéo et empêcher tout fallback avec fond rectangulaire
