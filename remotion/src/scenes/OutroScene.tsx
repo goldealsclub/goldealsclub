@@ -11,6 +11,10 @@ import { snap, smoothEnter, gpuLayer, TIMING } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
 
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
+const fitDisplaySize = (text: string, configuredSize: number, width: number, minSize: number) => {
+  const glyphWidth = text.length * configuredSize * 0.54;
+  return Math.max(minSize, Math.min(configuredSize, configuredSize * width / Math.max(width, glyphWidth)));
+};
 
 export const OutroScene: React.FC = () => {
   const s = useStyle();
@@ -37,6 +41,7 @@ export const OutroScene: React.FC = () => {
   const fgSoft = isInkBg ? s.paperSoft : s.inkSoft;
   const stripeBg = isInkBg ? s.paper : s.ink;
   const heroFamily = s.outro.heroFont === "body" ? s.fonts.body : s.fonts.display;
+  const heroSize = fitDisplaySize(s.outro.heroText, s.outro.heroFontSize, 960, 96);
 
   return (
     <AbsoluteFill style={{ background: bg }}>
@@ -82,16 +87,16 @@ export const OutroScene: React.FC = () => {
         <div style={{
           fontFamily: heroFamily,
           fontWeight: s.outro.heroFont === "body" ? 400 : 900,
-          fontSize: s.outro.heroFontSize, color: fg,
+          fontSize: heroSize, color: fg,
           lineHeight: 0.92, letterSpacing: s.outro.heroLetterSpacing,
           textTransform: s.outro.heroFont === "body" ? "none" : "uppercase",
-          opacity: hero.t,
+          opacity: hero.t, whiteSpace: "nowrap",
           transform: `translate3d(0, ${hero.y}px, 0)`,
           ...gpuLayer,
         }}>{s.outro.heroText}</div>
         <div style={{
           marginTop: 24,
-          fontFamily: s.fonts.kinetic, fontSize: 50, color: fgSoft, letterSpacing: 8,
+          fontFamily: s.fonts.kinetic, fontSize: 38, color: fgSoft, letterSpacing: 6,
           opacity: sub.t,
           transform: `translate3d(0, ${sub.y}px, 0)`,
           ...gpuLayer,

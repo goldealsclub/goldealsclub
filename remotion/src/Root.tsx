@@ -8,6 +8,13 @@ import { StyleProvider } from "./lib/style-context";
 import { STYLES, type StyleId } from "./lib/styles";
 
 const STYLE_IDS: StyleId[] = ["adidas", "zara", "nike"];
+const QA_STRESS_DEAL = {
+  ...deals[0],
+  title: "Chaussures de football enfant adidas F50 Club FG/AG édition spéciale",
+  brand: "New Balance Athletics",
+  salePrice: 1299.99,
+  originalPrice: 1599.99,
+};
 
 // Wrappers QA solo : injectent le StyleProvider pour les scènes isolées
 const wrapWithStyle = <P extends object>(
@@ -68,7 +75,7 @@ export const RemotionRoot = () => (
         width={1080}
         height={1920}
         defaultProps={{
-          deal: deals[0],
+          deal: QA_STRESS_DEAL,
           index: 0,
           total: deals.length || 5,
         }}
@@ -98,7 +105,7 @@ export const RemotionRoot = () => (
       component={wrapWithStyle(DealScene, "adidas")}
       durationInFrames={SCENE_DURATIONS.deal}
       fps={30} width={1080} height={1920}
-      defaultProps={{ deal: deals[0], index: 0, total: deals.length || 5 }}
+      defaultProps={{ deal: QA_STRESS_DEAL, index: 0, total: deals.length || 5 }}
     />
     <Composition
       id="qa-outro"
