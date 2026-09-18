@@ -8,3 +8,6 @@
 - [x] Rendu de contrôle : les 3 styles régénérés et publiés depuis la chaîne complète, visibles sur l'accueil
 - [x] Corriger le cadrage 1080 × 1920 des trois styles et valider les contenus longs
 - [x] Restaurer la qualité de détourage vidéo et empêcher tout fallback avec fond rectangulaire
+- [ ] Verrouiller le détourage avec un corpus de référence et des métriques qualité
+- [ ] Exécuter ces contrôles avant chaque rendu et bloquer toute publication en régression
+- [ ] Ajouter ces contrôles à la CI avec rapport visuel exploitable
