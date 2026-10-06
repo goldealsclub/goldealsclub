@@ -299,7 +299,7 @@ Deno.serve(async (req) => {
       .map(([date, count]) => ({ date, count }));
 
     // Classify a visit into a traffic source bucket
-    const OWN_DOMAINS = ["goldealsclub.com", "goldealsclub.fr", "goldealsclub.lovable.app", "lovable.app"];
+    const OWN_DOMAINS = ["goldealsclub.com", "www.goldealsclub.com", "goldealsclub.fr", "www.goldealsclub.fr", "goldealsclub.vercel.app", "goldealsclub.lovable.app", "lovable.app"];
     const SOCIAL_HOSTS = ["instagram", "facebook", "fb.", "tiktok", "twitter", "x.com", "t.co", "youtube", "youtu.be", "linkedin", "pinterest", "reddit", "snapchat", "threads"];
     const SEARCH_HOSTS = ["google.", "bing.", "duckduckgo", "yahoo.", "ecosia", "qwant", "yandex", "baidu", "brave"];
     const SOCIAL_UTM = ["instagram", "facebook", "tiktok", "twitter", "x", "youtube", "linkedin", "pinterest", "reddit", "snapchat", "social"];

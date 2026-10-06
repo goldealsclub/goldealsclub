@@ -47,7 +47,7 @@ const WorldCup2026Page = () => {
       <SEOHead
         title="Maillots Coupe du Monde 2026 — adidas & Puma | GOLDEALS CLUB"
         description="Découvrez les maillots officiels des sélections nationales adidas et Puma pour la Coupe du Monde 2026, disponibles chez Sport Is Good. -5% supplémentaires avec le code SIG5."
-        canonical="https://goldealsclub.lovable.app/coupe-du-monde-2026"
+        canonical="https://www.goldealsclub.com/coupe-du-monde-2026"
       />
       <Header />
 

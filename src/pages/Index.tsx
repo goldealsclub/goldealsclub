@@ -102,16 +102,16 @@ const Index = () => {
       <SEOHead
         title="GOLDEALS CLUB — Les meilleures promos mode & sneakers"
         description="Découvrez les meilleures promos mode, streetwear et sneakers sélectionnées chez des vendeurs fiables. Jusqu'à -70% sur Nike, Adidas, New Balance et plus."
-        canonical="https://goldealsclub.lovable.app/"
+        canonical="https://www.goldealsclub.com/"
         jsonLd={{
           "@context": "https://schema.org",
           "@type": "WebSite",
           name: "GOLDEALS CLUB",
-          url: "https://goldealsclub.lovable.app",
+          url: "https://www.goldealsclub.com",
           description: "Les meilleures promos mode, streetwear et sneakers",
           potentialAction: {
             "@type": "SearchAction",
-            target: "https://goldealsclub.lovable.app/category/all?q={search_term_string}",
+            target: "https://www.goldealsclub.com/category/all?q={search_term_string}",
             "query-input": "required name=search_term_string",
           },
         }}

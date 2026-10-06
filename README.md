@@ -396,25 +396,45 @@ Le rendu final doit être :
 
 - très élégant dans l’affichage des super deals
 
-This project was built with [Lovable](https://lovable.dev).
+## Hébergement & infrastructure
 
-**Live app**: https://goldealsclub.lovable.app
+| Élément | Où | Notes |
+|---|---|---|
+| Code source | GitHub `goldealsclub/goldealsclub` (branche `main`) | source de vérité |
+| Site (frontend) | Vercel — projet `goldealsclub` | chaque push sur `main` redéploie automatiquement |
+| Domaines | IONOS (registrar + DNS) | `goldealsclub.com`, `www.goldealsclub.com`, `goldealsclub.fr`, `www.goldealsclub.fr` → A `216.198.79.1` (Vercel) |
+| Backend (base, auth, stockage, edge functions, crons) | Supabase `yyqgxhuzobmqygksbaze` (Lovable Cloud) | voir « Migration backend » ci-dessous |
+| Vidéos | GitHub Actions + Remotion | `.github/workflows/daily-tiktok-video.yml` |
 
-## Build with Lovable
+### Variables d'environnement (Vercel → Settings → Environment Variables)
 
-Continue developing this project in the [Lovable editor](https://lovable.dev/projects/a5d143b6-24c3-4c80-8b11-ab8e98812270).
+- `VITE_SUPABASE_URL` = `https://yyqgxhuzobmqygksbaze.supabase.co`
+- `VITE_SUPABASE_PUBLISHABLE_KEY` = clé anon (publique) du projet Supabase
+- `VITE_SUPABASE_PROJECT_ID` = `yyqgxhuzobmqygksbaze`
+- `VITE_ENABLE_SOCIAL_LOGIN` = `true` *(seulement après avoir configuré Google/Apple dans Supabase Auth)*
 
-- **Ship faster**: describe what you want to build and Lovable handles the code.
-- **Stay in sync**: every change made in Lovable is committed straight to this repository.
-- **Full ownership**: this code is yours. Push to `main` on GitHub and your changes sync back into Lovable, ready for your next prompt.
+### Secrets des edge functions (côté backend)
 
-## Development
+`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_ANON_KEY` (automatiques), `AWIN_API_KEY`, `CRON_SECRET`,
+`VIDEO_PUBLISH_TOKEN`, `GITHUB_REPO`, `GITHUB_TOKEN` (token GitHub « workflow », remplace le connecteur Lovable),
+`LOVABLE_API_KEY` (uniquement pour `classify-deals`, passerelle IA Lovable).
 
-Prefer working locally? You need Node.js and npm — [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating).
+### Migration backend (à faire plus tard)
+
+Le backend tourne sur Lovable Cloud. Il continue de fonctionner sur le plan gratuit de Lovable
+(20 crédits Cloud/mois ; consommation mesurée ≈ 17,5/mois en sept.–oct. 2026).
+Pour en être totalement indépendant : créer un projet Supabase personnel, y rejouer `supabase/migrations`,
+exporter/importer les données, déployer `supabase/functions`, recréer les secrets et les crons,
+puis changer les 3 variables `VITE_SUPABASE_*` sur Vercel.
+
+## Développement local
+
+Il faut Node.js 20+ et npm.
 
 ```sh
-git clone <this-repository-url>
-cd <repository-name>
-npm i
-npm run dev
-``` 
+git clone https://github.com/goldealsclub/goldealsclub.git
+cd goldealsclub
+npm ci
+npm run dev        # http://localhost:8080
+npm run build      # lance aussi les audits de non-régression (prebuild)
+```

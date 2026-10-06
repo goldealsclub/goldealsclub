@@ -94,7 +94,7 @@ const DealPage = () => {
       <SEOHead
         title={`${deal.title} — GOLDEALS CLUB`}
         description={`${deal.title} à ${deal.sale_price}${deal.currency === "EUR" ? "€" : deal.currency} chez ${deal.merchant}. ${deal.discount_percent ? `-${deal.discount_percent}%` : ""}`}
-        canonical={`https://goldealsclub.lovable.app/deal/${deal.id}`}
+        canonical={`https://www.goldealsclub.com/deal/${deal.id}`}
         image={deal.image_url || undefined}
         jsonLd={{
           "@context": "https://schema.org",

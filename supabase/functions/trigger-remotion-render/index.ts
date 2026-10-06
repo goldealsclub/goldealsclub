@@ -1,7 +1,7 @@
 // Déclenche le rendu vidéo officiel (pipeline Remotion) via GitHub Actions.
 // Le site n'exécute plus de rendu navigateur : on lance exactement le même
 // script et les mêmes paramètres que le rendu automatique quotidien.
-// L'appel GitHub passe par le connecteur (gateway) : aucun token à gérer.
+// L'appel GitHub passe en direct (GITHUB_TOKEN) ou, à défaut, par le connecteur Lovable.
 import { corsHeaders, requireAdminOrService } from "../_shared/auth.ts";
 
 const json = (status: number, body: unknown) =>
@@ -16,10 +16,13 @@ Deno.serve(async (req) => {
   const auth = await requireAdminOrService(req);
   if (!auth.ok) return auth.response;
 
+  // Priorité : token GitHub personnel (GITHUB_TOKEN, scope "workflow") → appel direct à l'API GitHub,
+  // indépendant de Lovable. Sinon, repli sur le connecteur Lovable (LOVABLE_API_KEY + GITHUB_API_KEY).
+  const GITHUB_TOKEN = Deno.env.get("GITHUB_TOKEN");
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const GITHUB_API_KEY = Deno.env.get("GITHUB_API_KEY");
-  const repo = Deno.env.get("GITHUB_REPO"); // format "owner/repo"
-  if (!LOVABLE_API_KEY || !GITHUB_API_KEY) {
+  const repo = Deno.env.get("GITHUB_REPO") ?? "goldealsclub/goldealsclub"; // format "owner/repo"
+  if (!GITHUB_TOKEN && (!LOVABLE_API_KEY || !GITHUB_API_KEY)) {
     return json(400, {
       error: "missing_connection",
       message: "La connexion GitHub n'est pas liée au projet.",
@@ -44,13 +47,19 @@ Deno.serve(async (req) => {
   const ref = String(body.ref ?? Deno.env.get("GITHUB_REF_NAME") ?? "main");
   const workflow = "daily-tiktok-video.yml";
 
+  const dispatchUrl = GITHUB_TOKEN
+    ? `https://api.github.com/repos/${repo}/actions/workflows/${workflow}/dispatches`
+    : `https://connector-gateway.lovable.dev/github/repos/${repo}/actions/workflows/${workflow}/dispatches`;
+  const authHeaders: Record<string, string> = GITHUB_TOKEN
+    ? { Authorization: `Bearer ${GITHUB_TOKEN}` }
+    : { Authorization: `Bearer ${LOVABLE_API_KEY}`, "X-Connection-Api-Key": GITHUB_API_KEY! };
+
   const res = await fetch(
-    `https://connector-gateway.lovable.dev/github/repos/${repo}/actions/workflows/${workflow}/dispatches`,
+    dispatchUrl,
     {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "X-Connection-Api-Key": GITHUB_API_KEY,
+        ...authHeaders,
         Accept: "application/vnd.github+json",
         "X-GitHub-Api-Version": "2022-11-28",
         "Content-Type": "application/json",

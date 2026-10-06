@@ -14,7 +14,7 @@ const PromoCodesPage = () => {
       <SEOHead
         title="Codes promo — GOLDEALS CLUB"
         description="Tous les codes promo actifs chez nos vendeurs partenaires : Sport Is Good et plus encore."
-        canonical="https://goldealsclub.lovable.app/codes-promo"
+        canonical="https://www.goldealsclub.com/codes-promo"
       />
       <Header />
       <main className="flex-1 container mx-auto px-4 py-12">

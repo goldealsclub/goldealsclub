@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable/index";
 import { useI18n } from "@/lib/i18n";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,9 @@ import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { ArrowLeft, Heart, Bell, Smartphone, Shield, Zap, Star } from "lucide-react";
 import { Link } from "react-router-dom";
+
+// Google/Apple : activer avec VITE_ENABLE_SOCIAL_LOGIN=true une fois les fournisseurs configurés côté Supabase Auth.
+const SOCIAL_LOGIN_ENABLED = import.meta.env.VITE_ENABLE_SOCIAL_LOGIN === "true";
 
 const benefits = [
   { icon: Heart, label: "Favoris synchronisés sur tous vos appareils" },
@@ -137,12 +139,14 @@ const AuthPage = () => {
               {isLogin ? "Retrouvez vos favoris et alertes" : "Créez votre compte GOLDEALS CLUB"}
             </p>
 
-            {/* Social Sign In */}
+            {/* Social Sign In — affiché seulement si les fournisseurs OAuth sont configurés dans Supabase */}
+            {SOCIAL_LOGIN_ENABLED && (<>
             <div className="space-y-3">
               <button
                 onClick={async () => {
-                  const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: socialRedirect(),
+                  const { error } = await supabase.auth.signInWithOAuth({
+                    provider: "google",
+                    options: { redirectTo: socialRedirect() },
                   });
                   if (error) toast.error(error.message);
                 }}
@@ -159,8 +163,9 @@ const AuthPage = () => {
 
               <button
                 onClick={async () => {
-                  const { error } = await lovable.auth.signInWithOAuth("apple", {
-                    redirect_uri: socialRedirect(),
+                  const { error } = await supabase.auth.signInWithOAuth({
+                    provider: "apple",
+                    options: { redirectTo: socialRedirect() },
                   });
                   if (error) toast.error(error.message);
                 }}
@@ -178,6 +183,7 @@ const AuthPage = () => {
               <span className="text-[10px] font-display uppercase tracking-widest text-foreground/30">ou</span>
               <div className="flex-1 h-px bg-foreground/10" />
             </div>
+            </>)}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
