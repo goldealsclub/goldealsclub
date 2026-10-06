@@ -16,6 +16,7 @@ import { fileURLToPath } from "url";
 import { execFileSync, execSync } from "child_process";
 import { imageSize } from "image-size";
 import { assertCleanCutout, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
+import { loadDeals } from "./lib/load-deals.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -52,44 +53,38 @@ const SUPABASE_URL = env.VITE_SUPABASE_URL;
 const SUPABASE_KEY = env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const localDealsPath = path.resolve(rootDir, "../public/deals.json");
-let allDeals;
-if (fs.existsSync(localDealsPath)) {
-  const payload = JSON.parse(fs.readFileSync(localDealsPath, "utf-8"));
-  allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
-} else {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/deals-json`, {
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-  });
-  const payload = await res.json();
-  allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
-}
+const allDeals = await loadDeals({ supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY, localPath: localDealsPath });
 
-const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok", "Asics", "Converse", "Vans", "Salomon", "Mizuno", "Saucony", "Hoka", "Under Armour"]);
+// Comparaison insensible à la casse : les flux mélangent "Adidas"/"adidas", "PUMA"/"Puma"…
+const brandKey = (b) => (b || "").trim().toLowerCase();
+const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok", "Asics", "Converse", "Vans", "Salomon", "Mizuno", "Saucony", "Hoka", "Under Armour"].map(brandKey));
+// Nom de marque canonique (pour les logos et l'affichage)
+const CANONICAL_BRAND = { nike: "Nike", adidas: "adidas", jordan: "Jordan", "new balance": "New Balance", puma: "Puma", reebok: "Reebok" };
 
-let rawDeals = allDeals.filter((d) => {
+let rawDeals = allDeals.map((d) => ({ ...d, brand: CANONICAL_BRAND[brandKey(d.brand)] ?? d.brand })).filter((d) => {
   const cat = (d.category || "").toLowerCase();
   return cat === "sneakers" && d.image_url && d.sale_price;
 });
 
 if (preset === "top") {
   rawDeals = rawDeals
-    .filter((d) => (d.discount_percent ?? 0) >= 30 && allowedBrands.has(d.brand))
+    .filter((d) => (d.discount_percent ?? 0) >= 30 && allowedBrands.has(brandKey(d.brand)))
     .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0));
 } else if (preset === "nike") {
   rawDeals = rawDeals
-    .filter((d) => (d.discount_percent ?? 0) >= 25 && (d.brand === "Nike" || d.brand === "Jordan"))
+    .filter((d) => (d.discount_percent ?? 0) >= 25 && (brandKey(d.brand) === "nike" || brandKey(d.brand) === "jordan"))
     .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0));
 } else if (preset === "adidas") {
   rawDeals = rawDeals
-    .filter((d) => (d.discount_percent ?? 0) >= 25 && d.brand === "adidas")
+    .filter((d) => (d.discount_percent ?? 0) >= 25 && brandKey(d.brand) === "adidas")
     .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0));
 } else if (preset === "budget") {
   rawDeals = rawDeals
-    .filter((d) => (d.discount_percent ?? 0) >= 40 && allowedBrands.has(d.brand) && d.sale_price <= 80)
+    .filter((d) => (d.discount_percent ?? 0) >= 40 && allowedBrands.has(brandKey(d.brand)) && d.sale_price <= 80)
     .sort((a, b) => (a.sale_price || 999) - (b.sale_price || 999));
 }
 
-rawDeals = rawDeals.slice(0, 100);
+rawDeals = rawDeals.slice(0, 250);
 console.log(`✅ ${rawDeals.length} deals candidats`);
 
 if (rawDeals.length < 5) {
@@ -166,31 +161,41 @@ async function imageToDataUri(url) {
   const direct = extractDirectImageUrl(url);
   if (direct) candidates.push(direct);
 
-  // 1) tente la version studio détourée — meilleur rendu
+  // Version studio détourée uniquement (contrôle qualité strict conservé).
+  // Les motifs de rejet sont journalisés : avant, ils étaient avalés et le job
+  // échouait sans explication.
+  const reasons = [];
   for (const c of candidates) {
     try {
       // qualité source minimale d'abord (évite d'upscaler un thumbnail)
       await fetchImage(c);
-      try {
-        const studio = await fetchStudioImage(c);
-        return { dataUri: studio.dataUri, dims: studio.dims, source: "studio" };
-      } catch {}
-    } catch {}
+    } catch (e) {
+      reasons.push(`source: ${e.message}`);
+      continue;
+    }
+    try {
+      const studio = await fetchStudioImage(c);
+      return { dataUri: studio.dataUri, dims: studio.dims, source: "studio" };
+    } catch (e) {
+      reasons.push(`détourage: ${e.message}`);
+    }
   }
-  return null;
+  return { rejected: reasons.join(" | ") || "aucune source" };
 }
 
 
 const deals = [];
 const seenTitles = new Set();
+let rejectedCount = 0;
 for (const d of rawDeals) {
   if (deals.length >= 5) break;
   // Évite doublons exacts pour varier les modèles
   const key = `${d.brand}|${(d.title || "").slice(0, 40)}`;
   if (seenTitles.has(key)) continue;
   const result = await imageToDataUri(d.image_url);
-  if (!result) {
-    console.log(`   ⏭️  ${d.brand} — pas d'image HD`);
+  if (!result || result.rejected) {
+    rejectedCount++;
+    console.log(`   ⏭️  ${d.brand} — rejeté (${result?.rejected ?? "inconnu"})`);
     continue;
   }
   seenTitles.add(key);
@@ -210,7 +215,7 @@ for (const d of rawDeals) {
 }
 
 if (deals.length < 5) {
-  console.error(`❌ Seulement ${deals.length} deals avec images HD`);
+  console.error(`❌ Seulement ${deals.length} deals avec images HD (${rejectedCount} images rejetées sur ${rawDeals.length} candidats)`);
   process.exit(1);
 }
 

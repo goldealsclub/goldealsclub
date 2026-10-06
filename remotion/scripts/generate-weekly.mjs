@@ -28,6 +28,7 @@ import { fileURLToPath } from "url";
 import { execFileSync, execSync } from "child_process";
 import { imageSize } from "image-size";
 import { assertCleanCutout, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
+import { loadDeals } from "./lib/load-deals.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const rootDir = path.resolve(__dirname, "..");
@@ -63,22 +64,7 @@ const query = new URLSearchParams({
 });
 
 const localDealsPath = path.resolve(rootDir, "../public/deals.json");
-let allDeals;
-if (fs.existsSync(localDealsPath)) {
-  console.log("📂 Reading deals from local public/deals.json");
-  const payload = JSON.parse(fs.readFileSync(localDealsPath, "utf-8"));
-  allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
-} else {
-  const res = await fetch(`${SUPABASE_URL}/functions/v1/deals-json`, {
-    headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
-  });
-  if (!res.ok) {
-    console.error("Edge function fetch failed:", res.status, await res.text());
-    process.exit(1);
-  }
-  const payload = await res.json();
-  allDeals = Array.isArray(payload) ? payload : (payload.deals || []);
-}
+const allDeals = await loadDeals({ supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY, localPath: localDealsPath });
 const allowedBrands = new Set(["Nike", "adidas", "Jordan", "New Balance", "Puma", "Reebok", "Asics", "Converse", "Vans", "Salomon", "Mizuno", "Saucony", "Hoka", "Under Armour"]);
 
 // Daily-seeded shuffle so each day picks a different selection
