@@ -10,6 +10,23 @@ export const CUTOUT_LIMITS = Object.freeze({
 });
 
 /**
+ * Ajoute une marge blanche opaque autour de l'image.
+ * wsrv.nl ignore désormais le paramètre `pad` (constaté le 06/10/2026) : sans cette
+ * marge locale, les visuels dont le produit touche le cadre sont tous rejetés
+ * ("cadre résiduel détecté") et la vidéo quotidienne échoue.
+ */
+export function padStudioMargin(buf, margin = 60) {
+  const src = PNG.sync.read(buf);
+  const out = new PNG({ width: src.width + margin * 2, height: src.height + margin * 2 });
+  out.data.fill(255);
+  for (let y = 0; y < src.height; y++) {
+    const from = y * src.width * 4;
+    src.data.copy(out.data, ((y + margin) * out.width + margin) * 4, from, from + src.width * 4);
+  }
+  return PNG.sync.write(out);
+}
+
+/**
  * Retire uniquement le fond clair connecté aux bords du packshot.
  * Les pixels du bord extérieur restent totalement transparents : le feather
  * est calculé contre le produit, jamais contre les limites de l'image.

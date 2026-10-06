@@ -15,7 +15,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { execFileSync, execSync } from "child_process";
 import { imageSize } from "image-size";
-import { assertCleanCutout, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
+import { assertCleanCutout, padStudioMargin, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
 import { loadDeals } from "./lib/load-deals.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -149,7 +149,7 @@ async function fetchStudioImage(rawUrl) {
     headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://wsrv.nl/" },
   });
   if (!r.ok) throw new Error(`wsrv HTTP ${r.status}`);
-  const buf = removeConnectedStudioBackground(Buffer.from(await r.arrayBuffer()));
+  const buf = removeConnectedStudioBackground(padStudioMargin(Buffer.from(await r.arrayBuffer())));
   assertCleanCutout(buf);
   let dims;
   try { dims = imageSize(buf); } catch { throw new Error("wsrv undecodable"); }
