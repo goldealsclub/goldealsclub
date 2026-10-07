@@ -218,13 +218,14 @@ function inferCategory(category: string, title: string): Category {
   return category as Category;
 }
 
-/** Produits hors mode/sport-style (maison, animaux, pêche, équitation, musculation,
- *  nutrition…) amenés par les flux Awin des magasins de sport : retirés du catalogue.
- *  Appliqué UNIQUEMENT aux articles restés en « autres » après classement. */
-const NON_FASHION = /^ (coussins?|torchons?|housses?|harnais|tapis|appareils?|espaliers?|disques?|bancs?|bench|planches?|mat[ée]riel|m[ée]decine ball|medecine ball|kettlebells?|halt[èe]res?|leurres?|cannes?|moulinets?|pneus?|chambres? à air|antivols?|selles?|licols?|mors|couvertures?|prot[ée]ines?|nutrition|barres?|racks?|cages?|poulies?|jouets?|puzzles?|figurines?|peluches?|tentes?|matelas|lampes?|batteries?|chargeurs?|pinces?|tournevis|aiguilles?|pompes?|guêtres|tabliers?|plateaux?|cordes?|roues?|valises?|kit|support|sangles?|mini-chaps|cloches?|filets?|cibles?|plastrons?|élastiques?|bandes? de|rouleaux?|foam roller|stepper|trampoline|vélos?|trottinettes?|rollers?|skate-?boards?|planches? à|ballons? de lestage)\b/;
+/** Les flux Awin des magasins de sport contiennent aussi des produits hors mode
+ *  (maison, jouets, outillage, équitation, pêche, musculation, nutrition…), souvent
+ *  avec des titres en allemand. Règle : un article resté en « autres » après
+ *  classement n'est gardé que s'il ressemble à un vêtement. */
+const AUTRES_KEEP = /\b(robes?|jupes?|jupe-short|combinaisons?|combi|kimonos?|judogi|karategi|dobok|tenues?|ensembles?|surv[êe]tements?|dress|skirt|jumpsuit|overall|salopettes?|bodys?|tuniques?|lingerie|pyjamas?|peignoirs?|nuisettes?|maillots?|jersey|shorty|ponchos?|capes?|knickers|tights|swimsuit|trikot|kleid|rock|bademode|badeanzug)\b/i;
 
 export function isNonFashion(title: string, category: string): boolean {
-  return category === "autres" && NON_FASHION.test(` ${(title || "").toLowerCase()} `);
+  return category === "autres" && !AUTRES_KEEP.test(title || "");
 }
 
 /** Normalize raw JSON deals, filtering out broken entries.

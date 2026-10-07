@@ -28,7 +28,15 @@ const OnboardingModal = () => {
   const [selectedBrands, setSelectedBrands] = useState<string[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<Category[]>([]);
 
-  const allBrands = [...new Set(allDeals.map((d) => d.brand).filter((brand) => brand && !EXCLUDED_ONBOARDING_BRANDS.has(brand)))].sort();
+  // Marques les plus présentes d'abord (avant : tri alphabétique sensible à la casse,
+  // « adidas » arrivait en dernier après 400 marques confidentielles).
+  const brandCounts = new Map<string, number>();
+  for (const d of allDeals) {
+    if (d.brand && !EXCLUDED_ONBOARDING_BRANDS.has(d.brand)) brandCounts.set(d.brand, (brandCounts.get(d.brand) || 0) + 1);
+  }
+  const allBrands = [...brandCounts.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "fr", { sensitivity: "base" }))
+    .map(([brand]) => brand);
   const allCategories = [...new Set(allDeals.map((d) => d.category))].sort() as Category[];
 
   const categoryLabels: Record<string, string> = {
