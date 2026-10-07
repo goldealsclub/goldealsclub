@@ -356,7 +356,17 @@ Deno.serve(async (req) => {
 
     async function flushBuffer() {
       if (buffer.length === 0) return;
-      const { error } = await supabase.from("deals").upsert(buffer, { onConflict: "id" });
+      let { error } = await supabase.from("deals").upsert(buffer, { onConflict: "id" });
+      // Timeout SQL ponctuel (autovacuum, charge) : on réessaie en deux moitiés.
+      if (error?.code === "57014") {
+        console.warn("⚠️ upsert timeout, retry in halves");
+        const half = Math.ceil(buffer.length / 2);
+        for (const part of [buffer.slice(0, half), buffer.slice(half)]) {
+          await new Promise((r) => setTimeout(r, 1500));
+          ({ error } = await supabase.from("deals").upsert(part, { onConflict: "id" }));
+          if (error) break;
+        }
+      }
       if (error) {
         console.error("Upsert error:", error.message);
         throw error;
@@ -506,10 +516,10 @@ Deno.serve(async (req) => {
             .like("id", `awin-${mid}-%`)
             .lt("detected_at", runStartedAt)
             .limit(500);
-          if (selErr) throw selErr;
+          if (selErr) { console.error("cleanup select failed", selErr); throw selErr; }
           if (!stale || stale.length === 0) break;
           const { error: delErr } = await supabase.from("deals").delete().in("id", stale.map((d) => d.id));
-          if (delErr) throw delErr;
+          if (delErr) { console.error("cleanup delete failed", delErr); throw delErr; }
           deleted += stale.length;
         }
       }
