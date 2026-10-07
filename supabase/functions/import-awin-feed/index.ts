@@ -508,19 +508,32 @@ Deno.serve(async (req) => {
     let deleted = 0;
     if (doCleanup && reachedEnd && kept > 0) {
       for (const mid of merchantIds) {
-        // Par lots de 500 pour rester sous le timeout SQL.
-        for (let guard = 0; guard < 200; guard++) {
-          const { data: stale, error: selErr } = await supabase
-            .from("deals").select("id")
-            .eq("merchant", merchantNames.get(mid) ?? "")
-            .like("id", `awin-${mid}-%`)
-            .lt("detected_at", runStartedAt)
-            .limit(500);
+        // Parcours par clé primaire (pagination keyset, 1000 lignes/requête)
+        // puis suppression par lots de 200 : chaque requête reste courte même
+        // quand la table est gonflée par les upserts successifs.
+        const lo = `awin-${mid}-`, hi = `awin-${mid}.`;
+        let cursor = lo;
+        const stale: string[] = [];
+        for (let guard = 0; guard < 500; guard++) {
+          const { data: page, error: selErr } = await supabase
+            .from("deals").select("id,detected_at")
+            .gt("id", cursor).lt("id", hi)
+            .order("id", { ascending: true })
+            .limit(1000);
           if (selErr) { console.error("cleanup select failed", selErr); throw selErr; }
-          if (!stale || stale.length === 0) break;
-          const { error: delErr } = await supabase.from("deals").delete().in("id", stale.map((d) => d.id));
+          if (!page || page.length === 0) break;
+          for (const d of page) if (!d.detected_at || d.detected_at < runStartedAt) {
+            // comparaison robuste (formats ISO différents)
+            if (!d.detected_at || new Date(d.detected_at).getTime() < new Date(runStartedAt).getTime()) stale.push(d.id);
+          }
+          cursor = page[page.length - 1].id;
+          if (page.length < 1000) break;
+        }
+        console.log(`🧹 ${stale.length} offres obsolètes à supprimer pour ${mid}`);
+        for (let j = 0; j < stale.length; j += 200) {
+          const { error: delErr } = await supabase.from("deals").delete().in("id", stale.slice(j, j + 200));
           if (delErr) { console.error("cleanup delete failed", delErr); throw delErr; }
-          deleted += stale.length;
+          deleted += Math.min(200, stale.length - j);
         }
       }
     }
