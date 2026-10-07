@@ -309,13 +309,15 @@ Deno.serve(async (req) => {
       "aw_deep_link","product_name","aw_product_id","merchant_product_id",
       "merchant_image_url","description","merchant_category","search_price",
       "merchant_name","merchant_id","category_name","aw_image_url","currency","gender","product_gender",
+      // Genre fourni par le marchand (Snipes : Femmes/Hommes/Unisex)
+      "Fashion:suitable_for",
       "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
       "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
       // Some merchants ship the RRP only via product_price_old / base_price / saving
       "product_price_old","base_price","saving",
     ].join(",");
 
-    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
+    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/1/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
 
     console.log(`📡 Streaming Awin feed for FID ${fidParam}...`);
     const feedRes = await fetch(feedUrl);
@@ -429,7 +431,7 @@ Deno.serve(async (req) => {
       const merchant = (r.merchant_name || "").trim() || "Awin";
       const brand = cleanBrand(r.brand_name || "", merchant);
       const category = inferCategory(r.merchant_category || r.category_name || "", title);
-      const gender = inferGender(title, r.description || "", r.merchant_category || "", r.gender || r.product_gender || "");
+      const gender = inferGender(title, r.description || "", r.merchant_category || "", r["Fashion:suitable_for"] || r.gender || r.product_gender || "");
 
       let dealLevel = "promo-normale", flameCount = 1;
       if (discount >= 50) { dealLevel = "hot-deal"; flameCount = 3; }
