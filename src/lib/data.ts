@@ -355,6 +355,8 @@ async function fetchLive(): Promise<any[] | null> {
   } catch { return null; }
 }
 
+const SNAPSHOT_MAX_AGE_MS = 30 * 60 * 60 * 1000;
+
 /** Fetch the daily snapshot from Storage CDN. Fast (~1s, brotli + edge cached). */
 async function fetchSnapshot(): Promise<any[] | null> {
   if (!SUPABASE_URL) return null;
@@ -364,7 +366,17 @@ async function fetchSnapshot(): Promise<any[] | null> {
     );
     if (!r.ok) return null;
     const data = await r.json();
-    return Array.isArray(data) && data.length > 0 ? data : null;
+    if (!Array.isArray(data) || data.length === 0) return null;
+    // Snapshot figé (ex. 02/10 → 07/10/2026 : job quotidien en échec) = offres
+    // expirées et pages « Deal not found ». Au-delà de 30 h, on l'ignore et la
+    // fonction live prend le relais.
+    let newest = 0;
+    for (const d of data) {
+      const ts = Date.parse(d?.detected_at || "");
+      if (ts > newest) newest = ts;
+    }
+    if (newest && Date.now() - newest > SNAPSHOT_MAX_AGE_MS) return null;
+    return data;
   } catch { return null; }
 }
 

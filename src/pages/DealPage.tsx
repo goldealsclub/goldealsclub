@@ -5,6 +5,7 @@ import { Heart, ArrowLeft, Eye, ExternalLink, Star, Clock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { deals, isTrustedMerchant } from "@/lib/data";
 import { useFavorites } from "@/lib/favorites";
+import { useGender } from "@/lib/gender-context";
 import { useRecentlyViewed } from "@/hooks/use-recently-viewed";
 import SEOHead from "@/components/SEOHead";
 import { motion } from "framer-motion";
@@ -35,6 +36,9 @@ const DealPage = () => {
   const { toggle, isFav } = useFavorites();
   const { addViewed } = useRecentlyViewed();
 
+  // Re-rendu quand le catalogue est chargé : sans ça, un lien direct vers
+  // /deal/:id affichait « introuvable » avant même la fin du chargement.
+  const { loading } = useGender();
   const deal = deals.find((d) => d.id === id);
   // `description` est exclue du payload deals-json (perf : -35 % de payload).
   // On la charge à la demande ici, pour la seule page qui l'affiche.
@@ -61,10 +65,15 @@ const DealPage = () => {
     return () => { cancelled = true; };
   }, [deal?.id]);
 
+  if (!deal && loading) {
+    return <div className="min-h-screen bg-background" aria-busy="true" />;
+  }
+
   if (!deal) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <p className="font-body text-foreground/50">Deal not found.</p>
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4 px-4 text-center">
+        <p className="font-body text-foreground/70">Cette offre n'est plus disponible (promo terminée ou stock épuisé).</p>
+        <Link to="/" className="font-body text-sm underline underline-offset-4">Voir les offres du moment</Link>
       </div>
     );
   }
