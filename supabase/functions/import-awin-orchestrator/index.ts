@@ -23,29 +23,58 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     let mode: "sequential" | "parallel" = "parallel";
+    let only: string | null = null;
     if (req.method === "POST") {
       try {
         const body = await req.json();
         if (body?.mode === "sequential") mode = "sequential";
+        if (body?.fid) only = String(body.fid);
       } catch { /* no body */ }
     }
     const url = new URL(req.url);
+    only = url.searchParams.get("fid") ?? only;
+    const FIDS = only ? ALL_FIDS.filter((f) => f === only) : ALL_FIDS;
     if (url.searchParams.get("mode") === "sequential") mode = "sequential";
 
-    const callFid = (fid: string) =>
+    const post = (fid: string, extra: Record<string, unknown> = {}) =>
       fetch(`${SUPABASE_URL}/functions/v1/import-awin-feed?fid=${fid}`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${SERVICE_KEY}`,
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({ fid, ...extra }),
       });
+
+    // Flux trop lourds pour une seule invocation : découpés en morceaux
+    // séquentiels partageant le même run_started_at ; seul le morceau qui
+    // atteint la fin du flux fait le nettoyage des offres disparues.
+    const CHUNKED: Record<string, number> = { "112989": 5000 };
+    const MAX_CHUNKS = 20;
+
+    const callFid = async (fid: string): Promise<Response> => {
+      const size = CHUNKED[fid];
+      if (!size) return post(fid);
+      const runStartedAt = new Date().toISOString();
+      const parts: unknown[] = [];
+      for (let i = 0; i < MAX_CHUNKS; i++) {
+        const res = await post(fid, { offset: i * size, limit: size, run_started_at: runStartedAt });
+        const data = await res.json().catch(() => ({}));
+        parts.push(data);
+        console.log(`  FID ${fid} chunk ${i}: ${res.status} ${JSON.stringify(data)}`);
+        if (!res.ok) return new Response(JSON.stringify({ error: `chunk ${i} failed`, parts }), { status: 500 });
+        if ((data as any).reached_end) break;
+      }
+      return new Response(JSON.stringify({ success: true, chunked: true, parts }), { status: 200 });
+    };
 
     if (mode === "parallel") {
       // Fire-and-forget: trigger all 4 in parallel and return immediately.
       // Each invocation runs in its own isolate with its own CPU quota.
-      const triggers = ALL_FIDS.map(fid => {
-        callFid(fid).catch(err => console.error(`FID ${fid} failed:`, err));
+      const triggers = FIDS.map(fid => {
+        const p = callFid(fid).catch(err => console.error(`FID ${fid} failed:`, err));
+        // Garde l'isolate vivant pour les imports découpés (chaîne de morceaux).
+        (globalThis as any).EdgeRuntime?.waitUntil?.(p);
         return fid;
       });
       console.log(`🚀 Triggered ${triggers.length} parallel imports`);
@@ -62,7 +91,7 @@ Deno.serve(async (req) => {
 
     // Sequential: wait for each FID
     const results: Array<{ fid: string; ok: boolean; result?: any; error?: string }> = [];
-    for (const fid of ALL_FIDS) {
+    for (const fid of FIDS) {
       console.log(`▶️  Importing FID ${fid}...`);
       try {
         const res = await callFid(fid);

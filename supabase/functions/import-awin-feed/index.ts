@@ -19,8 +19,13 @@ const corsHeaders = {
 // Streaming line iterator (handles CSV with quoted multi-line fields)
 // ──────────────────────────────────────────────────────────────────────────────
 async function* iterateCsvLines(stream: ReadableStream<string>): AsyncGenerator<string> {
+  // Scanne chaque caractère UNE seule fois : `scanPos` mémorise où reprendre,
+  // l'état `inQuotes` reste cohérent entre deux chunks (l'ancienne version
+  // re-scannait la fin du buffer et inversait l'état des guillemets, ce qui
+  // pouvait faire gonfler le buffer jusqu'au manque de ressources).
   const reader = stream.getReader();
   let buffer = "";
+  let scanPos = 0;
   let inQuotes = false;
 
   while (true) {
@@ -28,23 +33,23 @@ async function* iterateCsvLines(stream: ReadableStream<string>): AsyncGenerator<
     if (done) break;
     buffer += value;
 
-    // Walk through buffer to find LINE boundaries that are NOT inside quotes
     let lineStart = 0;
-    for (let i = 0; i < buffer.length; i++) {
-      const c = buffer[i];
-      if (c === '"') {
-        // Toggle, accounting for escaped quotes ""
-        if (inQuotes && buffer[i + 1] === '"') { i++; continue; }
+    let i = scanPos;
+    for (; i < buffer.length; i++) {
+      const c = buffer.charCodeAt(i);
+      if (c === 34 /* " */) {
+        if (inQuotes && i + 1 < buffer.length && buffer.charCodeAt(i + 1) === 34) { i++; continue; }
+        if (inQuotes && i + 1 >= buffer.length) break; // attendre le chunk suivant pour trancher
         inQuotes = !inQuotes;
-      } else if (c === "\n" && !inQuotes) {
+      } else if (c === 10 /* \n */ && !inQuotes) {
         let line = buffer.slice(lineStart, i);
         if (line.endsWith("\r")) line = line.slice(0, -1);
         yield line;
         lineStart = i + 1;
       }
     }
-    // Keep unfinished tail in buffer
     buffer = buffer.slice(lineStart);
+    scanPos = i - lineStart;
   }
   if (buffer.length > 0) {
     let line = buffer;
@@ -284,12 +289,20 @@ Deno.serve(async (req) => {
     // Accept FID via query param (?fid=48225) or body { fid }
     const url = new URL(req.url);
     let fidParam = url.searchParams.get("fid");
-    if (!fidParam && req.method === "POST") {
-      try {
-        const body = await req.json();
-        if (body?.fid) fidParam = String(body.fid);
-      } catch { /* no body */ }
+    let body: Record<string, unknown> = {};
+    if (req.method === "POST") {
+      try { body = (await req.json()) ?? {}; } catch { /* no body */ }
     }
+    if (!fidParam && body?.fid) fidParam = String(body.fid);
+    // Découpage optionnel : ne traiter que les lignes [offset, offset+limit).
+    // `run_started_at` est partagé par tous les morceaux d'un même import ;
+    // `cleanup=1` (dernier morceau) supprime les offres du marchand non vues
+    // depuis ce début d'import.
+    const param = (k: string) => url.searchParams.get(k) ?? (body[k] != null ? String(body[k]) : null);
+    const offset = Math.max(0, parseInt(param("offset") || "0", 10) || 0);
+    const limit = Math.max(0, parseInt(param("limit") || "0", 10) || 0); // 0 = illimité
+    const runStartedAt = param("run_started_at") || new Date().toISOString();
+    const doCleanup = (param("cleanup") ?? "1") !== "0";
     const ALL_FIDS = ["48225", "87190", "87833", "90621", "111256", "112989"];
     if (!fidParam || !ALL_FIDS.includes(fidParam)) {
       return new Response(
@@ -311,8 +324,8 @@ Deno.serve(async (req) => {
       "merchant_name","merchant_id","category_name","aw_image_url","currency","gender","product_gender",
       // Genre fourni par le marchand (Snipes : Femmes/Hommes/Unisex)
       "Fashion:suitable_for",
-      "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
-      "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
+      "merchant_deep_link","brand_name","rrp_price","savings_percent",
+      "in_stock","stock_status","large_image","valid_from","valid_to",
       // Some merchants ship the RRP only via product_price_old / base_price / saving
       "product_price_old","base_price","saving",
     ].join(",");
@@ -331,16 +344,29 @@ Deno.serve(async (req) => {
       .pipeThrough(new TextDecoderStream("utf-8"));
 
     let headers: string[] | null = null;
+    let reachedEnd = true;
+    const merchantIds = new Set<string>();
+    const merchantNames = new Map<string, string>();
     let rowCount = 0;
     let kept = 0;
     let skippedNoImage = 0, skippedNoPrice = 0, skippedOutOfStock = 0, skippedNoTitle = 0, skippedOffTopic = 0;
     const importedIds = new Set<string>();
     let buffer: Record<string, any>[] = [];
-    const BATCH_SIZE = 250;
+    const BATCH_SIZE = 500;
 
     async function flushBuffer() {
       if (buffer.length === 0) return;
-      const { error } = await supabase.from("deals").upsert(buffer, { onConflict: "id" });
+      let { error } = await supabase.from("deals").upsert(buffer, { onConflict: "id" });
+      // Timeout SQL ponctuel (autovacuum, charge) : on réessaie en deux moitiés.
+      if (error?.code === "57014") {
+        console.warn("⚠️ upsert timeout, retry in halves");
+        const half = Math.ceil(buffer.length / 2);
+        for (const part of [buffer.slice(0, half), buffer.slice(half)]) {
+          await new Promise((r) => setTimeout(r, 1500));
+          ({ error } = await supabase.from("deals").upsert(part, { onConflict: "id" }));
+          if (error) break;
+        }
+      }
       if (error) {
         console.error("Upsert error:", error.message);
         throw error;
@@ -359,6 +385,8 @@ Deno.serve(async (req) => {
       }
 
       rowCount++;
+      if (rowCount <= offset) continue;            // avant la fenêtre : pas de parsing
+      if (limit && rowCount > offset + limit) { reachedEnd = false; break; }
       const fields = parseRow(line);
       if (fields.length !== headers.length) continue;
 
@@ -414,6 +442,7 @@ Deno.serve(async (req) => {
       }
 
       const merchantId = r.merchant_id || "0";
+      merchantIds.add(merchantId);
       const productId = r.aw_product_id || r.merchant_product_id || "";
       if (!productId) continue;
       const id = `awin-${merchantId}-${productId}`;
@@ -429,6 +458,7 @@ Deno.serve(async (req) => {
 
 
       const merchant = (r.merchant_name || "").trim() || "Awin";
+      merchantNames.set(merchantId, merchant);
       const brand = cleanBrand(r.brand_name || "", merchant);
       const category = inferCategory(r.merchant_category || r.category_name || "", title);
       const gender = inferGender(title, r.description || "", r.merchant_category || "", r["Fashion:suitable_for"] || r.gender || r.product_gender || "");
@@ -459,7 +489,7 @@ Deno.serve(async (req) => {
         is_super_deal: discount >= 50,
         deal_level: dealLevel,
         flame_count: flameCount,
-        detected_at: new Date().toISOString(),
+        detected_at: runStartedAt,
       });
 
       if (buffer.length >= BATCH_SIZE) await flushBuffer();
@@ -472,40 +502,48 @@ Deno.serve(async (req) => {
     await flushBuffer();
     console.log(`✅ Total: ${rowCount} rows scanned, ${kept} imported`);
 
-    // Cleanup: remove deals from THIS merchant only that are NOT in this import
-    // (out-of-stock / removed). We detect the merchant prefix from importedIds.
+    // Nettoyage : toutes les offres importées par ce run ont detected_at =
+    // run_started_at. On supprime celles du marchand restées plus anciennes,
+    // uniquement si le flux a été lu jusqu'au bout (dernier morceau).
     let deleted = 0;
-    const merchantPrefixes = new Set<string>();
-    for (const id of importedIds) {
-      // id format: awin-{merchantId}-{productId} → keep "awin-{merchantId}-"
-      const parts = id.split("-");
-      if (parts.length >= 3) merchantPrefixes.add(`${parts[0]}-${parts[1]}-`);
-    }
-
-    for (const prefix of merchantPrefixes) {
-      let from = 0;
-      const pageSize = 1000;
-      while (true) {
-        const { data: page } = await supabase
-          .from("deals").select("id").like("id", `${prefix}%`)
-          .range(from, from + pageSize - 1);
-        if (!page || page.length === 0) break;
-        const toDelete = page.filter(d => !importedIds.has(d.id)).map(d => d.id);
-        if (toDelete.length > 0) {
-          for (let j = 0; j < toDelete.length; j += 500) {
-            const slice = toDelete.slice(j, j + 500);
-            await supabase.from("deals").delete().in("id", slice);
+    if (doCleanup && reachedEnd && kept > 0) {
+      for (const mid of merchantIds) {
+        // Parcours par clé primaire (pagination keyset, 1000 lignes/requête)
+        // puis suppression par lots de 200 : chaque requête reste courte même
+        // quand la table est gonflée par les upserts successifs.
+        const lo = `awin-${mid}-`, hi = `awin-${mid}.`;
+        let cursor = lo;
+        const stale: string[] = [];
+        for (let guard = 0; guard < 500; guard++) {
+          const { data: page, error: selErr } = await supabase
+            .from("deals").select("id,detected_at")
+            .gt("id", cursor).lt("id", hi)
+            .order("id", { ascending: true })
+            .limit(1000);
+          if (selErr) { console.error("cleanup select failed", selErr); throw selErr; }
+          if (!page || page.length === 0) break;
+          for (const d of page) if (!d.detected_at || d.detected_at < runStartedAt) {
+            // comparaison robuste (formats ISO différents)
+            if (!d.detected_at || new Date(d.detected_at).getTime() < new Date(runStartedAt).getTime()) stale.push(d.id);
           }
-          deleted += toDelete.length;
+          cursor = page[page.length - 1].id;
+          if (page.length < 1000) break;
         }
-        if (page.length < pageSize) break;
-        from += pageSize;
+        console.log(`🧹 ${stale.length} offres obsolètes à supprimer pour ${mid}`);
+        for (let j = 0; j < stale.length; j += 200) {
+          const { error: delErr } = await supabase.from("deals").delete().in("id", stale.slice(j, j + 200));
+          if (delErr) { console.error("cleanup delete failed", delErr); throw delErr; }
+          deleted += Math.min(200, stale.length - j);
+        }
       }
     }
 
     const result = {
       success: true,
       fid: fidParam,
+      offset, limit, run_started_at: runStartedAt,
+      reached_end: reachedEnd,
+      cleanup_done: doCleanup && reachedEnd && kept > 0,
       total_rows: rowCount,
       imported: kept,
       deleted_stale: deleted,
