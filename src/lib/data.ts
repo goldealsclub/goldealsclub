@@ -161,9 +161,22 @@ function genderToLabel(gender: Gender): string {
 function inferCategory(category: string, title: string): Category {
   const t = ` ${(title || "").toLowerCase()} `;
 
+  // 0. Noms de produits sans ambiguïté, testés AVANT les mots-clés partiels
+  //    (sinon « Bottes western » → vestes via « weste », « Chaussettes Crew » → t-shirts…)
+  if (/^ (sac|sacs|sacoche|chaussettes?|socks?|ballons?|balles?|casques?|bob|bonnets?|casquettes?|gants?|ceintures?|gourdes?|cagoule|tour de cou|bandeau|serviette|trousse|valise)\b/.test(t)
+    || /\b(sac à dos|sac de sport|crew socks?|ballon de|mini-ballon)\b/.test(t)) return "accessoires";
+  const FOOTWEAR = /\b(chaussures?|sneakers?|bottes?|bottines?|boots?|sandales?|claquettes?|tongs?|baskets)\b/;
+  const APPAREL = /\b(t-shirts?|tee|hoodie|sweat\S*|leggings?|pantalons?|shorts?|vestes?|jackets?|polos?|chemises?|maillots?|robes?|chaussettes?|socks?)\b|bootcut|boot cut|désodorisant/;
+  if ((/^ (chaussures?|sneakers?|bottes?|bottines?|boots?|sandales?|claquettes?|tongs?|baskets?) /.test(t) && !/\b(hoodie|sweat\S*|t-shirts?|tee)\b/.test(t))
+    || (FOOTWEAR.test(t) && !APPAREL.test(t))) return "sneakers";
+  if (/\b(brassi[èe]re|soutien-gorge|sports? bra|rashguard)\b/.test(t) || /^ haut /.test(t)) return "t-shirts";
+  if (/\bsweat-shirt|sweat à capuche|sweatshirt à capuche/.test(t)) return "hoodies";
+  if (/\b(short|collant|cuissard)s?\b/.test(t) && !/short[ -]?sleeve|manches? courtes?|jacket|veste|doudoune|parka/.test(t)) return "pantalons";
+
   // 1. Jackets FIRST – "Short Puffer Jacket" must not match "short " in pants
-  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","wind breaker","windrunner","coupe-vent","bomber","puffer","gilet","weste","overshirt","vest ","anorak","softshell","teddy ","cagoule","firebird tt","jacke ","sherpa","traningsjacke","sst tt","cardigan","mount hope","winterized","wr fz","adverzip"];
-  if (jacketKw.some(k => t.includes(k))) return "vestes";
+  const jacketKw = ["jacket","veste","manteau","coat","blouson","parka","doudoune","windbreaker","wind breaker","windrunner","coupe-vent","bomber","puffer","gilet","weste ","overshirt","vest ","anorak","softshell","teddy ","firebird tt","jacke ","sherpa","traningsjacke","sst tt","cardigan","mount hope","winterized","wr fz","adverzip"];
+  const tJacket = t.replace("teddy smith", ""); // marque, pas un « teddy »
+  if (jacketKw.some(k => tJacket.includes(k))) return "vestes";
 
   // 2. Hoodies — exclude items that also match pants/shorts/skirt keywords
   const hoodieKw = ["hoodie","hooded-","sweatshirt","sweat ","sweat,","sweats ","capuche","pullover","crew neck","crewneck","sweater","sweatjacket","tracktop","track top","trainingstop","zip top","halfzip","half-zip","half zip","zipper ","flc po ","troyer"];

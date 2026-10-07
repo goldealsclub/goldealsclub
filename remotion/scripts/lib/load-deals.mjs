@@ -1,5 +1,5 @@
 // Charge les deals DU JOUR pour les vidéos.
-// Ordre : snapshot quotidien (Storage CDN) → fonction live deals-json → public/deals.json (figé, dernier recours).
+// Ordre : fonction live deals-json → snapshot quotidien (Storage CDN) → public/deals.json (figé, dernier recours).
 // Avant : public/deals.json était lu en priorité, or ce fichier est figé dans le dépôt
 // (avril 2026) → promos expirées, images mortes, rendu en échec.
 import fs from "fs";
@@ -28,12 +28,9 @@ async function tryFetch(label, url, headers = {}) {
 
 export async function loadDeals({ supabaseUrl, supabaseKey, localPath }) {
   if (supabaseUrl) {
-    const snapshot = await tryFetch(
-      "snapshot quotidien",
-      `${supabaseUrl}/storage/v1/object/public/deals-snapshots/all.json`,
-    );
-    if (snapshot) return snapshot;
-
+    // 1. Fonction live (toujours à jour). Le snapshot quotidien peut être figé :
+    //    le 07/10/2026 il datait du 02/10 (job snapshot en échec, deals-json HTTP 500
+    //    pendant l'import Awin de 06:00 UTC).
     if (supabaseKey) {
       const live = await tryFetch("fonction deals-json", `${supabaseUrl}/functions/v1/deals-json`, {
         apikey: supabaseKey,
@@ -41,6 +38,13 @@ export async function loadDeals({ supabaseUrl, supabaseKey, localPath }) {
       });
       if (live) return live;
     }
+
+    // 2. Snapshot quotidien (CDN) en secours.
+    const snapshot = await tryFetch(
+      "snapshot quotidien",
+      `${supabaseUrl}/storage/v1/object/public/deals-snapshots/all.json`,
+    );
+    if (snapshot) return snapshot;
   }
 
   if (localPath && fs.existsSync(localPath)) {
