@@ -166,20 +166,32 @@ export function isOffTopic(title: string, category: string, description: string)
   return OFF_TOPIC_RE.test(all) || OFF_TOPIC_RE2.test(all) || OFF_TOPIC_RE3.test(all) || OFF_TOPIC_RE4.test(all);
 }
 
+/** Normalise une valeur de genre fournie par le marchand (Fashion:suitable_for, gender…). */
+function normalizeSuppliedGender(raw: string): string {
+  const s = ` ${(raw || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")} `;
+  if (s.trim() === "") return "";
+  if (/\b(enfants?|kids?|junior|juniors|children|child|youth|bebe|baby|garcons?|filles?|boys?|girls?|kinder)\b/.test(s)) return "enfant";
+  if (/\b(unisex|unisexe|mixte)\b/.test(s)) return "unisexe";
+  if (/\b(femmes?|women|womens|woman|female|ladies|damen|mujer|donna)\b/.test(s)) return "femme";
+  if (/\b(hommes?|men|mens|man|male|herren|hombre|uomo)\b/.test(s)) return "homme";
+  return "";
+}
+
 function inferGender(title: string, description: string, productCategory: string, genderField = ""): string {
   const combined = ` ${(description || "").toLowerCase()} ${(title || "").toLowerCase()} ${(productCategory || "").toLowerCase()} `;
+  const supplied = normalizeSuppliedGender(genderField);
 
+  // 1. Champ marchand « enfant » : définitif.
+  if (supplied === "enfant") return "enfant";
+
+  // 2. Marqueurs enfant explicites dans le titre (ex. Snipes range les « (GS) » chez Hommes).
   const enfantKw = [" enfant","enfants","kids","junior","bébé","toddler","infant","youth","kinder"," boy "," girl ",
      " garçon"," garcon"," fille ","(gs)","(ps)","(td)"," jr "," gs)"," cadet","juniors"];
   const enfantExclude = ["baby tee","junior mesure"];
   if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
 
-  // Le champ marchand explicite est prioritaire sur les heuristiques adultes.
-  const supplied = genderField.trim().toLowerCase();
-  if (["female", "femme", "women", "woman", "damen"].includes(supplied)) return "femme";
-  if (["male", "homme", "men", "man", "herren"].includes(supplied)) return "homme";
-  if (["child", "children", "kids", "kid", "enfant", "junior"].includes(supplied)) return "enfant";
-  if (["unisex", "unisexe"].includes(supplied)) return "unisexe";
+  // 3. Le champ marchand adulte est prioritaire sur les heuristiques texte.
+  if (supplied) return supplied;
 
   const femmeKw = ["pour femme"," femme ", " femme,", " femmes ","women","woman","wmns","w's ","ladies","damen",
     "pour fille", " fille ", "mädchen", " mujer ", " donna ",
