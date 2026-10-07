@@ -23,13 +23,17 @@ Deno.serve(async (req) => {
     const SERVICE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 
     let mode: "sequential" | "parallel" = "parallel";
+    let only: string | null = null;
     if (req.method === "POST") {
       try {
         const body = await req.json();
         if (body?.mode === "sequential") mode = "sequential";
+        if (body?.fid) only = String(body.fid);
       } catch { /* no body */ }
     }
     const url = new URL(req.url);
+    only = url.searchParams.get("fid") ?? only;
+    const FIDS = only ? ALL_FIDS.filter((f) => f === only) : ALL_FIDS;
     if (url.searchParams.get("mode") === "sequential") mode = "sequential";
 
     const post = (fid: string, extra: Record<string, unknown> = {}) =>
@@ -67,7 +71,7 @@ Deno.serve(async (req) => {
     if (mode === "parallel") {
       // Fire-and-forget: trigger all 4 in parallel and return immediately.
       // Each invocation runs in its own isolate with its own CPU quota.
-      const triggers = ALL_FIDS.map(fid => {
+      const triggers = FIDS.map(fid => {
         const p = callFid(fid).catch(err => console.error(`FID ${fid} failed:`, err));
         // Garde l'isolate vivant pour les imports découpés (chaîne de morceaux).
         (globalThis as any).EdgeRuntime?.waitUntil?.(p);
@@ -87,7 +91,7 @@ Deno.serve(async (req) => {
 
     // Sequential: wait for each FID
     const results: Array<{ fid: string; ok: boolean; result?: any; error?: string }> = [];
-    for (const fid of ALL_FIDS) {
+    for (const fid of FIDS) {
       console.log(`▶️  Importing FID ${fid}...`);
       try {
         const res = await callFid(fid);
