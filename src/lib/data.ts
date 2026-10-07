@@ -171,6 +171,10 @@ function inferCategory(category: string, title: string): Category {
     || (FOOTWEAR.test(t) && !APPAREL.test(t))) return "sneakers";
   if (/\b(brassi[èe]re|soutien-gorge|sports? bra|rashguard)\b/.test(t) || /^ haut /.test(t)) return "t-shirts";
   if (/\bsweat-shirt|sweat à capuche|sweatshirt à capuche/.test(t)) return "hoodies";
+  if (/^ (blazers?|cabans?|trench)\b/.test(t)) return "vestes";
+  if (/^ (chemisiers?|blouses?|tuniques?|bodys?)\b/.test(t)) return "t-shirts";
+  if (/^ (derbies?|derbys?|escarpins?|ballerines?|mocassins?|espadrilles?)\b/.test(t)) return "sneakers";
+  if (/^ (slips?|shorty|culottes?|strings?|tangas?|boxers?|caleçons?)\b/.test(t) || /\bsloggi\b/.test(t)) return "accessoires";
   if (/\b(short|collant|cuissard)s?\b/.test(t) && !/short[ -]?sleeve|manches? courtes?|jacket|veste|doudoune|parka/.test(t)) return "pantalons";
 
   // 1. Jackets FIRST – "Short Puffer Jacket" must not match "short " in pants
@@ -214,6 +218,15 @@ function inferCategory(category: string, title: string): Category {
   return category as Category;
 }
 
+/** Produits hors mode/sport-style (maison, animaux, pêche, équitation, musculation,
+ *  nutrition…) amenés par les flux Awin des magasins de sport : retirés du catalogue.
+ *  Appliqué UNIQUEMENT aux articles restés en « autres » après classement. */
+const NON_FASHION = /^ (coussins?|torchons?|housses?|harnais|tapis|appareils?|espaliers?|disques?|bancs?|bench|planches?|mat[ée]riel|m[ée]decine ball|medecine ball|kettlebells?|halt[èe]res?|leurres?|cannes?|moulinets?|pneus?|chambres? à air|antivols?|selles?|licols?|mors|couvertures?|prot[ée]ines?|nutrition|barres?|racks?|cages?|poulies?|jouets?|puzzles?|figurines?|peluches?|tentes?|matelas|lampes?|batteries?|chargeurs?|pinces?|tournevis|aiguilles?|pompes?|guêtres|tabliers?|plateaux?|cordes?|roues?|valises?|kit|support|sangles?|mini-chaps|cloches?|filets?|cibles?|plastrons?|élastiques?|bandes? de|rouleaux?|foam roller|stepper|trampoline|vélos?|trottinettes?|rollers?|skate-?boards?|planches? à|ballons? de lestage)\b/;
+
+export function isNonFashion(title: string, category: string): boolean {
+  return category === "autres" && NON_FASHION.test(` ${(title || "").toLowerCase()} `);
+}
+
 /** Normalize raw JSON deals, filtering out broken entries.
  *  Dedupe strategy: collapse SKU/size variants but PRESERVE color variants.
  *  → primary key = merchant + image_url (different colors = different images)
@@ -255,7 +268,9 @@ function normalizeDeals(raw: any[]): Deal[] {
     }
   }
 
-  return Array.from(uniqueDeals.values()).map((d, i) => {
+  return Array.from(uniqueDeals.values()).filter((d) =>
+    !isNonFashion(d.title || "", inferCategory(d.category || "autres", d.title || "")),
+  ).map((d, i) => {
     const brand = inferBrand(d.brand || "", d.title || "");
     const gender = inferGender(d.gender || "", d.description || "", d.title || "");
     const category = inferCategory(d.category || "autres", d.title || "");
