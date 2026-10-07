@@ -166,20 +166,32 @@ export function isOffTopic(title: string, category: string, description: string)
   return OFF_TOPIC_RE.test(all) || OFF_TOPIC_RE2.test(all) || OFF_TOPIC_RE3.test(all) || OFF_TOPIC_RE4.test(all);
 }
 
+/** Normalise une valeur de genre fournie par le marchand (Fashion:suitable_for, gender…). */
+function normalizeSuppliedGender(raw: string): string {
+  const s = ` ${(raw || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "")} `;
+  if (s.trim() === "") return "";
+  if (/\b(enfants?|kids?|junior|juniors|children|child|youth|bebe|baby|garcons?|filles?|boys?|girls?|kinder)\b/.test(s)) return "enfant";
+  if (/\b(unisex|unisexe|mixte)\b/.test(s)) return "unisexe";
+  if (/\b(femmes?|women|womens|woman|female|ladies|damen|mujer|donna)\b/.test(s)) return "femme";
+  if (/\b(hommes?|men|mens|man|male|herren|hombre|uomo)\b/.test(s)) return "homme";
+  return "";
+}
+
 function inferGender(title: string, description: string, productCategory: string, genderField = ""): string {
   const combined = ` ${(description || "").toLowerCase()} ${(title || "").toLowerCase()} ${(productCategory || "").toLowerCase()} `;
+  const supplied = normalizeSuppliedGender(genderField);
 
+  // 1. Champ marchand « enfant » : définitif.
+  if (supplied === "enfant") return "enfant";
+
+  // 2. Marqueurs enfant explicites dans le titre (ex. Snipes range les « (GS) » chez Hommes).
   const enfantKw = [" enfant","enfants","kids","junior","bébé","toddler","infant","youth","kinder"," boy "," girl ",
      " garçon"," garcon"," fille ","(gs)","(ps)","(td)"," jr "," gs)"," cadet","juniors"];
   const enfantExclude = ["baby tee","junior mesure"];
   if (enfantKw.some(k => combined.includes(k)) && !enfantExclude.some(k => combined.includes(k))) return "enfant";
 
-  // Le champ marchand explicite est prioritaire sur les heuristiques adultes.
-  const supplied = genderField.trim().toLowerCase();
-  if (["female", "femme", "women", "woman", "damen"].includes(supplied)) return "femme";
-  if (["male", "homme", "men", "man", "herren"].includes(supplied)) return "homme";
-  if (["child", "children", "kids", "kid", "enfant", "junior"].includes(supplied)) return "enfant";
-  if (["unisex", "unisexe"].includes(supplied)) return "unisexe";
+  // 3. Le champ marchand adulte est prioritaire sur les heuristiques texte.
+  if (supplied) return supplied;
 
   const femmeKw = ["pour femme"," femme ", " femme,", " femmes ","women","woman","wmns","w's ","ladies","damen",
     "pour fille", " fille ", "mädchen", " mujer ", " donna ",
@@ -297,13 +309,15 @@ Deno.serve(async (req) => {
       "aw_deep_link","product_name","aw_product_id","merchant_product_id",
       "merchant_image_url","description","merchant_category","search_price",
       "merchant_name","merchant_id","category_name","aw_image_url","currency","gender","product_gender",
+      // Genre fourni par le marchand (Snipes : Femmes/Hommes/Unisex)
+      "Fashion:suitable_for",
       "merchant_deep_link","brand_name","colour","rrp_price","savings_percent",
       "in_stock","stock_status","large_image","aw_thumb_url","valid_from","valid_to",
       // Some merchants ship the RRP only via product_price_old / base_price / saving
       "product_price_old","base_price","saving",
     ].join(",");
 
-    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/0/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
+    const feedUrl = `https://productdata.awin.com/datafeed/download/apikey/${AWIN_API_KEY}/language/fr/fid/${fidParam}/rid/0/hasEnhancedFeeds/1/columns/${COLUMNS}/format/csv/delimiter/%2C/compression/gzip/adultcontent/1/`;
 
     console.log(`📡 Streaming Awin feed for FID ${fidParam}...`);
     const feedRes = await fetch(feedUrl);
@@ -417,7 +431,7 @@ Deno.serve(async (req) => {
       const merchant = (r.merchant_name || "").trim() || "Awin";
       const brand = cleanBrand(r.brand_name || "", merchant);
       const category = inferCategory(r.merchant_category || r.category_name || "", title);
-      const gender = inferGender(title, r.description || "", r.merchant_category || "", r.gender || r.product_gender || "");
+      const gender = inferGender(title, r.description || "", r.merchant_category || "", r["Fashion:suitable_for"] || r.gender || r.product_gender || "");
 
       let dealLevel = "promo-normale", flameCount = 1;
       if (discount >= 50) { dealLevel = "hot-deal"; flameCount = 3; }
