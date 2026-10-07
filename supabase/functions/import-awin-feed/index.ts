@@ -346,6 +346,7 @@ Deno.serve(async (req) => {
     let headers: string[] | null = null;
     let reachedEnd = true;
     const merchantIds = new Set<string>();
+    const merchantNames = new Map<string, string>();
     let rowCount = 0;
     let kept = 0;
     let skippedNoImage = 0, skippedNoPrice = 0, skippedOutOfStock = 0, skippedNoTitle = 0, skippedOffTopic = 0;
@@ -447,6 +448,7 @@ Deno.serve(async (req) => {
 
 
       const merchant = (r.merchant_name || "").trim() || "Awin";
+      merchantNames.set(merchantId, merchant);
       const brand = cleanBrand(r.brand_name || "", merchant);
       const category = inferCategory(r.merchant_category || r.category_name || "", title);
       const gender = inferGender(title, r.description || "", r.merchant_category || "", r["Fashion:suitable_for"] || r.gender || r.product_gender || "");
@@ -496,12 +498,20 @@ Deno.serve(async (req) => {
     let deleted = 0;
     if (doCleanup && reachedEnd && kept > 0) {
       for (const mid of merchantIds) {
-        const { count, error } = await supabase
-          .from("deals").delete({ count: "exact" })
-          .like("id", `awin-${mid}-%`)
-          .lt("detected_at", runStartedAt);
-        if (error) throw error;
-        deleted += count ?? 0;
+        // Par lots de 500 pour rester sous le timeout SQL.
+        for (let guard = 0; guard < 200; guard++) {
+          const { data: stale, error: selErr } = await supabase
+            .from("deals").select("id")
+            .eq("merchant", merchantNames.get(mid) ?? "")
+            .like("id", `awin-${mid}-%`)
+            .lt("detected_at", runStartedAt)
+            .limit(500);
+          if (selErr) throw selErr;
+          if (!stale || stale.length === 0) break;
+          const { error: delErr } = await supabase.from("deals").delete().in("id", stale.map((d) => d.id));
+          if (delErr) throw delErr;
+          deleted += stale.length;
+        }
       }
     }
 
