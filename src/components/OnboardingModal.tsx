@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { deals as allDeals, Category } from "@/lib/data";
 import { useI18n } from "@/lib/i18n";
 import { X, Sparkles, ArrowRight } from "lucide-react";
+import { useGender } from "@/lib/gender-context";
 
 const STORAGE_KEY = "goldeals_onboarding_done";
 const PREFS_KEY = "goldeals_user_prefs";
@@ -46,13 +47,18 @@ const OnboardingModal = () => {
     vestes: t.jackets, autres: "Autres",
   };
 
+  // N'ouvrir qu'une fois le catalogue chargé : sinon la liste des marques est vide
+  // (le chargement des offres du jour prend ~3 s).
+  const { loading } = useGender();
   useEffect(() => {
-    const done = localStorage.getItem(STORAGE_KEY);
+    if (loading) return;
+    let done: string | null = null;
+    try { done = localStorage.getItem(STORAGE_KEY); } catch { /* stockage indisponible */ }
     if (!done) {
       const timer = setTimeout(() => setVisible(true), 2000);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [loading]);
 
   const finish = () => {
     const prefs: UserPrefs = { brands: selectedBrands, categories: selectedCategories };
