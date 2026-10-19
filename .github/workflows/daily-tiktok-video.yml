@@ -126,10 +126,21 @@ jobs:
             --category=top \
             --label="Sélection du jour"
 
+      - name: Publish to Facebook (Reel)
+        if: ${{ env.skip != 'true' }}
+        env:
+          FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
+          FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+        run: |
+          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
+          node remotion/scripts/publish-facebook.mjs "$VIDEO" --style=${{ matrix.style }}
+
       - name: Upload as workflow artifact (backup)
         if: ${{ env.skip != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: tiktok-video-${{ matrix.style }}
-          path: /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4
+          path: |
+            /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4
+            /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.txt
           retention-days: 14

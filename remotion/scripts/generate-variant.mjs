@@ -258,6 +258,29 @@ const date = new Date().toISOString().slice(0, 10);
 const rawVideoPath = `/tmp/goldeals-${preset}-${STYLE_ID}-raw-${date}.mp4`;
 const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${STYLE_ID}-${date}.mp4`;
 
+// Légende prête à publier (Facebook automatique, copier-coller pour TikTok/Instagram).
+{
+  const fmt = (n) => (Number(n) || 0).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
+  const lines = deals.map((d, i) => {
+    const was = d.originalPrice && d.originalPrice > d.salePrice ? ` au lieu de ${fmt(d.originalPrice)}` : "";
+    const pct = d.discountPercent ? ` (-${d.discountPercent} %)` : "";
+    return `${i + 1}. ${d.brand} ${d.title} — ${fmt(d.salePrice)}${was}${pct}`;
+  });
+  const tag = (b) => "#" + String(b || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  const brandTags = [...new Set(deals.map((d) => tag(d.brand)).filter((t) => t.length > 2))];
+  const caption = [
+    "🔥 La sélection du jour Goldeals Club",
+    "",
+    ...lines,
+    "",
+    "👉 Toutes les promos mode & sneakers, vérifiées chaque matin : https://www.goldealsclub.com",
+    "",
+    ["#bonplan", "#promo", "#sneakers", "#streetwear", "#soldes", "#mode", ...brandTags].join(" "),
+  ].join("\n");
+  fs.writeFileSync(outputPath.replace(/\.mp4$/, ".txt"), caption);
+  console.log("📝 Légende écrite :\n" + caption);
+}
+
 await renderMedia({
   composition,
   serveUrl: bundled,
