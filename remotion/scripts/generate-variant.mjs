@@ -233,6 +233,11 @@ for (const d of rawDeals) {
     continue;
   }
   console.log(`   ✔︎ ${d.merchant} — ${d.title.slice(0, 40)} — ${live.detail}`);
+  // Petit écart toléré (arrondis, variante de taille) : on affiche le prix de la page marchand.
+  if (live.livePrice && Math.abs(live.livePrice - Number(d.sale_price)) >= 0.01) {
+    d.sale_price = live.livePrice;
+    if (d.original_price > d.sale_price) d.discount_percent = Math.round((1 - d.sale_price / d.original_price) * 100);
+  }
   const result = await imageToDataUri(d.image_url);
   if (!result || result.rejected) {
     rejectedCount++;

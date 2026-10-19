@@ -151,7 +151,8 @@ for (const [i, d] of deals.entries()) {
   if (liveById.size) {
     const now = liveById.get(d.id);
     if (!now) fail(`${label} : n'est plus en ligne sur le site`);
-    else if (Math.abs(Number(now.sale_price) - sale) > 0.01) fail(`${label} : prix changé (${sale} € → ${now.sale_price} €)`);
+    // Le prix affiché vient de la page marchand (vérifiée à la génération) ; écart > 2 % avec le catalogue = suspect.
+    else if (Math.abs(Number(now.sale_price) - sale) > Math.max(0.5, sale * 0.02)) fail(`${label} : prix changé (${sale} € → ${now.sale_price} €)`);
   }
   // Le bouton « Voir l'offre » du site passe par le lien affilié : il doit arriver chez le bon marchand.
   if (d.affiliateUrl && d.productUrl) {
