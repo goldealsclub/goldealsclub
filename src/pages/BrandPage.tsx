@@ -17,8 +17,10 @@ const BrandPage = () => {
 
   const brandName = decodeURIComponent(brand || "");
   const brandDeals = useMemo(() => {
-    const needle = brandName.toLowerCase();
-    const byBrand = filteredDeals.filter((d) => d.brand.toLowerCase() === needle);
+    // « new-balance » (lien de la recherche) et « New Balance » désignent la même marque.
+    const norm = (v: string) => v.toLowerCase().replace(/[\s-]+/g, " ").trim();
+    const needle = norm(brandName);
+    const byBrand = filteredDeals.filter((d) => norm(d.brand) === needle);
     if (byBrand.length > 0) return byBrand;
     // Fallback: match by merchant (e.g. "Sneakin" → "Sneakin FR")
     return filteredDeals.filter((d) => (d.merchant || "").toLowerCase().includes(needle));
