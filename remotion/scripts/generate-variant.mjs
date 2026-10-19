@@ -15,7 +15,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { execFileSync, execSync } from "child_process";
 import { imageSize } from "image-size";
-import { assertCleanCutout, padStudioMargin, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
+import { assertCleanCutout, CUTOUT_LIMITS, padStudioMargin, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
+
+// Détourage IA disponible ? (python3 + rembg installés par le workflow)
+const AI_CUTOUT_SCRIPT = new URL("./lib/ai_cutout.py", import.meta.url).pathname;
+const AI_CUTOUT = (() => {
+  try { execFileSync("python3", ["-c", "import rembg"], { stdio: "ignore" }); return true; } catch { return false; }
+})();
+console.log(AI_CUTOUT ? "✂️  Détourage IA (u2net) actif" : "✂️  rembg absent : détourage classique");
 import { loadDeals } from "./lib/load-deals.mjs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -149,8 +156,23 @@ async function fetchStudioImage(rawUrl) {
     headers: { "User-Agent": UA, Accept: "image/*,*/*", Referer: "https://wsrv.nl/" },
   });
   if (!r.ok) throw new Error(`wsrv HTTP ${r.status}`);
-  const buf = removeConnectedStudioBackground(padStudioMargin(Buffer.from(await r.arrayBuffer())));
-  assertCleanCutout(buf);
+  const raw = Buffer.from(await r.arrayBuffer());
+  let buf;
+  if (AI_CUTOUT) {
+    // Détourage IA (u2net) : retire aussi sol, reflet et ombre du studio, sans cadre.
+    try {
+      buf = execFileSync("python3", [AI_CUTOUT_SCRIPT], { input: raw, maxBuffer: 64 * 1024 * 1024, stdio: ["pipe", "pipe", "pipe"] });
+      // Bords anti-crénelés du modèle : un peu plus de semi-transparence tolérée.
+      assertCleanCutout(buf, { ...CUTOUT_LIMITS, maxSemiTransparentRatio: 0.06 });
+    } catch (e) {
+      console.warn(`   ⚠️ détourage IA refusé (${String(e.stderr || e.message).trim().slice(0, 120)}) → méthode classique`);
+      buf = undefined;
+    }
+  }
+  if (!buf) {
+    buf = removeConnectedStudioBackground(padStudioMargin(raw));
+    assertCleanCutout(buf);
+  }
   let dims;
   try { dims = imageSize(buf); } catch { throw new Error("wsrv undecodable"); }
   return { dataUri: `data:image/png;base64,${buf.toString("base64")}`, dims };
@@ -271,7 +293,8 @@ const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${STYLE_ID}-${date}
     const was = d.originalPrice && d.originalPrice > d.salePrice ? ` au lieu de ${fmt(d.originalPrice)}` : "";
     const pct = d.discountPercent ? ` (-${d.discountPercent} %)` : "";
     const name = d.title.toLowerCase().includes(String(d.brand || "").toLowerCase()) ? d.title : `${d.brand} ${d.title}`;
-    return `${i + 1}. ${name} — ${fmt(d.salePrice)}${was}${pct}`;
+    const link = manifest[i]?.id ? `\n   👉 https://www.goldealsclub.com/deal/${encodeURIComponent(manifest[i].id)}` : "";
+    return `${i + 1}. ${name} — ${fmt(d.salePrice)}${was}${pct}${link}`;
   });
   const tag = (b) => "#" + String(b || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
   const brandTags = [...new Set(deals.map((d) => tag(d.brand)).filter((t) => t.length > 2))];
@@ -280,6 +303,7 @@ const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${STYLE_ID}-${date}
     "",
     ...lines,
     "",
+    "📲 Sur Instagram les liens ne sont pas cliquables : retrouve chaque article sur goldealsclub.com",
     "👉 Toutes les promos mode & sneakers, vérifiées chaque matin : https://www.goldealsclub.com",
     "",
     ["#bonplan", "#promo", "#sneakers", "#streetwear", "#soldes", "#mode", ...brandTags].join(" "),

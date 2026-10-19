@@ -9,10 +9,12 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } from "remotion";
 import { snap, smoothEnter, gpuLayer, TIMING } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
+import { SAFE_ZONE as SAFE } from "../lib/LayoutQA";
 
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
 const fitDisplaySize = (text: string, configuredSize: number, width: number, minSize: number) => {
-  const glyphWidth = text.length * configuredSize * 0.54;
+  // Archivo Black / Playfair en capitales : ~0.68 em par caractère (marge comprise).
+  const glyphWidth = text.length * configuredSize * 0.68;
   return Math.max(minSize, Math.min(configuredSize, configuredSize * width / Math.max(width, glyphWidth)));
 };
 
@@ -41,7 +43,7 @@ export const OutroScene: React.FC = () => {
   const fgSoft = isInkBg ? s.paperSoft : s.inkSoft;
   const stripeBg = isInkBg ? s.paper : s.ink;
   const heroFamily = s.outro.heroFont === "body" ? s.fonts.body : s.fonts.display;
-  const heroSize = fitDisplaySize(s.outro.heroText, s.outro.heroFontSize, 960, 96);
+  const heroSize = fitDisplaySize(s.outro.heroText, s.outro.heroFontSize, SAFE.right - SAFE.left - 20, 96);
 
   return (
     <AbsoluteFill style={{ background: bg }}>
@@ -63,8 +65,8 @@ export const OutroScene: React.FC = () => {
         );
       })}
 
-      {/* Header eyebrow */}
-      <div style={{
+      {/* Header eyebrow (décoratif : peut passer sous l'en-tête des réseaux) */}
+      <div data-qa-decor style={{
         position: "absolute", top: 110, left: 60, right: 60,
         display: "flex", justifyContent: "space-between",
         fontFamily: s.fonts.body, fontWeight: 700,
@@ -79,7 +81,7 @@ export const OutroScene: React.FC = () => {
 
       {/* Hero */}
       <div style={{
-        position: "absolute", top: 700, left: 60, right: 60,
+        position: "absolute", top: 640, left: SAFE.left + 10, right: 1080 - SAFE.right,
         display: "flex", flexDirection: "column", gap: 6,
         overflow: "hidden",
         textAlign: s.outro.layout === "serif-fade" ? "center" : "left",
@@ -96,7 +98,7 @@ export const OutroScene: React.FC = () => {
         }}>{s.outro.heroText}</div>
         <div style={{
           marginTop: 24,
-          fontFamily: s.fonts.kinetic, fontSize: 38, color: fgSoft, letterSpacing: 6,
+          fontFamily: s.fonts.kinetic, fontSize: 34, color: fgSoft, letterSpacing: 5,
           opacity: sub.t,
           transform: `translate3d(0, ${sub.y}px, 0)`,
           ...gpuLayer,
@@ -105,18 +107,18 @@ export const OutroScene: React.FC = () => {
 
       {/* Filet + URL pied */}
       <div style={{
-        position: "absolute", bottom: 130, left: 60,
-        height: 3, width: ruleW, background: fg,
+        position: "absolute", top: SAFE.bottom - 130, left: SAFE.left + 10,
+        height: 3, width: Math.min(ruleW, SAFE.right - SAFE.left - 20), background: fg,
         ...gpuLayer,
       }} />
       <div style={{
-        position: "absolute", bottom: 70, left: 60, right: 60,
+        position: "absolute", top: SAFE.bottom - 100, left: SAFE.left + 10, right: 1080 - SAFE.right,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         opacity: url.t,
         fontFamily: s.fonts.body, fontWeight: 700,
       }}>
         <span style={{ fontSize: 32, color: fg, letterSpacing: 8 }}>GOLDEALSCLUB.COM</span>
-        <span style={{
+        <span data-qa-decor style={{
           fontFamily: s.fonts.display, fontWeight: 900,
           fontSize: 28, color: fgSoft, letterSpacing: 4,
         }}>—</span>

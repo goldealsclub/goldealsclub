@@ -11,11 +11,15 @@
     "qa:nike": "node scripts/qa-frames.mjs --style=nike",
     "qa:update:adidas": "VISUAL_BASELINE_APPROVED=YES node scripts/qa-frames.mjs --update --style=adidas",
     "qa:update:zara": "VISUAL_BASELINE_APPROVED=YES node scripts/qa-frames.mjs --update --style=zara",
-    "qa:update:nike": "VISUAL_BASELINE_APPROVED=YES node scripts/qa-frames.mjs --update --style=nike"
-    ,"qa:cutout": "node scripts/qa-cutout.mjs"
-    ,"qa:cutout:update": "CUTOUT_BASELINE_APPROVED=YES node scripts/qa-cutout.mjs --update"
+    "qa:update:nike": "VISUAL_BASELINE_APPROVED=YES node scripts/qa-frames.mjs --update --style=nike",
+    "qa:cutout": "node scripts/qa-cutout.mjs",
+    "qa:cutout:update": "CUTOUT_BASELINE_APPROVED=YES node scripts/qa-cutout.mjs --update"
   },
   "devDependencies": {
+    "@fontsource/archivo": "^5.3.0",
+    "@fontsource/bebas-neue": "^5.3.0",
+    "@fontsource/inter": "^5.3.0",
+    "@fontsource/playfair-display": "^5.3.0",
     "@types/bun": "latest",
     "pixelmatch": "^7.2.0",
     "pngjs": "^7.0.0"

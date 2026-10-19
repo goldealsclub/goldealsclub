@@ -157,7 +157,7 @@ const serveUrl = await bundle({
 const browser = await openBrowser("chrome", {
   browserExecutable: process.env.PUPPETEER_EXECUTABLE_PATH ?? "/bin/chromium",
   chromiumOptions: { args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"] },
-  chromeMode: "chrome-for-testing",
+  chromeMode: process.env.QA_CHROME_MODE ?? "chrome-for-testing",
 });
 
 const report = {

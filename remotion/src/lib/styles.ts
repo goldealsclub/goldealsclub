@@ -9,25 +9,34 @@
  * pour éviter la collision avec `themeKey` côté pipeline
  * (sneakers / streetwear / accessoires).
  */
-import { loadFont as loadArchivo } from "@remotion/google-fonts/Archivo";
-import { loadFont as loadBebas } from "@remotion/google-fonts/BebasNeue";
-import { loadFont as loadInter } from "@remotion/google-fonts/Inter";
-import { loadFont as loadPlayfair } from "@remotion/google-fonts/PlayfairDisplay";
+import { continueRender, delayRender, cancelRender, staticFile } from "remotion";
 
-// On force le chargement des 4 familles au boot — Remotion attend
-// l'idle des fonts avant de rendre, donc pas de FOUT entre scènes.
-const { fontFamily: archivo } = loadArchivo("normal", {
-  weights: ["700", "800", "900"], subsets: ["latin"],
-});
-const { fontFamily: bebas } = loadBebas("normal", {
-  weights: ["400"], subsets: ["latin"],
-});
-const { fontFamily: inter } = loadInter("normal", {
-  weights: ["400", "500", "600", "700"], subsets: ["latin"],
-});
-const { fontFamily: playfair } = loadPlayfair("normal", {
-  weights: ["400", "500", "600"], subsets: ["latin"],
-});
+// Polices embarquées dans remotion/public/fonts (copiées depuis @fontsource) :
+// mêmes fichiers que Google Fonts, mais sans téléchargement au moment du rendu
+// (plus de dépendance réseau, rendu identique en local et sur GitHub).
+const FONT_FILES: Array<{ family: string; weight: string; file: string }> = [
+  ...["700", "800", "900"].map((weight) => ({ family: "Archivo", weight, file: `archivo-latin-${weight}-normal.woff2` })),
+  { family: "Bebas Neue", weight: "400", file: "bebas-neue-latin-400-normal.woff2" },
+  ...["400", "500", "600", "700"].map((weight) => ({ family: "Inter", weight, file: `inter-latin-${weight}-normal.woff2` })),
+  ...["400", "500", "600"].map((weight) => ({ family: "Playfair Display", weight, file: `playfair-display-latin-${weight}-normal.woff2` })),
+];
+
+if (typeof document !== "undefined" && typeof FontFace !== "undefined") {
+  const handle = delayRender("Chargement des polices embarquées");
+  Promise.all(
+    FONT_FILES.map(async ({ family, weight, file }) => {
+      const face = new FontFace(family, `url(${staticFile(`fonts/${file}`)}) format("woff2")`, { weight, style: "normal" });
+      document.fonts.add(await face.load());
+    }),
+  )
+    .then(() => continueRender(handle))
+    .catch((err) => cancelRender(err));
+}
+
+const archivo = "Archivo";
+const bebas = "Bebas Neue";
+const inter = "Inter";
+const playfair = "Playfair Display";
 
 export type StyleId = "adidas" | "zara" | "nike";
 

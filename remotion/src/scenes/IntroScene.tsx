@@ -11,6 +11,11 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } from "remotion";
 import { snap, smoothEnter, gpuLayer, TIMING } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
+import { SAFE_ZONE as SAFE } from "../lib/LayoutQA";
+
+// Largeur du bloc noir (adidas/nike) et début de la colonne texte.
+const BLOCK_W = 300;
+const COL_L = BLOCK_W + 60;
 
 const clamp = (t: number) => Math.max(0, Math.min(1, t));
 
@@ -65,7 +70,7 @@ export const IntroScene: React.FC = () => {
     // ZARA : tout centré, serif oversize, énormément d'air
     return (
       <AbsoluteFill style={{ background: bg }}>
-        <div style={{
+        <div data-qa-decor style={{
           position: "absolute", top: 110, left: 60, right: 60,
           display: "flex", justifyContent: "space-between",
           fontFamily: s.fonts.body, fontWeight: 500,
@@ -79,13 +84,13 @@ export const IntroScene: React.FC = () => {
         <AbsoluteFill style={{
           display: "flex", flexDirection: "column",
           alignItems: "center", justifyContent: "center",
-          padding: "0 80px", textAlign: "center",
+          left: SAFE.left, right: 1080 - SAFE.right, textAlign: "center",
         }}>
           {heroLines.map(({ txt, line }, i) => (
             <div key={i} style={{
               fontFamily: heroFamily,
               fontWeight: 400,
-              fontSize: fitDisplaySize(txt, s.intro.heroFontSize, 920, 120),
+              fontSize: fitDisplaySize(txt, s.intro.heroFontSize, SAFE.right - SAFE.left - 40, 110, 0.6),
               color: s.ink,
               lineHeight: s.intro.heroLineHeight,
               letterSpacing: s.intro.heroLetterSpacing,
@@ -109,7 +114,7 @@ export const IntroScene: React.FC = () => {
         </AbsoluteFill>
 
         <div style={{
-          position: "absolute", bottom: 80, left: 0, right: 0,
+          position: "absolute", top: SAFE.bottom - 60, left: SAFE.left, right: 1080 - SAFE.right,
           textAlign: "center", opacity: counter.t,
           fontFamily: s.fonts.body, fontWeight: 500,
           fontSize: 20, color: s.ink, letterSpacing: 10,
@@ -142,11 +147,11 @@ export const IntroScene: React.FC = () => {
       {/* Bloc noir asymétrique gauche */}
       <div style={{
         position: "absolute", top: 0, bottom: 0, left: 0,
-        width: 440, background: s.ink,
+        width: BLOCK_W, background: s.ink,
         transform: `translate3d(${actualBlockX}px, 0, 0)`,
         ...gpuLayer,
       }}>
-        <div style={{
+        <div data-qa-decor style={{
           position: "absolute", top: 200, left: 60,
           transform: "rotate(-90deg)", transformOrigin: "0 0",
           fontFamily: s.fonts.kinetic, fontSize: 28,
@@ -155,7 +160,7 @@ export const IntroScene: React.FC = () => {
           opacity: blockEnter.t,
         }}>GOLDEALS · CLUB</div>
 
-        <div style={{
+        <div data-qa-decor style={{
           position: "absolute", bottom: 70, left: 36,
           fontFamily: s.fonts.kinetic, fontSize: 22,
           color: s.paperSoft, letterSpacing: 6,
@@ -164,8 +169,8 @@ export const IntroScene: React.FC = () => {
       </div>
 
       {/* Header date côté paper */}
-      <div style={{
-        position: "absolute", top: 90, left: 510, right: 60,
+      <div data-qa-decor style={{
+        position: "absolute", top: 90, left: COL_L, right: 60,
         display: "flex", justifyContent: "space-between", alignItems: "center",
         fontFamily: s.fonts.body, fontSize: 20, fontWeight: 700,
         color: s.inkSoft, letterSpacing: 6,
@@ -180,21 +185,21 @@ export const IntroScene: React.FC = () => {
 
       {/* Filet noir */}
       <div style={{
-        position: "absolute", top: 150, left: 510,
+        position: "absolute", top: 150, left: COL_L,
         height: 3, width: ruleW, background: s.ink,
         ...gpuLayer,
       }} />
 
       {/* Hero multi-lignes */}
       <div style={{
-        position: "absolute", top: 720, left: 510, right: 60,
+        position: "absolute", top: 640, left: COL_L, right: 1080 - SAFE.right,
         display: "flex", flexDirection: "column", gap: 4,
         overflow: "hidden",
       }}>
         {heroLines.map(({ txt, line }, i) => (
           <div key={i} style={{
             fontFamily: heroFamily, fontWeight: 900,
-            fontSize: fitDisplaySize(txt, s.intro.heroFontSize, 510, 96, 0.72), color: s.ink,
+            fontSize: fitDisplaySize(txt, s.intro.heroFontSize, SAFE.right - COL_L, 96, 0.72), color: s.ink,
             lineHeight: s.intro.heroLineHeight,
             letterSpacing: s.intro.heroLetterSpacing,
             textTransform: "uppercase",
@@ -207,7 +212,7 @@ export const IntroScene: React.FC = () => {
 
       {/* Compteur N°XX */}
       <div style={{
-        position: "absolute", bottom: 90, right: 60,
+        position: "absolute", top: SAFE.bottom - 230, right: 1080 - SAFE.right,
         display: "flex", alignItems: "baseline", gap: 14,
         opacity: counter.t, transform: `translate3d(${snap(interpolate(counter.t, [0, 1], [60, 0]))}px, 0, 0)`,
         ...gpuLayer,
@@ -220,7 +225,7 @@ export const IntroScene: React.FC = () => {
       </div>
 
       <div style={{
-        position: "absolute", bottom: 92, left: 510,
+        position: "absolute", top: SAFE.bottom - 50, left: COL_L,
         fontFamily: s.fonts.body, fontWeight: 700,
         fontSize: 20, color: s.ink, letterSpacing: 8,
         opacity: counter.t,

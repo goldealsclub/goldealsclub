@@ -10,23 +10,44 @@
  * Le résultat est écrit dans la console (« QA_LAYOUT {…} ») ; le script de
  * génération le récupère et bloque la publication en cas de défaut.
  */
-import { useEffect } from "react";
-import { useCurrentFrame, useVideoConfig } from "remotion";
+import { useEffect, useRef } from "react";
+import { continueRender, delayRender, useCurrentFrame, useVideoConfig } from "remotion";
 
 export interface QACheckpoint {
   frame: number;
   scene: string;
 }
 
+/**
+ * Zone de sécurité des Reels / TikTok / Shorts (1080×1920) : en dehors, l'interface
+ * des réseaux recouvre la vidéo (en-tête en haut, pseudo + légende + boutons en bas,
+ * colonne d'icônes à droite). Prix, titre et marque doivent rester dedans.
+ */
+export const SAFE_ZONE = { top: 210, bottom: 1440, left: 50, right: 920 };
+
 const FRAME_TOLERANCE = 2;
 
 export const LayoutQA: React.FC<{ checkpoints: QACheckpoint[]; fonts: string[] }> = ({ checkpoints, fonts }) => {
   const frame = useCurrentFrame();
   const { width, height } = useVideoConfig();
+  const rootRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const cp = checkpoints.find((c) => c.frame === frame);
     if (!cp || typeof document === "undefined") return;
+    // Le moteur de rendu met parfois la composition en place après le premier
+    // effet (conteneur 0×0 hors écran) : on attend que la vidéo ait sa vraie taille.
+    const handle = delayRender(`Contrôle mise en page ${cp.scene}`);
+    let tries = 0;
+    let cancelled = false;
+    const waitLayout = () => {
+      if (cancelled) return;
+      const b = rootRef.current?.getBoundingClientRect();
+      if ((!b || b.width < 10 || b.top < -10000) && tries++ < 100) { requestAnimationFrame(waitLayout); return; }
+      measure();
+      continueRender(handle);
+    };
+    const measure = () => {
 
     const issues: Array<{ kind: string; text: string }> = [];
     const visible = (el: Element) => {
@@ -44,17 +65,42 @@ export const LayoutQA: React.FC<{ checkpoints: QACheckpoint[]; fonts: string[] }
         .join("")
         .trim();
       if (!ownText || !visible(el)) return;
-      const r = el.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) return;
+      const raw = el.getBoundingClientRect();
+      if (raw.width === 0 || raw.height === 0) return;
+      // Coordonnées dans la vidéo (1080×1920), quelle que soit la mise à l'échelle de la page.
+      const box = rootRef.current?.getBoundingClientRect();
+      const sx = box && box.width ? width / box.width : 1;
+      const sy = box && box.height ? height / box.height : 1;
+      const r = {
+        left: (raw.left - (box?.left ?? 0)) * sx, right: (raw.right - (box?.left ?? 0)) * sx,
+        top: (raw.top - (box?.top ?? 0)) * sy, bottom: (raw.bottom - (box?.top ?? 0)) * sy,
+      };
       const text = (el.textContent ?? "").trim().slice(0, 70);
       const cs = getComputedStyle(el);
       const he = el as HTMLElement;
 
-      if (r.left < -FRAME_TOLERANCE || r.top < -FRAME_TOLERANCE || r.right > width + FRAME_TOLERANCE || r.bottom > height + FRAME_TOLERANCE) {
-        issues.push({ kind: "hors-cadre", text });
+      const decor = !!el.closest("[data-qa-decor]");
+      if (!decor && (r.left < -FRAME_TOLERANCE || r.top < -FRAME_TOLERANCE || r.right > width + FRAME_TOLERANCE || r.bottom > height + FRAME_TOLERANCE)) {
+        issues.push({ kind: "hors-cadre", text: `${text} [${Math.round(r.left)},${Math.round(r.top)} → ${Math.round(r.right)},${Math.round(r.bottom)}]` });
+      }
+      // Texte important (prix, titre, marque…) sous l'interface des réseaux.
+      // Seuls les textes décoratifs marqués data-qa-decor sont tolérés hors zone.
+      if (!decor &&
+          (r.top < SAFE_ZONE.top || r.bottom > SAFE_ZONE.bottom || r.left < SAFE_ZONE.left || r.right > SAFE_ZONE.right)) {
+        issues.push({ kind: "zone-reseaux", text });
+      }
+      // Texte rogné par un parent qui masque le débordement (ex. « À DEMAIN » sans le point).
+      for (let p = el.parentElement; p && !decor; p = p.parentElement) {
+        const pcs = getComputedStyle(p);
+        if (pcs.overflow !== "hidden" && pcs.overflowX !== "hidden" && pcs.overflow !== "clip") continue;
+        const pr = p.getBoundingClientRect();
+        if (raw.left < pr.left - FRAME_TOLERANCE || raw.right > pr.right + FRAME_TOLERANCE) {
+          issues.push({ kind: "coupe-largeur", text: `${text} (masqué par le cadre parent)` });
+        }
+        break;
       }
       const clips = cs.overflow === "hidden" || cs.overflowX === "hidden" || cs.textOverflow === "ellipsis";
-      if (clips && he.scrollWidth > he.clientWidth + FRAME_TOLERANCE) issues.push({ kind: "coupe-largeur", text });
+      if (!decor && clips && he.scrollWidth > he.clientWidth + FRAME_TOLERANCE) issues.push({ kind: "coupe-largeur", text });
       // Une vraie ligne masquée dépasse d'au moins une demi-ligne ; en dessous, ce sont
       // les jambages des lettres avec un interlignage serré (faux positif).
       const lineSlack = Math.max(FRAME_TOLERANCE, parseFloat(cs.fontSize) * 0.5);
@@ -70,7 +116,12 @@ export const LayoutQA: React.FC<{ checkpoints: QACheckpoint[]; fonts: string[] }
     }
 
     console.log(`QA_LAYOUT ${JSON.stringify({ frame, scene: cp.scene, issues })}`);
+    };
+    requestAnimationFrame(waitLayout);
+    return () => { cancelled = true; continueRender(handle); };
   }, [frame, checkpoints, fonts, width, height]);
 
-  return null;
+
+  // Repère invisible couvrant toute la vidéo, sert d'origine aux mesures.
+  return <div ref={rootRef} style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />;
 };

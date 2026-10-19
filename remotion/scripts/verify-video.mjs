@@ -5,7 +5,8 @@
  * Bloquant (code de sortie 1 → aucune publication) :
  *   - fichier : 1080×1920, H.264, durée 15–60 s, taille < 100 Mo
  *   - images  : aucune scène vide/noire aux instants contrôlés
- *   - mise en page : police non chargée, texte rogné en largeur, texte hors cadre
+ *   - mise en page : police non chargée, texte rogné en largeur, texte hors cadre,
+ *               texte important sous l'interface des réseaux (zone de sécurité Reels)
  *   - offres  : 5 offres, prix cohérents (promo < prix barré, % juste),
  *               toujours en ligne au même prix, liens produit non cassés (404/410)
  *   - légende : lien du site présent, prix identiques à la vidéo, longueur/hashtags OK
@@ -99,10 +100,11 @@ if (!layout.length) {
       if (kind === "police") fail(`police non chargée (${text}) — ${scene}`);
       else if (kind === "coupe-largeur") fail(`texte coupé en largeur — ${where}`);
       else if (kind === "hors-cadre") fail(`texte hors cadre — ${where}`);
+      else if (kind === "zone-reseaux") fail(`texte caché par l'interface Instagram/TikTok/Facebook — ${where}`);
       else if (kind === "coupe-hauteur") warn(`texte tronqué (« … ») — ${where}`);
     }
   }
-  if (!errors.some((e) => /police|coupé|hors cadre|mise en page/.test(e))) ok(`mise en page : ${layout.length} scènes mesurées, polices chargées, rien de coupé ni hors cadre`);
+  if (!errors.some((e) => /police|coupé|hors cadre|interface|mise en page/.test(e))) ok(`mise en page : ${layout.length} scènes mesurées, polices chargées, rien de coupé, hors cadre ni sous l'interface des réseaux`);
 }
 
 // ── 4. Offres ────────────────────────────────────────────────────
@@ -161,9 +163,15 @@ else {
   if (tags.length > 30) fail(`légende : ${tags.length} hashtags (max 30)`);
   const fmt = (n) => (Number(n) || 0).toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   for (const d of deals) if (!caption.includes(fmt(d.salePrice))) fail(`légende : prix ${fmt(d.salePrice)} € absent (${d.brand})`);
+  for (const d of deals) {
+    const link = `https://www.goldealsclub.com/deal/${encodeURIComponent(d.id)}`;
+    if (!caption.includes(link)) { fail(`légende : lien de l'article absent (${d.brand})`); continue; }
+    const st = await checkLink(link);
+    if (st !== 200) fail(`légende : lien de l'article ${link} répond ${st}`);
+  }
   const site = await checkLink("https://www.goldealsclub.com/");
   if (site !== 200) warn(`site goldealsclub.com : réponse ${site}`);
-  if (!errors.some((e) => e.startsWith("légende"))) ok(`légende : ${caption.length} caractères, ${tags.length} hashtags, lien et prix présents`);
+  if (!errors.some((e) => e.startsWith("légende"))) ok(`légende : ${caption.length} caractères, ${tags.length} hashtags, lien du site, liens des 5 articles et prix présents`);
 }
 
 // ── Bilan ────────────────────────────────────────────────────────

@@ -107,6 +107,22 @@ jobs:
         working-directory: remotion
         run: bun install --frozen-lockfile
 
+      # Détourage IA des photos produits (u2net) : enlève sol, reflet et cadre du studio.
+      - name: Cache AI cutout model
+        if: ${{ env.skip != 'true' }}
+        uses: actions/cache@v4
+        with:
+          path: ~/.rembg
+          key: rembg-u2net-v1
+
+      - name: Install AI cutout (rembg)
+        if: ${{ env.skip != 'true' }}
+        run: |
+          pip install --quiet "rembg[cpu]==2.0.85" \
+            || pip install --quiet --break-system-packages "rembg[cpu]==2.0.85" \
+            || echo "::warning::rembg indisponible, détourage classique"
+          python3 -c "from rembg import new_session; new_session('u2net')" || true
+
       - name: Prepare Remotion compositor
         if: ${{ env.skip != 'true' }}
         working-directory: remotion
