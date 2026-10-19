@@ -16,7 +16,7 @@ import { fileURLToPath } from "url";
 import { execFileSync, execSync } from "child_process";
 import { mixAudio } from "./lib/audio-mix.mjs";
 import { checkLiveOffer } from "./lib/live-offer.mjs";
-import { rankTrendingDeals, loadRecentKeys, saveHistory } from "./lib/select-deals.mjs";
+import { rankTrendingDeals, loadRecentKeys, saveHistory, themeForDate, THEMES, displayCategory } from "./lib/select-deals.mjs";
 import { imageSize } from "image-size";
 import { assertCleanCutout, CUTOUT_LIMITS, padStudioMargin, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
 
@@ -78,6 +78,10 @@ let rawDeals = allDeals.map((d) => ({ ...d, brand: CANONICAL_BRAND[brandKey(d.br
 
 const today = new Date().toISOString().slice(0, 10);
 const HISTORY_DIR = process.env.VIDEO_HISTORY_DIR;
+// Thème du jour (sneakers, vêtements, enfants, accessoires, best-of) ; forçable via --theme=…
+const themeArg = process.argv.find((a) => a.startsWith("--theme="))?.slice(8) || process.env.VIDEO_THEME;
+const THEME = themeArg && THEMES[themeArg] ? themeArg : themeForDate(today);
+console.log(`🗓️  Thème du jour : ${THEMES[THEME].label}`);
 if (preset === "top") {
   // Modèles tendance uniquement, sélection différente chaque jour et pour chaque style.
   const recentKeys = loadRecentKeys(HISTORY_DIR, today);
@@ -86,8 +90,9 @@ if (preset === "top") {
     date: today,
     styleIndex: validStyles.indexOf(STYLE_ID),
     recentKeys,
+    theme: THEME,
   });
-  console.log(`🔥 ${rawDeals.length} modèles tendance candidats (${recentKeys.size} déjà montrés ces 3 derniers jours, écartés)`);
+  console.log(`🔥 ${rawDeals.length} produits tendance candidats (${recentKeys.size} déjà montrés ces 3 derniers jours, écartés)`);
 } else if (preset === "nike") {
   rawDeals = rawDeals
     .filter((d) => (d.discount_percent ?? 0) >= 25 && (brandKey(d.brand) === "nike" || brandKey(d.brand) === "jordan"))
@@ -266,7 +271,7 @@ for (const d of rawDeals) {
     salePrice: d.sale_price,
     discountPercent: d.discount_percent,
     imageUrl: result.dataUri,
-    category: d.category.charAt(0).toUpperCase() + d.category.slice(1),
+    category: displayCategory(d),
     currency: d.currency || "EUR",
     merchant: d.merchant,
     productUrl: "goldealsclub.com",
@@ -295,6 +300,8 @@ const dataTs = `export interface Deal {
 export const deals: Deal[] = ${JSON.stringify(deals, null, 2)};
 
 export const brandLogos: Record<string, string> = ${JSON.stringify(brandLogos, null, 2)};
+
+export const edition = ${JSON.stringify(THEMES[THEME].label)};
 `;
 fs.writeFileSync(path.join(rootDir, "src/data.ts"), dataTs);
 console.log("📝 src/data.ts mis à jour");
@@ -331,14 +338,14 @@ const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${STYLE_ID}-${date}
   const tag = (b) => "#" + String(b || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
   const brandTags = [...new Set(deals.map((d) => tag(d.brand)).filter((t) => t.length > 2))];
   const caption = [
-    "🔥 La sélection du jour Goldeals Club",
+    `🔥 La sélection ${THEMES[THEME].label.toLowerCase()} du jour Goldeals Club`,
     "",
     ...lines,
     "",
     "📲 Sur Instagram les liens ne sont pas cliquables : retrouve chaque article sur goldealsclub.com",
     "👉 Toutes les promos mode & sneakers, vérifiées chaque matin : https://www.goldealsclub.com",
     "",
-    ["#bonplan", "#promo", "#sneakers", "#streetwear", "#soldes", "#mode", ...brandTags].join(" "),
+    [...new Set([...THEMES[THEME].hashtags, "#soldes", ...brandTags])].join(" "),
   ].join("\n");
   fs.writeFileSync(outputPath.replace(/\.mp4$/, ".txt"), caption);
   console.log("📝 Légende écrite :\n" + caption);

@@ -11,6 +11,7 @@
 import { AbsoluteFill, useCurrentFrame, interpolate, useVideoConfig } from "remotion";
 import { snap, smoothEnter, gpuLayer, TIMING } from "../lib/motion";
 import { useStyle } from "../lib/style-context";
+import { edition } from "../data";
 import { SAFE_ZONE as SAFE } from "../lib/LayoutQA";
 
 // Largeur du bloc noir (adidas/nike) et début de la colonne texte.
@@ -77,7 +78,7 @@ export const IntroScene: React.FC = () => {
           fontSize: 20, color: s.inkSoft, letterSpacing: 8,
           opacity: eye.t,
         }}>
-          <span style={{ textTransform: "uppercase" }}>Édition Quotidienne</span>
+          <span style={{ textTransform: "uppercase" }}>Édition {edition}</span>
           <span style={{ fontFamily: s.fonts.kinetic, letterSpacing: 4 }}>{dateLabel}</span>
         </div>
 
@@ -177,7 +178,7 @@ export const IntroScene: React.FC = () => {
         opacity: eye.t, transform: `translate3d(0, ${eye.y}px, 0)`,
         ...gpuLayer,
       }}>
-        <span>ÉDITION QUOTIDIENNE</span>
+        <span style={{ textTransform: "uppercase" }}>Édition {edition}</span>
         <span style={{ fontFamily: s.fonts.kinetic, fontSize: 26, color: s.ink, letterSpacing: 4 }}>
           {dateLabel}
         </span>

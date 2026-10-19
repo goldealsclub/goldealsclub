@@ -1,6 +1,10 @@
 /**
- * Sélection des produits de la vidéo du jour : uniquement des modèles tendance,
+ * Sélection des produits de la vidéo du jour : uniquement des produits tendance,
  * une sélection différente chaque jour et pour chacun des 3 styles.
+ *
+ * Thème du jour (THEME_PAR_JOUR) : sneakers, vêtements, enfants, accessoires ou
+ * best-of. Chaque thème a ses règles « tendance » (modèles, marques, pièces phares).
+ * Ci-dessous, les règles détaillées du thème sneakers ; les autres suivent la même logique.
  *
  * 1. Éligibles : sneakers de marques recherchées, modèle présent dans la liste
  *    TENDANCES, remise entre 25 et 80 %, prix ≥ 25 €, ni enfant ni chaussure de
@@ -79,6 +83,117 @@ export function isEligible(d) {
     && trendWeight(d) > 0;
 }
 
+// ── Vêtements ────────────────────────────────────────────────────────────────
+// Marques recherchées : 3 = très tendance, 2 = tendance / rétro qui revient.
+const MARQUES_MODE = new Map(Object.entries({
+  nike: 3, jordan: 3, adidas: 3, "adidas originals": 3, "new balance": 3, "the north face": 3, carhartt: 3,
+  "carhartt wip": 3, stussy: 3, "stüssy": 3, "ralph lauren": 3, "polo ralph lauren": 3, lacoste: 3,
+  "arc'teryx": 3, arcteryx: 3, "karl kani": 3, patagonia: 3, salomon: 3,
+  dickies: 2, "helly hansen": 2, ellesse: 2, "mitchell & ness": 2, "new era": 2, kappa: 2, umbro: 2,
+  champion: 2, columbia: 2, puma: 2, "project x paris": 2, pegador: 2, "tommy hilfiger": 2, "tommy jeans": 2,
+  "calvin klein": 2, "levi's": 2, levis: 2, fila: 2, "sergio tacchini": 2, "le coq sportif": 2, reebok: 2, asics: 2,
+  converse: 2, vans: 2,
+}));
+const brandTier = (d) => MARQUES_MODE.get(brandKey(d.brand)) || 0;
+
+// Pièces phares (une seule par vidéo et par famille) : [motif, nom de famille]
+const PIECES = [
+  [/tech ?fleece/i, "tech fleece"], [/windrunner/i, "windrunner"], [/firebird|beckenbauer|\bsst\b|track ?(top|jacket|pant)|veste de surv[eê]tement|survêtement|tracksuit/i, "survetement"],
+  [/doudoune|puffer|nuptse|down jacket|parka/i, "doudoune"], [/jersey|maillot(?! de bain)/i, "maillot"],
+  [/cargo/i, "cargo"], [/polaire|fleece|sherpa/i, "polaire"], [/hoodie|sweat.*capuche|à capuche/i, "hoodie"],
+  [/crewneck|sweat-?shirt|\bcrew\b/i, "sweat"], [/coupe-?vent|windbreaker|anorak|veste/i, "veste"],
+  [/jogging|jogger|sweatpants?|pantalon de surv/i, "jogging"], [/baggy|wide leg|carpenter|work pant|\bjean/i, "pantalon"],
+  [/polo/i, "polo"], [/t-?shirt|\btee\b/i, "t-shirt"],
+];
+const pieceOf = (d) => { for (const [re, name] of PIECES) if (re.test(d.title || "")) return name; return null; };
+const PIECES_FORTES = new Set(["tech fleece", "windrunner", "survetement", "doudoune", "maillot", "cargo", "polaire"]);
+
+// Hors saison ou peu vendeur en vidéo : sous-vêtements, maillots de bain, technique sport…
+const EXCLUS_MODE = /maillot de bain|bikini|boxer|slip|culotte|brassi[eè]re|soutien|chaussette|legging|collant|compression|thermique|base ?layer|cyclisme|ski\b|arbitre|gardien|training top|entra[iî]nement|running|golf|ultimate ?365|cold\.?rdy|heat\.?rdy/i;
+// Pièces d'été écartées d'octobre à mars (et inversement pour les doudounes l'été).
+const horsSaison = (d, date) => {
+  const m = Number(String(date).slice(5, 7));
+  const hiver = m >= 10 || m <= 3;
+  if (hiver) return /\bshorts?\b|\bjorts\b|débardeur|tank top|bermuda/i.test(d.title || "");
+  return /doudoune|puffer|parka|polaire|bonnet|beanie/i.test(d.title || "");
+};
+const VETEMENTS = new Set(["t-shirts", "pantalons", "vestes", "hoodies"]);
+
+// ── Accessoires ──────────────────────────────────────────────────────────────
+const ACCESSOIRES_TENDANCE = [
+  [/casquette|\bcap\b|snapback|trucker|9forty|9fifty|59fifty|39thirty|dad hat/i, "casquette"],
+  [/bonnet|beanie/i, "bonnet"], [/banane|fanny|waist ?bag|sling|crossbody|shoulder bag|sacoche/i, "sacoche"],
+  [/sac à dos|backpack|rucksack/i, "sac a dos"], [/tote|sac\b|bag\b|duffel/i, "sac"],
+];
+const accessoireOf = (d) => { for (const [re, name] of ACCESSOIRES_TENDANCE) if (re.test(d.title || "")) return name; return null; };
+
+const prixMini = (d, min) => Number(d.sale_price) >= min;
+const remiseOk = (d) => { const x = Number(d.discount_percent) || 0; return x >= 25 && x <= 80; };
+const estEnfant = (d) => /enfant|kid/i.test(d.gender || "") || /enfant|junior|kids|\b(gs|ps|td)\b|tout-?petits|b[ée]b[ée]/i.test(d.title || "");
+const SPORT_TECHNIQUE = /football|crampon|\b(fg|ag|sg|tf|mg)\b|rugby|golf|baseball|handball (?!spezial)|volley|chaussures de tennis|basketball|spikes|pointes|cyclisme|randonn/i;
+
+export const THEMES = {
+  sneakers: {
+    label: "Sneakers", hashtags: ["#sneakers", "#sneakerhead", "#bonplan", "#promo", "#streetwear"],
+    eligible: (d) => isEligible(d),
+    weight: (d) => trendWeight(d),
+    family: (d) => familyKey(d),
+  },
+  vetements: {
+    label: "Vêtements", hashtags: ["#streetwear", "#mode", "#outfit", "#bonplan", "#promo"],
+    eligible: (d, date) => VETEMENTS.has((d.category || "").toLowerCase()) && !estEnfant(d) && d.image_url
+      && prixMini(d, 20) && remiseOk(d) && brandTier(d) > 0 && !EXCLUS_MODE.test(d.title || "") && !horsSaison(d, date)
+      && (brandTier(d) === 3 || PIECES_FORTES.has(pieceOf(d))),
+    weight: (d) => brandTier(d) + (PIECES_FORTES.has(pieceOf(d)) ? 1 : 0),
+    family: (d) => `${brandKey(d.brand)}|${pieceOf(d) || d.category}`,
+  },
+  enfants: {
+    label: "Enfants", hashtags: ["#enfant", "#modeenfant", "#sneakers", "#bonplan", "#promo"],
+    eligible: (d, date) => estEnfant(d) && d.image_url && prixMini(d, 15) && remiseOk(d) && !SPORT_TECHNIQUE.test(d.title || "")
+      && !EXCLUS_MODE.test(d.title || "") && !horsSaison(d, date) && !/claquette|slide|sandale|\bpack\b/i.test(d.title || "")
+      && (((d.category || "").toLowerCase() === "sneakers" && trendWeight(d) > 0)
+        || (VETEMENTS.has((d.category || "").toLowerCase()) && brandTier(d) === 3)),
+    weight: (d) => (d.category || "").toLowerCase() === "sneakers" ? trendWeight(d) : brandTier(d) - 1 + (PIECES_FORTES.has(pieceOf(d)) ? 1 : 0),
+    family: (d) => (d.category || "").toLowerCase() === "sneakers" ? familyKey(d) : `${brandKey(d.brand)}|${pieceOf(d) || d.category}`,
+  },
+  accessoires: {
+    label: "Accessoires", hashtags: ["#accessoires", "#casquette", "#streetwear", "#bonplan", "#promo"],
+    eligible: (d, date) => (d.category || "").toLowerCase() === "accessoires" && d.image_url && prixMini(d, 15) && remiseOk(d)
+      && brandTier(d) > 0 && accessoireOf(d)
+      && !/\bpack\b|chaussette|sock|gant|glove|écharpe set|set \(|\bjeans?\b|pantalon|\bpull\b|sweat|t-?shirt|veste/i.test(d.title || "")
+      && !horsSaison(d, date),
+    weight: (d) => brandTier(d),
+    family: (d) => `${brandKey(d.brand)}|${accessoireOf(d)}`,
+  },
+};
+// Best-of du dimanche : sneakers et vêtements mélangés.
+THEMES.bestof = {
+  label: "Best-of", hashtags: ["#bonplan", "#promo", "#sneakers", "#streetwear", "#mode"],
+  eligible: (d, date) => THEMES.sneakers.eligible(d, date) || THEMES.vetements.eligible(d, date),
+  weight: (d) => (VETEMENTS.has((d.category || "").toLowerCase()) ? THEMES.vetements.weight(d) : THEMES.sneakers.weight(d)),
+  family: (d) => (VETEMENTS.has((d.category || "").toLowerCase()) ? THEMES.vetements.family(d) : THEMES.sneakers.family(d)),
+};
+
+/** Libellé affiché dans la vidéo (« Hoodie », « Doudoune »… plutôt que la catégorie du flux). */
+const LIBELLES = { "tech fleece": "Tech Fleece", windrunner: "Windrunner", survetement: "Survêtement", doudoune: "Doudoune",
+  maillot: "Maillot", cargo: "Cargo", polaire: "Polaire", hoodie: "Hoodie", sweat: "Sweat", veste: "Veste", jogging: "Jogging",
+  pantalon: "Pantalon", polo: "Polo", "t-shirt": "T-shirt", casquette: "Casquette", bonnet: "Bonnet", sacoche: "Sacoche",
+  "sac a dos": "Sac à dos", sac: "Sac" };
+export function displayCategory(d) {
+  const cat = (d.category || "").toLowerCase();
+  const enfant = estEnfant(d) ? " enfant" : "";
+  if (cat === "sneakers") return `Sneakers${enfant}`;
+  const k = cat === "accessoires" ? accessoireOf(d) : pieceOf(d);
+  const base = LIBELLES[k] || (d.category ? d.category.charAt(0).toUpperCase() + d.category.slice(1) : "");
+  return `${base}${enfant}`;
+}
+
+// Lundi → dimanche (le mercredi, jour des enfants)
+const THEME_PAR_JOUR = ["bestof", "sneakers", "vetements", "enfants", "sneakers", "vetements", "accessoires"]; // index = getUTCDay()
+export function themeForDate(date) {
+  return THEME_PAR_JOUR[new Date(`${date}T12:00:00Z`).getUTCDay()];
+}
+
 // Générateur pseudo-aléatoire déterministe (même date → même ordre pour les 3 styles).
 function rng(seedText) {
   let h = 2166136261;
@@ -99,8 +214,9 @@ function rng(seedText) {
  * @param recentKeys  clés de modèles montrés les jours précédents
  * @returns candidats ordonnés (la vérification marchand/photo prend les 5 premiers valides)
  */
-export function rankTrendingDeals({ deals, date, styleIndex = 0, styles = 3, recentKeys = new Set() }) {
-  const pool = deals.filter(isEligible);
+export function rankTrendingDeals({ deals, date, styleIndex = 0, styles = 3, recentKeys = new Set(), theme = "sneakers" }) {
+  const T = THEMES[theme] || THEMES.sneakers;
+  const pool = deals.filter((d) => T.eligible(d, date));
   // Un seul coloris par modèle : on garde le plus intéressant (remise la plus forte).
   const byModel = new Map();
   for (const d of pool) {
@@ -114,9 +230,9 @@ export function rankTrendingDeals({ deals, date, styleIndex = 0, styles = 3, rec
   if (fresh.length >= styles * 6) models = fresh;
 
   // Tirage pondéré : score = popularité du modèle (dominant) + remise.
-  const rand = rng(`goldeals-${date}`);
+  const rand = rng(`goldeals-${theme}-${date}`);
   const keyed = models.map((d) => {
-    const score = trendWeight(d) * 25 + (Number(d.discount_percent) || 0);
+    const score = T.weight(d) * 25 + (Number(d.discount_percent) || 0);
     return { d, key: Math.pow(rand(), 1 / score) }; // tirage pondéré sans remise (Efraimidis-Spirakis)
   }).sort((a, b) => b.key - a.key).map((x) => x.d);
 
@@ -126,7 +242,7 @@ export function rankTrendingDeals({ deals, date, styleIndex = 0, styles = 3, rec
   const unique = [];
   const repeats = [];
   for (const d of keyed) {
-    const f = familyKey(d);
+    const f = T.family(d);
     if (seenFamilies.has(f)) repeats.push(d); else { seenFamilies.add(f); unique.push(d); }
   }
   const mine = [
@@ -140,7 +256,7 @@ export function rankTrendingDeals({ deals, date, styleIndex = 0, styles = 3, rec
   for (const d of mine) {
     const b = brandKey(d.brand) === "adidas originals" ? "adidas" : brandKey(d.brand);
     const n = perBrand.get(b) || 0;
-    const f = familyKey(d);
+    const f = T.family(d);
     if (n >= 2 || families.has(f)) { overflow.push(d); continue; }
     perBrand.set(b, n + 1);
     families.add(f);

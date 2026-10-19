@@ -19,6 +19,10 @@ on:
         description: "Réseaux : all, facebook, instagram ou none (site seulement)"
         required: false
         default: "all"
+      theme:
+        description: "Thème forcé (vide = thème du jour) : sneakers, vetements, enfants, accessoires, bestof"
+        required: false
+        default: ""
 
 jobs:
   cutout-qa:
@@ -163,6 +167,7 @@ jobs:
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
           VIDEO_HISTORY_DIR: ${{ github.workspace }}/remotion/.history
+          VIDEO_THEME: ${{ github.event.inputs.theme }}
         run: |
           sudo mkdir -p /mnt/documents
           sudo chmod 777 /mnt/documents
