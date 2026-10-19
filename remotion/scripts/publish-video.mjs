@@ -109,7 +109,7 @@ await upload(remoteName);
 // Alias stable par style (URL fixe partageable) — non bloquant
 await upload(`latest-${style}.mp4`, { upsert: true, fatal: false });
 
-const { video } = await callFn({
+const finalized = await callFn({
   action: "finalize",
   style,
   storage_path: remoteName,
@@ -121,7 +121,14 @@ const { video } = await callFn({
   size_bytes: buffer.length,
 });
 
-console.log(`✅ ${path.basename(localPath)} → ${video?.public_url ?? remoteName}`);
+if (!finalized.ok) {
+  console.error(`❌ finalize [${finalized.status}] ${JSON.stringify(finalized.body)}`);
+  process.exit(1);
+}
+// callFn renvoie { ok, status, body } : la vidéo est dans body.video.
+const video = finalized.body?.video;
+const publicUrl = video?.public_url || `${SUPABASE_URL}/storage/v1/object/public/tiktok-videos/${remoteName}`;
+console.log(`✅ ${path.basename(localPath)} → ${publicUrl}`);
 // URL publique réutilisée par la publication Instagram (qui télécharge la vidéo elle-même).
-if (video?.public_url) fs.writeFileSync(`${localPath}.url`, video.public_url);
+fs.writeFileSync(`${localPath}.url`, publicUrl);
 console.log(`   style=${style} publiée=${isPublished} date=${publishAt}`);
