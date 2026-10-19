@@ -87,7 +87,7 @@ export const LayoutQA: React.FC<{ checkpoints: QACheckpoint[]; fonts: string[] }
       // Seuls les textes décoratifs marqués data-qa-decor sont tolérés hors zone.
       if (!decor &&
           (r.top < SAFE_ZONE.top || r.bottom > SAFE_ZONE.bottom || r.left < SAFE_ZONE.left || r.right > SAFE_ZONE.right)) {
-        issues.push({ kind: "zone-reseaux", text });
+        issues.push({ kind: "zone-reseaux", text: `${text} [${Math.round(r.left)},${Math.round(r.top)} → ${Math.round(r.right)},${Math.round(r.bottom)}]` });
       }
       // Texte rogné par un parent qui masque le débordement (ex. « À DEMAIN » sans le point).
       for (let p = el.parentElement; p && !decor; p = p.parentElement) {
