@@ -146,6 +146,7 @@ export const THEMES = {
       && (brandTier(d) === 3 || PIECES_FORTES.has(pieceOf(d))),
     weight: (d) => brandTier(d) + (PIECES_FORTES.has(pieceOf(d)) ? 1 : 0),
     family: (d) => `${brandKey(d.brand)}|${pieceOf(d) || d.category}`,
+    kind: (d) => pieceOf(d) || d.category,
   },
   enfants: {
     label: "Enfants", hashtags: ["#enfant", "#modeenfant", "#sneakers", "#bonplan", "#promo"],
@@ -164,6 +165,7 @@ export const THEMES = {
       && !horsSaison(d, date),
     weight: (d) => brandTier(d),
     family: (d) => `${brandKey(d.brand)}|${accessoireOf(d)}`,
+    kind: (d) => accessoireOf(d), // pas 4 casquettes dans la même vidéo
   },
 };
 // Best-of du dimanche : sneakers et vêtements mélangés.
@@ -250,6 +252,7 @@ export function rankTrendingDeals({ deals, date, styleIndex = 0, styles = 3, rec
     ...repeats.filter((_, i) => i % styles === styleIndex), // secours si trop d'offres sont refusées
   ];
   const perBrand = new Map();
+  const perKind = new Map();
   const families = new Set();
   const out = [];
   const overflow = [];
@@ -257,8 +260,10 @@ export function rankTrendingDeals({ deals, date, styleIndex = 0, styles = 3, rec
     const b = brandKey(d.brand) === "adidas originals" ? "adidas" : brandKey(d.brand);
     const n = perBrand.get(b) || 0;
     const f = T.family(d);
-    if (n >= 2 || families.has(f)) { overflow.push(d); continue; }
+    const k = T.kind ? T.kind(d) : null; // 2 max par type d'article (casquettes, hoodies…)
+    if (n >= 2 || families.has(f) || (k && (perKind.get(k) || 0) >= 2)) { overflow.push(d); continue; }
     perBrand.set(b, n + 1);
+    if (k) perKind.set(k, (perKind.get(k) || 0) + 1);
     families.add(f);
     out.push(d);
   }
