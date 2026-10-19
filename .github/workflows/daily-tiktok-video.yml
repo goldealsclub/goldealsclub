@@ -61,7 +61,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: oven-sh/setup-bun@v2
-      - run: sudo apt-get update && sudo apt-get install -y chromium-browser ffmpeg
+      - run: |
+          for i in 1 2 3; do
+            sudo apt-get update && sudo apt-get install -y chromium-browser ffmpeg && exit 0
+            echo "::warning::apt-get a échoué (tentative $i)"; sleep 20
+          done
+          exit 1
       - run: bun install --frozen-lockfile
       - name: Prepare Remotion compositor
         run: |
@@ -102,9 +107,13 @@ jobs:
 
       - name: Install ffmpeg + chromium
         if: ${{ env.skip != 'true' }}
+        # Les miroirs apt échouent parfois (code 100) : 3 tentatives avant d'abandonner.
         run: |
-          sudo apt-get update
-          sudo apt-get install -y ffmpeg chromium-browser
+          for i in 1 2 3; do
+            sudo apt-get update && sudo apt-get install -y ffmpeg chromium-browser && exit 0
+            echo "::warning::apt-get a échoué (tentative $i), nouvel essai dans 20 s"; sleep 20
+          done
+          exit 1
 
       - name: Install Remotion deps
         if: ${{ env.skip != 'true' }}
