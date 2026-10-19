@@ -55,7 +55,10 @@ export const LayoutQA: React.FC<{ checkpoints: QACheckpoint[]; fonts: string[] }
       }
       const clips = cs.overflow === "hidden" || cs.overflowX === "hidden" || cs.textOverflow === "ellipsis";
       if (clips && he.scrollWidth > he.clientWidth + FRAME_TOLERANCE) issues.push({ kind: "coupe-largeur", text });
-      if (clips && he.scrollHeight > he.clientHeight + FRAME_TOLERANCE) issues.push({ kind: "coupe-hauteur", text });
+      // Une vraie ligne masquée dépasse d'au moins une demi-ligne ; en dessous, ce sont
+      // les jambages des lettres avec un interlignage serré (faux positif).
+      const lineSlack = Math.max(FRAME_TOLERANCE, parseFloat(cs.fontSize) * 0.5);
+      if (clips && he.scrollHeight > he.clientHeight + lineSlack) issues.push({ kind: "coupe-hauteur", text });
     });
 
     for (const family of fonts) {
