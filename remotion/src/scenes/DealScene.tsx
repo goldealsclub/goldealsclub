@@ -57,6 +57,11 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
   const brandLogo = brandLogos[deal.brand];
   // Le prix doit tenir avec l'ancien prix dans la largeur de la zone de sécurité (≈ 860 px).
   const fittedPriceSize = Math.min(priceSize(sale, s.deal.priceFontSize, hasOrig), hasOrig ? 160 : 190);
+  // Ligne prix + pastille (adidas/nike) : le prix doit laisser la place à la pastille de remise
+  // dans la zone visible. Largeur estimée d'Archivo Black ≈ 0,62 em par caractère.
+  const blockRowWidth = SAFE.right - SAFE.left - 40;
+  const blockPriceSize = Math.min(fittedPriceSize,
+    Math.floor((blockRowWidth - (hasOrig ? 270 : 0)) / ((fmtPrice(sale).length + 1) * 0.62)));
 
   // Bloc bas
   const block = enter(TIMING.secondaryDelay, 16, 320);
@@ -317,10 +322,10 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
             <div style={{
               marginTop: 8,
               fontFamily: s.fonts.display, fontWeight: 900,
-              fontSize: fittedPriceSize, color: s.paper,
+              fontSize: blockPriceSize, color: s.paper,
               lineHeight: 0.85, letterSpacing: -8,
               whiteSpace: "nowrap",
-            }}>{fmtPrice(sale)}<span style={{ fontSize: fittedPriceSize * 0.56, marginLeft: 8 }}>€</span></div>
+            }}>{fmtPrice(sale)}<span style={{ fontSize: blockPriceSize * 0.56, marginLeft: 8 }}>€</span></div>
           </div>
 
           {hasOrig && (
