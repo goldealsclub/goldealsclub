@@ -208,10 +208,8 @@ jobs:
             --label="Sélection du jour"
 
       - name: Publish to Facebook + Instagram (Reels)
-        # EN PAUSE (19/10) : prix masqué par l'interface des réseaux — réactiver après
-        # passage du contrôle « zone de sécurité ». Remettre la ligne ci-dessous :
-        # if: ${{ env.skip != 'true' && env.dryrun != 'true' }}
-        if: ${{ false }}
+        # Réactivé le 19/10 : publication seulement si « Verify video before publishing » a réussi.
+        if: ${{ env.skip != 'true' && env.dryrun != 'true' }}
         env:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
