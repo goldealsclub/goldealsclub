@@ -10,6 +10,7 @@ import { OutroScene } from "./scenes/OutroScene";
 import { deals } from "./data";
 import { StyleProvider } from "./lib/style-context";
 import { DEFAULT_STYLE_ID, getStyle, type StyleId } from "./lib/styles";
+import { LayoutQA, type QACheckpoint } from "./lib/LayoutQA";
 
 interface MainVideoProps {
   styleId?: StyleId;
@@ -39,8 +40,20 @@ export const MainVideo: React.FC<MainVideoProps> = ({ styleId }) => {
     easing: s.motion.easing,
   });
 
+  // Instants « posés » de chaque scène pour le contrôle de mise en page :
+  // une fois les entrées animées terminées, avant la transition de sortie.
+  const T = s.motion.transitionFrames;
+  const dealStart = (i: number) => INTRO_FRAMES - T + i * (DEAL_FRAMES - T);
+  const checkpoints: QACheckpoint[] = [
+    { frame: INTRO_FRAMES - T - 5, scene: "intro" },
+    ...deals.map((_, i) => ({ frame: dealStart(i) + DEAL_FRAMES - T - 8, scene: `offre-${i + 1}` })),
+    { frame: dealStart(TOTAL) + OUTRO_FRAMES - 10, scene: "fin" },
+  ];
+  const fonts = Array.from(new Set([s.fonts.display, s.fonts.kinetic, s.fonts.body]));
+
   return (
     <StyleProvider styleId={styleId ?? DEFAULT_STYLE_ID}>
+      <LayoutQA checkpoints={checkpoints} fonts={fonts} />
       <AbsoluteFill style={{ backgroundColor: s.paper }}>
         <TransitionSeries>
           <TransitionSeries.Sequence durationInFrames={INTRO_FRAMES}>

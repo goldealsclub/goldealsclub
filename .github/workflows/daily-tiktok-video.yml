@@ -10,6 +10,11 @@ on:
         description: "Style à générer (vide = les trois)"
         required: false
         default: ""
+      publish:
+        description: "Publier (site + réseaux) si les contrôles passent ; non = test à blanc"
+        type: boolean
+        required: false
+        default: true
 
 jobs:
   cutout-qa:
@@ -79,6 +84,10 @@ jobs:
         if: ${{ github.event.inputs.style != '' && github.event.inputs.style != matrix.style }}
         run: echo "skip=true" >> $GITHUB_ENV
 
+      - name: Dry run (no publishing)
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.publish == 'false' }}
+        run: echo "dryrun=true" >> $GITHUB_ENV
+
       - name: Setup Bun
         if: ${{ env.skip != 'true' }}
         uses: oven-sh/setup-bun@v2
@@ -114,8 +123,14 @@ jobs:
           sudo chmod 777 /mnt/documents
           node scripts/generate-variant.mjs top --style=${{ matrix.style }}
 
-      - name: Publish to the site
+      - name: Verify video before publishing
         if: ${{ env.skip != 'true' }}
+        run: |
+          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
+          node remotion/scripts/verify-video.mjs "$VIDEO"
+
+      - name: Publish to the site
+        if: ${{ env.skip != 'true' && env.dryrun != 'true' }}
         env:
           VIDEO_PUBLISH_TOKEN: ${{ secrets.VIDEO_PUBLISH_TOKEN }}
         run: |
@@ -127,7 +142,7 @@ jobs:
             --label="Sélection du jour"
 
       - name: Publish to Facebook + Instagram (Reels)
-        if: ${{ env.skip != 'true' }}
+        if: ${{ env.skip != 'true' && env.dryrun != 'true' }}
         env:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
@@ -137,11 +152,13 @@ jobs:
           node remotion/scripts/publish-social.mjs "$VIDEO" --style=${{ matrix.style }}
 
       - name: Upload as workflow artifact (backup)
-        if: ${{ env.skip != 'true' }}
+        if: ${{ always() && env.skip != 'true' }}
         uses: actions/upload-artifact@v4
         with:
           name: tiktok-video-${{ matrix.style }}
           path: |
             /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4
             /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.txt
+            /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.json
+            /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.png
           retention-days: 14

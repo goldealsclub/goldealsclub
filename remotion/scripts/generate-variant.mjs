@@ -185,6 +185,7 @@ async function imageToDataUri(url) {
 
 
 const deals = [];
+const manifest = []; // offres retenues, avec liens et prix source (contrôle avant publication)
 const seenTitles = new Set();
 let rejectedCount = 0;
 for (const d of rawDeals) {
@@ -199,6 +200,11 @@ for (const d of rawDeals) {
     continue;
   }
   seenTitles.add(key);
+  manifest.push({
+    id: d.id, title: d.title, brand: d.brand, merchant: d.merchant,
+    salePrice: d.sale_price, originalPrice: d.original_price, discountPercent: d.discount_percent,
+    productUrl: d.product_url, affiliateUrl: d.affiliate_url,
+  });
   deals.push({
     title: d.title,
     brand: d.brand,
@@ -282,6 +288,7 @@ const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${STYLE_ID}-${date}
   console.log("📝 Légende écrite :\n" + caption);
 }
 
+const layoutQA = []; // rempli par <LayoutQA /> pendant le rendu
 await renderMedia({
   composition,
   serveUrl: bundled,
@@ -290,6 +297,11 @@ await renderMedia({
   puppeteerInstance: browser,
   muted: true,
   concurrency: 1,
+  onBrowserLog: (log) => {
+    if (log.text.startsWith("QA_LAYOUT ")) {
+      try { layoutQA.push(JSON.parse(log.text.slice(10))); } catch { /* ligne illisible */ }
+    }
+  },
   onProgress: ({ progress }) => {
     const pct = Math.round(progress * 100);
     if (pct % 10 === 0) process.stdout.write(`\r🎞️  ${pct}%`);
@@ -339,3 +351,8 @@ try { fs.unlinkSync(rawVideoPath); } catch {}
 const stats = fs.statSync(outputPath);
 console.log(`\n🎉 ${outputPath} (${(stats.size / 1024 / 1024).toFixed(1)} MB)`);
 deals.forEach((d, i) => console.log(`   #${i + 1} ${d.brand} — ${d.title.slice(0, 50)} → ${d.salePrice}€ (-${d.discountPercent}%)`));
+
+// Fichiers lus par verify-video.mjs avant toute publication.
+fs.writeFileSync(outputPath.replace(/\.mp4$/, ".deals.json"), JSON.stringify(manifest, null, 2));
+fs.writeFileSync(outputPath.replace(/\.mp4$/, ".layout.json"), JSON.stringify(layoutQA, null, 2));
+console.log(`🧪 Contrôle de mise en page : ${layoutQA.length} instants mesurés`);
