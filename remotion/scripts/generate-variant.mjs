@@ -16,6 +16,7 @@ import { fileURLToPath } from "url";
 import { execFileSync, execSync } from "child_process";
 import { mixAudio } from "./lib/audio-mix.mjs";
 import { checkLiveOffer } from "./lib/live-offer.mjs";
+import { rankTrendingDeals, loadRecentKeys, saveHistory } from "./lib/select-deals.mjs";
 import { imageSize } from "image-size";
 import { assertCleanCutout, CUTOUT_LIMITS, padStudioMargin, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
 
@@ -75,10 +76,18 @@ let rawDeals = allDeals.map((d) => ({ ...d, brand: CANONICAL_BRAND[brandKey(d.br
   return cat === "sneakers" && d.image_url && d.sale_price;
 });
 
+const today = new Date().toISOString().slice(0, 10);
+const HISTORY_DIR = process.env.VIDEO_HISTORY_DIR;
 if (preset === "top") {
-  rawDeals = rawDeals
-    .filter((d) => (d.discount_percent ?? 0) >= 30 && allowedBrands.has(brandKey(d.brand)))
-    .sort((a, b) => (b.discount_percent || 0) - (a.discount_percent || 0));
+  // Modèles tendance uniquement, sélection différente chaque jour et pour chaque style.
+  const recentKeys = loadRecentKeys(HISTORY_DIR, today);
+  rawDeals = rankTrendingDeals({
+    deals: allDeals.map((d) => ({ ...d, brand: CANONICAL_BRAND[brandKey(d.brand)] ?? d.brand })),
+    date: today,
+    styleIndex: validStyles.indexOf(STYLE_ID),
+    recentKeys,
+  });
+  console.log(`🔥 ${rawDeals.length} modèles tendance candidats (${recentKeys.size} déjà montrés ces 3 derniers jours, écartés)`);
 } else if (preset === "nike") {
   rawDeals = rawDeals
     .filter((d) => (d.discount_percent ?? 0) >= 25 && (brandKey(d.brand) === "nike" || brandKey(d.brand) === "jordan"))
@@ -375,5 +384,7 @@ deals.forEach((d, i) => console.log(`   #${i + 1} ${d.brand} — ${d.title.slice
 // Fichiers lus par verify-video.mjs avant toute publication.
 fs.writeFileSync(outputPath.replace(/\.mp4$/, ".deals.json"), JSON.stringify(manifest, null, 2));
 fs.writeFileSync(outputPath.replace(/\.mp4$/, ".offers-audit.json"), JSON.stringify(offerAudit, null, 2));
+// Historique des produits montrés (évite de les remontrer les jours suivants).
+saveHistory(HISTORY_DIR, STYLE_ID, today, manifest);
 fs.writeFileSync(outputPath.replace(/\.mp4$/, ".layout.json"), JSON.stringify(layoutQA, null, 2));
 console.log(`🧪 Contrôle de mise en page : ${layoutQA.length} instants mesurés`);
