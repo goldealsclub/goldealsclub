@@ -122,4 +122,6 @@ const { video } = await callFn({
 });
 
 console.log(`✅ ${path.basename(localPath)} → ${video?.public_url ?? remoteName}`);
+// URL publique réutilisée par la publication Instagram (qui télécharge la vidéo elle-même).
+if (video?.public_url) fs.writeFileSync(`${localPath}.url`, video.public_url);
 console.log(`   style=${style} publiée=${isPublished} date=${publishAt}`);

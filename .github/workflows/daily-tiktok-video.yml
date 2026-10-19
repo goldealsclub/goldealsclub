@@ -126,14 +126,15 @@ jobs:
             --category=top \
             --label="Sélection du jour"
 
-      - name: Publish to Facebook (Reel)
+      - name: Publish to Facebook + Instagram (Reels)
         if: ${{ env.skip != 'true' }}
         env:
           FB_PAGE_ID: ${{ secrets.FB_PAGE_ID }}
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
+          IG_USER_ID: ${{ secrets.IG_USER_ID }}
         run: |
           VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
-          node remotion/scripts/publish-facebook.mjs "$VIDEO" --style=${{ matrix.style }}
+          node remotion/scripts/publish-social.mjs "$VIDEO" --style=${{ matrix.style }}
 
       - name: Upload as workflow artifact (backup)
         if: ${{ env.skip != 'true' }}
