@@ -303,7 +303,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
 
         {/* Prix */}
         <div style={{
-          position: "absolute", left: SAFE.left + 10, right: 1080 - SAFE.right + 10, top: 215,
+          position: "absolute", left: SAFE.left + 10, right: 1080 - SAFE.right + 30, top: 215, // marge : le ressort de l'animation dépasse un peu
           display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 24,
         }}>
           <div style={{
