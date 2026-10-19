@@ -264,7 +264,8 @@ const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${STYLE_ID}-${date}
   const lines = deals.map((d, i) => {
     const was = d.originalPrice && d.originalPrice > d.salePrice ? ` au lieu de ${fmt(d.originalPrice)}` : "";
     const pct = d.discountPercent ? ` (-${d.discountPercent} %)` : "";
-    return `${i + 1}. ${d.brand} ${d.title} — ${fmt(d.salePrice)}${was}${pct}`;
+    const name = d.title.toLowerCase().includes(String(d.brand || "").toLowerCase()) ? d.title : `${d.brand} ${d.title}`;
+    return `${i + 1}. ${name} — ${fmt(d.salePrice)}${was}${pct}`;
   });
   const tag = (b) => "#" + String(b || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
   const brandTags = [...new Set(deals.map((d) => tag(d.brand)).filter((t) => t.length > 2))];
