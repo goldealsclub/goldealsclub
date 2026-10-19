@@ -59,7 +59,15 @@ try {
   if (!(duration >= 15 && duration <= 60)) fail(`durée ${duration.toFixed(1)} s hors de 15–60 s`);
   if (size > 100 * 1024 * 1024) fail(`fichier trop lourd (${(size / 1048576).toFixed(0)} Mo)`);
   if (size < 500 * 1024) fail(`fichier anormalement léger (${(size / 1024).toFixed(0)} Ko)`);
-  if (!probe.streams.some((s) => s.codec_type === "audio")) warn("pas de piste audio");
+  const audio = probe.streams.find((s) => s.codec_type === "audio");
+  if (!audio) fail("pas de musique (aucune piste audio)");
+  else {
+    // Volume moyen : une piste présente mais silencieuse est aussi refusée.
+    const vd = (() => { try { return execFileSync("sh", ["-c", `ffmpeg -v info -i "${video}" -map 0:a -af volumedetect -f null - 2>&1`]).toString(); } catch (e) { return String(e.stdout || ""); } })();
+    const mean = Number((vd.match(/mean_volume:\s*(-?[\d.]+)/) || [])[1]);
+    if (!(mean > -45)) fail(`musique inaudible (volume moyen ${Number.isFinite(mean) ? mean + " dB" : "inconnu"})`);
+    else if (Math.abs(Number(audio.duration || duration) - duration) > 1) warn(`piste audio de ${Number(audio.duration).toFixed(1)} s pour ${duration.toFixed(1)} s de vidéo`);
+  }
   if (!errors.length) ok(`fichier : ${v.width}×${v.height}, ${duration.toFixed(1)} s, ${(size / 1048576).toFixed(1)} Mo`);
 } catch (e) {
   fail(`lecture du fichier impossible : ${e.message}`);
@@ -99,6 +107,7 @@ if (!layout.length) {
       const where = `${scene} : « ${text} »`;
       if (kind === "police") fail(`police non chargée (${text}) — ${scene}`);
       else if (kind === "coupe-largeur") fail(`texte coupé en largeur — ${where}`);
+      else if (kind === "glyphes-rognes") fail(`chiffres/lettres rognés en haut ou en bas — ${where}`);
       else if (kind === "hors-cadre") fail(`texte hors cadre — ${where}`);
       else if (kind === "zone-reseaux") fail(`texte caché par l'interface Instagram/TikTok/Facebook — ${where}`);
       else if (kind === "coupe-hauteur") warn(`texte tronqué (« … ») — ${where}`);
@@ -143,6 +152,19 @@ for (const [i, d] of deals.entries()) {
     const now = liveById.get(d.id);
     if (!now) fail(`${label} : n'est plus en ligne sur le site`);
     else if (Math.abs(Number(now.sale_price) - sale) > 0.01) fail(`${label} : prix changé (${sale} € → ${now.sale_price} €)`);
+  }
+  // Le bouton « Voir l'offre » du site passe par le lien affilié : il doit arriver chez le bon marchand.
+  if (d.affiliateUrl && d.productUrl) {
+    try {
+      const r = await fetch(d.affiliateUrl, { redirect: "follow", headers: { "User-Agent": UA, Accept: "text/html" }, signal: AbortSignal.timeout(20000) });
+      const want = new URL(d.productUrl).hostname.replace(/^www\./, "");
+      const got = new URL(r.url).hostname.replace(/^www\./, "");
+      if (got === want) ok(`${label} : « Voir l'offre » mène bien chez ${got}`);
+      else if (/awin/.test(got)) warn(`${label} : lien affilié resté sur ${got} (HTTP ${r.status})`);
+      else fail(`${label} : « Voir l'offre » mène sur ${got} au lieu de ${want}`);
+    } catch (e) {
+      warn(`${label} : redirection du lien affilié non vérifiable (${e.cause?.code || e.name})`);
+    }
   }
   for (const [kind, url] of [["lien produit", d.productUrl], ["lien affilié", d.affiliateUrl]]) {
     if (!url) { if (kind === "lien affilié") warn(`${label} : pas de lien affilié`); continue; }

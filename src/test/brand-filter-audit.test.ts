@@ -79,7 +79,7 @@ beforeAll(async () => {
     }
   }
   deals = loadFromFile();
-});
+}, 90_000); // le catalogue complet (~12 000 offres) met plus de 10 s à télécharger
 
 describe("Audit filtres marque & marchand (anti-régression)", () => {
   it("charge des deals", () => {

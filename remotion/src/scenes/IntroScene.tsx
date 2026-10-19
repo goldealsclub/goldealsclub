@@ -194,7 +194,7 @@ export const IntroScene: React.FC = () => {
       <div style={{
         position: "absolute", top: 640, left: COL_L, right: 1080 - SAFE.right,
         display: "flex", flexDirection: "column", gap: 4,
-        overflow: "hidden",
+        // pas d'overflow caché : il rognait les accents (À) et le bas des lettres
       }}>
         {heroLines.map(({ txt, line }, i) => (
           <div key={i} style={{

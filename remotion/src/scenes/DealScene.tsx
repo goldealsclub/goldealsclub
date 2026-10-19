@@ -160,13 +160,13 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
         <div style={{
           position: "absolute", left: SAFE.left + 10, right: 1080 - SAFE.right + 10, top: SAFE.top + 1040,
           display: "flex", alignItems: "baseline", justifyContent: "center", gap: 32,
-          overflow: "hidden",
+          // pas d'overflow caché : les chiffres Playfair descendent sous la ligne
           opacity: price.t, transform: `translate3d(0, ${-price.y}px, 0)`, ...gpuLayer,
         }}>
           <div style={{
             fontFamily: s.fonts.display, fontWeight: 400,
             fontSize: fittedPriceSize, color: s.ink,
-            lineHeight: 0.9, letterSpacing: -3,
+            lineHeight: 1.1, letterSpacing: -3, fontVariantNumeric: "lining-nums",
             whiteSpace: "nowrap", flexShrink: 1,
           }}>{fmtPrice(sale)}<span style={{ fontSize: fittedPriceSize * 0.55 }}> €</span></div>
           {hasOrig && (
@@ -313,7 +313,7 @@ export const DealScene: React.FC<DealSceneProps> = ({ deal, index, total = 5 }) 
               fontFamily: s.fonts.body, fontSize: 16, fontWeight: 700,
               color: s.paperSoft, letterSpacing: 6,
               textTransform: "uppercase",
-            }}>Prix membre</div>
+            }}>Prix promo</div>
             <div style={{
               marginTop: 8,
               fontFamily: s.fonts.display, fontWeight: 900,

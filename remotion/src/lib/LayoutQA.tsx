@@ -99,6 +99,17 @@ export const LayoutQA: React.FC<{ checkpoints: QACheckpoint[]; fonts: string[] }
         }
         break;
       }
+      // Interlignage < 1 dans un cadre qui masque le débordement : le haut ou le bas
+      // des lettres/chiffres est rogné (ex. « 85,05 » dont les 5 sont coupés).
+      if (!decor) {
+        for (let p: Element | null = el; p; p = p.parentElement) {
+          const pcs = getComputedStyle(p);
+          if (pcs.overflow === "visible" && pcs.overflowY === "visible") continue;
+          const lh = parseFloat(cs.lineHeight);
+          if (!Number.isNaN(lh) && lh < parseFloat(cs.fontSize) * 0.98) issues.push({ kind: "glyphes-rognes", text });
+          break;
+        }
+      }
       const clips = cs.overflow === "hidden" || cs.overflowX === "hidden" || cs.textOverflow === "ellipsis";
       if (!decor && clips && he.scrollWidth > he.clientWidth + FRAME_TOLERANCE) issues.push({ kind: "coupe-largeur", text });
       // Une vraie ligne masquée dépasse d'au moins une demi-ligne ; en dessous, ce sont

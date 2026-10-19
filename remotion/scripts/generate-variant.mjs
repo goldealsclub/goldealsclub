@@ -14,6 +14,8 @@ import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 import { execFileSync, execSync } from "child_process";
+import { mixAudio } from "./lib/audio-mix.mjs";
+import { checkLiveOffer } from "./lib/live-offer.mjs";
 import { imageSize } from "image-size";
 import { assertCleanCutout, CUTOUT_LIMITS, padStudioMargin, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
 
@@ -209,12 +211,28 @@ async function imageToDataUri(url) {
 const deals = [];
 const manifest = []; // offres retenues, avec liens et prix source (contrôle avant publication)
 const seenTitles = new Set();
+const offerAudit = []; // contrôle des offres sur les sites marchands (écrit à côté de la vidéo)
 let rejectedCount = 0;
 for (const d of rawDeals) {
   if (deals.length >= 5) break;
   // Évite doublons exacts pour varier les modèles
   const key = `${d.brand}|${(d.title || "").slice(0, 40)}`;
   if (seenTitles.has(key)) continue;
+  // Prix barré peu crédible (> 80 % de remise) : écarté d'office.
+  if ((d.discount_percent ?? 0) > 80) {
+    console.log(`   ⏭️  ${d.brand} ${d.title.slice(0, 40)} — remise de ${d.discount_percent} % jugée peu crédible`);
+    offerAudit.push({ id: d.id, merchant: d.merchant, title: d.title, status: "remise-suspecte" });
+    continue;
+  }
+  // Offre confirmée sur la page du marchand (prix identique, en stock) avant d'entrer dans la vidéo.
+  const live = await checkLiveOffer({ productUrl: d.product_url, salePrice: Number(d.sale_price) });
+  offerAudit.push({ id: d.id, merchant: d.merchant, title: d.title, feedPrice: d.sale_price, ...live });
+  if (live.status !== "ok") {
+    rejectedCount++;
+    console.log(`   ⏭️  ${d.merchant} — ${d.title.slice(0, 40)} — ${live.status} (${live.detail})`);
+    continue;
+  }
+  console.log(`   ✔︎ ${d.merchant} — ${d.title.slice(0, 40)} — ${live.detail}`);
   const result = await imageToDataUri(d.image_url);
   if (!result || result.rejected) {
     rejectedCount++;
@@ -334,40 +352,13 @@ await renderMedia({
 await browser.close({ silent: false });
 console.log("\n✅ Vidéo rendue");
 
-// Mix audio (identique à generate-weekly.mjs)
-const audioDir = path.join(rootDir, "public/audio");
-const lofiPath = path.join(audioDir, "lofi-bg.mp3");
-const whooshPath = path.join(audioDir, "whoosh.mp3");
-const dingPath = path.join(audioDir, "ding.mp3");
-const hasAudio = fs.existsSync(lofiPath) && fs.existsSync(whooshPath) && fs.existsSync(dingPath);
-
-if (hasAudio) {
-  const transitions = [2070, 5800, 9500, 13300, 17000];
-  const reveals = [3000, 6800, 10500, 14300, 18000];
-  const mixInputs = ["[music]", ...transitions.map((_, i) => `[w${i}]`), ...reveals.map((_, i) => `[d${i}]`)];
-  const filterComplex = [
-    `[1:a]atrim=9.3:34.3,asetpts=PTS-STARTPTS,volume=0.55,afade=t=in:st=0:d=0.5,afade=t=out:st=22:d=3[music]`,
-    `[2:a]asplit=5${transitions.map((_, i) => `[wi${i}]`).join("")}`,
-    ...transitions.map((t, i) => `[wi${i}]atrim=0:1.0,asetpts=PTS-STARTPTS,lowpass=f=3000,volume=0.4,adelay=${t}|${t}[w${i}]`),
-    `[3:a]asplit=5${reveals.map((_, i) => `[di${i}]`).join("")}`,
-    ...reveals.map((t, i) => `[di${i}]atrim=0:0.8,asetpts=PTS-STARTPTS,lowpass=f=4000,volume=0.3,adelay=${t}|${t}[d${i}]`),
-    `${mixInputs.join("")}amix=inputs=${mixInputs.length}:duration=first:normalize=0,volume=1.8,loudnorm=I=-14:TP=-1:LRA=11[audio]`,
-  ].join(";\n    ");
-  const ffmpegCmd = [
-    "ffmpeg", "-y", "-i", rawVideoPath, "-i", lofiPath,
-    "-stream_loop", "-1", "-i", whooshPath, "-stream_loop", "-1", "-i", dingPath,
-    "-filter_complex", `"\n    ${filterComplex}\n  "`,
-    "-map", "0:v", "-map", '"[audio]"',
-    "-c:v", "copy", "-c:a", "aac", "-b:a", "192k", "-shortest", outputPath,
-  ].join(" ");
-  try {
-    execSync(ffmpegCmd, { stdio: "inherit", shell: true });
-    console.log("✅ Audio mixé");
-  } catch {
-    console.error("⚠️ Mix audio échoué, copie sans audio");
-    fs.copyFileSync(rawVideoPath, outputPath);
-  }
-} else {
+// Musique + bruitages calés sur le découpage réel de ce style.
+try {
+  mixAudio({ rawVideo: rawVideoPath, output: outputPath, style: STYLE_ID, audioDir: path.join(rootDir, "public/audio") });
+  console.log("✅ Musique et bruitages ajoutés");
+} catch (e) {
+  // Sans musique, la vérification bloque la publication (vidéo muette refusée).
+  console.error(`⚠️ Mixage audio échoué (${e.message}) : vidéo sans son`);
   fs.copyFileSync(rawVideoPath, outputPath);
 }
 try { fs.unlinkSync(rawVideoPath); } catch {}
@@ -378,5 +369,6 @@ deals.forEach((d, i) => console.log(`   #${i + 1} ${d.brand} — ${d.title.slice
 
 // Fichiers lus par verify-video.mjs avant toute publication.
 fs.writeFileSync(outputPath.replace(/\.mp4$/, ".deals.json"), JSON.stringify(manifest, null, 2));
+fs.writeFileSync(outputPath.replace(/\.mp4$/, ".offers-audit.json"), JSON.stringify(offerAudit, null, 2));
 fs.writeFileSync(outputPath.replace(/\.mp4$/, ".layout.json"), JSON.stringify(layoutQA, null, 2));
 console.log(`🧪 Contrôle de mise en page : ${layoutQA.length} instants mesurés`);

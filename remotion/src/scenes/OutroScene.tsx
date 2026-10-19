@@ -83,7 +83,7 @@ export const OutroScene: React.FC = () => {
       <div style={{
         position: "absolute", top: 640, left: SAFE.left + 10, right: 1080 - SAFE.right,
         display: "flex", flexDirection: "column", gap: 6,
-        overflow: "hidden",
+        // pas d'overflow caché : il rognait les accents (À) et le bas des lettres
         textAlign: s.outro.layout === "serif-fade" ? "center" : "left",
       }}>
         <div style={{
