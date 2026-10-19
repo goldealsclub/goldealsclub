@@ -120,8 +120,19 @@ export function rankTrendingDeals({ deals, date, styleIndex = 0, styles = 3, rec
     return { d, key: Math.pow(rand(), 1 / score) }; // tirage pondéré sans remise (Efraimidis-Spirakis)
   }).sort((a, b) => b.key - a.key).map((x) => x.d);
 
-  // Répartition en alternance entre les styles, puis 1 modèle par famille et 2 max par marque.
-  const mine = keyed.filter((_, i) => i % styles === styleIndex);
+  // Une famille de modèle (ex. Chuck Taylor) n'apparaît que dans UNE des 3 vidéos du jour :
+  // on garde le premier tiré de chaque famille, puis répartition en alternance entre les styles.
+  const seenFamilies = new Set();
+  const unique = [];
+  const repeats = [];
+  for (const d of keyed) {
+    const f = familyKey(d);
+    if (seenFamilies.has(f)) repeats.push(d); else { seenFamilies.add(f); unique.push(d); }
+  }
+  const mine = [
+    ...unique.filter((_, i) => i % styles === styleIndex),
+    ...repeats.filter((_, i) => i % styles === styleIndex), // secours si trop d'offres sont refusées
+  ];
   const perBrand = new Map();
   const families = new Set();
   const out = [];
