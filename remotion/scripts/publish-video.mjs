@@ -56,7 +56,14 @@ if (!localPath || !fs.existsSync(localPath)) {
 
 const style = flag("style", "adidas");
 const category = flag("category", "top");
-const label = flag("label", `Sélection du jour — ${style}`);
+const baseLabel = flag("label", `Sélection du jour — ${style}`);
+// Légende prête à publier (écrite par generate-variant), rangée après le titre :
+// le site public n'affiche que le titre, l'admin propose de copier la légende.
+const CAPTION_SEPARATOR = "\n\n— Légende —\n"; // identique à src/lib/video-label.ts
+const captionFile = localPath ? localPath.replace(/\.mp4$/, ".txt") : "";
+const label = captionFile && fs.existsSync(captionFile)
+  ? `${baseLabel}${CAPTION_SEPARATOR}${fs.readFileSync(captionFile, "utf8").trim()}`
+  : baseLabel;
 const briefDate = flag("date", new Date().toISOString().slice(0, 10));
 const publishAt = flag("publish-at", new Date().toISOString());
 const isPublished = !args.includes("--draft");

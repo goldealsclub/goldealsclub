@@ -1,3 +1,4 @@
+import { splitVideoLabel } from "@/lib/video-label";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -50,6 +51,35 @@ function toLocalInput(iso: string | null) {
   const off = d.getTimezoneOffset() * 60000;
   return new Date(d.getTime() - off).toISOString().slice(0, 16);
 }
+
+
+/** Légende prête à publier (TikTok, Instagram…) avec copie en un clic. */
+const CaptionBox = ({ caption }: { caption: string }) => {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(caption);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = caption;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      ta.remove();
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+  return (
+    <div className="mb-2 rounded border bg-muted/40 p-2">
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Légende du jour</span>
+        <Button size="sm" variant="outline" onClick={copy}>{copied ? "Copiée ✓" : "Copier"}</Button>
+      </div>
+      <pre className="whitespace-pre-wrap text-[11px] leading-snug max-h-40 overflow-y-auto font-sans">{caption}</pre>
+    </div>
+  );
+};
 
 export default function AdminVideosPage() {
   const { user } = useAuth();
@@ -308,9 +338,13 @@ export default function AdminVideosPage() {
                 </div>
               )}
 
+              {row && splitVideoLabel(row.label).caption && (
+                <CaptionBox caption={splitVideoLabel(row.label).caption} />
+              )}
+
               {row && (
                 <p className="text-xs text-muted-foreground mb-2">
-                  {row.label} · {row.brief_date}
+                  {splitVideoLabel(row.label).title} · {row.brief_date}
                   {" · "}
                   {row.is_published && row.published_at
                     ? `publiée le ${new Date(row.published_at).toLocaleString("fr-FR")}`

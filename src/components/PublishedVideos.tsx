@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { splitVideoLabel } from "@/lib/video-label";
 
 type PublishedVideo = {
   id: string;
@@ -47,7 +48,7 @@ const PublishedVideos = () => {
               className="w-full aspect-[9/16] object-cover bg-foreground/5"
             />
             <figcaption className="font-body text-xs uppercase tracking-widest text-foreground/60">
-              {v.label}
+              {splitVideoLabel(v.label).title}
             </figcaption>
           </figure>
         ))}

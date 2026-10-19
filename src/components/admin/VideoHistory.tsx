@@ -1,3 +1,4 @@
+import { splitVideoLabel } from "@/lib/video-label";
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -209,7 +210,7 @@ export default function VideoHistory({ limit, compact }: Props) {
                   ⚠ {item.images_loaded === 0 ? "Aucune photo" : "1 photo manquante"}
                 </span>
               )}
-              <p className="text-sm font-medium mb-2 line-clamp-1">{item.label}</p>
+              <p className="text-sm font-medium mb-2 line-clamp-1">{splitVideoLabel(item.label).title}</p>
               <div className="flex gap-2 mt-auto">
                 <Button asChild size="sm" variant="outline" className="flex-1">
                   <a href={item.public_url} download={`battle-${item.category}-${item.brief_date}.webm`}>
