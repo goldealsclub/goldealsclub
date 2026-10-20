@@ -17,6 +17,10 @@ on:
         description: "Lancer le premier import Awin + snapshot"
         type: boolean
         default: true
+      seed:
+        description: "Reprendre les offres de l'ancien projet (snapshot public)"
+        type: boolean
+        default: false
 
 jobs:
   migrate:
@@ -120,6 +124,17 @@ jobs:
           END \$\$;
           SQL
           supabase db push --include-all -p "$SUPABASE_DB_PASSWORD"
+
+      - name: Reprise des offres de l'ancien projet
+        if: ${{ github.event.inputs.seed == 'true' }}
+        run: |
+          SERVICE=$(supabase projects api-keys --project-ref "$REF" -o json | jq -r '.[] | select(.name=="service_role") | .api_key')
+          echo "::add-mask::$SERVICE"
+          OLD_SNAPSHOT_URL="https://yyqgxhuzobmqygksbaze.supabase.co/storage/v1/object/public/deals-snapshots/all.json" \
+          NEW_URL="https://$REF.supabase.co" SERVICE_KEY="$SERVICE" node scripts/seed-deals-from-old.mjs
+          curl -sS -m 300 -X POST "https://$REF.supabase.co/functions/v1/snapshot-deals" \
+            -H "Content-Type: application/json" -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" -H "x-cron-secret: $CRON_SECRET" \
+            -d '{}' | head -c 600; echo
 
       - name: Premier import Awin
         if: ${{ github.event.inputs.import == 'true' }}
