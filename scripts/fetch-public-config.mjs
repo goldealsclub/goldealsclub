@@ -37,5 +37,6 @@ if (process.argv.includes("--github-env") && process.env.GITHUB_ENV) {
   console.log("✅ Config Supabase publique chargée dans l'environnement du job");
 } else {
   fs.writeFileSync(".env.production.local", lines.join("\n") + "\n");
+  fs.writeFileSync(".supabase-public.json", JSON.stringify(cfg));
   console.log(`✅ Config Supabase publique écrite (.env.production.local, projet ${cfg.projectRef || "?"})`);
 }
