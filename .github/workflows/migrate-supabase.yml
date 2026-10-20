@@ -1,0 +1,119 @@
+name: Migration vers Supabase (compte Goldeals)
+
+# Installe tout le backend du site sur le projet Supabase gratuit de Goldeals Club :
+# base (migrations), fonctions, secrets des fonctions, tâches planifiées, puis
+# premier import des offres Awin et premier snapshot. Relançable sans risque.
+#
+# Secrets GitHub requis : SUPABASE_ACCESS_TOKEN, SUPABASE_DB_PASSWORD, AWIN_API_KEY
+# (VIDEO_PUBLISH_TOKEN, déjà présent, est recopié vers les fonctions).
+
+on:
+  workflow_dispatch:
+    inputs:
+      project_ref:
+        description: "Reference ID du nouveau projet Supabase"
+        required: true
+      import:
+        description: "Lancer le premier import Awin + snapshot"
+        type: boolean
+        default: true
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      REF: ${{ github.event.inputs.project_ref }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Vérifier les secrets
+        run: |
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_DB_PASSWORD; do
+            [ -n "${!v}" ] || { echo "::error::Secret $v manquant"; exit 1; }
+          done
+          [ -n "${{ secrets.AWIN_API_KEY }}" ] || { echo "::error::Secret AWIN_API_KEY manquant"; exit 1; }
+
+      - name: Pointer la config sur le nouveau projet
+        run: sed -i "s/^project_id = .*/project_id = \"$REF\"/" supabase/config.toml
+
+      - name: Lier le projet
+        run: supabase link --project-ref "$REF" -p "$SUPABASE_DB_PASSWORD"
+
+      - name: Base de données (migrations)
+        run: supabase db push --include-all -p "$SUPABASE_DB_PASSWORD"
+
+      - name: Secrets des fonctions
+        run: |
+          CRON_SECRET=$(openssl rand -hex 32)
+          echo "::add-mask::$CRON_SECRET"
+          echo "CRON_SECRET=$CRON_SECRET" >> "$GITHUB_ENV"
+          supabase secrets set --project-ref "$REF" \
+            AWIN_API_KEY="${{ secrets.AWIN_API_KEY }}" \
+            VIDEO_PUBLISH_TOKEN="${{ secrets.VIDEO_PUBLISH_TOKEN }}" \
+            CRON_SECRET="$CRON_SECRET"
+
+      - name: Fonctions
+        run: supabase functions deploy --project-ref "$REF" --use-api
+
+      - name: Clé publique du site
+        run: |
+          ANON=$(supabase projects api-keys --project-ref "$REF" -o json | jq -r '.[] | select(.name=="anon") | .api_key')
+          echo "ANON_KEY=$ANON" >> "$GITHUB_ENV"
+          {
+            echo "### Projet Supabase prêt"
+            echo "URL : https://$REF.supabase.co"
+            echo
+            echo "Clé publique (anon, publique par nature) :"
+            echo '```'
+            echo "$ANON"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Tâches planifiées (imports, snapshot, brief vidéo, alertes)
+        run: |
+          TS=$(date -u +%Y%m%d%H%M%S)
+          cat > "supabase/migrations/${TS}_crons_goldeals.sql" <<SQL
+          DO \$\$
+          DECLARE
+            base text := 'https://$REF.supabase.co/functions/v1';
+            anon_key text := '$ANON_KEY';
+            cron_secret text := '$CRON_SECRET';
+          BEGIN
+            PERFORM cron.unschedule(jobname) FROM cron.job
+              WHERE jobname IN ('daily-deal-alerts','awin-daily-import','awin-import-daily-6am','snapshot-deals-daily','prepare-daily-video-brief-7am-paris');
+            PERFORM cron.schedule('awin-daily-import','0 3 * * *',
+              format(\$c\$SELECT net.http_post(url:='%s/import-awin-orchestrator?mode=parallel', headers:=jsonb_build_object('Content-Type','application/json','Authorization','Bearer %s','x-cron-secret','%s'), body:=jsonb_build_object('triggered_at', now()));\$c\$, base, anon_key, cron_secret));
+            PERFORM cron.schedule('awin-import-daily-6am','0 6 * * *',
+              format(\$c\$SELECT net.http_post(url:='%s/import-awin-orchestrator', headers:=jsonb_build_object('Content-Type','application/json','Authorization','Bearer %s','x-cron-secret','%s'), body:='{"mode":"parallel"}'::jsonb);\$c\$, base, anon_key, cron_secret));
+            PERFORM cron.schedule('snapshot-deals-daily','45 6 * * *',
+              format(\$c\$SELECT net.http_post(url:='%s/snapshot-deals', headers:=jsonb_build_object('Content-Type','application/json','apikey','%s','Authorization','Bearer %s','x-cron-secret','%s'), body:=jsonb_build_object('triggered_at', now()));\$c\$, base, anon_key, anon_key, cron_secret));
+            PERFORM cron.schedule('prepare-daily-video-brief-7am-paris','0 5 * * *',
+              format(\$c\$SELECT net.http_post(url:='%s/prepare-daily-video-brief', headers:=jsonb_build_object('Content-Type','application/json','apikey','%s','Authorization','Bearer %s','x-cron-secret','%s'), body:='{"trigger":"cron"}'::jsonb);\$c\$, base, anon_key, anon_key, cron_secret));
+            PERFORM cron.schedule('daily-deal-alerts','0 8 * * *',
+              format(\$c\$SELECT net.http_post(url:='%s/daily-alerts', headers:=jsonb_build_object('Content-Type','application/json','Authorization','Bearer %s','x-cron-secret','%s'), body:='{"trigger":"cron"}'::jsonb);\$c\$, base, anon_key, cron_secret));
+          END \$\$;
+          SQL
+          supabase db push --include-all -p "$SUPABASE_DB_PASSWORD"
+
+      - name: Premier import Awin
+        if: ${{ github.event.inputs.import == 'true' }}
+        run: |
+          curl -sS -m 600 -X POST "https://$REF.supabase.co/functions/v1/import-awin-orchestrator" \
+            -H "Content-Type: application/json" -H "Authorization: Bearer $ANON_KEY" -H "x-cron-secret: $CRON_SECRET" \
+            -d '{"mode":"parallel"}' | head -c 2000; echo
+          sleep 60
+          N=$(curl -sS -m 120 "https://$REF.supabase.co/functions/v1/deals-json" -H "apikey: $ANON_KEY" | jq 'length')
+          echo "Offres en base : $N" | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Premier snapshot
+        if: ${{ github.event.inputs.import == 'true' }}
+        run: |
+          curl -sS -m 300 -X POST "https://$REF.supabase.co/functions/v1/snapshot-deals" \
+            -H "Content-Type: application/json" -H "apikey: $ANON_KEY" -H "Authorization: Bearer $ANON_KEY" -H "x-cron-secret: $CRON_SECRET" \
+            -d '{}' | head -c 1000; echo
