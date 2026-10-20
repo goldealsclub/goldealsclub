@@ -22,7 +22,7 @@ import { describe, it, expect } from "vitest";
 
 const SUPABASE_URL =
   (import.meta as any).env?.VITE_SUPABASE_URL ??
-  "https://yyqgxhuzobmqygksbaze.supabase.co";
+  "https://wyfqswrhlupauvwutlla.supabase.co";
 const PUBLISHABLE_KEY =
   (import.meta as any).env?.VITE_SUPABASE_PUBLISHABLE_KEY ??
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl5cWd4aHV6b2JtcXlna3NiYXplIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMyMjU0NDgsImV4cCI6MjA4ODgwMTQ0OH0.yndVTKpuMkgee4a8YIfezymps5L2YGMNXhNNr1xkBiE";

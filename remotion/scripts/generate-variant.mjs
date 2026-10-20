@@ -60,7 +60,8 @@ for (const line of envContent.split("\n")) {
   if (m) env[m[1]] = m[2].trim().replace(/^["']|["']$/g, "");
 }
 const SUPABASE_URL = env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// La clé publique peut venir de l'environnement (secret GitHub SUPABASE_ANON_KEY) ou du .env.
+const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 const localDealsPath = path.resolve(rootDir, "../public/deals.json");
 const allDeals = await loadDeals({ supabaseUrl: SUPABASE_URL, supabaseKey: SUPABASE_KEY, localPath: localDealsPath });

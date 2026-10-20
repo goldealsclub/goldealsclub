@@ -46,7 +46,8 @@ for (const line of envContent.split("\n")) {
 }
 
 const SUPABASE_URL = env.VITE_SUPABASE_URL;
-const SUPABASE_KEY = env.VITE_SUPABASE_PUBLISHABLE_KEY;
+// La clé publique peut venir de l'environnement (secret GitHub SUPABASE_ANON_KEY) ou du .env.
+const SUPABASE_KEY = process.env.VITE_SUPABASE_PUBLISHABLE_KEY || env.VITE_SUPABASE_PUBLISHABLE_KEY;
 
 if (!SUPABASE_URL || !SUPABASE_KEY) {
   console.error("Missing VITE_SUPABASE_URL or VITE_SUPABASE_PUBLISHABLE_KEY in .env");

@@ -406,7 +406,7 @@ export function applyBgPreset(preset: BgPreset, settings?: StyleSettings | null)
   GOLD_DEEP = activePalette.accent;
 }
 
-const PROXY_BASE = `https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/image-proxy`;
+const PROXY_BASE = `https://wyfqswrhlupauvwutlla.supabase.co/functions/v1/image-proxy`;
 const proxify = (src: string) => `${PROXY_BASE}?url=${encodeURIComponent(src)}`;
 
 // Filtre qualité : rejette les images trop petites (thumbnails moches)

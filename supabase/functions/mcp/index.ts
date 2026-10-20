@@ -150,7 +150,7 @@ var remove_favorite_default = defineTool5({
 });
 
 // src/lib/mcp/index.ts
-var projectRef = "yyqgxhuzobmqygksbaze";
+var projectRef = "wyfqswrhlupauvwutlla";
 var mcp_default = defineMcp({
   name: "goldeals-club-mcp",
   title: "GOLDEALS CLUB",

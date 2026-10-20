@@ -1,7 +1,7 @@
 // Sitemap dynamique : pages fixes + catégories + marques + offres du jour.
 // Servi sur /sitemap.xml (voir vercel.json), mis en cache 6 h par le CDN Vercel.
 const SITE = "https://www.goldealsclub.com";
-const SUPABASE_URL = "https://yyqgxhuzobmqygksbaze.supabase.co";
+const SUPABASE_URL = "https://wyfqswrhlupauvwutlla.supabase.co";
 
 const STATIC = ["/", "/codes-promo", "/trends", "/sellers", "/coupe-du-monde-2026", "/about", "/contact", "/privacy", "/terms"];
 const CATEGORIES = ["sneakers", "vestes", "hoodies", "t-shirts", "pantalons", "accessoires"];

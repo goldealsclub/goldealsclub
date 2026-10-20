@@ -24,4 +24,4 @@ jobs:
       - name: Audit complet (live + invariants statiques)
         run: bun run audit:full
         env:
-          AUDIT_SOURCE_URL: https://yyqgxhuzobmqygksbaze.supabase.co/functions/v1/deals-json
+          AUDIT_SOURCE_URL: https://wyfqswrhlupauvwutlla.supabase.co/functions/v1/deals-json

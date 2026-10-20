@@ -403,14 +403,14 @@ Le rendu final doit être :
 | Code source | GitHub `goldealsclub/goldealsclub` (branche `main`) | source de vérité |
 | Site (frontend) | Vercel — projet `goldealsclub` | chaque push sur `main` redéploie automatiquement |
 | Domaines | IONOS (registrar + DNS) | `goldealsclub.com`, `www.goldealsclub.com`, `goldealsclub.fr`, `www.goldealsclub.fr` → A `216.198.79.1` (Vercel) |
-| Backend (base, auth, stockage, edge functions, crons) | Supabase `yyqgxhuzobmqygksbaze` (Lovable Cloud) | voir « Migration backend » ci-dessous |
+| Backend (base, auth, stockage, edge functions, crons) | Supabase `wyfqswrhlupauvwutlla` (Lovable Cloud) | voir « Migration backend » ci-dessous |
 | Vidéos | GitHub Actions + Remotion | `.github/workflows/daily-tiktok-video.yml` |
 
 ### Variables d'environnement (Vercel → Settings → Environment Variables)
 
-- `VITE_SUPABASE_URL` = `https://yyqgxhuzobmqygksbaze.supabase.co`
+- `VITE_SUPABASE_URL` = `https://wyfqswrhlupauvwutlla.supabase.co`
 - `VITE_SUPABASE_PUBLISHABLE_KEY` = clé anon (publique) du projet Supabase
-- `VITE_SUPABASE_PROJECT_ID` = `yyqgxhuzobmqygksbaze`
+- `VITE_SUPABASE_PROJECT_ID` = `wyfqswrhlupauvwutlla`
 - `VITE_ENABLE_SOCIAL_LOGIN` = `true` *(seulement après avoir configuré Google/Apple dans Supabase Auth)*
 
 ### Secrets des edge functions (côté backend)
