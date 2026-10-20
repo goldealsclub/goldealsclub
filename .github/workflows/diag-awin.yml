@@ -20,4 +20,5 @@ jobs:
           MATCH: ${{ github.event.inputs.match }}
         run: |
           [ -z "$MATCH" ] && unset MATCH
-          node scripts/diag/awin-price-columns.mjs
+          node scripts/diag/awin-price-columns.mjs | tee /tmp/out.txt
+          while IFS= read -r l; do echo "::notice::$l"; done < /tmp/out.txt
