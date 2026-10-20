@@ -50,7 +50,7 @@ jobs:
           # Les tâches planifiées sont installées par une migration générée à chaque
           # exécution (absente du dépôt) : on la marque « annulée » avant de repousser.
           supabase migration list -p "$SUPABASE_DB_PASSWORD" | tee /tmp/migrations.txt
-          for v in $(awk -F'|' 'NR>2 { l=$1; r=$2; gsub(/ /,"",l); gsub(/ /,"",r); if (l=="" && r ~ /^[0-9]+$/) print r }' /tmp/migrations.txt); do
+          for v in $(awk -F'|' 'NR>2 { l=$1; r=$2; gsub(/[ `]/,"",l); gsub(/[ `]/,"",r); if (l=="" && r ~ /^[0-9]+$/) print r }' /tmp/migrations.txt); do
             echo "Migration distante sans fichier local : $v → marquée annulée"
             supabase migration repair --status reverted "$v" -p "$SUPABASE_DB_PASSWORD"
           done
