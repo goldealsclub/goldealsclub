@@ -170,6 +170,10 @@ jobs:
           key: video-history-nike-${{ github.run_id }}
           restore-keys: video-history-nike-
 
+      - name: Load public Supabase config
+        if: ${{ env.skip != 'true' }}
+        run: node scripts/fetch-public-config.mjs --github-env
+
       - name: Generate video (${{ matrix.style }})
         if: ${{ env.skip != 'true' }}
         working-directory: remotion
@@ -177,7 +181,6 @@ jobs:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
           VIDEO_HISTORY_DIR: ${{ github.workspace }}/remotion/.history
           VIDEO_THEME: ${{ github.event.inputs.theme }}
-          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
         run: |
           sudo mkdir -p /mnt/documents
           sudo chmod 777 /mnt/documents

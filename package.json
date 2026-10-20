@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "prebuild": "vitest run src/test/brand-filter-audit.test.ts src/test/brand-filtering.test.ts src/test/site-audit.test.ts",
-    "build": "vite build",
+    "build": "node scripts/fetch-public-config.mjs && vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "preview": "vite preview",

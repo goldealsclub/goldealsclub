@@ -46,7 +46,15 @@ jobs:
         run: supabase link --project-ref "$REF" -p "$SUPABASE_DB_PASSWORD"
 
       - name: Base de données (migrations)
-        run: supabase db push --include-all -p "$SUPABASE_DB_PASSWORD"
+        run: |
+          # Les tâches planifiées sont installées par une migration générée à chaque
+          # exécution (absente du dépôt) : on la marque « annulée » avant de repousser.
+          supabase migration list -p "$SUPABASE_DB_PASSWORD" | tee /tmp/migrations.txt
+          for v in $(awk -F'|' 'NR>2 { l=$1; r=$2; gsub(/ /,"",l); gsub(/ /,"",r); if (l=="" && r ~ /^[0-9]+$/) print r }' /tmp/migrations.txt); do
+            echo "Migration distante sans fichier local : $v → marquée annulée"
+            supabase migration repair --status reverted "$v" -p "$SUPABASE_DB_PASSWORD"
+          done
+          supabase db push --include-all -p "$SUPABASE_DB_PASSWORD"
 
       - name: Secrets des fonctions
         run: |
@@ -74,6 +82,18 @@ jobs:
             echo "$ANON"
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Config publique du site (adresse + clé anon) dans le stockage public
+        run: |
+          SERVICE=$(supabase projects api-keys --project-ref "$REF" -o json | jq -r '.[] | select(.name=="service_role") | .api_key')
+          echo "::add-mask::$SERVICE"
+          jq -n --arg url "https://$REF.supabase.co" --arg key "$ANON_KEY" --arg ref "$REF" \
+            '{url: $url, anonKey: $key, projectRef: $ref}' > public-config.json
+          curl -sS -f -X POST "https://$REF.supabase.co/storage/v1/object/deals-snapshots/public-config.json" \
+            -H "Authorization: Bearer $SERVICE" -H "apikey: $SERVICE" -H "x-upsert: true" \
+            -H "Content-Type: application/json" -H "Cache-Control: max-age=300" --data-binary @public-config.json
+          echo
+          curl -sS -f "https://$REF.supabase.co/storage/v1/object/public/deals-snapshots/public-config.json" | jq -r '.projectRef'
 
       - name: Tâches planifiées (imports, snapshot, brief vidéo, alertes)
         run: |
