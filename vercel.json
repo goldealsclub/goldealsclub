@@ -33,5 +33,10 @@
         }
       ]
     }
-  ]
+  ],
+  "git": {
+    "deploymentEnabled": {
+      "migration-hors-lovable": false
+    }
+  }
 }
