@@ -293,6 +293,14 @@ export function inferBrand(rawBrand: string, title: string): string {
   const safeTitle = (title || "").trim();
   const lowerTitle = ` ${safeTitle.toLowerCase()} `;
 
+  // Marque du marchand confirmée par le titre (ex. « T-shirt Craft ADV… », brand « Craft ») :
+  // on la garde. Sinon des mots génériques du titre (« structure », « react »,
+  // « revolution »…) la transformaient à tort en Nike/adidas.
+  if (lowerRaw && lowerRaw !== "snipes" && stripGenericTokens(lowerRaw)) {
+    const head = lowerRaw.split(/\s+/)[0];
+    if (head.length >= 3 && lowerTitle.includes(` ${head}`)) return prettifyBrand(rawBrand.trim());
+  }
+
   for (const brand of MULTI_WORD_BRANDS) {
     if (safeTitle.toLowerCase().startsWith(brand.toLowerCase())) {
       return brand;

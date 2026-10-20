@@ -38,15 +38,26 @@ export interface Seller {
   trusted: boolean;
 }
 
+// Marchands partenaires réels (flux Awin). Le nombre d'offres est calculé à
+// l'affichage avec sellersWithCounts() — plus de chiffres inventés.
 export const sellers: Seller[] = [
-  { name: "Zalando", logo: "", dealCount: 42, trusted: true },
-  { name: "END.", logo: "", dealCount: 28, trusted: true },
-  { name: "SSENSE", logo: "", dealCount: 35, trusted: true },
-  { name: "Farfetch", logo: "", dealCount: 31, trusted: true },
-  { name: "Nike", logo: "", dealCount: 56, trusted: true },
-  { name: "ASOS", logo: "", dealCount: 48, trusted: true },
-  { name: "Adidas", logo: "", dealCount: 38, trusted: true },
+  { name: "Snipes", logo: "", dealCount: 0, trusted: true },
+  { name: "Sport Is Good", logo: "", dealCount: 0, trusted: true },
+  { name: "Training Fit", logo: "", dealCount: 0, trusted: true },
+  { name: "Sneakin", logo: "", dealCount: 0, trusted: true },
+  { name: "Sport Outlet", logo: "", dealCount: 0, trusted: true },
+  { name: "Kappa", logo: "", dealCount: 0, trusted: true },
 ];
+
+export function sellersWithCounts(list: { merchant?: string }[]): Seller[] {
+  return sellers
+    .map((s) => ({
+      ...s,
+      dealCount: list.filter((d) => (d.merchant || "").toLowerCase().includes(s.name.toLowerCase())).length,
+    }))
+    .filter((s) => s.dealCount > 0)
+    .sort((a, b) => b.dealCount - a.dealCount);
+}
 
 export function isTrustedMerchant(merchant: string): boolean {
   for (const s of sellers) {
@@ -222,9 +233,14 @@ function inferCategory(category: string, title: string): Category {
  *  (maison, jouets, outillage, équitation, pêche, musculation, nutrition…), souvent
  *  avec des titres en allemand. Règle : un article resté en « autres » après
  *  classement n'est gardé que s'il ressemble à un vêtement. */
-const AUTRES_KEEP = /\b(robes?|jupes?|jupe-short|combinaisons?|combi|kimonos?|judogi|karategi|dobok|tenues?|ensembles?|surv[êe]tements?|dress|skirt|jumpsuit|overall|salopettes?|bodys?|tuniques?|lingerie|pyjamas?|peignoirs?|nuisettes?|maillots?|jersey|shorty|ponchos?|capes?|knickers|tights|swimsuit|trikot|kleid|rock|bademode|badeanzug)\b/i;
+const AUTRES_KEEP = /\b(robes?|jupes?|jupe-short|combinaisons?|combi|tenues?|ensembles?|surv[êe]tements?|dress|skirt|jumpsuit|overall|salopettes?|bodys?|tuniques?|lingerie|pyjamas?|peignoirs?|nuisettes?|maillots?|jersey|shorty|ponchos?|capes?|knickers|tights|swimsuit|trikot|kleid|rock|bademode|badeanzug)\b/i;
+
+// Équipement de sport, accessoires techniques, animaux… : hors du périmètre mode/streetwear,
+// quelle que soit la catégorie du flux (contrôle du 20/10/2026).
+const EQUIPEMENT = /\b(ballons?|prot[eè]ge[s-]?\w*|coquilles?|gants? de (boxe|gardien|frappe|musculation)|casques?|bouteilles?|gourdes?|gobelets?|tapis|sacs? de frappe|semelles?|cr[eè]mes?|trousses?|flocages?|appareils?|disques?|mat[eé]riel|halt[eè]res?|kettlebells?|raquettes?|plots?|cerceaux?|filets?|chevaux|cheval|[eé]quitation|chiens?|jibbitz|kimonos?|judogi|karategi|dobok|rashguards?|bandes?|chevill[eè]res?|genouill[eè]res?|bandages?)\b/i;
 
 export function isNonFashion(title: string, category: string): boolean {
+  if (EQUIPEMENT.test(title || "")) return true;
   return category === "autres" && !AUTRES_KEEP.test(title || "");
 }
 
@@ -270,6 +286,8 @@ function normalizeDeals(raw: any[]): Deal[] {
   }
 
   return Array.from(uniqueDeals.values()).filter((d) =>
+    // Site de promos : un article sans prix barré (aucune remise) n'est pas affiché.
+    d.original_price !== null &&
     !isNonFashion(d.title || "", inferCategory(d.category || "autres", d.title || "")),
   ).map((d, i) => {
     const brand = inferBrand(d.brand || "", d.title || "");

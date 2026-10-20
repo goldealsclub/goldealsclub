@@ -629,11 +629,11 @@ const SearchOverlay = ({ open, onClose }: SearchOverlayProps) => {
                           </p>
                           <div className="flex items-baseline gap-2 mt-0.5">
                             {deal.sale_price != null && (
-                              <span className="font-display text-sm">{deal.sale_price.toFixed(2)}€</span>
+                              <span className="font-display text-sm">{deal.sale_price.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €</span>
                             )}
                             {deal.original_price != null && (
                               <span className="font-body text-xs text-foreground/40 line-through">
-                                {deal.original_price.toFixed(2)}€
+                                {deal.original_price.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
                               </span>
                             )}
                             {deal.discount_percent != null && deal.discount_percent > 0 && (

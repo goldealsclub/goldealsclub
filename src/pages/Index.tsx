@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { useI18n } from "@/lib/i18n";
-import { categoryList, sellers, Deal } from "@/lib/data";
+import { categoryList, sellersWithCounts, Deal } from "@/lib/data";
 import { useGender } from "@/lib/gender-context";
 import { useLoadVotes } from "@/hooks/use-deal-votes";
 import DealCard from "@/components/DealCard";
@@ -296,7 +296,7 @@ const Index = () => {
         <h2 className="font-display text-2xl md:text-3xl tracking-wider mb-3">{t.trustedSellers}</h2>
         <p className="font-body text-xs text-foreground/50 mb-12">{t.trustedSellersSub}</p>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          {sellers.map((seller) => (
+          {sellersWithCounts(deals).map((seller) => (
             <div key={seller.name} className="border border-foreground/8 p-6 flex flex-col items-center gap-3 hover:border-foreground/20 transition-colors">
               <ShieldCheck className="w-6 h-6 text-foreground/30" strokeWidth={1.5} />
               <span className="font-display text-xs uppercase tracking-wider">{seller.name}</span>

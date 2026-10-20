@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { Deal } from "@/lib/data";
-import { sortBrandsByPopularity } from "@/lib/brand-popularity";
+import { brandPopularity, sortBrandsByPopularity } from "@/lib/brand-popularity";
 import { useMemo, useEffect, useState, useRef, useCallback } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import brandNike from "@/assets/brand-nike.svg";
@@ -56,7 +56,10 @@ const BrandBanner = ({ deals }: BrandBannerProps) => {
       counts[d.brand] = (counts[d.brand] || 0) + 1;
     });
     // Tri par hype/popularité (Nike, Jordan, Adidas… en tête), volume en tie-breaker
-    return sortBrandsByPopularity(Object.keys(counts), counts).map((name) => ({
+    // Bandeau lisible : marques reconnues (score de popularité) ou bien fournies
+    // (≥ 15 offres). Les ~600 petites marques restent accessibles via la recherche.
+    const visible = Object.keys(counts).filter((b) => brandPopularity(b) > 0 || counts[b] >= 15);
+    return sortBrandsByPopularity(visible, counts).map((name) => ({
       name,
       count: counts[name],
     }));

@@ -53,7 +53,7 @@ export const CompareProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 function formatPrice(price: number | null, currency: string): string {
   if (price === null) return "—";
-  if (currency === "EUR") return `${price.toFixed(2)}€`;
+  if (currency === "EUR") return `${price.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`; // format français : 40,00 €
   if (currency === "USD") return `$${price.toFixed(2)}`;
   return `${price.toFixed(2)} ${currency}`;
 }
