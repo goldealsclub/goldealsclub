@@ -325,8 +325,8 @@ const browser = await openBrowser("chrome", {
 const composition = await selectComposition({ serveUrl: bundled, id: `main-${STYLE_ID}`, puppeteerInstance: browser });
 
 const date = new Date().toISOString().slice(0, 10);
-const rawVideoPath = `/tmp/goldeals-${preset}-${STYLE_ID}-raw-${date}.mp4`;
-const outputPath = `/mnt/documents/goldeals-tiktok-${preset}-${STYLE_ID}-${date}.mp4`;
+const rawVideoPath = `/tmp/goldeals-${THEME}-${STYLE_ID}-raw-${date}.mp4`;
+const outputPath = `/mnt/documents/goldeals-tiktok-${THEME}-${STYLE_ID}-${date}.mp4`;
 
 // Légende prête à publier (Facebook automatique, copier-coller pour TikTok/Instagram).
 {

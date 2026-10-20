@@ -197,13 +197,14 @@ export function themeForDate(date) {
 }
 
 /**
- * 3 vidéos par jour : sneakers, vêtements et accessoires. Chaque style graphique
- * (adidas, zara, nike) change de thème chaque jour pour varier les rendus.
+ * 4 vidéos par jour : sneakers, vêtements, accessoires et enfants. L'habillage
+ * graphique (adidas, zara, nike) tourne chaque jour pour varier les rendus
+ * (le workflow choisit le style ; ce calcul sert en local).
  */
-export const THEMES_DU_JOUR = ["sneakers", "vetements", "accessoires"];
+export const THEMES_DU_JOUR = ["sneakers", "vetements", "accessoires", "enfants"];
 export function themeForStyle(date, styleIndex) {
   const day = Math.floor(new Date(`${date}T12:00:00Z`).getTime() / 86400000);
-  return THEMES_DU_JOUR[(styleIndex + day) % THEMES_DU_JOUR.length];
+  return THEMES_DU_JOUR[(styleIndex + day) % 3];
 }
 
 // Générateur pseudo-aléatoire déterministe (même date → même ordre pour les 3 styles).

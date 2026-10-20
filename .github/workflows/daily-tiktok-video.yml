@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       style:
-        description: "Style à générer (vide = les trois)"
+        description: "Forcer l'habillage (vide = rotation du jour) : adidas, zara ou nike"
         required: false
         default: ""
       publish:
@@ -20,7 +20,7 @@ on:
         required: false
         default: "all"
       theme:
-        description: "Thème forcé (vide = thème du jour) : sneakers, vetements, enfants, accessoires, bestof"
+        description: "Une seule vidéo (vide = les 4) : sneakers, vetements, accessoires ou enfants"
         required: false
         default: ""
 
@@ -87,14 +87,25 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        style: [adidas, zara, nike]
+        # 4 vidéos par jour ; l'habillage (adidas/zara/nike) tourne chaque jour.
+        theme: [sneakers, vetements, accessoires, enfants]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Skip non-selected style
-        if: ${{ github.event.inputs.style != '' && github.event.inputs.style != matrix.style }}
+      - name: Style graphique du jour pour ce thème
+        run: |
+          THEMES=(sneakers vetements accessoires enfants); STYLES=(adidas zara nike)
+          for i in "${!THEMES[@]}"; do [ "${THEMES[$i]}" = "${{ matrix.theme }}" ] && IDX=$i; done
+          DAY=$(( $(date -u +%s) / 86400 ))
+          STYLE=${STYLES[$(( (IDX + DAY) % 3 ))]}
+          [ -n "${{ github.event.inputs.style }}" ] && STYLE="${{ github.event.inputs.style }}"
+          echo "STYLE=$STYLE" >> $GITHUB_ENV
+          echo "Thème ${{ matrix.theme }} → style $STYLE"
+
+      - name: Skip non-selected theme
+        if: ${{ github.event.inputs.theme != '' && github.event.inputs.theme != matrix.theme }}
         run: echo "skip=true" >> $GITHUB_ENV
 
       - name: Dry run (no publishing)
@@ -148,68 +159,71 @@ jobs:
 
       # Historique des produits montrés les jours précédents (les 3 styles), pour ne
       # pas remontrer les mêmes modèles : conservé dans le cache GitHub Actions.
-      - name: Restore video history (adidas)
+      - name: Restore video history (sneakers)
         if: ${{ env.skip != 'true' }}
         uses: actions/cache/restore@v4
         with:
-          path: remotion/.history/adidas.json
-          key: video-history-adidas-${{ github.run_id }}
-          restore-keys: video-history-adidas-
-      - name: Restore video history (zara)
+          path: remotion/.history/sneakers.json
+          key: video-history-sneakers-${{ github.run_id }}
+          restore-keys: video-history-sneakers-
+      - name: Restore video history (vetements)
         if: ${{ env.skip != 'true' }}
         uses: actions/cache/restore@v4
         with:
-          path: remotion/.history/zara.json
-          key: video-history-zara-${{ github.run_id }}
-          restore-keys: video-history-zara-
-      - name: Restore video history (nike)
+          path: remotion/.history/vetements.json
+          key: video-history-vetements-${{ github.run_id }}
+          restore-keys: video-history-vetements-
+      - name: Restore video history (accessoires)
         if: ${{ env.skip != 'true' }}
         uses: actions/cache/restore@v4
         with:
-          path: remotion/.history/nike.json
-          key: video-history-nike-${{ github.run_id }}
-          restore-keys: video-history-nike-
+          path: remotion/.history/accessoires.json
+          key: video-history-accessoires-${{ github.run_id }}
+          restore-keys: video-history-accessoires-
+      - name: Restore video history (enfants)
+        if: ${{ env.skip != 'true' }}
+        uses: actions/cache/restore@v4
+        with:
+          path: remotion/.history/enfants.json
+          key: video-history-enfants-${{ github.run_id }}
+          restore-keys: video-history-enfants-
 
-      - name: Load public Supabase config
-        if: ${{ env.skip != 'true' }}
-        run: node scripts/fetch-public-config.mjs --github-env
-
-      - name: Generate video (${{ matrix.style }})
+      - name: Generate video (${{ env.STYLE }})
         if: ${{ env.skip != 'true' }}
         working-directory: remotion
         env:
           PUPPETEER_EXECUTABLE_PATH: /usr/bin/chromium-browser
           VIDEO_HISTORY_DIR: ${{ github.workspace }}/remotion/.history
-          VIDEO_THEME: ${{ github.event.inputs.theme }}
+          VIDEO_THEME: ${{ matrix.theme }}
         run: |
           sudo mkdir -p /mnt/documents
           sudo chmod 777 /mnt/documents
-          node scripts/generate-variant.mjs top --style=${{ matrix.style }}
+          node scripts/generate-variant.mjs top --style=${{ env.STYLE }}
 
       - name: Verify video before publishing
         if: ${{ env.skip != 'true' }}
         run: |
-          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
+          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ env.STYLE }}-*.mp4 | head -n1)
           node remotion/scripts/verify-video.mjs "$VIDEO"
 
       - name: Save video history
         if: ${{ success() && env.skip != 'true' && env.dryrun != 'true' }}
         uses: actions/cache/save@v4
         with:
-          path: remotion/.history/${{ matrix.style }}.json
-          key: video-history-${{ matrix.style }}-${{ github.run_id }}
+          path: remotion/.history/${{ matrix.theme }}.json
+          key: video-history-${{ matrix.theme }}-${{ github.run_id }}
 
       - name: Publish to the site
         if: ${{ env.skip != 'true' && env.dryrun != 'true' }}
         env:
           VIDEO_PUBLISH_TOKEN: ${{ secrets.VIDEO_PUBLISH_TOKEN }}
         run: |
-          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
+          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ env.STYLE }}-*.mp4 | head -n1)
           echo "Publishing $VIDEO"
           node remotion/scripts/publish-video.mjs "$VIDEO" \
-            --style=${{ matrix.style }} \
-            --category=top \
-            --label="Sélection du jour"
+            --style=${{ env.STYLE }} \
+            --category=${{ matrix.theme }} \
+            --label="Sélection ${{ matrix.theme }} du jour"
 
       - name: Publish to Facebook + Instagram (Reels)
         # Réactivé le 19/10 : publication seulement si « Verify video before publishing » a réussi.
@@ -219,19 +233,19 @@ jobs:
           FB_PAGE_TOKEN: ${{ secrets.FB_PAGE_TOKEN }}
           IG_USER_ID: ${{ secrets.IG_USER_ID }}
         run: |
-          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4 | head -n1)
+          VIDEO=$(ls -t /mnt/documents/goldeals-tiktok-*-${{ env.STYLE }}-*.mp4 | head -n1)
           NETWORKS="${{ github.event.inputs.networks }}"
           ONLY=""; if [ -n "$NETWORKS" ] && [ "$NETWORKS" != "all" ]; then ONLY="--only=$NETWORKS"; fi
-          node remotion/scripts/publish-social.mjs "$VIDEO" --style=${{ matrix.style }} $ONLY
+          node remotion/scripts/publish-social.mjs "$VIDEO" --style=${{ env.STYLE }} $ONLY
 
       - name: Upload as workflow artifact (backup)
         if: ${{ always() && env.skip != 'true' }}
         uses: actions/upload-artifact@v4
         with:
-          name: tiktok-video-${{ matrix.style }}
+          name: tiktok-video-${{ matrix.theme }}
           path: |
-            /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.mp4
-            /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.txt
-            /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.json
-            /mnt/documents/goldeals-tiktok-*-${{ matrix.style }}-*.png
+            /mnt/documents/goldeals-tiktok-*-${{ env.STYLE }}-*.mp4
+            /mnt/documents/goldeals-tiktok-*-${{ env.STYLE }}-*.txt
+            /mnt/documents/goldeals-tiktok-*-${{ env.STYLE }}-*.json
+            /mnt/documents/goldeals-tiktok-*-${{ env.STYLE }}-*.png
           retention-days: 14
