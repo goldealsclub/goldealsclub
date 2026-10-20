@@ -1,0 +1,23 @@
+name: Diagnostic flux Awin
+
+on:
+  workflow_dispatch:
+    inputs:
+      match:
+        description: "Expression des produits à afficher"
+        required: false
+        default: ""
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Colonnes de prix
+        env:
+          AWIN_API_KEY: ${{ secrets.AWIN_API_KEY }}
+          MATCH: ${{ github.event.inputs.match }}
+        run: |
+          [ -z "$MATCH" ] && unset MATCH
+          node scripts/diag/awin-price-columns.mjs
