@@ -85,7 +85,10 @@ async function publishInstagram() {
   if (!igId) throw new Error("aucun compte Instagram professionnel relié à la page Facebook");
 
   // Les liens ne sont pas cliquables dans une légende Instagram.
-  const igCaption = caption.replace(/https?:\/\/www\.goldealsclub\.com/g, "goldealsclub.com (lien en bio)");
+  // Instagram : liens non cliquables. Liens d'articles raccourcis, lien du site → « lien en bio ».
+const igCaption = caption
+  .replace(/https?:\/\/www\.goldealsclub\.com\/deal\//g, "goldealsclub.com/deal/")
+  .replace(/https?:\/\/www\.goldealsclub\.com(?![\w/])/g, "goldealsclub.com (lien en bio)");
   const { id: creationId } = await api("POST", `${igId}/media`, {
     media_type: "REELS", video_url: videoUrl, caption: igCaption, share_to_feed: true,
   });
