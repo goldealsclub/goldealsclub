@@ -12,8 +12,12 @@
  */
 import fs from "fs";
 
+// Source de vérité : le projet indiqué dans supabase/config.toml (les variables
+// d'environnement de l'hébergeur peuvent pointer vers un ancien projet).
+const toml = fs.existsSync("supabase/config.toml") ? fs.readFileSync("supabase/config.toml", "utf8") : "";
+const ref = (toml.match(/^project_id = "([^"]+)"/m) || [])[1];
 const env = fs.existsSync(".env") ? fs.readFileSync(".env", "utf8") : "";
-const url = process.env.VITE_SUPABASE_URL || (env.match(/^VITE_SUPABASE_URL="?([^"\n]+)"?/m) || [])[1];
+const url = ref ? `https://${ref}.supabase.co` : (env.match(/^VITE_SUPABASE_URL="?([^"\n]+)"?/m) || [])[1];
 if (!url) { console.log("ℹ️  VITE_SUPABASE_URL absent : config publique non récupérée"); process.exit(0); }
 
 let cfg;
