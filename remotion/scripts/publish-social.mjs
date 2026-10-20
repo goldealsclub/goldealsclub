@@ -38,13 +38,8 @@ if (!video || !fs.existsSync(video)) {
   process.exit(1);
 }
 
-const STYLES = ["adidas", "zara", "nike"];
-const dayOfYear = Math.floor((Date.now() - Date.UTC(new Date().getUTCFullYear(), 0, 0)) / 86400000);
-const todayStyle = STYLES[dayOfYear % STYLES.length];
-if (!force && style !== todayStyle) {
-  console.log(`ℹ️  Style du jour pour les réseaux : ${todayStyle} (pas ${style}) — rien à publier.`);
-  process.exit(0);
-}
+// Les 3 vidéos du jour (sneakers, vêtements, accessoires) sont toutes publiées.
+void force;
 
 const captionPath = video.replace(/\.mp4$/, ".txt");
 const caption = fs.existsSync(captionPath)

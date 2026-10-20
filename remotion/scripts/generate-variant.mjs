@@ -16,7 +16,7 @@ import { fileURLToPath } from "url";
 import { execFileSync, execSync } from "child_process";
 import { mixAudio } from "./lib/audio-mix.mjs";
 import { checkLiveOffer } from "./lib/live-offer.mjs";
-import { rankTrendingDeals, loadRecentKeys, saveHistory, themeForDate, THEMES, displayCategory } from "./lib/select-deals.mjs";
+import { rankTrendingDeals, loadRecentKeys, saveHistory, themeForStyle, THEMES, displayCategory } from "./lib/select-deals.mjs";
 import { imageSize } from "image-size";
 import { assertCleanCutout, CUTOUT_LIMITS, padStudioMargin, removeConnectedStudioBackground } from "./lib/studio-cutout.mjs";
 
@@ -79,9 +79,10 @@ let rawDeals = allDeals.map((d) => ({ ...d, brand: CANONICAL_BRAND[brandKey(d.br
 
 const today = new Date().toISOString().slice(0, 10);
 const HISTORY_DIR = process.env.VIDEO_HISTORY_DIR;
-// Thème du jour (sneakers, vêtements, enfants, accessoires, best-of) ; forçable via --theme=…
+// Thème de la vidéo (sneakers, vêtements, accessoires… ) ; forçable via --theme=…
 const themeArg = process.argv.find((a) => a.startsWith("--theme="))?.slice(8) || process.env.VIDEO_THEME;
-const THEME = themeArg && THEMES[themeArg] ? themeArg : themeForDate(today);
+// Un thème par vidéo : les 3 vidéos du jour couvrent sneakers, vêtements et accessoires.
+const THEME = themeArg && THEMES[themeArg] ? themeArg : themeForStyle(today, validStyles.indexOf(STYLE_ID));
 console.log(`🗓️  Thème du jour : ${THEMES[THEME].label}`);
 if (preset === "top") {
   // Modèles tendance uniquement, sélection différente chaque jour et pour chaque style.
@@ -89,7 +90,8 @@ if (preset === "top") {
   rawDeals = rankTrendingDeals({
     deals: allDeals.map((d) => ({ ...d, brand: CANONICAL_BRAND[brandKey(d.brand)] ?? d.brand })),
     date: today,
-    styleIndex: validStyles.indexOf(STYLE_ID),
+    styleIndex: 0,
+    styles: 1, // chaque vidéo a son propre thème : pas de partage de candidats
     recentKeys,
     theme: THEME,
   });
