@@ -109,11 +109,16 @@ async function publishInstagram() {
   throw new Error("traitement Instagram trop long (> 6 min)");
 }
 
+const failures = [];
 for (const [name, fn] of [["Facebook", publishFacebook], ["Instagram", publishInstagram]]) {
   if (only && only !== name.toLowerCase()) continue;
   try {
     await fn();
   } catch (e) {
-    warn(name, `Publication ${name} échouée : ${e.message}`);
+    failures.push(name);
+    const expired = /expired|code":190|OAuthException/i.test(e.message);
+    console.log(`::error title=${name}::Publication ${name} échouée${expired ? " — JETON META EXPIRÉ : régénérer FB_PAGE_TOKEN (jeton de page permanent)" : ""} : ${e.message}`);
   }
 }
+// Échec visible (croix rouge + e-mail GitHub) au lieu d'un simple avertissement.
+if (failures.length) process.exit(1);
