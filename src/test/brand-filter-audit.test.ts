@@ -59,7 +59,8 @@ function loadFromFile(): Deal[] {
 }
 
 async function loadFromUrl(url: string): Promise<Deal[]> {
-  const res = await fetch(url);
+  // Délai borné : un backend lent ou en panne ne doit pas bloquer la mise en ligne du site.
+  const res = await fetch(url, { signal: AbortSignal.timeout(40_000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const parsed = await res.json();
   return Array.isArray(parsed) ? parsed : parsed.deals ?? [];

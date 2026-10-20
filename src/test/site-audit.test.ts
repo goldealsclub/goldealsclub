@@ -68,8 +68,10 @@ const merchantHas = (d: Deal, key: string) =>
 
 beforeAll(async () => {
   try {
+    // Délai borné : un backend lent ou en panne ne doit pas bloquer la mise en ligne du site.
     const res = await fetch(`${SUPABASE_URL}/functions/v1/deals-json`, {
       headers: { apikey: PUBLISHABLE_KEY, Authorization: `Bearer ${PUBLISHABLE_KEY}` },
+      signal: AbortSignal.timeout(40_000),
     });
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     deals = (await res.json()) as Deal[];
