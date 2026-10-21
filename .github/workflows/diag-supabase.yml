@@ -1,0 +1,23 @@
+name: Diagnostic Supabase
+
+on:
+  workflow_dispatch:
+
+jobs:
+  diag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      REF: wyfqswrhlupauvwutlla
+    steps:
+      - name: État du projet
+        run: |
+          A="https://api.supabase.com/v1/projects/$REF"
+          {
+            curl -sS -H "Authorization: Bearer $TOKEN" "$A" | jq -c '{status, region, created_at}'
+            curl -sS -H "Authorization: Bearer $TOKEN" "$A/health?services=db,rest,auth,storage,pooler" | jq -c '.[] | {name, healthy, status, error}'
+            curl -sS -H "Authorization: Bearer $TOKEN" "$A/database/query" -X POST -H "Content-Type: application/json" \
+              -d '{"query":"select pg_size_pretty(pg_database_size(current_database())) as taille, (select count(*) from deals) as offres, pg_size_pretty(pg_total_relation_size('"'"'deals'"'"')) as taille_deals"}' | jq -c .
+          } | tee /tmp/out.txt
+          while IFS= read -r l; do echo "::notice::$l"; done < /tmp/out.txt
