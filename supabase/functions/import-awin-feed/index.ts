@@ -483,7 +483,7 @@ Deno.serve(async (req) => {
         merchant,
         source: "awin",
         currency: r.currency || "EUR",
-        description: (r.description || "").slice(0, 2000),
+        description: (r.description || "").slice(0, 600), // limité : la base gratuite a peu de disque
         promo_start_date: r.valid_from || null,
         promo_end_date: r.valid_to || null,
         is_super_deal: discount >= 50,

@@ -160,7 +160,10 @@ for (const [i, d] of deals.entries()) {
       const r = await fetch(d.affiliateUrl, { redirect: "follow", headers: { "User-Agent": UA, Accept: "text/html" }, signal: AbortSignal.timeout(20000) });
       const want = new URL(d.productUrl).hostname.replace(/^www\./, "");
       const got = new URL(r.url).hostname.replace(/^www\./, "");
-      if (got === want) ok(`${label} : « Voir l'offre » mène bien chez ${got}`);
+      // Boutiques hébergées sur Shopify : kappafrance.myshopify.com = kappa.fr.
+      const root = want.split(".")[0];
+      const sameShop = got === want || (got.endsWith(".myshopify.com") && root.length >= 4 && got.includes(root));
+      if (sameShop) ok(`${label} : « Voir l'offre » mène bien chez ${got}`);
       else if (/awin/.test(got)) warn(`${label} : lien affilié resté sur ${got} (HTTP ${r.status})`);
       else fail(`${label} : « Voir l'offre » mène sur ${got} au lieu de ${want}`);
     } catch (e) {
