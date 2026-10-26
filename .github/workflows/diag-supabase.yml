@@ -32,5 +32,8 @@ jobs:
             curl -sS -H "Authorization: Bearer $TOKEN" "$A/health?services=db,rest,auth,storage,pooler" | jq -c '.[] | {name, healthy, status, error}'
             curl -sS -H "Authorization: Bearer $TOKEN" "$A/database/query" -X POST -H "Content-Type: application/json" \
               -d '{"query":"select pg_size_pretty(pg_database_size(current_database())) as taille, (select count(*) from deals) as offres, pg_size_pretty(pg_total_relation_size('"'"'deals'"'"')) as taille_deals, (select string_agg(n||'"'"'='"'"'||pg_size_pretty(s),'"'"', '"'"') from (select c.oid::regclass::text n, pg_total_relation_size(c.oid) s from pg_class c where c.relkind in ('"'"'r'"'"','"'"'m'"'"') order by 2 desc limit 8) t) as top"}' | jq -c .
+            ANON=$(curl -sS "https://$REF.supabase.co/storage/v1/object/public/deals-snapshots/public-config.json" | jq -r .anonKey)
+            curl -sS -m 120 -o /tmp/dj.json -w '{"deals_json_http":%{http_code},"secondes":%{time_total}}\n' "https://$REF.supabase.co/functions/v1/deals-json" -H "apikey: $ANON"
+            jq -c 'if type=="array" then {offres_site:length} else {reponse:(tostring|.[0:200])} end' /tmp/dj.json 2>/dev/null || head -c 200 /tmp/dj.json
           } | tee /tmp/out.txt
           while IFS= read -r l; do echo "::notice::$l"; done < /tmp/out.txt
