@@ -2,6 +2,11 @@ name: Diagnostic Supabase
 
 on:
   workflow_dispatch:
+    inputs:
+      sql:
+        description: "Requête SQL en lecture"
+        required: false
+        default: ""
 
 jobs:
   diag:
@@ -11,6 +16,14 @@ jobs:
       TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       REF: wyfqswrhlupauvwutlla
     steps:
+      - name: Requête
+        if: ${{ github.event.inputs.sql != '' }}
+        env:
+          SQL: ${{ github.event.inputs.sql }}
+        run: |
+          jq -n --arg q "$SQL" '{query:$q}' > /tmp/q.json
+          curl -sS -H "Authorization: Bearer $TOKEN" "https://api.supabase.com/v1/projects/$REF/database/query" -X POST -H "Content-Type: application/json" -d @/tmp/q.json | jq -c '.[]? // .' | tee /tmp/o.txt
+          while IFS= read -r l; do echo "::notice::$l"; done < /tmp/o.txt
       - name: État du projet
         run: |
           A="https://api.supabase.com/v1/projects/$REF"
