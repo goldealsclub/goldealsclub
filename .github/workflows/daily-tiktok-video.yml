@@ -82,6 +82,9 @@ jobs:
 
   generate:
     needs: [cutout-qa, visual-qa]
+    # Le contrôle pixel des modèles alerte sans bloquer : chaque vidéo passe ensuite
+    # « Verify video before publishing » (cadrage, prix, liens, son), qui reste bloquant.
+    if: ${{ !cancelled() && needs.cutout-qa.result == 'success' }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     strategy:
