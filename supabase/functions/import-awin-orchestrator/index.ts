@@ -49,7 +49,7 @@ Deno.serve(async (req) => {
     // Flux trop lourds pour une seule invocation : découpés en morceaux
     // séquentiels partageant le même run_started_at ; seul le morceau qui
     // atteint la fin du flux fait le nettoyage des offres disparues.
-    const CHUNKED: Record<string, number> = { "112989": 5000 };
+    const CHUNKED: Record<string, number> = { "112989": 5000, "87190": 3000, "87833": 3000, "90621": 3000, "111256": 3000 };
     const MAX_CHUNKS = 20;
 
     const callFid = async (fid: string): Promise<Response> => {
