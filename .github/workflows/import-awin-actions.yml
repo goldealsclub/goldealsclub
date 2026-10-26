@@ -1,0 +1,68 @@
+name: Import Awin quotidien (sur GitHub)
+
+# L'import tourne ici plutôt que dans les fonctions Supabase : l'offre gratuite
+# coupe les gros flux (mémoire / 150 s). Même code (fonction Deno), lancé localement.
+
+on:
+  schedule:
+    - cron: "15 3 * * *"
+  workflow_dispatch:
+    inputs:
+      fids:
+        description: "FID Awin (vide = tous)"
+        required: false
+        default: ""
+
+concurrency:
+  group: import-awin
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      AWIN_API_KEY: ${{ secrets.AWIN_API_KEY }}
+      REF: wyfqswrhlupauvwutlla
+    steps:
+      - uses: actions/checkout@v4
+      - uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Clés du projet
+        run: |
+          KEYS=$(supabase projects api-keys --project-ref "$REF" -o json)
+          SERVICE=$(echo "$KEYS" | jq -r '.[] | select(.name=="service_role") | .api_key')
+          ANON=$(echo "$KEYS" | jq -r '.[] | select(.name=="anon") | .api_key')
+          SECRET=$(openssl rand -hex 24)
+          echo "::add-mask::$SERVICE"; echo "::add-mask::$SECRET"
+          { echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE"; echo "SUPABASE_ANON_KEY=$ANON"; echo "CRON_SECRET=$SECRET"; echo "SUPABASE_URL=https://$REF.supabase.co"; } >> "$GITHUB_ENV"
+      - name: Import des flux
+        run: |
+          deno run -A supabase/functions/import-awin-feed/index.ts > /tmp/import.log 2>&1 &
+          PID=$!
+          for i in $(seq 1 60); do curl -s -o /dev/null localhost:8000 && break; sleep 2; done
+          FIDS="${{ github.event.inputs.fids }}"
+          [ -z "$FIDS" ] && FIDS="48225,87190,87833,90621,111256,112989"
+          FAILED=0
+          for FID in $(echo "$FIDS" | tr ',' ' '); do
+            OUT=$(curl -sS -m 1500 -X POST "http://localhost:8000/?fid=$FID" -H "x-cron-secret: $CRON_SECRET" \
+              -H "Content-Type: application/json" -d "{\"fid\":\"$FID\"}" | jq -c '{fid, imported, total_rows, deleted_stale, reached_end, error}' 2>&1)
+            echo "::notice::FID $FID → $OUT"
+            echo "$OUT" | grep -q '"imported":[1-9]' || FAILED=1
+          done
+          kill $PID || true
+          tail -n 20 /tmp/import.log
+          exit $FAILED
+      - name: Snapshot du catalogue
+        if: always()
+        run: |
+          deno run -A supabase/functions/snapshot-deals/index.ts > /tmp/snap.log 2>&1 &
+          for i in $(seq 1 60); do curl -s -o /dev/null localhost:8000 && break; sleep 2; done
+          OUT=$(curl -sS -m 900 -X POST localhost:8000 -H "x-cron-secret: $CRON_SECRET" -H "apikey: $SUPABASE_ANON_KEY" \
+            -H "Authorization: Bearer $SUPABASE_ANON_KEY" -H "Content-Type: application/json" -d '{}' | head -c 400)
+          echo "::notice::Snapshot → $OUT"
