@@ -1,0 +1,30 @@
+name: Import Awin (manuel, marchand par marchand)
+
+on:
+  workflow_dispatch:
+    inputs:
+      fids:
+        description: "FID Awin à importer, séparés par des virgules"
+        required: true
+        default: "48225,87190,87833,90621,111256"
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      REF: wyfqswrhlupauvwutlla
+    steps:
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Import séquentiel
+        run: |
+          SERVICE=$(supabase projects api-keys --project-ref "$REF" -o json | jq -r '.[] | select(.name=="service_role") | .api_key')
+          echo "::add-mask::$SERVICE"
+          for FID in $(echo "${{ github.event.inputs.fids }}" | tr ',' ' '); do
+            OUT=$(curl -sS -m 400 -w ' HTTP=%{http_code} t=%{time_total}s' -X POST "https://$REF.supabase.co/functions/v1/import-awin-orchestrator?fid=$FID&mode=sequential" \
+              -H "Authorization: Bearer $SERVICE" -H "apikey: $SERVICE" -H "Content-Type: application/json" -d "{\"fid\":\"$FID\",\"mode\":\"sequential\"}" | tr '\n' ' ' | cut -c1-900)
+            echo "::notice::FID $FID → $OUT"
+          done
