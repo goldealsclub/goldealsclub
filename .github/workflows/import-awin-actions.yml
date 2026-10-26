@@ -50,10 +50,15 @@ jobs:
           [ -z "$FIDS" ] && FIDS="48225,87190,87833,90621,111256,112989"
           FAILED=0
           for FID in $(echo "$FIDS" | tr ',' ' '); do
-            OUT=$(curl -sS -m 1500 -X POST "http://localhost:8000/?fid=$FID" -H "x-cron-secret: $CRON_SECRET" \
-              -H "Content-Type: application/json" -d "{\"fid\":\"$FID\"}" | jq -c '{fid, imported, total_rows, deleted_stale, reached_end, error}' 2>&1)
-            echo "::notice::FID $FID → $OUT"
-            echo "$OUT" | grep -q '"imported":[1-9]' || FAILED=1
+            OK=0
+            for TRY in 1 2 3; do
+              OUT=$(curl -sS -m 1500 -X POST "http://localhost:8000/?fid=$FID" -H "x-cron-secret: $CRON_SECRET" \
+                -H "Content-Type: application/json" -d "{\"fid\":\"$FID\"}" | jq -c '{fid, imported, total_rows, deleted_stale, reached_end, error}' 2>&1)
+              echo "::notice::FID $FID (essai $TRY) → $OUT"
+              if echo "$OUT" | grep -q '"imported":[1-9]'; then OK=1; break; fi
+              sleep 45
+            done
+            [ $OK = 1 ] || FAILED=1
           done
           kill $PID || true
           tail -n 20 /tmp/import.log
