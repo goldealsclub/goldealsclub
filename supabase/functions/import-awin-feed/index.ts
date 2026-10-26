@@ -426,6 +426,9 @@ Deno.serve(async (req) => {
         originalPrice = null;
       }
       if (!salePrice || salePrice <= 0) { skippedNoPrice++; continue; }
+      // Le site n'affiche que les vraies promos (prix barré) : inutile de stocker le reste,
+      // ça remplissait le disque de la base gratuite (×3 lignes, écritures quotidiennes).
+      if (!originalPrice) { skippedNoPrice++; continue; }
 
       let discount = toNum(r.savings_percent);
       if ((!discount || discount <= 0) && originalPrice && originalPrice > salePrice) {
@@ -440,6 +443,7 @@ Deno.serve(async (req) => {
         originalPrice = null;
         discount = 0;
       }
+      if (!originalPrice) { skippedNoPrice++; continue; }
 
       const merchantId = r.merchant_id || "0";
       merchantIds.add(merchantId);
