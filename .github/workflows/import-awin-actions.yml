@@ -20,7 +20,7 @@ concurrency:
 jobs:
   import:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 150
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       AWIN_API_KEY: ${{ secrets.AWIN_API_KEY }}
@@ -64,8 +64,9 @@ jobs:
           tail -n 20 /tmp/import.log
           exit $FAILED
       - name: Snapshot du catalogue
-        if: always()
+        if: ${{ !cancelled() }}
         run: |
+          pkill -f "deno run" || true; sleep 2
           deno run -A supabase/functions/snapshot-deals/index.ts > /tmp/snap.log 2>&1 &
           for i in $(seq 1 60); do curl -s -o /dev/null localhost:8000 && break; sleep 2; done
           OUT=$(curl -sS -m 900 -X POST localhost:8000 -H "x-cron-secret: $CRON_SECRET" -H "apikey: $SUPABASE_ANON_KEY" \
